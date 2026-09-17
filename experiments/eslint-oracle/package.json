@@ -1,0 +1,9 @@
+{
+  "name": "jev-eslint-oracle",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Can Jev predict ESLint's verdict from the rule description alone? (docs/12-eslint-oracle.md)",
+  "type": "module",
+  "scripts": { "demo": "tsx src/run.ts" },
+  "devDependencies": { "eslint": "^9.36.0", "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}
