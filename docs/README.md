@@ -17,6 +17,7 @@ moon run --target native cmd/moba -- --a jev --b scripted      # 02: 3v3 MOBA
 cd experiments/chess          && npm i && npx tsx src/run.ts   # 03: チェス vs Sonnet 5
 cd experiments/agent-questions && npm i && npx tsx src/run.ts  # 04: エージェントに質問を書かせる
 cd experiments/browser-chaos  && npm i && npx tsx src/run-spa.ts # 05: ブラウザ探索
+cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 12: ESLint の合否予測
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -42,6 +43,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **質問はエージェント、閾値はデータ** | 閾値を合わせ直すと 10〜22 → 21〜22 に収束 | 本リポジトリ | [04](04-agent-built-prompts.md#2-原因は設計ではなく閾値だった) |
 | **提案は「決定」ではなく「助言」として渡す** | 提案単独 10.3% → agent が見て決めて 5.9% | [cookbook](https://docs.typesafe.ai/cookbooks/skill_suggestion) | [08](08-skill-suggestion.md#42-提案は決定ではなく助言として効いている) |
 | **state に stat を渡せば「選ぶ」問題も解ける** | 素の数値から編成をドラフト。Jev 順位 ≈ 実測、最強を conf 0.76 で | 本リポジトリ | [11](11-synergy.md#5-jev-は編成を選べるか--ドラフト) |
+| **判定基準だけ渡せば実装なしで合否が当たる** | ESLint の説明文だけで **88.4%・AUC 0.95**。素直なケースは 60/60 | 本リポジトリ | [12](12-eslint-oracle.md#2-結果) |
+| **ルール名より判定基準を渡す** | ID だけだと過検出が 2〜3 倍(101 対 34)。暗記ではなく読解が効いている | 本リポジトリ | [12](12-eslint-oracle.md#3-どこまで見せるかは正解率を動かさない動くのは過検出) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -64,6 +67,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 1 リクエストの screen で全部塞げると思う | エンコードで抜ける・聞いてないハザードに穴([09](09-guardrails.md#外した-2-件--どちらも1-リクエストで-screen-の構造的限界)) |
 | confidence の相関だけ見て二層構成を組む | 第二段が弱い・分布が潰れている場合に破綻する([07](07-escalation.md#結論先に)) |
 | エスカレーションをランダム同予算と比べない | どう選んでも品質は上がるので、効いた証明にならない([07](07-escalation.md#4-q2--コスト品質曲線)) |
+| 判定基準の説明文を「仕様」だと思う | 逃げ道は実装にしかない。5 回とも同じ側に外す過検出になる([12](12-eslint-oracle.md#4-外すのは全部実装にしか書いていない逃げ道)) |
+| 例外規定を渡して過検出を直そうとする | 逃げ道を探しに行く。見逃しが 0 → 11 件、免除を隣の綴りにまで一般化して p 0.18 の自信ある誤答([12](12-eslint-oracle.md#5-逃げ道を渡したら直るのか--spec-arm)) |
 | シナジーの機構を実装せず編成だけ変える | ピールや耐性が効かないと前衛はただの的で raw DPS が勝つ。効果は機構を入れて初めて測れる([11](11-synergy.md#2-チャンピオンに多様性を持たせる)) |
 | リトライ無しのクライアントで API を叩きすぎる | レート制限で全 hold、対称ゲームが 350-350 で膠着する([11](11-synergy.md#1-相互キルの同時処理)) |
 
@@ -83,6 +88,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [09](09-guardrails.md) | [LLM guardrails cookbook](https://docs.typesafe.ai/cookbooks/llm_guardrails) の追試(入出力スクリーニング) | ✅ |
 | [10](10-jev-vs-jev.md) | Jev vs Jev を独立プロセスで対戦(referee + player ×2) | ✅ |
 | [11](11-synergy.md) | チャンピオンのシナジー(AD/AP・前衛)、相互キルの同時処理、TUI リプレイ | ✅ |
+| [12](12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡して、実装を伏せたまま合否を当てさせる | ✅ |
 
 ## この探索から見えている一般則
 
@@ -106,3 +112,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
    (チェス: 122cp → 2cp)。問いの定義が曖昧なら何に回しても効かない
    (シェル: 低 confidence の 2 件はどちらも Jev が正解)。
    後者はモデルを変える問題ではなく方針を決める問題([07](07-escalation.md#なぜドメインで分かれたのか))。
+9. **判定基準は渡せるが、逃げ道は書かないと渡らない。** 実装を伏せて評価基準だけ渡しても
+   合否は当たる(88.4%)。外すのは例外規定 —— 「禁止と書いてあるが実装だけが許している」
+   ケースに全部集まる。言語化すれば直る(`except-parens` を渡すと 10/15 → 15/15)が、
+   渡した例外は隣のケースにも一般化されるので、**ゲートに使うなら例外は渡さない**
+   ([12](12-eslint-oracle.md))。

@@ -15,7 +15,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
-| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト) |
+| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
 ([まとめと優先順位](docs/README.md))。
@@ -143,6 +143,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
+| [12](docs/12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -156,8 +157,14 @@ moon run --target native cmd/shellrisk --                  # シェルコマン�
 moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
 ```
 
-TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成)は
+TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測)は
 [`experiments/`](experiments/) 以下で、各ディレクトリで `npm install` してから走ります。
+
+```bash
+cd experiments/eslint-oracle && npm install
+npx tsx src/truth.ts                                 # ESLint の正解ラベルだけ(API 不要)
+npx tsx src/run.ts --repeat 5                         # 実装を伏せて合否を当てさせる(要 API)
+```
 
 ## 補足
 
