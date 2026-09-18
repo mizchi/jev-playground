@@ -20,8 +20,14 @@ export default [
       "jev/quality": [
         "warn",
         {
-          // The defaults, spelled out because the whole point of docs/21 is
-          // where these numbers came from.
+          // The defaults, spelled out because the whole point of docs/21 and
+          // docs/22 is where these numbers came from.
+          //
+          // `full` asks the eight named criteria alongside the score and the
+          // generic noul: 10 questions per function instead of 2, 3.3x the
+          // tokens, and the reason to pay it is that a finding comes back with
+          // a NAME. docs/22 measured 41/51 caught against 33/51 for `vague`.
+          rubric: "full",
           reportAt: 1.5,
           bugAt: 0.7,
           unsureBelow: 0.5,

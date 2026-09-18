@@ -29,6 +29,8 @@ import * as dates from "./corpus/dates.js";
 import { EventBus } from "./corpus/events.js";
 import * as fsutil from "./corpus/fsutil.js";
 import * as http from "./corpus/http.js";
+import * as pool from "./corpus/pool.js";
+import * as ranges from "./corpus/ranges.js";
 import { LruCache } from "./corpus/lru.js";
 import * as report from "./corpus/report.js";
 import * as retry from "./corpus/retry.js";
@@ -44,8 +46,16 @@ import * as stats from "./corpus/stats.js";
  */
 export const CLASSES = ["bug", "smell", "nearmiss", "clean"];
 
-const L = (label, basis, note, probe) => ({ label, basis, note, probe });
+const L = (label, basis, note, probe, covers = null) => ({ label, basis, note, probe, covers });
 const clean = (note) => L("clean", "review", note, null);
+
+/**
+ * Which of the eight named criteria in judge.mjs is SUPPOSED to catch each
+ * bug. `"unnamed"` means the class is deliberately absent from that list:
+ * those five are the held-out set, and they are the only honest way to
+ * measure the hole docs/01 section 4 predicts in a rubric written by
+ * enumerating defect classes.
+ */
 
 export const LABELS = {
   // ------------------------------------------------------------------ auth
@@ -54,6 +64,7 @@ export const LABELS = {
     "test",
     "Two empty tokens compare equal, so a request with no token authenticates against a session with no token.",
     () => auth.compareTokens("", "") === false,
+    "name_mismatch",
   ),
   "auth.js#isExpired": clean("A timestamp comparison, and both sides are ms."),
   "auth.js#parseBearer": clean("Guards the type, the prefix and the empty tail."),
@@ -66,6 +77,7 @@ export const LABELS = {
     "test",
     "Subtracts the percentage as if it were an amount: 10% off 1000 yen returns 990.",
     () => cart.applyDiscount(1000, 10) === 900,
+    "unit_or_arithmetic",
   ),
   "cart.js#roundMoney": L(
     "smell",
@@ -97,6 +109,7 @@ export const LABELS = {
       await counters.incrementAll(["a", "a", "a"]);
       return counters.snapshot().a === 3;
     },
+    "lost_update",
   ),
   "counters.js#incrementAll": L(
     "smell",
@@ -114,6 +127,7 @@ export const LABELS = {
     "test",
     "setUTCMonth overflows: 31 January plus one month lands in March.",
     () => dates.addMonths(new Date("2026-01-31T00:00:00Z"), 1).getUTCMonth() === 1,
+    "api_default",
   ),
   "dates.js#startOfDayUtc": L(
     "nearmiss",
@@ -158,6 +172,7 @@ export const LABELS = {
       bus.emit("x");
       return seen.join(",") === "b,c";
     },
+    "api_default",
   ),
   "events.js#EventBus#emit": L(
     "nearmiss",
@@ -208,6 +223,7 @@ export const LABELS = {
         return true;
       }
     },
+    "swallows_failure",
   ),
 
   // ------------------------------------------------------------------ http
@@ -230,6 +246,7 @@ export const LABELS = {
       const q = http.buildQuery({ q: "a&b=c" });
       return new URLSearchParams(q.slice(1)).get("q") === "a&b=c";
     },
+    "unescaped_composition",
   ),
 
   // ------------------------------------------------------------------- lru
@@ -246,6 +263,7 @@ export const LABELS = {
       cache.set("c", 3);
       return cache.has("a") && !cache.has("b");
     },
+    "name_mismatch",
   ),
   "lru.js#LruCache#set": clean("Re-inserts to move to the end, then evicts from the front."),
   "lru.js#LruCache#has": clean("Delegates to the map."),
@@ -290,6 +308,7 @@ export const LABELS = {
         return false;
       }
     },
+    "unhandled_async",
   ),
   "retry.js#withTimeout": clean("Races a guard and clears the timer in a finally."),
   "retry.js#settleAll": clean("Sequential, and both outcomes are recorded."),
@@ -300,6 +319,7 @@ export const LABELS = {
     "test",
     "The character-class replace has no /g, so only the first run of separators becomes a dash.",
     () => slug.slugify("Hello World Again") === "hello-world-again",
+    "api_default",
   ),
   "slug.js#titleCase": clean("Global replace over the first letter of each word."),
   "slug.js#dedupeSlugs": clean("Counts occurrences and suffixes from the second onward."),
@@ -312,15 +332,98 @@ export const LABELS = {
     "test",
     "Array.sort() with no comparator sorts lexicographically, so [10,9,8,100,1] has median 100.",
     () => stats.median([10, 9, 8, 100, 1]) === 9,
+    "api_default",
   ),
   "stats.js#percentile": L(
     "bug",
     "test",
     "floor(p/100 * length) indexes one past the end at p=100, returning undefined.",
     () => stats.percentile([1, 2, 3], 100) === 3,
+    "boundary",
   ),
   "stats.js#stddev": clean("Sample standard deviation with an n<2 guard."),
   "stats.js#histogram": clean("Clamps the top bucket and guards a zero span."),
+  // ----------------------------------------------------------------- ranges
+  // From here down: bugs in classes the eight named criteria in judge.mjs do
+  // NOT name. `covers: "unnamed"` is the held-out set -- written before the
+  // criteria were, so the criteria could not be shaped around them.
+  "ranges.js#mergeRanges": L(
+    "bug",
+    "test",
+    "Builds the merged list and never returns it, so every caller gets undefined.",
+    () => {
+      const out = ranges.mergeRanges([
+        { from: 1, to: 3 },
+        { from: 2, to: 5 },
+      ]);
+      return Array.isArray(out) && out.length === 1 && out[0].to === 5;
+    },
+    "unnamed",
+  ),
+  "ranges.js#modeFlags": L(
+    "bug",
+    "test",
+    "The `read` case has no break, so asking for read returns read AND write.",
+    () =>
+      ranges.modeFlags("read").join(",") === "r" &&
+      ranges.modeFlags("write").join(",") === "w",
+    "unnamed",
+  ),
+  "ranges.js#spanOf": clean("Guards the empty case, then a linear min and max."),
+  "ranges.js#overlaps": clean("Two strict comparisons; half-open intervals."),
+  "ranges.js#clampRange": clean("Clamps both ends against the limit."),
+
+  // ------------------------------------------------------------------- pool
+  "pool.js#Pool#constructor": clean("Fills the free list and zeroes the counter."),
+  "pool.js#Pool#acquire": clean("Pops, throws when exhausted, counts."),
+  "pool.js#Pool#release": clean("Decrements and pushes back."),
+  "pool.js#withConnection": L(
+    "bug",
+    "test",
+    "No try/finally, so a throwing callback leaks the connection and the pool drains to nothing.",
+    () => {
+      const p = new pool.Pool(2);
+      try {
+        pool.withConnection(p, () => {
+          throw new Error("boom");
+        });
+      } catch {
+        // expected
+      }
+      return p.inUse === 0;
+    },
+    "unnamed",
+  ),
+  "pool.js#settingsFor": L(
+    "bug",
+    "test",
+    "Caches by user id with no invalidation, so a changed theme is never seen again.",
+    () => {
+      const user = { id: "u-stale", theme: "dark", locale: "ja" };
+      pool.settingsFor(user);
+      user.theme = "light";
+      return pool.settingsFor(user).theme === "light";
+    },
+    "unnamed",
+  ),
+  "pool.js#reachable": L(
+    "bug",
+    "test",
+    "Walks a graph with no visited set, so any cycle recurses until the stack overflows.",
+    () => {
+      const a = { id: "a", next: [] };
+      const b = { id: "b", next: [a] };
+      a.next.push(b);
+      try {
+        const out = pool.reachable(a);
+        return out.includes("a") && out.includes("b") && out.length <= 4;
+      } catch {
+        return false;
+      }
+    },
+    "unnamed",
+  ),
+  "pool.js#describePool": clean("Two counters in a template string."),
 };
 
 /** `file.js#name` for a unit, which is how LABELS is keyed. */

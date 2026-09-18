@@ -26,7 +26,15 @@ export function cachePath(fromOption) {
 
 /** Never throws. Returns an empty cache on any problem. */
 export function readCache(path) {
-  const empty = { schema: SCHEMA, model: null, arm: null, entries: {}, ok: false, reason: "" };
+  const empty = {
+    schema: SCHEMA,
+    model: null,
+    arm: null,
+    rubric: null,
+    entries: {},
+    ok: false,
+    reason: "",
+  };
   const file = cachePath(path);
   if (!existsSync(file)) return { ...empty, reason: "no cache file" };
   let parsed;
@@ -46,13 +54,14 @@ export function readCache(path) {
     schema: SCHEMA,
     model: parsed.model ?? null,
     arm: parsed.arm ?? null,
+    rubric: parsed.rubric ?? null,
     entries: parsed.entries,
     ok: true,
     reason: "",
   };
 }
 
-export function writeCache(path, { model, arm, entries }) {
+export function writeCache(path, { model, arm, rubric, entries }) {
   const file = cachePath(path);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(
@@ -62,6 +71,7 @@ export function writeCache(path, { model, arm, entries }) {
         schema: SCHEMA,
         model: model ?? null,
         arm: arm ?? null,
+        rubric: rubric ?? null,
         written: new Date().toISOString(),
         entries,
       },
@@ -73,19 +83,30 @@ export function writeCache(path, { model, arm, entries }) {
 }
 
 /**
- * One verdict, or null. A stored entry must carry the two numbers the gate
- * reads; anything else is treated as absent rather than defaulted, because a
- * defaulted score is an invented verdict.
+ * One verdict, or null.
+ *
+ * A stored entry has to carry something the gate can actually read -- either
+ * the score pair or at least one named criterion. Anything short of that is
+ * treated as ABSENT rather than defaulted, because a defaulted score is an
+ * invented verdict, and this is the path a lint message comes from.
  */
 export function lookup(cache, key) {
   const entry = cache.entries?.[key];
-  if (!entry || typeof entry.score !== "number" || typeof entry.confidence !== "number") {
-    return null;
-  }
+  if (!entry || typeof entry !== "object") return null;
+  const hasScore = typeof entry.score === "number" && typeof entry.confidence === "number";
+  const atoms =
+    entry.atoms && typeof entry.atoms === "object"
+      ? Object.fromEntries(
+          Object.entries(entry.atoms).filter(([, p]) => typeof p === "number"),
+        )
+      : null;
+  const hasAtoms = atoms !== null && Object.keys(atoms).length > 0;
+  if (!hasScore && !hasAtoms) return null;
   return {
-    score: entry.score,
-    confidence: entry.confidence,
+    score: hasScore ? entry.score : null,
+    confidence: hasScore ? entry.confidence : null,
     bug: typeof entry.bug === "number" ? entry.bug : null,
+    atoms: hasAtoms ? atoms : null,
   };
 }
 

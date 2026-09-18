@@ -24,7 +24,7 @@ import { createHash } from "node:crypto";
  * It is part of the cache key, so a rubric edit invalidates every verdict
  * rather than mixing two rubrics in one report.
  */
-export const SCHEMA = "jev-quality-2";
+export const SCHEMA = "jev-quality-3";
 
 /**
  * The rubric is ONE axis: how hard a reviewer pushes back. docs/01 section 5
@@ -48,6 +48,137 @@ const BUG_CRITERIA = {
 };
 
 /**
+ * Concrete criteria: eight named things that make code wrong, each asked as
+ * its own noul.
+ *
+ * These exist because of what docs/21 measured. The vague question ("how hard
+ * would a reviewer push back") missed six of twelve bugs, and every miss was
+ * the same kind of thing -- a specific library call not behaving the way the
+ * surrounding code assumed. docs/01 section 5 says a rubric answers the axis
+ * you wrote and nothing else, so the obvious question is whether those six
+ * were invisible or merely unasked.
+ *
+ * **These criteria were written by looking at the corpus's defect classes.**
+ * That is deliberate and it is a fitted rubric, not a general one: it measures
+ * the CEILING (if you name the class, can Jev find it?), not generalisation.
+ * The five held-out bugs in `ranges.js` and `pool.js` are in classes NOT named
+ * here, and they are what measures the hole docs/01 section 4 predicts.
+ *
+ * `covers` is documentation of the intent, never sent.
+ */
+export const ATOMS = [
+  {
+    name: "api_default",
+    covers: "a library call's default is not what the code assumes",
+    statement:
+      "This function depends on a library or built-in behaving in a way it does not behave with the arguments given.",
+    criteria: {
+      true: "It calls a built-in or library function and relies on behaviour that call does not have: a comparator, flag, mode, or argument it never passed, or a default that differs from what the surrounding code assumes.",
+      false: "Every library and built-in call it makes behaves, with the arguments actually given, the way the surrounding code needs.",
+    },
+  },
+  {
+    name: "unhandled_async",
+    covers: "a promise whose rejection or value escapes",
+    statement: "This function lets asynchronous work escape unhandled.",
+    criteria: {
+      true: "A promise is returned, ignored or stored somewhere its rejection will not be caught, or its value is used before it resolves.",
+      false: "Every asynchronous call is awaited or has its failure handled where the surrounding code expects, or the function is not asynchronous.",
+    },
+  },
+  {
+    name: "boundary",
+    covers: "the edge of the input range",
+    statement: "This function gets an edge of its input range wrong.",
+    criteria: {
+      true: "Empty input, the first or the last element, an index one past the end, or a zero or negative size gives a wrong result or an error the caller does not expect.",
+      false: "The edges of its input range are handled, or cannot occur given how it is called.",
+    },
+  },
+  {
+    name: "swallows_failure",
+    covers: "a failure the caller needed to know about",
+    statement: "This function hides a failure from its caller.",
+    criteria: {
+      true: "An error or a failed operation is discarded so the caller cannot tell it happened, and the caller needs to know.",
+      false: "Failures propagate, or are absorbed deliberately in a way the function's name and shape announce.",
+    },
+  },
+  {
+    name: "name_mismatch",
+    covers: "the name promises something the body does not do",
+    statement:
+      "This function does something materially different from what its name promises.",
+    criteria: {
+      true: "Someone who read only the name and the parameters would be wrong about what it does, what it returns, or what guarantee it provides.",
+      false: "The name and parameters describe what the body actually does.",
+    },
+  },
+  {
+    name: "lost_update",
+    covers: "read-modify-write across a suspension point",
+    statement: "Concurrent calls to this function can lose each other's writes.",
+    criteria: {
+      true: "It reads shared state and writes it back with a suspension point in between, so two overlapping calls both read the old value and one write is lost.",
+      false: "It does not read-modify-write shared state, cannot be called concurrently, or the update is atomic.",
+    },
+  },
+  {
+    name: "unescaped_composition",
+    covers: "caller text spliced into something that gets parsed",
+    statement: "This function builds a structured string out of unescaped parts.",
+    criteria: {
+      true: "Caller-supplied text is concatenated into something that will later be parsed -- a URL, query string, path, shell command, SQL statement or markup -- without being escaped or encoded.",
+      false: "Anything interpolated into a structured string is escaped, encoded, or known to be safe by construction.",
+    },
+  },
+  {
+    name: "unit_or_arithmetic",
+    covers: "wrong operation or wrong scale",
+    statement: "This function gets an arithmetic operation or a unit wrong.",
+    criteria: {
+      true: "A percentage, currency amount, time unit, index or ratio is computed with the wrong operation or at the wrong scale for what the parameters mean.",
+      false: "Its arithmetic and its units are consistent with what its parameters mean.",
+    },
+  },
+];
+
+export const ATOM_NAMES = ATOMS.map((a) => a.name);
+
+/**
+ * A checklist of the same eight things, as one paragraph in the score
+ * question's instructions rather than as eight separate questions.
+ *
+ * This arm exists to separate two explanations of any improvement: "it helps
+ * to say what counts as a problem" from "it helps to ask about each one
+ * separately". Same information, one question instead of nine.
+ */
+const CHECKLIST = ATOMS.map((a) => `${a.name}: ${a.criteria.true}`);
+
+/** Question sets. `arm` varies the state; `rubric` varies what we ask. */
+export const RUBRICS = ["vague", "checklist", "atoms", "full"];
+
+export const RUBRIC_BLURB = {
+  vague: "the docs/21 pair: reviewer-action score + one generic `misbehaves` noul",
+  checklist: "the same pair, but the score question lists the eight criteria",
+  atoms: "eight named criteria as eight nouls, and nothing else",
+  full: "score + generic noul + the eight named criteria, all in one request",
+};
+
+export function rubricShape(rubric) {
+  switch (rubric) {
+    case "checklist":
+      return { score: true, generic: true, checklist: true, atoms: false };
+    case "atoms":
+      return { score: false, generic: false, checklist: false, atoms: true };
+    case "full":
+      return { score: true, generic: true, checklist: false, atoms: true };
+    default:
+      return { score: true, generic: true, checklist: false, atoms: false };
+  }
+}
+
+/**
  * Where a report starts. These live in code, not in the question text
  * (docs/01 section 3), and they are rule options so retuning the gate never
  * touches a question -- which is also what makes the cache reusable across
@@ -58,6 +189,38 @@ export const DEFAULT_THRESHOLDS = {
   reportAt: 1.5,
   /** Report separately when the atomic "misbehaves" noul reaches this. */
   bugAt: 0.7,
+  /**
+   * Fallback cutoff for a named criterion with no entry in `criterionAt`.
+   * docs/22 is why you do not want to rely on it.
+   */
+  atomAt: 0.8,
+  /**
+   * One cutoff PER criterion, because they are not on the same scale.
+   *
+   * docs/22 measured this and it was the whole finding. `unit_or_arithmetic`
+   * answers 0.94 on its own class; `api_default` answers 0.20 on its own
+   * class while still ranking it above clean code at AUC 0.80. One global
+   * 0.80 caught 13 of 36 named-class judgments; these cutoffs catch 24, at
+   * the same zero false positives -- including two of the six bugs docs/21
+   * missed entirely.
+   *
+   * **These numbers are fitted on 68 functions.** They are the highest clean
+   * answer each criterion gave, plus 0.01, so on this corpus they are exactly
+   * at the edge of a false positive -- which means on your code some of them
+   * WILL produce one. They are the first thing to retune, and the reason
+   * `criterionAt` is an option: docs/04's rule holds here, the questions are
+   * design and the thresholds are data.
+   */
+  criterionAt: {
+    api_default: 0.22,
+    unhandled_async: 0.57,
+    boundary: 0.55,
+    swallows_failure: 0.38,
+    name_mismatch: 0.47,
+    lost_update: 0.73,
+    unescaped_composition: 0.23,
+    unit_or_arithmetic: 0.28,
+  },
   /**
    * Confidence changes WHICH message fires, not WHETHER one fires.
    *
@@ -75,9 +238,18 @@ export const DEFAULT_THRESHOLDS = {
   unsureBelow: 0.5,
 };
 
-/** Content-addressed cache key. See the limitation note in README. */
-export function keyOf(unit) {
-  return createHash("sha256").update(`${SCHEMA}\n${unit.text}`).digest("hex").slice(0, 20);
+/**
+ * Content-addressed cache key. See the limitation note in README.
+ *
+ * The rubric is part of the key, not just the file header: two rubrics answer
+ * different questions about the same function, so they must be able to live
+ * in one cache without one silently standing in for the other.
+ */
+export function keyOf(unit, rubric = "vague") {
+  return createHash("sha256")
+    .update(`${SCHEMA}\n${rubric}\n${unit.text}`)
+    .digest("hex")
+    .slice(0, 20);
 }
 
 /** Stable question names. `q` = the score, `b` = the atomic noul. */
@@ -86,6 +258,12 @@ export function scoreKey(i) {
 }
 export function bugKey(i) {
   return `b${String(i).padStart(3, "0")}`;
+}
+/** `a3-007` = atom index 3, function 7. Opaque: the atom's NAME must not
+ *  leak into the answer map, or a reader of the request learns the taxonomy
+ *  twice and the keys stop being comparable across rubrics. */
+export function atomKey(atomIndex, i) {
+  return `a${atomIndex}-${String(i).padStart(3, "0")}`;
 }
 
 export const ARMS = ["located", "inlined", "solo", "isolated"];
@@ -147,9 +325,10 @@ export function stateFor(file, source, units, arm) {
   };
 }
 
-export function questionsFor(units, arm) {
+export function questionsFor(units, arm, rubric = "vague") {
   const questions = {};
   const shape = armShape(arm);
+  const want = rubricShape(rubric);
   units.forEach((unit, i) => {
     // docs/00: instructions may be an object, and a named field is clearer
     // than a sentence with the name spliced into it.
@@ -164,38 +343,109 @@ export function questionsFor(units, arm) {
             }
           : { function: unit.name, lines: `${unit.line}-${unit.endLine}` };
 
-    questions[scoreKey(i)] = {
-      type: "score",
-      instructions: {
-        task: "You are reviewing this function in a pull request. How hard would you push back?",
-        ...subject,
-      },
-      criteria: LEVELS,
-    };
-    questions[bugKey(i)] = {
-      type: "noul",
-      instructions: {
-        statement: "This function does the wrong thing for some input it will realistically receive.",
-        ...subject,
-      },
-      // Nested, because the server silently drops top-level true/false
-      // (docs/00-api-notes.md).
-      criteria: BUG_CRITERIA,
-    };
+    if (want.score) {
+      questions[scoreKey(i)] = {
+        type: "score",
+        instructions: {
+          task: "You are reviewing this function in a pull request. How hard would you push back?",
+          ...(want.checklist ? { things_that_count_as_a_problem: CHECKLIST } : {}),
+          ...subject,
+        },
+        criteria: LEVELS,
+      };
+    }
+    if (want.generic) {
+      questions[bugKey(i)] = {
+        type: "noul",
+        instructions: {
+          statement:
+            "This function does the wrong thing for some input it will realistically receive.",
+          ...subject,
+        },
+        // Nested, because the server silently drops top-level true/false
+        // (docs/00-api-notes.md).
+        criteria: BUG_CRITERIA,
+      };
+    }
+    if (want.atoms) {
+      ATOMS.forEach((atom, a) => {
+        questions[atomKey(a, i)] = {
+          type: "noul",
+          instructions: { statement: atom.statement, ...subject },
+          criteria: atom.criteria,
+        };
+      });
+    }
   });
   return questions;
 }
 
 /** Pull one function's verdict out of a response. */
-export function verdictFrom(answers, i) {
+export function verdictFrom(answers, i, rubric = "vague") {
+  const want = rubricShape(rubric);
   const s = answers[scoreKey(i)];
   const b = answers[bugKey(i)];
-  if (!s || s.type !== "score") return null;
+  const hasScore = s && s.type === "score";
+  let atoms = null;
+  if (want.atoms) {
+    atoms = {};
+    ATOMS.forEach((atom, a) => {
+      const ans = answers[atomKey(a, i)];
+      if (ans && ans.type === "noul") atoms[atom.name] = ans.noul;
+    });
+    if (Object.keys(atoms).length === 0) atoms = null;
+  }
+  // A rubric with no score still produces a verdict; one with no usable answer
+  // at all does not, because a defaulted score is an invented verdict.
+  if (!hasScore && !atoms) return null;
   return {
-    score: s.score,
-    confidence: s.confidence,
+    score: hasScore ? s.score : null,
+    confidence: hasScore ? s.confidence : null,
     bug: b && b.type === "noul" ? b.noul : null,
+    atoms,
   };
+}
+
+/**
+ * The highest-firing named criterion, or null.
+ *
+ * Taking the max and not the mean is docs/08: averaging several nouls dilutes
+ * the one that carries the signal, and here it would also throw away the one
+ * thing the atoms buy that the vague rubric cannot -- a name to put in the
+ * message.
+ */
+export function topAtom(verdict) {
+  if (!verdict?.atoms) return null;
+  let best = null;
+  for (const [name, p] of Object.entries(verdict.atoms)) {
+    if (typeof p !== "number") continue;
+    if (best === null || p > best.p) best = { name, p };
+  }
+  return best;
+}
+
+/**
+ * The criterion that actually fired, judged against its OWN cutoff.
+ *
+ * Not the same thing as `topAtom`: the raw maximum picks whichever criterion
+ * happens to answer on the highest scale, and docs/22 measured that the
+ * scales differ by a factor of five. Ranking by how far each answer is over
+ * its own cutoff is what makes "the criterion with the strongest case" mean
+ * something.
+ */
+export function firedAtom(verdict, thresholds = {}) {
+  if (!verdict?.atoms) return null;
+  const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
+  const cutoffs = t.criterionAt ?? {};
+  let best = null;
+  for (const [name, p] of Object.entries(verdict.atoms)) {
+    if (typeof p !== "number") continue;
+    const cutoff = cutoffs[name] ?? t.atomAt;
+    if (p < cutoff) continue;
+    const margin = p / cutoff;
+    if (best === null || margin > best.margin) best = { name, p, cutoff, margin };
+  }
+  return best;
 }
 
 /**
@@ -211,10 +461,26 @@ export function decide(verdict, thresholds = {}) {
   if (!verdict) return null;
   const { score, confidence, bug } = verdict;
 
+  // A named criterion outranks both the generic noul and the score, because
+  // it is the only one of the three that can say WHAT is wrong -- and a lint
+  // message that names the defect is worth more than one that reports 1.94/3.
+  const atom = firedAtom(verdict, t);
+  if (atom) {
+    return {
+      messageId: "criterion",
+      level: "block",
+      data: {
+        ...fmt(verdict, t),
+        criterion: atom.name,
+        criterionP: atom.p.toFixed(2),
+        criterionAt: atom.cutoff.toFixed(2),
+      },
+    };
+  }
   if (bug !== null && bug >= t.bugAt) {
     return { messageId: "bug", level: "block", data: fmt(verdict, t) };
   }
-  if (score >= t.reportAt) {
+  if (score !== null && score >= t.reportAt) {
     // Over the bar. Confidence decides how it is worded, not whether it
     // fires: docs/09 found boundary decisions flip on trivial input
     // differences, so an under-confident one goes to a human as a question.
@@ -237,12 +503,13 @@ function fmt(verdict, t) {
   const bug =
     verdict.bug === null ? "n/a" : `${verdict.bug.toFixed(2)} (fires at ${t.bugAt.toFixed(2)})`;
   return {
-    score: verdict.score.toFixed(2),
-    confidence: verdict.confidence.toFixed(2),
+    score: verdict.score === null ? "n/a" : verdict.score.toFixed(2),
+    confidence: verdict.confidence === null ? "n/a" : verdict.confidence.toFixed(2),
     reportAt: t.reportAt.toFixed(2),
     unsureBelow: t.unsureBelow.toFixed(2),
+    atomAt: t.atomAt.toFixed(2),
     bug,
-    level: levelName(verdict.score),
+    level: verdict.score === null ? "n/a" : levelName(verdict.score),
   };
 }
 

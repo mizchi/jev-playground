@@ -2,12 +2,16 @@
  * eslint-plugin-jev -- an ESLint rule whose verdict comes from Jev.
  *
  * The rule is `jev/quality`. It judges one function at a time and reports
- * three different things, because they want three different answers from a
+ * four different things, because they want four different answers from a
  * team:
  *
+ *   criterion    a NAMED review criterion matched (`rubric: "atoms"`/"full")
+ *   jev/bug      the generic "this misbehaves" noul fired
  *   jev/quality  the reviewer-action score crossed the bar, confidently
- *   jev/bug      the atomic "this misbehaves" noul fired
  *   jev/unsure   over the bar but under-confident -- a human should look
+ *
+ * `criterion` is the only one that can say WHAT is wrong, which is why it
+ * outranks the other three. docs/22 is what it costs and what it buys.
  *
  * ## The one hard problem
  *
@@ -33,7 +37,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 import { collectUnits, DEFAULT_SELECTION } from "./functions.mjs";
-import { DEFAULT_THRESHOLDS, decide, keyOf, levelName } from "./judge.mjs";
+import { DEFAULT_THRESHOLDS, RUBRICS, decide, keyOf, levelName } from "./judge.mjs";
 import { lookup, readCacheMemo } from "./cache.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -55,6 +59,8 @@ const messages = {
   bug: "Jev thinks `{{name}}` does the wrong thing for some realistic input (misbehaves {{bug}}; reviewer action {{score}}/3).",
   unsure:
     "Jev would push back on `{{name}}` but is not sure -- worth a human look rather than a fix (score {{score}}/3, confidence {{confidence}} under {{unsureBelow}}).",
+  criterion:
+    "`{{name}}` matches the review criterion `{{criterion}}` ({{criterionP}}, its cutoff is {{criterionAt}}). See docs/22 for what that criterion means and how well it holds.",
   missing: "No Jev verdict cached for `{{name}}`. Run the warm pass, or set `onMiss` to \"silent\".",
 };
 
@@ -64,7 +70,12 @@ const schema = [
     properties: {
       reportAt: { type: "number", minimum: 0, maximum: 3 },
       bugAt: { type: "number", minimum: 0, maximum: 1 },
+      atomAt: { type: "number", minimum: 0, maximum: 1 },
+      /** One cutoff per named criterion. docs/22 measured why this is a map. */
+      criterionAt: { type: "object", additionalProperties: { type: "number" } },
       unsureBelow: { type: "number", minimum: 0, maximum: 1 },
+      /** Which question set the cache was warmed with. docs/22 compares them. */
+      rubric: { enum: ["vague", "checklist", "atoms", "full"] },
       minLines: { type: "integer", minimum: 1 },
       includeCallbacks: { type: "boolean" },
       cache: { type: "string" },
@@ -125,6 +136,7 @@ const quality = {
       includeCallbacks: options.includeCallbacks ?? DEFAULT_SELECTION.includeCallbacks,
     };
     const onMiss = options.onMiss ?? "silent";
+    const rubric = RUBRICS.includes(options.rubric) ? options.rubric : "vague";
     const filename = context.filename ?? context.getFilename();
 
     return {
@@ -148,7 +160,7 @@ const quality = {
         const verdicts = new Map();
         const missing = [];
         for (const unit of units) {
-          const verdict = lookup(cache, keyOf(unit));
+          const verdict = lookup(cache, keyOf(unit, rubric));
           if (verdict) verdicts.set(unit, verdict);
           else missing.push(unit);
         }
@@ -159,8 +171,9 @@ const quality = {
               file: relative(process.cwd(), filename),
               source: sourceCode.getText(),
               cache: options.cache ?? null,
+              rubric,
               units: missing.map((u) => ({
-                key: keyOf(u),
+                key: keyOf(u, rubric),
                 name: u.name,
                 line: u.line,
                 endLine: u.endLine,
@@ -170,8 +183,14 @@ const quality = {
             options.timeout ?? 30_000,
           );
           for (const unit of missing) {
-            const verdict = fresh[keyOf(unit)];
-            if (verdict && typeof verdict.score === "number") verdicts.set(unit, verdict);
+            const verdict = fresh[keyOf(unit, rubric)];
+            // Same bar as a cache hit: a score pair or a named criterion.
+            // The `atoms` rubric produces no score at all.
+            const usable =
+              verdict &&
+              (typeof verdict.score === "number" ||
+                (verdict.atoms && Object.keys(verdict.atoms).length > 0));
+            if (usable) verdicts.set(unit, verdict);
           }
         }
 

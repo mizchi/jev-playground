@@ -21,14 +21,21 @@ import plugin from "../src/index.mjs";
 import { resetCacheMemo } from "../src/cache.mjs";
 import { collectUnits } from "../src/functions.mjs";
 import {
+  ATOM_NAMES,
   DEFAULT_THRESHOLDS,
   MAX_REQUEST_TOKENS,
+  RUBRICS,
   SCHEMA,
+  atomKey,
+  bugKey,
   decide,
   estimateTokens,
+  firedAtom,
   keyOf,
   questionsFor,
+  scoreKey,
   stateFor,
+  verdictFrom,
 } from "../src/judge.mjs";
 import { planBatches } from "../src/warm.mjs";
 
@@ -303,6 +310,93 @@ if (only !== "failsafe") {
     );
   }
   check("a null verdict is silent", decide(null, t) === null);
+
+  console.log("");
+  console.log("NAMED CRITERIA  (docs/22: the eight criteria and their per-criterion cutoffs)");
+  check(
+    "every criterion has a cutoff, and every cutoff names a criterion",
+    ATOM_NAMES.every((n) => typeof t.criterionAt[n] === "number") &&
+      Object.keys(t.criterionAt).every((n) => ATOM_NAMES.includes(n)),
+    `${ATOM_NAMES.length} criteria, ${Object.keys(t.criterionAt).length} cutoffs`,
+  );
+  const atomTable = [
+    // [atoms, expected messageId, why]
+    [{ api_default: 0.23 }, "criterion", "just over api_default's 0.22"],
+    [{ api_default: 0.21 }, null, "just under it"],
+    // The whole point of a per-criterion cutoff: 0.5 fires for one criterion
+    // and is silence for another, and a single global number cannot do that.
+    [{ unit_or_arithmetic: 0.5 }, "criterion", "0.50 is well over unit_or_arithmetic's 0.28"],
+    [{ lost_update: 0.5 }, null, "the same 0.50 is under lost_update's 0.73"],
+    [{ mystery_criterion: 0.85 }, "criterion", "an unknown name falls back to atomAt"],
+    [{ mystery_criterion: 0.75 }, null, "and is silent under it"],
+  ];
+  for (const [atoms, expected, why] of atomTable) {
+    const got = decide({ score: null, confidence: null, bug: 0.1, atoms }, t)?.messageId ?? null;
+    check(`${why} -> ${expected ?? "silent"}`, got === expected, `got ${got ?? "silent"}`);
+  }
+  check(
+    "the criterion with the biggest margin over its own cutoff wins, not the biggest number",
+    firedAtom({ atoms: { api_default: 0.66, lost_update: 0.74 } }, t)?.name === "api_default",
+    JSON.stringify(firedAtom({ atoms: { api_default: 0.66, lost_update: 0.74 } }, t)),
+  );
+  check(
+    "a named criterion outranks the score and the generic noul",
+    decide({ score: 2.9, confidence: 0.9, bug: 0.95, atoms: { boundary: 0.6 } }, t)?.messageId ===
+      "criterion",
+  );
+  check(
+    "an atoms-only verdict still decides (that rubric has no score)",
+    decide({ score: null, confidence: null, bug: null, atoms: { boundary: 0.9 } }, t)
+      ?.messageId === "criterion",
+  );
+  check(
+    "a verdict with neither a score nor a criterion is silent",
+    decide({ score: null, confidence: null, bug: null, atoms: null }, t) === null,
+  );
+
+  console.log("");
+  console.log("RUBRICS");
+  const oneUnit = [
+    { name: "f", line: 1, endLine: 4, text: "function f(a) {\n  return a;\n}" },
+  ];
+  const counts = Object.fromEntries(
+    RUBRICS.map((r) => [r, Object.keys(questionsFor(oneUnit, "located", r)).length]),
+  );
+  check(
+    "question count per function: vague 2, checklist 2, atoms 8, full 10",
+    counts.vague === 2 && counts.checklist === 2 && counts.atoms === 8 && counts.full === 10,
+    JSON.stringify(counts),
+  );
+  check(
+    "the checklist rubric puts the criteria in the score question, not in new questions",
+    JSON.stringify(questionsFor(oneUnit, "located", "checklist")).includes("api_default") &&
+      !JSON.stringify(questionsFor(oneUnit, "located", "vague")).includes("api_default"),
+  );
+  check(
+    "criterion NAMES never cross the wire as question keys",
+    Object.keys(questionsFor(oneUnit, "located", "full")).every(
+      (k) => !ATOM_NAMES.some((n) => k.includes(n)),
+    ),
+    Object.keys(questionsFor(oneUnit, "located", "full")).join(","),
+  );
+  check(
+    "the rubric is part of the cache key, so two rubrics can share one cache",
+    keyOf(oneUnit[0], "vague") !== keyOf(oneUnit[0], "full"),
+  );
+  const answers = {
+    [scoreKey(0)]: { type: "score", score: 2, confidence: 0.8 },
+    [bugKey(0)]: { type: "noul", noul: 0.4 },
+    [atomKey(0, 0)]: { type: "noul", noul: 0.33 },
+  };
+  check(
+    "verdictFrom reads the atoms back under the right names",
+    verdictFrom(answers, 0, "full")?.atoms?.[ATOM_NAMES[0]] === 0.33,
+    JSON.stringify(verdictFrom(answers, 0, "full")),
+  );
+  check(
+    "and ignores them when the rubric did not ask for them",
+    verdictFrom(answers, 0, "vague")?.atoms === null,
+  );
 
   console.log("");
   console.log("THE UNIT OF JUDGMENT");

@@ -3,33 +3,50 @@
 An ESLint rule whose verdict comes from Jev: a per-function review score,
 every function in a file asked in one request.
 
-Write-up with the numbers: [docs/21-eslint-plugin-jev.md](../../docs/21-eslint-plugin-jev.md).
+Write-ups with the numbers: [docs/21](../../docs/21-eslint-plugin-jev.md) (the plugin, the
+synchronous-rule problem, batching) and [docs/22](../../docs/22-code-criteria.md) (what changes
+when you name eight concrete defect classes instead of asking one vague question).
 
 ```bash
 npm install
 
-npm test                     # 40 checks, no API key needed
+npm test                     # 57 checks, no API key needed
 npm run truth                # the labels, proved by running the code
+npm run replay               # docs/21's numbers, re-derived, no API key
+npm run replay:criteria      # docs/22's numbers, re-derived, no API key
 
 export TYPESAFEAI_API_KEY=...
-npm run warm                 # 12 requests, 56 functions, $0.001
-npm run lint                 # eslint, reading the cached verdicts
+npm run warm -- --rubric full   # 14 requests, 68 functions, $0.004
+npm run lint                    # eslint, reading the cached verdicts
 
-npm run run -- --repeat 3    # the 4-arm measurement
-npm run replay               # re-derive every number, no API key
-npm run bench                # what each way around async costs
+npm run run -- --repeat 3       # docs/21: the 4-arm measurement (state and batching)
+npm run criteria -- --repeat 3  # docs/22: the 4-rubric measurement (what we ask)
+npm run bench                   # what each way around async costs
 ```
 
 ## What it reports
 
-One rule, `jev/quality`, with three messages, because a team wants to switch
+One rule, `jev/quality`, with four messages, because a team wants to switch
 them on separately:
 
 | message | fires when | means |
 | --- | --- | --- |
-| `jev/bug` | the atomic `misbehaves` noul >= 0.7 | probably wrong, not merely improvable |
+| `criterion` | a NAMED criterion clears its own cutoff | the only one that says WHAT is wrong |
+| `jev/bug` | the generic `misbehaves` noul >= 0.7 | probably wrong, not merely improvable |
 | `jev/quality` | reviewer-action score >= 1.5, confidently | a reviewer would want this changed |
 | `jev/unsure` | score >= 1.5 but confidence < 0.5 | worth a human look, not a fix |
+
+```
+  8:8  warning  `median` matches the review criterion `api_default` (0.35, its cutoff is 0.22)
+```
+
+`rubric` picks the question set. `vague` is docs/21's two questions per
+function; `full` adds the eight named criteria (10 questions per function,
+still one request per file). docs/22 measured 41/51 caught for `full` against
+33/51 for `vague`, at the same false-positive count — and the cutoffs are
+**per criterion**, because their answers are not on the same scale (0.20 to
+0.94 on their own class). Those cutoffs are fitted on 68 functions; retune
+`criterionAt` first.
 
 ## The one hard problem
 

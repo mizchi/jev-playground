@@ -23,6 +23,7 @@ import { relative } from "node:path";
 import { Jev, mapLimit } from "./jev.mjs";
 import {
   ARMS,
+  RUBRICS,
   armShape,
   MAX_REQUEST_TOKENS,
   MAX_STATE_TOKENS,
@@ -38,6 +39,7 @@ export function parseArgs(argv) {
   const opts = {
     globs: [],
     arm: "located",
+    rubric: "vague",
     cache: undefined,
     concurrency: 4,
     model: undefined,
@@ -50,6 +52,7 @@ export function parseArgs(argv) {
     const a = argv[i];
     const next = () => argv[(i += 1)];
     if (a === "--arm") opts.arm = next();
+    else if (a === "--rubric") opts.rubric = next();
     else if (a === "--cache") opts.cache = next();
     else if (a === "--concurrency") opts.concurrency = Number.parseInt(next(), 10);
     else if (a === "--model") opts.model = next();
@@ -61,6 +64,9 @@ export function parseArgs(argv) {
     else opts.globs.push(a);
   }
   if (!ARMS.includes(opts.arm)) throw new Error(`--arm must be one of ${ARMS.join(", ")}`);
+  if (!RUBRICS.includes(opts.rubric)) {
+    throw new Error(`--rubric must be one of ${RUBRICS.join(", ")}`);
+  }
   if (opts.globs.length === 0) opts.globs.push(".");
   return opts;
 }
@@ -108,11 +114,12 @@ export async function collectFiles(globs, { minLines, includeCallbacks } = {}) {
  * the isolated shape (each function as its own small state) rather than
  * being dropped.
  */
-export function planBatches(units, arm) {
+export function planBatches(units, arm, rubric = "vague") {
   const shape = armShape(arm);
   if (shape.batch === "one") {
     return units.map((u) => ({
       arm,
+      rubric,
       file: u.file,
       source: shape.state === "file" ? (u.fileSource ?? u.text) : u.text,
       units: [u],
@@ -129,23 +136,30 @@ export function planBatches(units, arm) {
     const stateTokens = estimateTokens(stateFor(file, source, group, arm));
     if (stateTokens > MAX_STATE_TOKENS) {
       for (const unit of group) {
-        batches.push({ arm: "isolated", file, source: unit.text, units: [unit], oversize: true });
+        batches.push({
+          arm: "isolated",
+          rubric,
+          file,
+          source: unit.text,
+          units: [unit],
+          oversize: true,
+        });
       }
       continue;
     }
     let current = [];
     let tokens = stateTokens;
     for (const unit of group) {
-      const cost = estimateTokens(questionsFor([unit], arm));
+      const cost = estimateTokens(questionsFor([unit], arm, rubric));
       if (current.length > 0 && tokens + cost > MAX_REQUEST_TOKENS) {
-        batches.push({ arm, file, source, units: current });
+        batches.push({ arm, rubric, file, source, units: current });
         current = [];
         tokens = stateTokens;
       }
       current.push(unit);
       tokens += cost;
     }
-    if (current.length > 0) batches.push({ arm, file, source, units: current });
+    if (current.length > 0) batches.push({ arm, rubric, file, source, units: current });
   }
   return batches;
 }
@@ -153,8 +167,12 @@ export function planBatches(units, arm) {
 /** Ask one batch. Returns [{unit, verdict}]. */
 export async function askBatch(jev, batch) {
   const state = stateFor(batch.file, batch.source, batch.units, batch.arm);
-  const res = await jev.askSplitting(state, questionsFor(batch.units, batch.arm));
-  return batch.units.map((unit, i) => ({ unit, verdict: verdictFrom(res.answers, i) }));
+  const rubric = batch.rubric ?? "vague";
+  const res = await jev.askSplitting(state, questionsFor(batch.units, batch.arm, rubric));
+  return batch.units.map((unit, i) => ({
+    unit,
+    verdict: verdictFrom(res.answers, i, rubric),
+  }));
 }
 
 async function main() {
@@ -164,7 +182,7 @@ async function main() {
   // Content-addressed: the same function text in two files is one question.
   const byKey = new Map();
   for (const unit of all) {
-    const key = keyOf(unit);
+    const key = keyOf(unit, opts.rubric);
     if (!byKey.has(key)) byKey.set(key, { ...unit, key });
   }
   const cache = readCache(opts.cache);
@@ -178,13 +196,15 @@ async function main() {
   );
   if (!cache.ok && cache.reason) console.log(`  cache: ${cache.reason}`);
 
-  const batches = planBatches(todo, opts.arm);
-  console.log(`  ${batches.length} request(s) planned (arm: ${opts.arm})`);
+  const batches = planBatches(todo, opts.arm, opts.rubric);
+  console.log(
+    `  ${batches.length} request(s) planned (arm: ${opts.arm}, rubric: ${opts.rubric})`,
+  );
   if (opts.dryRun) {
     for (const batch of batches) {
       console.log(
         `    ${relative(process.cwd(), batch.file)}  ${batch.units.length} fn  ` +
-          `~${estimateTokens(stateFor(batch.file, batch.source, batch.units, batch.arm)) + estimateTokens(questionsFor(batch.units, batch.arm))} tok`,
+          `~${estimateTokens(stateFor(batch.file, batch.source, batch.units, batch.arm)) + estimateTokens(questionsFor(batch.units, batch.arm, opts.rubric))} tok`,
       );
     }
     return;
@@ -217,7 +237,12 @@ async function main() {
       stored += 1;
     }
   }
-  const where = writeCache(opts.cache, { model: jev.model, arm: opts.arm, entries });
+  const where = writeCache(opts.cache, {
+    model: jev.model,
+    arm: opts.arm,
+    rubric: opts.rubric,
+    entries,
+  });
   console.log(
     `  ${jev.calls} request(s), ${jev.inputTokens} input tokens, $${jev.usd.toFixed(5)}` +
       (jev.splits > 0 ? `, ${jev.splits} split(s)` : "") +

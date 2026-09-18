@@ -13,6 +13,7 @@
  *    than an opinion about it: the probe runs the function.
  * 3. Both classes are present, so an accuracy number means something.
  */
+import { ATOM_NAMES } from "../src/judge.mjs";
 import { collectFiles } from "../src/warm.mjs";
 import { CLASSES, LABELS, counts, labelKey, labelOf } from "./labels.mjs";
 
@@ -25,6 +26,19 @@ for (const unit of units) {
 }
 for (const key of Object.keys(LABELS)) {
   if (!seen.has(key)) problems.push(`label ${key} matches no extracted function`);
+}
+// Every bug must say which named criterion is supposed to catch it, or
+// declare itself held out. A bug with no `covers` would silently land in
+// neither half of the docs/22 split.
+for (const [key, entry] of Object.entries(LABELS)) {
+  if (entry.label !== "bug") {
+    if (entry.covers) problems.push(`${key} is ${entry.label} but has covers=${entry.covers}`);
+    continue;
+  }
+  if (!entry.covers) problems.push(`bug ${key} has no covers`);
+  else if (entry.covers !== "unnamed" && !ATOM_NAMES.includes(entry.covers)) {
+    problems.push(`bug ${key} covers '${entry.covers}', which is not a named criterion`);
+  }
 }
 
 const byClass = counts();
@@ -78,6 +92,19 @@ console.log(
       .join(", ") +
     ` -- `.concat("`clean` cannot be probed: you cannot execute the absence of a defect"),
 );
+
+console.log("");
+console.log("THE docs/22 SPLIT  (is the bug's class one of the eight named criteria?)");
+for (const which of ["named", "unnamed"]) {
+  const rows = units.filter((u) => {
+    const e = labelOf(u);
+    return e?.label === "bug" && (which === "unnamed") === (e.covers === "unnamed");
+  });
+  console.log(`  ${which.padEnd(8)} ${rows.length}`);
+  for (const unit of rows) {
+    console.log(`    ${labelKey(unit).padEnd(28)} ${labelOf(unit).covers}`);
+  }
+}
 
 console.log("");
 const bugs = units.filter((u) => labelOf(u)?.label === "bug").length;

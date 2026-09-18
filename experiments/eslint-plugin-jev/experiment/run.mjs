@@ -80,7 +80,7 @@ function parseArgs(argv) {
 }
 
 const opts = parseArgs(process.argv.slice(2));
-const units = await collectFiles(["experiment/corpus/*.js"]);
+let units = await collectFiles(["experiment/corpus/*.js"]);
 // The state carries the file path, and an absolute path ending in
 // `experiment/corpus/` tells Jev it is looking at a test set rather than a
 // repository. Same reasoning as docs/16 using `sample.js`: the payload must
@@ -92,8 +92,6 @@ units.sort((a, b) => labelKey(a).localeCompare(labelKey(b)));
 for (const unit of units) {
   if (!labelOf(unit)) throw new Error(`no label for ${labelKey(unit)} -- run truth.mjs`);
 }
-const keys = units.map(labelKey);
-const labelFor = new Map(units.map((u) => [labelKey(u), labelOf(u).label]));
 
 /** verdicts[arm] = [ Map<key, verdict> ] one per repeat. */
 const verdicts = {};
@@ -106,8 +104,19 @@ const costs = {};
  * in this report from a recorded run, with no API call and no variance --
  * which is how the gate in judge.mjs was retuned after the first run.
  */
-if (opts.from) {
-  const dump = JSON.parse(readFileSync(opts.from, "utf8"));
+const dump = opts.from ? JSON.parse(readFileSync(opts.from, "utf8")) : null;
+if (dump) {
+  // A replay reports on the set that was RECORDED. The corpus has grown since
+  // (docs/22 added five held-out bugs), and letting those count as units with
+  // no verdict would make this report's own header disagree with its tables.
+  const recorded = new Set(dump.units.map((u) => u.key));
+  units = units.filter((u) => recorded.has(labelKey(u)));
+}
+
+const keys = units.map(labelKey);
+const labelFor = new Map(units.map((u) => [labelKey(u), labelOf(u).label]));
+
+if (dump) {
   opts.repeat = dump.repeat;
   opts.arms = opts.arms.filter((arm) => dump.units[0]?.arms[arm]);
   Object.assign(costs, dump.costs ?? {});

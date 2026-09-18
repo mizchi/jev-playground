@@ -2,7 +2,7 @@
   "name": "eslint-plugin-jev",
   "private": true,
   "version": "0.1.0",
-  "description": "An ESLint rule whose verdict comes from Jev: a per-function review score, batched (docs/21-eslint-plugin-jev.md)",
+  "description": "An ESLint rule whose verdict comes from Jev: a per-function review score and named review criteria, batched (docs/21, docs/22)",
   "type": "module",
   "exports": "./src/index.mjs",
   "scripts": {
@@ -12,8 +12,14 @@
     "lint": "eslint --config experiment/eslint.config.mjs experiment/corpus",
     "run": "node experiment/run.mjs",
     "replay": "node experiment/run.mjs --from experiment/out-run.json",
+    "criteria": "node experiment/run-criteria.mjs",
+    "replay:criteria": "node experiment/run-criteria.mjs --from experiment/out-criteria.json",
     "bench": "node experiment/sync-bench.mjs"
   },
-  "peerDependencies": { "eslint": ">=9" },
-  "devDependencies": { "eslint": "^9.36.0" }
+  "peerDependencies": {
+    "eslint": ">=9"
+  },
+  "devDependencies": {
+    "eslint": "^9.36.0"
+  }
 }

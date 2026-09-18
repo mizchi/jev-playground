@@ -24,15 +24,16 @@ async function main() {
   // "located" is the arm the plugin defaults to: the file crosses the wire
   // once, and each question names its function by name and line range.
   const arm = process.env.JEV_QUALITY_ARM || "located";
+  const rubric = req.rubric || "vague";
   const jev = new Jev({ model: process.env.JEV_QUALITY_MODEL || undefined, retries: 1 });
   const res = await jev.askSplitting(
     stateFor(req.file, req.source, units, arm),
-    questionsFor(units, arm),
+    questionsFor(units, arm, rubric),
   );
 
   const verdicts = {};
   units.forEach((unit, i) => {
-    const verdict = verdictFrom(res.answers, i);
+    const verdict = verdictFrom(res.answers, i, rubric);
     if (verdict) verdicts[unit.key] = verdict;
   });
 
@@ -53,7 +54,7 @@ async function main() {
         at: new Date().toISOString(),
       };
     });
-    writeCache(req.cache, { model: res.model ?? null, arm, entries });
+    writeCache(req.cache, { model: res.model ?? null, arm, rubric, entries });
   } catch {
     // A cache we cannot write costs speed, not correctness.
   }

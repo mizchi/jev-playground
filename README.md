@@ -16,7 +16,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
-| `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score、ファイル単位でバッチ) |
+| `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標、ファイル単位でバッチ) |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 | `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
 | `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
@@ -155,6 +155,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
 | [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
 | [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
+| [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -194,11 +195,11 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                    # 40 件(fail-safe 12 + ロジック 28)、API 不要
+npm test                                    # 57 件(fail-safe 12 + ロジック 45)、API 不要
 npm run truth                               # ラベルをコード実行で検証、API 不要
 npm run replay                              # 記録から全数値を再計算、API 不要
 
-TYPESAFEAI_API_KEY=... npm run warm         # 56 関数を 12 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run warm         # 68 関数を 14 リクエスト、$0.001
 TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 ```
 
@@ -210,6 +211,18 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 実測は **自信のある指摘の 15/15 が本物のバグ・誤検出 0、ただし 12 バグ中 5 個しか
 捕まえない**(関数 1 個 $0.000017)。捕まえるのは**契約の齟齬**、落とすのは
 **特定の API の誤用**でした。→ [docs/21](docs/21-eslint-plugin-jev.md)
+
+`--rubric full` にすると **8 つの具体的な欠陥クラスを名前で**聞きます
+(関数ごとに 10 問、それでも 1 ファイル 1 リクエスト)。捕まる数が 33/51 → 41/51 に増え、
+指摘が名前で返ります:
+
+```
+  8:8  warning  `median` matches the review criterion `api_default` (0.35, its cutoff is 0.22)
+```
+
+ただし**名前を付けても戻ったのは見逃し 6 個のうち 2 個**で、
+一番効いたのは指標ではなく**指標ごとに閾値を引くこと**でした
+(共通閾値 0.80 で 13/36、質問ごとなら 24/36)。→ [docs/22](docs/22-code-criteria.md)
 
 ## 7. Claude Code の permission hook
 
