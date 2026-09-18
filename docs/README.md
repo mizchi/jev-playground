@@ -63,6 +63,10 @@ cd experiments/otel-triage     && npx tsx src/run.ts --arm aggregate --repeat 3 
 cd experiments/bilingual       && npm i && npm test                 # 28: 対訳の整列と規則の不変条件(API 不要)
 cd experiments/bilingual       && npm run demo                      # 28: 記録から再集計(API 不要)
 cd experiments/bilingual       && npx tsx src/run.ts --arm section --repeat 3   # 28: 英日が同じことを言っているか
+cd experiments/skill-select    && npm i && npm test                 # 29: ラベル規則とラベル漏れの検査(API 不要)
+cd experiments/skill-select    && npm run demo                      # 29: 記録から再集計(API 不要)
+cd experiments/skill-select    && npx tsx src/run.ts --arm fanout    # 29: 74 skill から選ぶ(14 リクエスト)
+node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -122,6 +126,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **サンプリング規則は質問の一部** | 同じ件数・同じトークン数で、うるさい順に選ぶと誤ページ **27 件・均等なら 6 件** | 本リポジトリ | [27](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか) |
 | **翻訳の同期は「diff + 判断」で割る** | 数値と識別子は差分で 26/30・誤検出 0、意味の 4 クラスは判断が 2 つ埋める(84/90・誤検出 0) | 本リポジトリ | [28](28-bilingual.md#2-判断は何を足すか) |
 | **原子述語は「どこがどう違うか」まで返す** | omission で `omits` 0.95、addition で `adds` 0.98、数値差で `numbers_agree` 0.03 | 本リポジトリ | [28](28-bilingual.md#2-判断は何を足すか) |
+| **ファン・アウトは幅を広げても答えが変わらない** | 74 問を 1 リクエストと 1 問 1,036 リクエストで **0.25 以内に 99.8% 一致**・平均差 0.032、コストは 2.4 分の 1 | mizchi/skills のカタログ | [29](29-skill-select.md#4-ファンアウトの幅は無料答えが同じ) |
+| **判断対象は state ではなく質問に置く** | 同じ幅 1 で、state に移すと一致が 53%・AP 0.53 → 0.46 | mizchi/skills のカタログ | [29](29-skill-select.md#4-ファンアウトの幅は無料答えが同じ) |
+| **選択の方針(常に入れる/頼まれたら)はコードに置く** | カタログのティア列を適用するだけで AP 0.41 → **0.70**。判断に聞くと 74 件中 41〜53 位 | mizchi/skills のカタログ | [29](29-skill-select.md#3-方針は判断に聞くものではない) |
+| **人が書いた 1 行は skill 自身の description より効く** | `Use when` 列に差し替えると AP 0.53 → 0.56、P@k 0.43 → 0.51、文字数は 3 分の 1 | mizchi/skills のカタログ | [29](29-skill-select.md#9-人の-1-行は-skill-自身の-description-より良い) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -202,6 +210,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 異常検知で「何も問題ない」を判断に期待する | 逃げ道を別 noul にしても健全な 18 窓で発火 **0〜4 件**。沈黙は算術にしか担保できない([27 §5](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか)) |
 | 「この範囲に無い」を判定するときに範囲を広げる | 文書全体を足すと omission が **1.84 → 0.57**。**文脈は答えの隠れ場所を与える**([28 §4](28-bilingual.md#4-文書全体を渡すと悪くなるそして機構が見える)) |
 | 言語をまたぐ比較で生の数値 diff を使う | 英語 "one request" 対 日本語「1 リクエスト」。faithful な 20 対のうち **14 対を誤検出**([28 §1](28-bilingual.md#1-先に-diff-を書く)) |
+| 候補が多いからと 1 問ずつ聞く | 答えは 99.8% 同じで**入力トークンが 2.4 倍**。幅を狭めて得るものは無い([29 §4](29-skill-select.md#4-ファンアウトの幅は無料答えが同じ)) |
+| 2 つの selector を重み 1 つで混ぜる | in-sample 0.42 がホールドアウトで **0.35** —— 単独の両方より悪い。当てた重みは fold 間で 0.00〜1.00 に振れる([29 §6](29-skill-select.md#6-重みを当てるな経路を書け)) |
+| 「常に入れる」を description から読ませる | T0 の 2 行は正例の 21% で、description のどこにも書いていない。平均順位 74 件中 41〜53 位([29 §3](29-skill-select.md#3-方針は判断に聞くものではない)) |
 
 ## レポート
 
@@ -236,6 +247,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [26](26-repo-rules.md) | 実リポジトリで `jev/rule` を走らせる — 散文の規約を自分のコード 9,315 行に当てる | ✅ |
 | [27](27-otel-triage.md) | otel の異常検知のトリアージ(検知はコード・severity は算術・cause は判断) | ✅ |
 | [28](28-bilingual.md) | 英語と日本語が同じことを言っているか(実物の対訳 + 8 種の変異) | ✅ |
+| [29](29-skill-select.md) | コンテキストに入らない skill カタログから選ぶ(mizchi/skills の実物 98 行 + 7 arm) | ✅ |
 
 ## この探索から見えている一般則
 

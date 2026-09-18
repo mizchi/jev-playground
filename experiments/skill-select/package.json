@@ -1,0 +1,17 @@
+{
+  "name": "jev-skill-select",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Picking skills for a project out of a catalog that does not fit in context (docs/29-skill-select.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "extract": "tsx src/extract.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

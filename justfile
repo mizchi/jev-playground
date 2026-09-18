@@ -67,6 +67,12 @@ install-otel-triage:
 install-bilingual:
     npm --prefix experiments/bilingual install
 
+# @inputs: experiments/skill-select/package.json experiments/skill-select/package-lock.json
+# @cost: 0.6
+# Install the skill-selection experiment's dev dependencies
+install-skill-select:
+    npm --prefix experiments/skill-select install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -197,6 +203,24 @@ test-bilingual: install-bilingual
 replay-bilingual: install-bilingual
     npm --prefix experiments/bilingual run demo
 
+# @inputs: experiments/skill-select/** experiments/shared/**
+# @cost: 0.5
+# Check the label rule against mizchi's catalog, and that no label reaches a payload
+test-skill-select: install-skill-select
+    npm --prefix experiments/skill-select test
+
+# @inputs: experiments/skill-select/** experiments/shared/**
+# @cost: 1.8
+# Re-derive docs/29's tables from the recorded judgments
+replay-skill-select: install-skill-select
+    npm --prefix experiments/skill-select run demo
+
+# @inputs: docs/** README.md experiments/**/README*.md
+# @cost: 0.1
+# Every relative Markdown link and heading anchor across the repository
+check-links:
+    node tools/check-links.mjs
+
 # @inputs: eslint.config.mjs eslint.rules.mjs hooks/** jevlang-js/** experiments/eslint-plugin-jev/**
 # @cost: 0.7
 # Lint this repository against its own prose conventions (docs/26), from the
@@ -228,5 +252,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select check-links
     @echo "all green"
