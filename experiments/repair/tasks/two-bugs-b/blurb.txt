@@ -1,0 +1,1 @@
+TWO bugs: slice(0) should be slice(1) AND wordCount is off by one

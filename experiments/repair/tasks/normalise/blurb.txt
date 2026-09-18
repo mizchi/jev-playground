@@ -1,0 +1,1 @@
+maxOf's loop bound drops the last element (the `==` on a number is harmless here, which the truth found)

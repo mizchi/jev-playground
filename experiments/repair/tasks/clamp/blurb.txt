@@ -1,0 +1,1 @@
+clamp returns v instead of hi on the upper branch

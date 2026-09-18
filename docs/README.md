@@ -73,6 +73,9 @@ npx tsx experiments/skill-pick/src/pick.ts . --prior --intent "..."  # 30: 1 リ
 cd experiments/orchestration   && npm i && npm test                 # 31: ラベル一致とラベル漏れ(API 不要)
 cd experiments/orchestration   && npm run demo                      # 31: 記録から再集計(API 不要)
 cd experiments/orchestration   && npx tsx src/run.ts --arm all --repeat 3  # 31: ゲートを 5 通りに読む
+cd experiments/repair          && npm i && npm test                 # 32: 全題材が赤から始まるか・truth が古くないか
+cd experiments/repair          && npm run demo                      # 32: 記録から再集計(API 不要)
+cd experiments/repair          && npx tsx src/run.ts --replay --verify  # 32: 順序を本物のプロセスで確認
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
@@ -143,6 +146,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **質問にコストを書くかどうかが保守性のダイヤル** | 同じ決定・同じ state で、第 2 ワーカーのコストを先に述べると 58%(誤り 16 件すべてが「分けない」)、述べないと 79%(+4/−4) | multi-agent-orchestration | [31](31-orchestration.md#2-聞くか組み立てるか) |
 | **原子が全部当たっていても結合を間違えると落ちる** | 条件 3 を規則に入れると、4 つの原子が正しいまま 4/4 → **0/4** | multi-agent-orchestration | [31](31-orchestration.md#4-太字の-1-文が何点ぶんか) |
 | **表の行をそのまま choice の criteria にする** | 8 パターンの "Use for" 列で **22/22**、パターン同士の取り違えは 0 件 | multi-agent-orchestration | [31](31-orchestration.md#5-トポロジーの-choice) |
+| **文字列を返せないモデルでも修復ループは書ける** | パッチはコードが生成し、判断は並べるだけ。テスト実行 3.00 回 → **1.00 回**、16/16 を一発 | 植えたバグ 21 件 | [32](32-repair.md#2-テスト実行回数) |
+| **相互排他な候補なら `choice` 1 つで全順序が出る** | `probabilities` が全選択肢ぶん返るので質問 1 つ。1 タスク 1,554 トークン対 候補ごとに聞く 3,254 で、結果は同じ | 植てたバグ 21 件 | [32](32-repair.md#5-1-つの-choice-で全部の順序が出る) |
+| **終了コードのラベルは gap を正にする** | このリポジトリで初めて gap が正(+0.03)。ただし draw が 0.043 動くので閾値にはならない | 植てたバグ 21 件 | [32](32-repair.md#4-直る候補が入っているか) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -231,6 +237,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 語彙の重なりだけで候補を絞り切る | k をいくら増やしても recall は **85% で止まる** —— 欲しい行の 15% はプロジェクト文と語彙を共有していない([30 §2](30-skill-pick.md#2-無料の前段は何を残すか)) |
 | 書いてあるブール式を「分解すれば良くなる」と思う | 組み立てて 30/38・そのまま聞いて 30/38 で**同点**。分解の値打ちは正解率ではなく理由が出ること([31 §2](31-orchestration.md#2-聞くか組み立てるか)) |
 | choice の confidence で「該当なし」を拾う | 強制された選択と本物の選択は **AUC 0.601** —— ほぼ見分けられない。逃げ道は別の noul([31 §5b](31-orchestration.md#5b-逃げ道を外すと)) |
+| choice の確率で「どれも駄目」を拾う | 確率は和が 1 なので、全滅のときも誰かが高い。gap −0.04・AUC 0.900 に対し、同じことを noul に聞くと gap 0.08・AUC 1.000([32 §5](32-repair.md#5-1-つの-choice-で全部の順序が出る)) |
+| AUC 1.000 を見て閾値を作る | gap 0.03 に対して draw が平均 0.043 動く。**きれいに分かれた in-sample は分かれている証拠ではない**([32 §4](32-repair.md#4-直る候補が入っているか)) |
+| 無料の基準線を「賢くないはず」と決めてかかる | 候補生成順がそのまま事前分布で、無作為 7.69 回に対し **3.00 回**。コードのコメントを測って訂正した([32 §2](32-repair.md#2-テスト実行回数)) |
 
 ## レポート
 
@@ -268,6 +277,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [29](29-skill-select.md) | コンテキストに入らない skill カタログから選ぶ(mizchi/skills の実物 98 行 + 7 arm) | ✅ |
 | [30](30-skill-pick.md) | 461 個の実在 skill から選ぶ道具 — 何が入るか、前段は何を買うか、評価ループ | ✅ |
 | [31](31-orchestration.md) | 文書化されたゲート(multi-agent-orchestration)は聞く方が良いのか組み立てる方が良いのか | ✅ |
+| [32](32-repair.md) | パッチはコードが作り、判断は並べるだけの修復ループ(ラベルは `node --test` の終了コード) | ✅ |
 
 ## この探索から見えている一般則
 
