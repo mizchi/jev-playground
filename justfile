@@ -49,6 +49,12 @@ install-eslint-plugin:
 install-task-filter:
     npm --prefix experiments/task-filter install
 
+# @inputs: experiments/threshold-fit/package.json experiments/threshold-fit/package-lock.json
+# @cost: 0.6
+# Install the threshold component's dev dependencies
+install-threshold-fit:
+    npm --prefix experiments/threshold-fit install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -155,9 +161,21 @@ test-task-filter: install-task-filter
 replay-task-filter: install-task-filter
     npm --prefix experiments/task-filter exec -- tsx experiments/task-filter/src/run.ts --replay
 
+# @inputs: experiments/threshold-fit/** experiments/shared/**
+# @cost: 0.6
+# Check the cutoff-fitting component: placements, folds, calibration
+test-threshold-fit: install-threshold-fit
+    npm --prefix experiments/threshold-fit test
+
+# @inputs: experiments/threshold-fit/** experiments/shared/** experiments/task-filter/** experiments/eslint-plugin-jev/experiment/**
+# @cost: 13.5
+# Re-derive docs/25's numbers from the other experiments' recorded runs
+replay-threshold-fit: install-threshold-fit
+    npm --prefix experiments/threshold-fit run report
+
 # ---------------------------------------------------------------- aggregate
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit
     @echo "all green"
