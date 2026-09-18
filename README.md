@@ -17,6 +17,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 | `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標 + **セレクタ 1 個と 1 文で書く ad-hoc ルール**、ファイル単位でバッチ) |
+| `experiments/task-filter` | **タスク/テストランナーの filter** — `just` の依存グラフ + diff で「今何を走らせるか」を採点 |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 | `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
 | `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
@@ -166,6 +167,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
 | [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
 | [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
+| [23](docs/23-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
 | [24](docs/24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
@@ -398,6 +400,42 @@ scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 (`examples/milk.jev` で 4 → 2 リクエスト、1501 → 867 トークン)。
 `"${result}"` のように実行時の値に依存する質問だけが後から個別に聞かれます。
 設計の理由と実測は [docs/19](docs/19-jevlang.md)。
+
+## 10. タスク/テストランナーの filter
+
+`just` で**依存グラフを先に作っておき**、今の diff を state に、
+**ゴールタスク 1 つにつき `score` 1 問**を 1 リクエストで投げて、
+閾値で切った集合を走らせます。前提と順序は**グラフの閉包**が足すので、
+`e2e-auth` を選べば `build-web` は自動で付いてきます(Jev は依存関係を知らなくていい)。
+
+```bash
+cd experiments/task-filter && npm install
+npm test                                            # 28 件(API 不要・just 不要)
+TYPESAFEAI_API_KEY=... npx tsx src/cli.ts --base main   # 手元の diff を採点して `just ...` を出す
+TYPESAFEAI_API_KEY=... npx tsx src/run.ts --repeat 3    # 20 ブランチのコーパスで実測
+npx tsx src/run.ts --replay out/raw.jsonl           # 収集済みの行を再集計(API 不要)
+```
+
+```
+   score  conf   cost  task
+    1.71  0.56     4s  RUN  fmt-check
+    1.68  0.52     6s  RUN  docs-links
+    0.05  0.93    22s  skip typecheck-web
+    0.02  0.96   320s  skip e2e-web
+
+  p(this change alters behaviour) 0.63   p(nothing needs running) 0.18
+  5 of 26 tasks: 1.7m machine / 1.1m wall  (everything: 18.5m / 7.2m, 91% saved)
+
+  just fmt-check docs-links docs-build lint
+```
+
+実測は [docs/23](docs/23-task-filter.md): **検出 15/15 を保ったまま machine time 68.6%**
+(閾値 1.25 で 75.8%)削減、1 ブランチ **0.17 秒・$0.000131**。
+静的な affected 判定(inputs glob + 依存伝播)は 30.9% しか削れず、
+glob だけにすると **14/15 に取りこぼします**。
+[17](docs/17-task-picker.md) との一番の違いは**ゴール文を渡さないこと**で、
+その条件だと [17 §5](docs/17-task-picker.md#5-リポジトリの文脈は要らなかった) の
+「文脈は払い損」が**反転します**([docs/23 §4](docs/23-task-filter.md#4-文脈は効いた--17-との違いは意図が書かれているかどうか))。
 
 ## 補足
 
