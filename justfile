@@ -25,13 +25,13 @@
 # ---------------------------------------------------------------- prerequisites
 
 # @inputs: moon.mod
-# @cost: 1.5
+# @cost: 3.8
 # Fetch the MoonBit dependencies named in moon.mod
 moon-deps:
     moon update
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
-# @cost: 9.3
+# @cost: 12.8
 # @reset: moon clean
 # Compile every MoonBit package to a native binary
 moon-build: moon-deps
@@ -66,7 +66,7 @@ test-lib: moon-deps
     moon test --target native -p lib
 
 # @inputs: jevlang/**
-# @cost: 4.8
+# @cost: 5.3
 # @reset: moon clean
 # Run the MoonBit jevlang implementation's tests
 test-jevlang: moon-deps
@@ -88,13 +88,13 @@ test-jevlang-js:
     node jevlang-js/test.mjs
 
 # @inputs: jevlang/** jevlang-js/** cmd/jevlang/** examples/**
-# @cost: 3.8
+# @cost: 3.9
 # Check the MoonBit and JS jevlang implementations still agree on examples/*.jev
 conformance: moon-build
     scripts/jevlang-conformance.sh
 
 # @inputs: hooks/**
-# @cost: 1.1
+# @cost: 1.0
 # Check that all seven of the permission hook's failure paths defer
 test-hooks-failsafe:
     node hooks/test-gate.mjs --failsafe-only
@@ -108,13 +108,13 @@ test-hooks-policy:
 # ---------------------------------------------------------------- experiments
 
 # @inputs: experiments/eslint-plugin-jev/**
-# @cost: 1.0
+# @cost: 2.3
 # Run the ESLint plugin's unit tests
 test-eslint-plugin: install-eslint-plugin
     node experiments/eslint-plugin-jev/experiment/test.mjs
 
 # @inputs: experiments/eslint-plugin-jev/**
-# @cost: 0.4
+# @cost: 0.5
 # Re-derive docs/21's numbers from the recorded run
 replay-eslint-plugin: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run replay
@@ -126,7 +126,7 @@ replay-criteria: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run replay:criteria
 
 # @inputs: experiments/eslint-plugin-jev/**
-# @cost: 0.4
+# @cost: 0.5
 # Re-derive docs/22's easy/hard 2x2 from the recorded run
 replay-tiers: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run replay:tiers
@@ -138,13 +138,13 @@ replay-loo: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run replay:loo
 
 # @inputs: experiments/eslint-plugin-jev/**
-# @cost: 1.0
+# @cost: 0.3
 # Re-derive docs/24's ad-hoc rule report from the recorded run
 replay-rules: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run rules
 
 # @inputs: experiments/task-filter/**
-# @cost: 0.4
+# @cost: 0.5
 # Check the task filter's graph, oracle and request invariants
 test-task-filter: install-task-filter
     npm --prefix experiments/task-filter test

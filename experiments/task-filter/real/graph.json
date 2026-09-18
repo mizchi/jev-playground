@@ -46,7 +46,7 @@
         "cmd/jevlang/**",
         "examples/**"
       ],
-      "cost": 3.8,
+      "cost": 3.9,
       "reset": null,
       "groups": []
     },
@@ -98,7 +98,7 @@
         "jevdsl/**",
         "moon.mod"
       ],
-      "cost": 9.3,
+      "cost": 12.8,
       "reset": "moon clean",
       "groups": []
     },
@@ -134,7 +134,7 @@
       "inputs": [
         "moon.mod"
       ],
-      "cost": 1.5,
+      "cost": 3.8,
       "reset": null,
       "groups": []
     },
@@ -166,7 +166,7 @@
       "inputs": [
         "experiments/eslint-plugin-jev/**"
       ],
-      "cost": 0.4,
+      "cost": 0.5,
       "reset": null,
       "groups": []
     },
@@ -198,7 +198,7 @@
       "inputs": [
         "experiments/eslint-plugin-jev/**"
       ],
-      "cost": 1,
+      "cost": 0.3,
       "reset": null,
       "groups": []
     },
@@ -230,7 +230,7 @@
       "inputs": [
         "experiments/eslint-plugin-jev/**"
       ],
-      "cost": 0.4,
+      "cost": 0.5,
       "reset": null,
       "groups": []
     },
@@ -246,7 +246,7 @@
       "inputs": [
         "experiments/eslint-plugin-jev/**"
       ],
-      "cost": 1,
+      "cost": 2.3,
       "reset": null,
       "groups": []
     },
@@ -260,7 +260,7 @@
       "inputs": [
         "hooks/**"
       ],
-      "cost": 1.1,
+      "cost": 1,
       "reset": null,
       "groups": []
     },
@@ -307,7 +307,7 @@
       "inputs": [
         "jevlang/**"
       ],
-      "cost": 4.8,
+      "cost": 5.3,
       "reset": "moon clean",
       "groups": []
     },
@@ -353,7 +353,7 @@
       "inputs": [
         "experiments/task-filter/**"
       ],
-      "cost": 0.4,
+      "cost": 0.5,
       "reset": null,
       "groups": []
     }
