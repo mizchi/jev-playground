@@ -2,7 +2,7 @@
   "name": "jev-task-filter",
   "private": true,
   "version": "0.0.0",
-  "description": "A task/test filter: a `just` dependency graph decides what CAN run, Jev scores what SHOULD (docs/21-task-filter.md)",
+  "description": "A task/test filter: a `just` dependency graph decides what CAN run, Jev scores what SHOULD (docs/23-task-filter.md)",
   "type": "module",
   "scripts": {
     "demo": "tsx src/run.ts",

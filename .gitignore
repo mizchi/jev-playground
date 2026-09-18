@@ -8,3 +8,4 @@ experiments/*/out-*.log
 hooks/out-*.log
 hooks/out-*.jsonl
 .claude/jev-gate.json
+experiments/*/.jev-quality*.json

@@ -10,9 +10,9 @@
  *   npx tsx src/run.ts --replay transcripts/raw.jsonl --threshold 1.25
  *
  * `--replay` with no path takes out/raw.jsonl when a run has produced one, and
- * otherwise the committed transcripts/ rows that docs/21 is written from.
+ * otherwise the committed transcripts/ rows that docs/23 is written from.
  *
- * Collection and analysis are separate on purpose: every number in docs/21
+ * Collection and analysis are separate on purpose: every number in docs/23
  * comes out of `analyse()` over those saved rows, so a different threshold or a
  * new strategy costs no requests at all.
  */
@@ -52,7 +52,7 @@ const DEFAULT_T = Number(opt("threshold", "1.0"));
 const FREE_UNDER = Number(opt("free-under", "10"));
 // Ablations write elsewhere so they never clobber the main corpus.
 const RAW = opt("out", `${ROOT}/out/raw${INTENT ? "" : "-no-intent"}.jsonl`);
-// The committed rows behind docs/21, so a fresh checkout can replay without a key.
+// The committed rows behind docs/23, so a fresh checkout can replay without a key.
 const TRANSCRIPT = `${ROOT}/transcripts/raw${INTENT ? "" : "-no-intent"}.jsonl`;
 
 const graph = new TaskGraph(loadGraph(ROOT));

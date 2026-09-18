@@ -82,6 +82,41 @@ OpenAPI スキーマには書かれていません。`lib` では `max_choices` 
 送信前に `InvalidRequest` で弾いています。五目並べが 15×15 までなのも実はこれが効いていて、
 盤面全体を候補にすると 16×16(256 セル)で上限に当たります。
 
+## <a id="token-ceilings"></a>質問数に上限は無い。上限はトークンで、枠が 2 つある
+
+上の 255 は **choice の選択肢**の上限で、**1 リクエストの質問数**とは別。
+質問数には上限が無く、**1220 問が 1 リクエストで通る**:
+
+```
+ 128 questions ->   6951 tokens  OK
+ 255 questions ->  13682 tokens  OK
+ 256 questions ->  13735 tokens  OK      <- 256 に境界は無い
+1024 questions ->  54463 tokens  OK
+1220 questions ->  65047 tokens  OK
+1240 questions ->  ~66100        400 {"detail":{"error_type":"max_tokens_exceeded"}}
+```
+
+境界は **65536(64Ki)入力トークン**。質問 1 問の増分はその質問文のトークンだけ
+(上の形では 53 トークン/問)。
+
+**state には別枠の、もっと厳しい上限**がある。質問数を 4 に固定して state だけ伸ばすと:
+
+```
+state 28462 tokens  OK
+state 32662 tokens  OK
+state ~33400        400 max_tokens_exceeded
+```
+
+**32768(32Ki)。** 1220 問で 65047 トークンが通るのだから、
+これは 1 本の合計上限ではなく**独立した 2 枠**(state 32Ki / リクエスト全体 64Ki)。
+どちらも OpenAPI スキーマには書かれていない。
+
+> 実務的な含意: 「何問投げられるか」を気にする必要はない。
+> 気にするのは **state の大きさ**で、そこが先に詰まる。
+> 実装側は `max_tokens_exceeded` を見たら**質問集合を半分に割って投げ直す**のが安い
+> (見積りを正確にするより、外れたときの復帰を用意するほうが確実)。
+> → [21](21-eslint-plugin-jev.md#8-バッチ上限は-256-ではない--上限は-2-つあってどちらもトークン)
+
 ## instructions と criteria は文字列でなくてよい
 
 `instructions` と各 criteria の説明は string / object / array すべて通ります(実測で確認)。

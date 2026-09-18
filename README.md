@@ -15,7 +15,8 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
-| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
+| `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
+| `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標、ファイル単位でバッチ) |
 | `experiments/task-filter` | **タスク/テストランナーの filter** — `just` の依存グラフ + diff で「今何を走らせるか」を採点 |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 | `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
@@ -24,7 +25,14 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `examples/` | `.jev` のサンプルと、API 不要で再現するための transcript |
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
-([まとめと優先順位](docs/README.md))。
+([索引](docs/README.md))。
+読む順に 3 つの入口があります:
+
+| | 何が書いてあるか |
+| --- | --- |
+| [**docs/practice.md**](docs/practice.md) | **Jev を使うときに順番に決めること**(手順書・やってはいけないこと一覧) |
+| [**docs/findings.md**](docs/findings.md) | **実験ごとに何がわかったか**(1 本 = 1 ブロック) |
+| [**docs/summary.md**](docs/summary.md) | やったこと / わかったことの端的な要約 |
 
 ## 必要なもの
 
@@ -142,6 +150,9 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 
 | # | 内容 |
 | --- | --- |
+| [practice](docs/practice.md) | **実践ガイド** — 使うときに順番に決めること |
+| [findings](docs/findings.md) | **実験ごとに何がわかったか** |
+| [summary](docs/summary.md) | やったこと / わかったことの要約 |
 | [00](docs/00-api-notes.md) | API の実挙動(スキーマに書かれていない上限・挙動、公式パターン集の実測) |
 | [01](docs/01-shell-risk.md) | シェルコマンドの危険度判定 — エージェントの実行許可ゲート |
 | [02](docs/02-moba.md) | ヘッドレス 3v3 MOBA(視界と戦場の霧)を Jev にチーム操作させる |
@@ -154,7 +165,9 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
 | [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
 | [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
-| [21](docs/21-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
+| [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
+| [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
+| [23](docs/23-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -168,8 +181,9 @@ moon run --target native cmd/shellrisk --                  # シェルコマン�
 moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
 ```
 
-TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測)は
-[`experiments/`](experiments/) 以下で、各ディレクトリで `npm install` してから走ります。
+TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測・
+ESLint プラグイン)は [`experiments/`](experiments/) 以下で、
+各ディレクトリで `npm install` してから走ります。
 
 ```bash
 cd experiments/eslint-oracle && npm install
@@ -180,7 +194,54 @@ cd experiments/task-picker && npm install
 npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正しいものを選ばせる
 ```
 
-## 6. Claude Code の permission hook
+## 6. eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン
+
+`experiments/eslint-plugin-jev` は**本物の ESLint プラグイン**です。関数ごとに
+「レビューでどれだけ押し返すか」を `score` で出し、**ファイル 1 個ぶんの全関数を
+1 リクエストで**聞きます(依存ゼロ、ビルド不要)。
+
+```
+  1:8  warning  Jev thinks `compareTokens` does the wrong thing for some realistic
+                input (misbehaves 0.71 (fires at 0.70); reviewer action 1.94/3)   jev/quality
+```
+
+```bash
+cd experiments/eslint-plugin-jev && npm install
+npm test                                    # 59 件(fail-safe 12 + ロジック 47)、API 不要
+npm run truth                               # ラベルをコード実行で検証、API 不要
+npm run replay                              # 記録から全数値を再計算、API 不要
+
+TYPESAFEAI_API_KEY=... npm run warm         # 78 関数を 15 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
+```
+
+**ESLint のルールは同期関数で `await` できない**のが本題です。判定を事前に
+バッチで済ませてキャッシュに置き、ルールはハッシュを引くだけにすることで
+**lint 時間は何もしない lint と誤差の範囲**(31 ms 対 36 ms)に収まります。
+`onMiss: "ask"` を選べばルールの中で同期リクエストもできますが 1 ファイル 361 ms。
+
+実測は **自信のある指摘の 15/15 が本物のバグ・誤検出 0、ただし 12 バグ中 5 個しか
+捕まえない**(関数 1 個 $0.000017)。捕まえるのは**契約の齟齬**、落とすのは
+**特定の API の誤用**でした。→ [docs/21](docs/21-eslint-plugin-jev.md)
+
+`--rubric full` にすると **8 つの具体的な欠陥クラスを名前で**聞きます
+(関数ごとに 10 問、それでも 1 ファイル 1 リクエスト)。捕まる数が 33/51 → 41/51 に増え、
+指摘が名前で返ります:
+
+```
+  8:8  warning  `median` matches the review criterion `api_default` (0.35, its cutoff is 0.22)
+```
+
+ただし**名前を付けても戻ったのは見逃し 6 個のうち 2 個**で、
+一番効いたのは指標ではなく**指標ごとに閾値を引くこと**でした
+(共通閾値 0.80 で 13/36、質問ごとなら 24/36)。
+
+指標が効くのは**見えにくいバグでだけ**です。関数の中だけ読めば分かるバグは
+naming の有無にかかわらず 15/15 で、**特定の API の挙動を知らないと見えない**バグで
+14% → 52% になります。そして **8 指標は重複していて、抜いて本当に困るのは 1 個だけ**
+(`api_default`、9/12 → 4/12)。→ [docs/22](docs/22-code-criteria.md)
+
+## 7. Claude Code の permission hook
 
 `hooks/jev-permission-gate.mjs` は、Bash コマンドの実行許可を Jev に判定させる
 `PreToolUse` hook です(**依存ゼロの Node スクリプト 1 枚、ビルド不要**)。
@@ -198,7 +259,7 @@ TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンド�
 **このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
 Bash がゲートされてしまうので。実測値と設計の理由は [docs/18](docs/18-permission-hook.md)。
 
-## 7. jevdsl — 判断を `match` できる値にする
+## 8. jevdsl — 判断を `match` できる値にする
 
 `lib` は API をそのまま写した生クライアントです。`jevdsl` は判断を
 **`(result, confidence)` のタプル**にして、MoonBit の `match` に直接載せます。
@@ -237,7 +298,7 @@ moon test --target native -p jevdsl                 # 10 件(API 不要)
 **複数の判断があるなら `Session::ask` で束ねてください**(アクセサは同じ)。
 設計の理由と限界は [docs/20](docs/20-jevdsl.md)。
 
-## 8. jevlang — 条件が Jev の判断である小さな言語
+## 9. jevlang — 条件が Jev の判断である小さな言語
 
 `if` の条件や `match` の対象が**自然文の確率判断**である DSL です。
 **JS 版**(`jevlang-js/`)と **MoonBit 版**(`jevlang/` + `cmd/jevlang`)の 2 実装があり、
@@ -281,7 +342,7 @@ scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 `"${result}"` のように実行時の値に依存する質問だけが後から個別に聞かれます。
 設計の理由と実測は [docs/19](docs/19-jevlang.md)。
 
-## 9. タスク/テストランナーの filter
+## 10. タスク/テストランナーの filter
 
 `just` で**依存グラフを先に作っておき**、今の diff を state に、
 **ゴールタスク 1 つにつき `score` 1 問**を 1 リクエストで投げて、
@@ -309,13 +370,13 @@ npx tsx src/run.ts --replay out/raw.jsonl           # 収集済みの行を再�
   just fmt-check docs-links docs-build lint
 ```
 
-実測は [docs/21](docs/21-task-filter.md): **検出 15/15 を保ったまま machine time 68.6%**
+実測は [docs/23](docs/23-task-filter.md): **検出 15/15 を保ったまま machine time 68.6%**
 (閾値 1.25 で 75.8%)削減、1 ブランチ **0.17 秒・$0.000131**。
 静的な affected 判定(inputs glob + 依存伝播)は 30.9% しか削れず、
 glob だけにすると **14/15 に取りこぼします**。
 [17](docs/17-task-picker.md) との一番の違いは**ゴール文を渡さないこと**で、
 その条件だと [17 §5](docs/17-task-picker.md#5-リポジトリの文脈は要らなかった) の
-「文脈は払い損」が**反転します**([docs/21 §4](docs/21-task-filter.md#4-文脈は効いた--17-との違いは意図が書かれているかどうか))。
+「文脈は払い損」が**反転します**([docs/23 §4](docs/23-task-filter.md#4-文脈は効いた--17-との違いは意図が書かれているかどうか))。
 
 ## 補足
 
