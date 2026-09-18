@@ -27,6 +27,9 @@ moon run --target native cmd/jevlang -- examples/milk.jev       # 19: jevlang(Mo
 scripts/jevlang-conformance.sh                                 # 19: 2 実装の一致(API 不要)
 node hooks/test-gate.mjs --policy-logic                        # 18/19: .jev ポリシーの規則(API 不要)
 moon run --target native cmd/jevdsl -- --bundled               # 20: match できるラッパー
+cd experiments/eslint-plugin-jev && npm i && npm test           # 21: ESLint プラグイン(API 不要)
+cd experiments/eslint-plugin-jev && npm run warm && npm run lint # 21: 判定を Jev がやる eslint
+cd experiments/eslint-plugin-jev && npm run replay              # 21: 記録から再採点(API 不要)
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -64,7 +67,11 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **設計判断を構文で強制する** | 閾値を質問文に書く場所を作らない・逃げ道を選択肢に混ぜられなくする | 本リポジトリ | [19](19-jevlang.md#1-言語の形) |
 | **確率的な判断には record/replay** | 無いとテストが書けず、実装差とモデルのばらつきも区別できない | 本リポジトリ | [19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具) |
 | **判定ロジックをコードではなくデータにする** | hook の判定を `.jev` に出して差し替え可能に。規則と理由文の 16 分岐を API 無しで検証 | 本リポジトリ | [18](18-permission-hook.md#6b-判定ロジックを-jev-で書く) |
-| **3 種を `(result, confidence)` に揃える** | `match` の形が同じになり、guard に閾値が書ける。noul は confidence を導出する必要あり | 本リポジトリ | [20](20-jevdsl.md#1-result-confidence-に揃えるとき-noul-だけ困る) |
+| **3 種を `(result, confidence)` に揃える** | `match` の形が同じになり、guard に閾値が書ける。noul は confidence を導出する必要あり | 本リポジトリ | [20](20-jevdsl.md#1-result-confidence-に揃えるときnoul-だけ困る) |
+| **非同期の判定は事前バッチ + 同期ルックアップ** | ESLint の同期ルールに Jev を入れる。lint 時間は**何もしない lint と誤差の範囲**(31 ms 対 36 ms) | 本リポジトリ | [21](21-eslint-plugin-jev.md#1-eslint-プラグインにする唯一の難所--ルールは同期) |
+| **state の一部分についての質問も束ねて良い** | ファイル全関数を 1 リクエストに。**4.7x 少ないリクエストで平均絶対差 0.082・ρ 0.931** | 本リポジトリ | [21](21-eslint-plugin-jev.md#5-バッチはほぼ無料--これがこのプラグインの成立条件) |
+| **confidence はルーティング、ゲートではない** | 報告条件から外すと **62.5% → 73.7%**。clean と bug で confidence が同じ値域に入る | 本リポジトリ | [21](21-eslint-plugin-jev.md#7-confidence-をゲートにすると-11-ポイント損する) |
+| **1 リクエストに 1220 問入る(上限は質問数ではない)** | 枠は 2 つ、**state 32Ki / リクエスト全体 64Ki トークン**。255 は choice の選択肢の上限 | 本リポジトリ | [00](00-api-notes.md#token-ceilings) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -81,10 +88,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | エージェントに質問を書かせて評価しない | 同じプロンプトで 10/24〜23/24 に振れる([04](04-agent-built-prompts.md#1-結果-書かせたままでは当たらないばらつきが巨大)) |
 | score の閾値を分布を見ずに決める | rubric が実際に出す値と噛み合わず全部下位に落ちる([04](04-agent-built-prompts.md#2-原因は設計ではなく閾値だった)) |
 | driver の候補一覧をステップ毎に作り直さない | SPA では 2 手目以降が古い候補から選ぶ([05](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない)) |
-| ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートは-このロスターでは純損失だった)) |
-| 複数の noul を平均してゲートにする | 信号を持つ 1 問が薄まる。単独のほうが強いことがある([08](08-skill-suggestion.md#43-cookbook-のゲートは-このロスターでは純損失だった)) |
+| ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
+| 複数の noul を平均してゲートにする | 信号を持つ 1 問が薄まる。単独のほうが強いことがある([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 閾値の境界に乗った決定をそのまま採る | 些細な入力差で pass/block が入れ替わる。境界帯は人間へ([09](09-guardrails.md#3-cookbook-の-15-ケースの再現)) |
-| 1 リクエストの screen で全部塞げると思う | エンコードで抜ける・聞いてないハザードに穴([09](09-guardrails.md#外した-2-件--どちらも1-リクエストで-screen-の構造的限界)) |
+| 1 リクエストの screen で全部塞げると思う | エンコードで抜ける・聞いてないハザードに穴([09](09-guardrails.md#外した-2-件--どちらも1-リクエストで-screenの構造的限界)) |
 | confidence の相関だけ見て二層構成を組む | 第二段が弱い・分布が潰れている場合に破綻する([07](07-escalation.md#結論先に)) |
 | エスカレーションをランダム同予算と比べない | どう選んでも品質は上がるので、効いた証明にならない([07](07-escalation.md#4-q2--コスト品質曲線)) |
 | 判定基準の説明文を「仕様」だと思う | 逃げ道は実装にしかない。5 回とも同じ側に外す過検出になる([16](16-eslint-oracle.md#4-外すのは全部実装にしか書いていない逃げ道)) |
@@ -97,7 +104,12 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | ゲートに `allow` を返させる | ユーザーが設定した permission ルールを上書き承認してしまう。狭める方向にだけ使う([18](18-permission-hook.md#1-精度より先に決めるべき-3-つの性質)) |
 | 確率的な実行を replay 無しでテストしようとする | 分岐が毎回変わるので期待値が書けず、実装差とモデルのばらつきが区別できない([19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具)) |
 | ラッパーを「1 判断 1 リクエスト」で作る | 同じ 3 判断が 3 リクエスト/1069 トークン 対 束ねて 1/435。束ねる道を最初から用意する([20](20-jevdsl.md#3-1-判断-1-リクエストは既定として間違っている)) |
-| noul の確率をそのまま confidence として使う | `confidence > 0.5` が `result == true` と同義になって guard が無意味になる。コイン投げからの距離にする([20](20-jevdsl.md#1-result-confidence-に揃えるとき-noul-だけ困る)) |
+| noul の確率をそのまま confidence として使う | `confidence > 0.5` が `result == true` と同義になって guard が無意味になる。コイン投げからの距離にする([20](20-jevdsl.md#1-result-confidence-に揃えるときnoul-だけ困る)) |
+| confidence を報告の前提条件にする | clean も bug も 0.54〜0.57 に入るので、柵にすると正解を捨てる。score 2.42 / conf 0.42 の当たりが消えた([21](21-eslint-plugin-jev.md#7-confidence-をゲートにすると-11-ポイント損する)) |
+| 質問に、state にあるものを重ねて書く | 関数のコードを質問にも入れると **32% 多く払って 0.4 ポイント下がる**。名前と行番号で十分([21](21-eslint-plugin-jev.md#関数のコードを質問に重ねるのは払い損)) |
+| 文脈を足せば精度が上がると思う | ファイル全体を state に入れると clean の score が上がり、**誤検出が 5 倍**になる。文脈は judgment を穏やかにするだけ([21](21-eslint-plugin-jev.md#6-ファイルの文脈は精度を上げない下げる)) |
+| コード品質のような「審判のいない」判定を正解率で語る | 51 判定中バグ 12 個なら「何も言わない」が 76.5% を取る。読むべきは**指摘の中身**([21](21-eslint-plugin-jev.md#素の正解率で負けるのは指標のせいではない)) |
+| バッチ上限を質問数だと思う | 1220 問は通る。詰まるのは **state 32Ki** が先。`max_tokens_exceeded` を見たら半分に割る([00](00-api-notes.md#token-ceilings)) |
 | 手書きの数値パーサで閾値を読む | `0.6` が 0.6000000000000001 になり、境界で分岐が変わる。小数部は整数で溜めて最後に 1 回割る([19](19-jevlang.md#5-2-実装であることが実際に効いた)) |
 | 逃げ道の gate を subject を見ずに付ける | 文字列の `match` にも「どれも当てはまらないか」を聞いてしまう。gate が要るのは `choice` が必ず何かを返すからで、普通の値に閉じた世界は無い([19](19-jevlang.md#3-choice-に対する-else-腕は-gate-noul-を生やす)) |
 | シナジーの機構を実装せず編成だけ変える | ピールや耐性が効かないと前衛はただの的で raw DPS が勝つ。効果は機構を入れて初めて測れる([11](11-synergy.md#2-チャンピオンに多様性を持たせる)) |
@@ -127,6 +139,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [18](18-permission-hook.md) | Claude Code の `PreToolUse` hook として実装する(提案 C の検証) | ✅ |
 | [19](19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語(JS 版 / MoonBit 版) | ✅ |
 | [20](20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) | 📝 |
+| [21](21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score、ファイル単位でバッチ) | ✅ |
 
 ## この探索から見えている一般則
 
@@ -184,3 +197,27 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 15. **確率的な判断を含む実行には record/replay を最初から入れる。**
     同じ入力で分岐が変わるので、無いとテストが書けない。
     そして**実装やモデルを比べるときの唯一の土台**になる([19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具))。
+16. **同期の拡張点に非同期の判断を入れるには、判断を前に出して、拡張点にはルックアップだけ残す。**
+    ESLint のルールは `await` できないが、事前バッチ + ハッシュ引きなら
+    **lint 時間は何もしない lint と誤差の範囲**(31 ms 対 36 ms)。
+    ブロッキングも本当に可能(`execFileSync`)だが 1 ファイル 361 ms で、
+    「できる」と「入れて良い」は別([21](21-eslint-plugin-jev.md#1-eslint-プラグインにする唯一の難所--ルールは同期))。
+    そして**バッチの単位は拡張点が全体を見られる瞬間**で決まる
+    (ESLint なら `Program:exit` = ファイル)。
+17. **confidence は「報告するか」ではなく「どう報告するか」に使う。**
+    報告の前提条件にすると **62.5%、外すと 73.7%**。
+    clean も bug も confidence が 0.54〜0.57 に入るので、柵にすると正解ごと捨てる
+    ([21](21-eslint-plugin-jev.md#7-confidence-をゲートにすると-11-ポイント損する))。
+    [07](07-escalation.md) の「低 confidence は方針を決める問題」の運用形がこれ。
+18. **文脈は精度を上げるのではなく、judgment を穏やかにする。**
+    4〜8 では構造化 state が最大のレバー、17 では 1 件も動かさず、
+    21 では**誤検出を 1/5 にして見逃しを増やした** —— 3 つとも同じ現象で、
+    文脈が増えると score が下がる。だから **どちらの誤りを減らしたいかで足す/外す**を決める
+    ([21](21-eslint-plugin-jev.md#6-ファイルの文脈は精度を上げない下げる))。
+19. **審判のいない領域では、正解率ではなく「指摘の中身」を報告する。**
+    「コード品質」に ESLint のような審判は無い。だから
+    (a) **ラベルはコード実行で証明できるものに寄せる**(バグ 12 個すべてにプローブ)、
+    (b) 証明できない意見(`smell`・`clean`)は**別クラスにして主指標から外す**、
+    (c) 不均衡な集合では「何も言わない」が 76.5% を取るので、
+    **精度と再現率を分けて出す**(自信のある指摘 15/15 が本物 / 12 バグ中 5 個)
+    ([21](21-eslint-plugin-jev.md#3-結果--捕まえたものと落としたもの))。
