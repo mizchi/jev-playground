@@ -9,3 +9,5 @@ hooks/out-*.log
 hooks/out-*.jsonl
 .claude/jev-gate.json
 experiments/*/.jev-quality*.json
+# Playwright run artifacts from the generated specs (docs/27).
+experiments/*/test-results/
