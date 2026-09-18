@@ -1,0 +1,18 @@
+{
+  "name": "jev-skill-pick",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Two-stage skill selection over a roster that does not fit in one request (docs/30-skill-pick.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "pick": "tsx src/pick.ts",
+    "collect": "tsx src/collect.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

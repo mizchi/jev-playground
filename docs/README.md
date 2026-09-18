@@ -66,6 +66,10 @@ cd experiments/bilingual       && npx tsx src/run.ts --arm section --repeat 3   
 cd experiments/skill-select    && npm i && npm test                 # 29: ラベル規則とラベル漏れの検査(API 不要)
 cd experiments/skill-select    && npm run demo                      # 29: 記録から再集計(API 不要)
 cd experiments/skill-select    && npx tsx src/run.ts --arm fanout    # 29: 74 skill から選ぶ(14 リクエスト)
+cd experiments/skill-pick      && npm i && npm test                 # 30: ロスターの join とラベル漏れ(API 不要)
+cd experiments/skill-pick      && npm run demo                      # 30: 記録から再集計(API 不要)
+npx tsx experiments/skill-pick/src/pick.ts . --stage1-only          # 30: 道具。461 skill から短縮リスト(API 不要)
+npx tsx experiments/skill-pick/src/pick.ts . --prior --intent "..."  # 30: 1 リクエスト $0.0004
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
@@ -130,6 +134,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **判断対象は state ではなく質問に置く** | 同じ幅 1 で、state に移すと一致が 53%・AP 0.53 → 0.46 | mizchi/skills のカタログ | [29](29-skill-select.md#4-ファンアウトの幅は無料答えが同じ) |
 | **選択の方針(常に入れる/頼まれたら)はコードに置く** | カタログのティア列を適用するだけで AP 0.41 → **0.70**。判断に聞くと 74 件中 41〜53 位 | mizchi/skills のカタログ | [29](29-skill-select.md#3-方針は判断に聞くものではない) |
 | **人が書いた 1 行は skill 自身の description より効く** | `Use when` 列に差し替えると AP 0.53 → 0.56、P@k 0.43 → 0.51、文字数は 3 分の 1 | mizchi/skills のカタログ | [29](29-skill-select.md#9-人の-1-行は-skill-自身の-description-より良い) |
+| **全問で同一の文字列は state に置く(上限が 2 倍になる)** | criteria を 1 問ごとに繰り返すと 1 問 251 トークン・260 問で上限。state に 1 回置くと 118 トークン・520 問まで入り、答えはレベル一致 95% | 461 skill のロスター | [30](30-skill-pick.md#7-criteria-の文字列の値段) |
+| **候補が多いほど提案は悪くなる(curate されていないなら)** | recall 63% → 100% で P@12 は 0.25 → 0.19。増えた 387 件は「どのリポジトリにも当てはまる」実在 skill | 461 skill のロスター | [30](30-skill-pick.md#3-上げるべきは-recall-ではなかった) |
+| **「どこでも高い」を引く —— 判断に対する IDF** | skill ごとの他プロジェクト平均を引くと、全件で AP 0.19 → 0.29、P@12 0.19 → 0.23 | 461 skill のロスター | [30](30-skill-pick.md#6-どこでも高いものを引く) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -213,6 +220,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 候補が多いからと 1 問ずつ聞く | 答えは 99.8% 同じで**入力トークンが 2.4 倍**。幅を狭めて得るものは無い([29 §4](29-skill-select.md#4-ファンアウトの幅は無料答えが同じ)) |
 | 2 つの selector を重み 1 つで混ぜる | in-sample 0.42 がホールドアウトで **0.35** —— 単独の両方より悪い。当てた重みは fold 間で 0.00〜1.00 に振れる([29 §6](29-skill-select.md#6-重みを当てるな経路を書け)) |
 | 「常に入れる」を description から読ませる | T0 の 2 行は正例の 21% で、description のどこにも書いていない。平均順位 74 件中 41〜53 位([29 §3](29-skill-select.md#3-方針は判断に聞くものではない)) |
+| 候補プールを広げて選択を良くしようとする | curate されていない 387 件を足すと P@12 が 0.25 → 0.19。判断は正しく、`code-reviewer` はどこにでも当てはまる([30 §5](30-skill-pick.md#5-判断が好む-distractor-を読む)) |
+| 前段(prefilter)を recall で評価する | recall 100% の「前段なし」が P@12 最下位。読むのは**ユーザーが読む 12 行**([30 §3](30-skill-pick.md#3-上げるべきは-recall-ではなかった)) |
+| 語彙の重なりだけで候補を絞り切る | k をいくら増やしても recall は **85% で止まる** —— 欲しい行の 15% はプロジェクト文と語彙を共有していない([30 §2](30-skill-pick.md#2-無料の前段は何を残すか)) |
 
 ## レポート
 
@@ -248,6 +258,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [27](27-otel-triage.md) | otel の異常検知のトリアージ(検知はコード・severity は算術・cause は判断) | ✅ |
 | [28](28-bilingual.md) | 英語と日本語が同じことを言っているか(実物の対訳 + 8 種の変異) | ✅ |
 | [29](29-skill-select.md) | コンテキストに入らない skill カタログから選ぶ(mizchi/skills の実物 98 行 + 7 arm) | ✅ |
+| [30](30-skill-pick.md) | 461 個の実在 skill から選ぶ道具 — 何が入るか、前段は何を買うか、評価ループ | ✅ |
 
 ## この探索から見えている一般則
 

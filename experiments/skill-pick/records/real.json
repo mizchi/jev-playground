@@ -1,0 +1,224 @@
+[
+  {
+    "project": "jev-playground",
+    "prefilter": "overlap",
+    "k": 60,
+    "rows": [
+      {
+        "name": "justfile",
+        "source": "mizchi/skills",
+        "score": 1.64,
+        "raw": 2.09,
+        "confidence": 0.33,
+        "prefilter": 10.72
+      },
+      {
+        "name": "content-quality-editor",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 1.5,
+        "raw": 2.32,
+        "confidence": 0.49,
+        "prefilter": 11.03
+      },
+      {
+        "name": "moonbit-practice",
+        "source": "mizchi/skills",
+        "score": 1.41,
+        "raw": 1.59,
+        "confidence": 0.5,
+        "prefilter": 12.22
+      },
+      {
+        "name": "knowledge-synthesizer",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 1.37,
+        "raw": 1.94,
+        "confidence": 0.43,
+        "prefilter": 12.42
+      },
+      {
+        "name": "moonbit-js-binding",
+        "source": "mizchi/skills",
+        "score": 1.34,
+        "raw": 1.49,
+        "confidence": 0.38,
+        "prefilter": 19.43
+      },
+      {
+        "name": "performance-monitor",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 1.31,
+        "raw": 1.63,
+        "confidence": 0.44,
+        "prefilter": 10.47
+      },
+      {
+        "name": "trace-to-training-data",
+        "source": "wshobson/agents",
+        "score": 1.17,
+        "raw": 1.22,
+        "confidence": 0.43,
+        "prefilter": 10.48
+      },
+      {
+        "name": "avoid-ai-writing",
+        "source": "wshobson/agents",
+        "score": 0.94,
+        "raw": 1.26,
+        "confidence": 0.23,
+        "prefilter": 9.78
+      },
+      {
+        "name": "chaos-engineer",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 0.93,
+        "raw": 1.11,
+        "confidence": 0.48,
+        "prefilter": 14.53
+      },
+      {
+        "name": "preference-optimization",
+        "source": "wshobson/agents",
+        "score": 0.88,
+        "raw": 0.88,
+        "confidence": 0.43,
+        "prefilter": 10.48
+      },
+      {
+        "name": "opentelemetry",
+        "source": "mizchi/skills",
+        "score": 0.82,
+        "raw": 1.09,
+        "confidence": 0.53,
+        "prefilter": 9.27
+      },
+      {
+        "name": "retrospective-codify",
+        "source": "mizchi/skills",
+        "score": 0.8,
+        "raw": 1.33,
+        "confidence": 0.31,
+        "prefilter": 11.67
+      }
+    ],
+    "stage2": true,
+    "prior": "subtracted, from 461 recorded baselines",
+    "requests": 1,
+    "inputTokens": 10590,
+    "dollars": 0.0004,
+    "ms": 413,
+    "repo": "mizchi/jev-playground",
+    "intent": "MoonBit と TypeScript の混在リポジトリで、実験の測定コードを書き足しては just でテストと lint を回している。docs のレポートを増やす作業が主で、CI は GitHub Actions。"
+  },
+  {
+    "project": "similarity",
+    "prefilter": "overlap",
+    "k": 60,
+    "rows": [
+      {
+        "name": "rust-engineer",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 2.39,
+        "raw": 2.43,
+        "confidence": 0.43,
+        "prefilter": 13.28
+      },
+      {
+        "name": "check-similarity-rs",
+        "source": "mizchi/similarity",
+        "score": 1.93,
+        "raw": 1.98,
+        "confidence": 0.55,
+        "prefilter": 29.51
+      },
+      {
+        "name": "changelog-automation",
+        "source": "wshobson/agents",
+        "score": 1.59,
+        "raw": 2.6,
+        "confidence": 0.6,
+        "prefilter": 16.53
+      },
+      {
+        "name": "check-similarity-py",
+        "source": "mizchi/similarity",
+        "score": 1.31,
+        "raw": 1.38,
+        "confidence": 0.27,
+        "prefilter": 27.88
+      },
+      {
+        "name": "javascript-testing-patterns",
+        "source": "wshobson/agents",
+        "score": 1.19,
+        "raw": 2.05,
+        "confidence": 0.42,
+        "prefilter": 23.98
+      },
+      {
+        "name": "python-packaging",
+        "source": "wshobson/agents",
+        "score": 1.17,
+        "raw": 1.23,
+        "confidence": 0.46,
+        "prefilter": 17.64
+      },
+      {
+        "name": "check-similarity-ts",
+        "source": "mizchi/similarity",
+        "score": 1.07,
+        "raw": 1.85,
+        "confidence": 0.47,
+        "prefilter": 48.79
+      },
+      {
+        "name": "actions-ci-tuning",
+        "source": "mizchi/skills",
+        "score": 0.95,
+        "raw": 1.93,
+        "confidence": 0.52,
+        "prefilter": 17.64
+      },
+      {
+        "name": "check-similarity",
+        "source": "mizchi/similarity",
+        "score": 0.93,
+        "raw": 1.85,
+        "confidence": 0.45,
+        "prefilter": 74.38
+      },
+      {
+        "name": "flaker-manual-release",
+        "source": "mizchi/flaker",
+        "score": 0.8,
+        "raw": 1.01,
+        "confidence": 0,
+        "prefilter": 22.46
+      },
+      {
+        "name": "frontend-review-hygiene",
+        "source": "mizchi/skills",
+        "score": 0.79,
+        "raw": 1.78,
+        "confidence": 0.42,
+        "prefilter": 15.18
+      },
+      {
+        "name": "python-pro",
+        "source": "VoltAgent/awesome-claude-code-subagents",
+        "score": 0.74,
+        "raw": 0.8,
+        "confidence": 0.46,
+        "prefilter": 13.67
+      }
+    ],
+    "stage2": true,
+    "prior": "subtracted, from 461 recorded baselines",
+    "requests": 1,
+    "inputTokens": 11296,
+    "dollars": 0.0005,
+    "ms": 340,
+    "repo": "mizchi/similarity",
+    "intent": "Rust で書いた CLI を npm と cargo に publish している。TypeScript の薄いラッパーもあり、リリースとテストを整えたい。"
+  }
+]

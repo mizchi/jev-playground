@@ -73,6 +73,12 @@ install-bilingual:
 install-skill-select:
     npm --prefix experiments/skill-select install
 
+# @inputs: experiments/skill-pick/package.json experiments/skill-pick/package-lock.json
+# @cost: 0.6
+# Install the 461-skill roster experiment's dev dependencies
+install-skill-pick:
+    npm --prefix experiments/skill-pick install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -215,6 +221,24 @@ test-skill-select: install-skill-select
 replay-skill-select: install-skill-select
     npm --prefix experiments/skill-select run demo
 
+# @inputs: experiments/skill-pick/** experiments/skill-select/** experiments/shared/**
+# @cost: 0.5
+# Check the roster join, the prefilter tie-break, and that no label reaches a payload
+test-skill-pick: install-skill-pick
+    npm --prefix experiments/skill-pick test
+
+# @inputs: experiments/skill-pick/** experiments/skill-select/** experiments/shared/**
+# @cost: 7.4
+# Re-derive docs/30's tables from the recorded judgments
+replay-skill-pick: install-skill-pick
+    npm --prefix experiments/skill-pick run demo
+
+# @inputs: experiments/skill-pick/**
+# @cost: 0.7
+# The tool itself, stage 1 only: a shortlist for this repository with no API key
+pick-skills DIR=".": install-skill-pick
+    npx --prefix experiments/skill-pick tsx experiments/skill-pick/src/pick.ts {{DIR}} --stage1-only
+
 # @inputs: docs/** README.md experiments/**/README*.md
 # @cost: 0.1
 # Every relative Markdown link and heading anchor across the repository
@@ -252,5 +276,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick check-links
     @echo "all green"
