@@ -252,6 +252,21 @@ export const DEFAULT_THRESHOLDS = {
 };
 
 /**
+ * Overlay a partial threshold set on the defaults.
+ *
+ * `criterionAt` is merged per key, not replaced. A shallow spread would make
+ * `criterionAt: { unescaped_composition: 1.01 }` -- the obvious way to mute
+ * one noisy criterion -- silently drop the other seven cutoffs onto the 0.8
+ * `atomAt` fallback, which reports almost nothing. A config change that turns
+ * one criterion off must not turn seven others down.
+ */
+export function withThresholds(thresholds = {}) {
+  const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
+  t.criterionAt = { ...DEFAULT_THRESHOLDS.criterionAt, ...(thresholds.criterionAt ?? {}) };
+  return t;
+}
+
+/**
  * Content-addressed cache key. See the limitation note in README.
  *
  * The rubric is part of the key, not just the file header: two rubrics answer
@@ -461,8 +476,8 @@ export function topAtom(verdict) {
  */
 export function firedAtom(verdict, thresholds = {}) {
   if (!verdict?.atoms) return null;
-  const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
-  const cutoffs = t.criterionAt ?? {};
+  const t = withThresholds(thresholds);
+  const cutoffs = t.criterionAt;
   let best = null;
   for (const [name, p] of Object.entries(verdict.atoms)) {
     if (typeof p !== "number") continue;
@@ -483,7 +498,7 @@ export function firedAtom(verdict, thresholds = {}) {
  * separately, and collapsing them would hide which signal fired.
  */
 export function decide(verdict, thresholds = {}) {
-  const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
+  const t = withThresholds(thresholds);
   if (!verdict) return null;
   const { score, confidence, bug } = verdict;
 
