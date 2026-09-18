@@ -339,7 +339,7 @@ function analyse(rows: Row[], jev?: Jev): void {
 }
 
 async function main(): Promise<void> {
-  const out = resolve(HERE, "scores.json");
+  const out = resolve(HERE, opt("out", "scores.json"));
   if (flag("replay")) {
     if (!existsSync(out)) throw new Error(`no ${out}; run without --replay first`);
     analyse(JSON.parse(readFileSync(out, "utf8")) as Row[]);

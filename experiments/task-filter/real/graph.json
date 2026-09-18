@@ -35,7 +35,7 @@
       "deps": [
         "moon-build"
       ],
-      "doc": "Replay every example through both jevlang implementations and diff them",
+      "doc": "Check the MoonBit and JS jevlang implementations still agree on examples/*.jev",
       "body": [
         "scripts/jevlang-conformance.sh"
       ],

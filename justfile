@@ -89,7 +89,7 @@ test-jevlang-js:
 
 # @inputs: jevlang/** jevlang-js/** cmd/jevlang/** examples/**
 # @cost: 3.8
-# Replay every example through both jevlang implementations and diff them
+# Check the MoonBit and JS jevlang implementations still agree on examples/*.jev
 conformance: moon-build
     scripts/jevlang-conformance.sh
 
