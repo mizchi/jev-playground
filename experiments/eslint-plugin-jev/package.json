@@ -14,7 +14,10 @@
     "replay": "node experiment/run.mjs --from experiment/out-run.json",
     "criteria": "node experiment/run-criteria.mjs",
     "replay:criteria": "node experiment/run-criteria.mjs --from experiment/out-criteria.json",
-    "bench": "node experiment/sync-bench.mjs"
+    "bench": "node experiment/sync-bench.mjs",
+    "replay:tiers": "node experiment/run-criteria.mjs --from experiment/out-criteria-tiers.json",
+    "loo": "node experiment/run-loo.mjs",
+    "replay:loo": "node experiment/run-loo.mjs --from experiment/out-loo.json"
   },
   "peerDependencies": {
     "eslint": ">=9"

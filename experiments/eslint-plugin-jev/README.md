@@ -5,24 +5,32 @@ every function in a file asked in one request.
 
 Write-ups with the numbers: [docs/21](../../docs/21-eslint-plugin-jev.md) (the plugin, the
 synchronous-rule problem, batching) and [docs/22](../../docs/22-code-criteria.md) (what changes
-when you name eight concrete defect classes instead of asking one vague question).
+when you name eight concrete defect classes instead of asking one vague question, and how deep
+the hole is for the classes you did not name).
 
 ```bash
 npm install
 
-npm test                     # 57 checks, no API key needed
+npm test                     # 59 checks, no API key needed
 npm run truth                # the labels, proved by running the code
 npm run replay               # docs/21's numbers, re-derived, no API key
 npm run replay:criteria      # docs/22's numbers, re-derived, no API key
+npm run replay:tiers         # docs/22's addendum: the named x hard 2x2
+npm run replay:loo           # docs/22's addendum: one criterion dropped at a time
 
 export TYPESAFEAI_API_KEY=...
-npm run warm -- --rubric full   # 14 requests, 68 functions, $0.004
+npm run warm -- --rubric full   # 15 requests, 78 functions, $0.004
 npm run lint                    # eslint, reading the cached verdicts
 
 npm run run -- --repeat 3       # docs/21: the 4-arm measurement (state and batching)
 npm run criteria -- --repeat 3  # docs/22: the 4-rubric measurement (what we ask)
+npm run loo -- --repeat 3       # docs/22 addendum: leave one criterion out
 npm run bench                   # what each way around async costs
 ```
+
+A `--from` replay scores with the thresholds the run was RECORDED with, so retuning a
+cutoff cannot rewrite an already-published report. Add `--current-thresholds` to see what
+today's defaults would have done to that same run.
 
 ## What it reports
 
@@ -45,8 +53,15 @@ function; `full` adds the eight named criteria (10 questions per function,
 still one request per file). docs/22 measured 41/51 caught for `full` against
 33/51 for `vague`, at the same false-positive count — and the cutoffs are
 **per criterion**, because their answers are not on the same scale (0.20 to
-0.94 on their own class). Those cutoffs are fitted on 68 functions; retune
-`criterionAt` first.
+0.94 on their own class).
+
+Naming the classes only pays on defects you cannot see from the function's own
+text: docs/22's addendum measured 15/15 either way on visible ones and 14% →
+52% on the rest. And the eight criteria overlap — drop any one but
+`api_default` and a neighbour or the generic noul still catches its class.
+
+`criterionAt` is fitted, and has been refitted once already; it is the first
+thing to retune on your code.
 
 ## The one hard problem
 

@@ -13,14 +13,19 @@
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                        # 40 件、API 不要
+npm test                                        # 59 件、API 不要
 npm run truth                                   # ラベルをコード実行で検証、API 不要
-TYPESAFEAI_API_KEY=... npm run warm             # 56 関数を 12 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run warm             # 78 関数を 15 リクエスト、$0.001
 TYPESAFEAI_API_KEY=... npm run lint             # eslint が Jev の判定を読む
 TYPESAFEAI_API_KEY=... npm run run -- --repeat 3   # 4 arm × 3 = 408 リクエスト、$0.017
 npm run replay                                  # 記録から全数値を再計算、API 不要
 npm run bench                                   # 同期問題の 3 つの出口のコスト
 ```
+
+> このレポートの数値は **56 関数 / 12 ファイル**のコーパスで測ったものです。
+> [22](22-code-criteria.md) でコーパスが 78 関数に増えましたが、
+> `npm run replay` は**記録した時点のコーパスと閾値で採点する**ので、
+> 以下の表はそのまま再現できます。
 
 ---
 
@@ -56,6 +61,11 @@ npm run bench                                   # 同期問題の 3 つの出口
 欠陥クラスに名前を付けて 8 問に分けると捕まる数は 33/51 → 41/51 に増え、指摘に名前が付く。
 ただし**この 6 個のうち戻ったのは 2 個だけ**で、残り 4 個は
 ちょうど正しい問いに 0.09〜0.22 で「いいえ」と答える —— 質問設計の問題ではなかった。
+
+そして [22 §11](22-code-criteria.md#11-追記--保留セットを作り直して穴の深さを測った) で、
+**この表の「契約の齟齬 / API の誤用」は要するに「関数の中だけ読めば分かるか」**だったと分かった。
+その軸で割ると**前者は全 rubric で 15/15、後者は 14% → 52%** で、
+指標を名指しする価値は**後者にだけある**。
 
 副産物として、**バッチ上限は 256 ではなかった**(§8 — docs/00 に追記)。
 

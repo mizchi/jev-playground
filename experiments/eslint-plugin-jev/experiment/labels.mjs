@@ -22,6 +22,8 @@
  * every request body, the same way docs/16 asserted the rule implementations
  * never leaked.
  */
+import * as access from "./corpus/access.js";
+import { Formatter } from "./corpus/access.js";
 import * as auth from "./corpus/auth.js";
 import * as cart from "./corpus/cart.js";
 import * as counters from "./corpus/counters.js";
@@ -46,15 +48,37 @@ import * as stats from "./corpus/stats.js";
  */
 export const CLASSES = ["bug", "smell", "nearmiss", "clean"];
 
-const L = (label, basis, note, probe, covers = null) => ({ label, basis, note, probe, covers });
+const L = (label, basis, note, probe, covers = null, tier = null) => ({
+  label,
+  basis,
+  note,
+  probe,
+  covers,
+  tier,
+});
 const clean = (note) => L("clean", "review", note, null);
 
 /**
- * Which of the eight named criteria in judge.mjs is SUPPOSED to catch each
- * bug. `"unnamed"` means the class is deliberately absent from that list:
- * those five are the held-out set, and they are the only honest way to
- * measure the hole docs/01 section 4 predicts in a rubric written by
- * enumerating defect classes.
+ * Two axes on every bug, because docs/22's first held-out set conflated them.
+ *
+ * `covers` -- which of the eight named criteria in judge.mjs is SUPPOSED to
+ * catch this bug, or `"unnamed"` when the class is deliberately absent from
+ * that list. That is the axis docs/01 section 4 is about.
+ *
+ * `tier` -- how the defect is SEEN, which turned out to matter more:
+ *
+ *   "easy"  the function's own text contradicts itself. A careful reader needs
+ *           no outside knowledge: no `return`, no `break`, no `try/finally`,
+ *           a discount subtracted as an amount.
+ *   "hard"  you have to know how one specific thing behaves. `.sort()` has no
+ *           default comparator, `splice(at)` takes a count, spread is
+ *           shallow, `{}` inherits `toString`, `fill` stores one reference,
+ *           a returned promise escapes its `try`.
+ *
+ * docs/22's held-out five were ALL `unnamed` + `easy`, so they measured
+ * nothing about the hole: the generic question caught 15/15 of them because
+ * they were easy, not because they were covered. `access.js` adds five that
+ * are `unnamed` + `hard`, which is the cell that was empty.
  */
 
 export const LABELS = {
@@ -65,6 +89,7 @@ export const LABELS = {
     "Two empty tokens compare equal, so a request with no token authenticates against a session with no token.",
     () => auth.compareTokens("", "") === false,
     "name_mismatch",
+    "easy",
   ),
   "auth.js#isExpired": clean("A timestamp comparison, and both sides are ms."),
   "auth.js#parseBearer": clean("Guards the type, the prefix and the empty tail."),
@@ -78,6 +103,7 @@ export const LABELS = {
     "Subtracts the percentage as if it were an amount: 10% off 1000 yen returns 990.",
     () => cart.applyDiscount(1000, 10) === 900,
     "unit_or_arithmetic",
+    "easy",
   ),
   "cart.js#roundMoney": L(
     "smell",
@@ -110,6 +136,7 @@ export const LABELS = {
       return counters.snapshot().a === 3;
     },
     "lost_update",
+    "hard",
   ),
   "counters.js#incrementAll": L(
     "smell",
@@ -128,6 +155,7 @@ export const LABELS = {
     "setUTCMonth overflows: 31 January plus one month lands in March.",
     () => dates.addMonths(new Date("2026-01-31T00:00:00Z"), 1).getUTCMonth() === 1,
     "api_default",
+    "hard",
   ),
   "dates.js#startOfDayUtc": L(
     "nearmiss",
@@ -173,6 +201,7 @@ export const LABELS = {
       return seen.join(",") === "b,c";
     },
     "api_default",
+    "hard",
   ),
   "events.js#EventBus#emit": L(
     "nearmiss",
@@ -224,6 +253,7 @@ export const LABELS = {
       }
     },
     "swallows_failure",
+    "easy",
   ),
 
   // ------------------------------------------------------------------ http
@@ -247,6 +277,7 @@ export const LABELS = {
       return new URLSearchParams(q.slice(1)).get("q") === "a&b=c";
     },
     "unescaped_composition",
+    "easy",
   ),
 
   // ------------------------------------------------------------------- lru
@@ -264,6 +295,7 @@ export const LABELS = {
       return cache.has("a") && !cache.has("b");
     },
     "name_mismatch",
+    "hard",
   ),
   "lru.js#LruCache#set": clean("Re-inserts to move to the end, then evicts from the front."),
   "lru.js#LruCache#has": clean("Delegates to the map."),
@@ -309,6 +341,7 @@ export const LABELS = {
       }
     },
     "unhandled_async",
+    "hard",
   ),
   "retry.js#withTimeout": clean("Races a guard and clears the timer in a finally."),
   "retry.js#settleAll": clean("Sequential, and both outcomes are recorded."),
@@ -320,6 +353,7 @@ export const LABELS = {
     "The character-class replace has no /g, so only the first run of separators becomes a dash.",
     () => slug.slugify("Hello World Again") === "hello-world-again",
     "api_default",
+    "hard",
   ),
   "slug.js#titleCase": clean("Global replace over the first letter of each word."),
   "slug.js#dedupeSlugs": clean("Counts occurrences and suffixes from the second onward."),
@@ -333,6 +367,7 @@ export const LABELS = {
     "Array.sort() with no comparator sorts lexicographically, so [10,9,8,100,1] has median 100.",
     () => stats.median([10, 9, 8, 100, 1]) === 9,
     "api_default",
+    "hard",
   ),
   "stats.js#percentile": L(
     "bug",
@@ -340,6 +375,7 @@ export const LABELS = {
     "floor(p/100 * length) indexes one past the end at p=100, returning undefined.",
     () => stats.percentile([1, 2, 3], 100) === 3,
     "boundary",
+    "easy",
   ),
   "stats.js#stddev": clean("Sample standard deviation with an n<2 guard."),
   "stats.js#histogram": clean("Clamps the top bucket and guards a zero span."),
@@ -359,6 +395,7 @@ export const LABELS = {
       return Array.isArray(out) && out.length === 1 && out[0].to === 5;
     },
     "unnamed",
+    "easy",
   ),
   "ranges.js#modeFlags": L(
     "bug",
@@ -368,6 +405,7 @@ export const LABELS = {
       ranges.modeFlags("read").join(",") === "r" &&
       ranges.modeFlags("write").join(",") === "w",
     "unnamed",
+    "easy",
   ),
   "ranges.js#spanOf": clean("Guards the empty case, then a linear min and max."),
   "ranges.js#overlaps": clean("Two strict comparisons; half-open intervals."),
@@ -393,6 +431,7 @@ export const LABELS = {
       return p.inUse === 0;
     },
     "unnamed",
+    "easy",
   ),
   "pool.js#settingsFor": L(
     "bug",
@@ -405,6 +444,7 @@ export const LABELS = {
       return pool.settingsFor(user).theme === "light";
     },
     "unnamed",
+    "easy",
   ),
   "pool.js#reachable": L(
     "bug",
@@ -422,8 +462,95 @@ export const LABELS = {
       }
     },
     "unnamed",
+    "easy",
   ),
   "pool.js#describePool": clean("Two counters in a template string."),
+  // ----------------------------------------------------------------- access
+  // The rebuilt held-out set: `unnamed` AND `hard`. Each one needs you to know
+  // how one specific JavaScript thing behaves -- knowledge that is not in the
+  // function's own text -- and none of the eight named criteria is about it.
+  //
+  // `overlap` records the criterion someone could argue covers it anyway, so
+  // the write-up can report the strict and the generous reading separately
+  // rather than me deciding which is fair.
+  "access.js#withDefaults": L(
+    "bug",
+    "test",
+    "Object spread is shallow, so passing any part of `limits` replaces the whole nested object and the defaults inside it are silently lost.",
+    () => {
+      const merged = access.withDefaults({ limits: { max: 5 } });
+      return merged.limits.max === 5 && merged.limits.burst === 10;
+    },
+    "unnamed",
+    "hard",
+  ),
+  "access.js#hasRole": L(
+    "bug",
+    "test",
+    "Every object inherits Object.prototype, so hasRole({}, 'toString') is true and any inherited name grants the role.",
+    () => access.hasRole({}, "toString") === false && access.hasRole({ admin: 1 }, "admin"),
+    "unnamed",
+    "hard",
+  ),
+  "access.js#requiredMissing": L(
+    "bug",
+    "test",
+    "Tests falsiness rather than presence, so a field legitimately set to 0, false or the empty string is reported missing.",
+    () =>
+      access.requiredMissing({ age: 0, agreed: false, note: "" }, ["age", "agreed", "note"])
+        .length === 0,
+    "unnamed",
+    "hard",
+  ),
+  "access.js#emptyGrid": L(
+    "bug",
+    "test",
+    "fill stores ONE reference, so every row of the grid is the same array and writing one cell writes the whole column.",
+    () => {
+      const grid = access.emptyGrid(2, 2);
+      grid[0][0] = 1;
+      return grid[1][0] === 0;
+    },
+    "unnamed",
+    "hard",
+  ),
+  "access.js#Formatter#formatAll": L(
+    "bug",
+    "test",
+    "Passing a method as a callback drops its receiver, so `this` is undefined inside format and the call throws.",
+    () => {
+      try {
+        return new Formatter(">").formatAll(["a"]).join(",") === ">a";
+      } catch {
+        return false;
+      }
+    },
+    "unnamed",
+    "hard",
+  ),
+  "access.js#Formatter#constructor": clean("Assigns one field."),
+  "access.js#Formatter#format": clean("Template string over its own field."),
+  "access.js#pickKeys": L(
+    "nearmiss",
+    "test",
+    "Object.hasOwn next to a plain lookup reads like paranoia, and it is exactly what stops `hasRole`'s bug.",
+    () => {
+      const out = access.pickKeys({ a: 1 }, ["a", "toString", "b"]);
+      return Object.keys(out).join(",") === "a";
+    },
+  ),
+  "access.js#countBy": clean("Map with a nullish-coalescing seed."),
+  "access.js#deepFreeze": L(
+    "nearmiss",
+    "test",
+    "Recursion plus mutation plus a default parameter; the WeakSet is what stops the cycle `reachable` falls into.",
+    () => {
+      const a = { n: 1 };
+      a.self = a;
+      const out = access.deepFreeze(a);
+      return Object.isFrozen(out) && out.self === a;
+    },
+  ),
 };
 
 /** `file.js#name` for a unit, which is how LABELS is keyed. */

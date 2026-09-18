@@ -114,12 +114,13 @@ export async function collectFiles(globs, { minLines, includeCallbacks } = {}) {
  * the isolated shape (each function as its own small state) rather than
  * being dropped.
  */
-export function planBatches(units, arm, rubric = "vague") {
+export function planBatches(units, arm, rubric = "vague", omit = []) {
   const shape = armShape(arm);
   if (shape.batch === "one") {
     return units.map((u) => ({
       arm,
       rubric,
+      omit,
       file: u.file,
       source: shape.state === "file" ? (u.fileSource ?? u.text) : u.text,
       units: [u],
@@ -139,6 +140,7 @@ export function planBatches(units, arm, rubric = "vague") {
         batches.push({
           arm: "isolated",
           rubric,
+          omit,
           file,
           source: unit.text,
           units: [unit],
@@ -150,16 +152,18 @@ export function planBatches(units, arm, rubric = "vague") {
     let current = [];
     let tokens = stateTokens;
     for (const unit of group) {
-      const cost = estimateTokens(questionsFor([unit], arm, rubric));
+      const cost = estimateTokens(questionsFor([unit], arm, rubric, omit));
       if (current.length > 0 && tokens + cost > MAX_REQUEST_TOKENS) {
-        batches.push({ arm, rubric, file, source, units: current });
+        batches.push({ arm, rubric, omit, file, source, units: current });
         current = [];
         tokens = stateTokens;
       }
       current.push(unit);
       tokens += cost;
     }
-    if (current.length > 0) batches.push({ arm, rubric, file, source, units: current });
+    if (current.length > 0) {
+      batches.push({ arm, rubric, omit, file, source, units: current });
+    }
   }
   return batches;
 }
@@ -168,7 +172,10 @@ export function planBatches(units, arm, rubric = "vague") {
 export async function askBatch(jev, batch) {
   const state = stateFor(batch.file, batch.source, batch.units, batch.arm);
   const rubric = batch.rubric ?? "vague";
-  const res = await jev.askSplitting(state, questionsFor(batch.units, batch.arm, rubric));
+  const res = await jev.askSplitting(
+    state,
+    questionsFor(batch.units, batch.arm, rubric, batch.omit ?? []),
+  );
   return batch.units.map((unit, i) => ({
     unit,
     verdict: verdictFrom(res.answers, i, rubric),

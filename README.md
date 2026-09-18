@@ -155,7 +155,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
 | [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
 | [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
-| [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか |
+| [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -195,11 +195,11 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                    # 57 件(fail-safe 12 + ロジック 45)、API 不要
+npm test                                    # 59 件(fail-safe 12 + ロジック 47)、API 不要
 npm run truth                               # ラベルをコード実行で検証、API 不要
 npm run replay                              # 記録から全数値を再計算、API 不要
 
-TYPESAFEAI_API_KEY=... npm run warm         # 68 関数を 14 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run warm         # 78 関数を 15 リクエスト、$0.001
 TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 ```
 
@@ -222,7 +222,12 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 
 ただし**名前を付けても戻ったのは見逃し 6 個のうち 2 個**で、
 一番効いたのは指標ではなく**指標ごとに閾値を引くこと**でした
-(共通閾値 0.80 で 13/36、質問ごとなら 24/36)。→ [docs/22](docs/22-code-criteria.md)
+(共通閾値 0.80 で 13/36、質問ごとなら 24/36)。
+
+指標が効くのは**見えにくいバグでだけ**です。関数の中だけ読めば分かるバグは
+naming の有無にかかわらず 15/15 で、**特定の API の挙動を知らないと見えない**バグで
+14% → 52% になります。そして **8 指標は重複していて、抜いて本当に困るのは 1 個だけ**
+(`api_default`、9/12 → 4/12)。→ [docs/22](docs/22-code-criteria.md)
 
 ## 7. Claude Code の permission hook
 

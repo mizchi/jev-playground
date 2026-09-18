@@ -61,8 +61,14 @@ const BUG_CRITERIA = {
  * **These criteria were written by looking at the corpus's defect classes.**
  * That is deliberate and it is a fitted rubric, not a general one: it measures
  * the CEILING (if you name the class, can Jev find it?), not generalisation.
- * The five held-out bugs in `ranges.js` and `pool.js` are in classes NOT named
- * here, and they are what measures the hole docs/01 section 4 predicts.
+ *
+ * The hole that enumerating classes leaves is measured two ways, because the
+ * first way was not enough. `ranges.js` and `pool.js` hold five bugs in
+ * classes absent from this list -- but they all turned out to be visible from
+ * the function's own text, so the generic question caught 15/15 of them and
+ * the hole looked shallow. `access.js` adds five that are absent from this
+ * list AND need outside knowledge, and `run-loo.mjs` drops each criterion
+ * from the request in turn to see whether its own class survives without it.
  *
  * `covers` is documentation of the intent, never sent.
  */
@@ -204,21 +210,28 @@ export const DEFAULT_THRESHOLDS = {
    * the same zero false positives -- including two of the six bugs docs/21
    * missed entirely.
    *
-   * **These numbers are fitted on 68 functions.** They are the highest clean
-   * answer each criterion gave, plus 0.01, so on this corpus they are exactly
-   * at the edge of a false positive -- which means on your code some of them
-   * WILL produce one. They are the first thing to retune, and the reason
-   * `criterionAt` is an option: docs/04's rule holds here, the questions are
-   * design and the thresholds are data.
+   * **These numbers are fitted, and they have already been refitted once.**
+   * docs/22 set them to the highest clean answer plus 0.01 on a 68-function
+   * corpus, which put four of them exactly on the false-positive boundary --
+   * and the ten functions added for the addendum promptly crossed it
+   * (`unescaped_composition` fired on every template literal). Raising those
+   * four by one notch removed all ten false positives and cost NOTHING in
+   * own-class recall, which is what these values are.
+   *
+   * Expect to do it again. The margin is still thin (`api_default` sits at
+   * 0.25 against a worst clean answer of 0.24), so on your code some of them
+   * will fire where they should not. The transferable part is the method, not
+   * the numbers: fit on the clean class, then leave a notch. docs/04's rule
+   * holds -- the questions are design, the thresholds are data.
    */
   criterionAt: {
-    api_default: 0.22,
+    api_default: 0.25,
     unhandled_async: 0.57,
-    boundary: 0.55,
+    boundary: 0.58,
     swallows_failure: 0.38,
-    name_mismatch: 0.47,
+    name_mismatch: 0.48,
     lost_update: 0.73,
-    unescaped_composition: 0.23,
+    unescaped_composition: 0.26,
     unit_or_arithmetic: 0.28,
   },
   /**
@@ -325,8 +338,20 @@ export function stateFor(file, source, units, arm) {
   };
 }
 
-export function questionsFor(units, arm, rubric = "vague") {
+/**
+ * `omit` drops named criteria from the REQUEST, not from the analysis.
+ *
+ * That distinction is the measurement in docs/22's addendum: to find out what
+ * enumerating classes costs on a class you forgot, you have to actually not
+ * ask about it. Dropping it from the scoring afterwards would leave the
+ * question in the request, where it can still steer the other answers.
+ *
+ * The atom INDEX stays stable (`a3-007` is always the fourth criterion), so
+ * omitting one shifts nothing and `verdictFrom` simply finds that name absent.
+ */
+export function questionsFor(units, arm, rubric = "vague", omit = []) {
   const questions = {};
+  const dropped = new Set(omit);
   const shape = armShape(arm);
   const want = rubricShape(rubric);
   units.forEach((unit, i) => {
@@ -369,6 +394,7 @@ export function questionsFor(units, arm, rubric = "vague") {
     }
     if (want.atoms) {
       ATOMS.forEach((atom, a) => {
+        if (dropped.has(atom.name)) return;
         questions[atomKey(a, i)] = {
           type: "noul",
           instructions: { statement: atom.statement, ...subject },

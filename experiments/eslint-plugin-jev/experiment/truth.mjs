@@ -39,6 +39,9 @@ for (const [key, entry] of Object.entries(LABELS)) {
   else if (entry.covers !== "unnamed" && !ATOM_NAMES.includes(entry.covers)) {
     problems.push(`bug ${key} covers '${entry.covers}', which is not a named criterion`);
   }
+  if (!["easy", "hard"].includes(entry.tier)) {
+    problems.push(`bug ${key} has tier '${entry.tier}', expected easy or hard`);
+  }
 }
 
 const byClass = counts();
@@ -94,15 +97,31 @@ console.log(
 );
 
 console.log("");
-console.log("THE docs/22 SPLIT  (is the bug's class one of the eight named criteria?)");
-for (const which of ["named", "unnamed"]) {
-  const rows = units.filter((u) => {
+console.log("THE TWO AXES  (docs/22's first held-out set was all one cell, which measured nothing)");
+console.log("  `named`  = its class is one of the eight criteria in judge.mjs");
+console.log("  `hard`   = you must know how one specific thing behaves; not in the function's text");
+console.log("");
+const cell = (named, tier) =>
+  units.filter((u) => {
     const e = labelOf(u);
-    return e?.label === "bug" && (which === "unnamed") === (e.covers === "unnamed");
+    return e?.label === "bug" && (e.covers !== "unnamed") === named && e.tier === tier;
   });
-  console.log(`  ${which.padEnd(8)} ${rows.length}`);
-  for (const unit of rows) {
-    console.log(`    ${labelKey(unit).padEnd(28)} ${labelOf(unit).covers}`);
+console.log("            easy      hard");
+for (const [label, named] of [["named   ", true], ["unnamed ", false]]) {
+  console.log(
+    `  ${label}  ${String(cell(named, "easy").length).padEnd(9)} ${cell(named, "hard").length}`,
+  );
+}
+for (const named of [true, false]) {
+  for (const tier of ["easy", "hard"]) {
+    const rows = cell(named, tier);
+    if (rows.length === 0) continue;
+    console.log("");
+    console.log(`  ${named ? "named" : "unnamed"} / ${tier}`);
+    for (const unit of rows) {
+      const e = labelOf(unit);
+      console.log(`    ${labelKey(unit).padEnd(30)} ${e.covers.padEnd(22)} ${e.note.slice(0, 60)}`);
+    }
   }
 }
 

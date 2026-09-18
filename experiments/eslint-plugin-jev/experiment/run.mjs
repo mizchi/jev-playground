@@ -71,6 +71,8 @@ function parseArgs(argv) {
       case "--out":
         opts.out = next();
         break;
+      case "--current-thresholds":
+        break;
       default:
         throw new Error(`unknown flag ${argv[i]}`);
     }
@@ -195,7 +197,12 @@ function headline(arm, value) {
     .map((x) => ({ value: x.value, truth: x.label === "bug" }));
 }
 
-const t = DEFAULT_THRESHOLDS;
+// Score a replay with the thresholds it was recorded with, so a later
+// retune cannot rewrite an already-published report. See run-criteria.mjs.
+const t =
+  dump && dump.thresholds && !process.argv.includes("--current-thresholds")
+    ? { ...DEFAULT_THRESHOLDS, ...dump.thresholds }
+    : DEFAULT_THRESHOLDS;
 
 function line(...cells) {
   console.log(cells.join(""));
@@ -470,6 +477,19 @@ console.log("");
 console.log(`ARM SHAPES:`);
 for (const arm of opts.arms) console.log(`  ${arm.padEnd(10)} ${ARM_BLURB[arm]}`);
 
+/**
+ * Recordings are machine-read, so they are written compactly and the
+ * probabilities are rounded to 4 decimals. Every number this report prints is
+ * a 2- or 3-decimal figure and every cutoff has 2, so the rounding is lossless
+ * for the tables -- and it takes `out-loo.json` from 900 KB to a size worth
+ * committing. The replays are checked against the full-precision numbers.
+ */
+function compact(value) {
+  return JSON.stringify(value, (_key, v) =>
+    typeof v === "number" && !Number.isInteger(v) ? Number(v.toFixed(4)) : v,
+  );
+}
+
 if (opts.out) {
   const dump = {
     at: new Date().toISOString(),
@@ -491,6 +511,6 @@ if (opts.out) {
       ),
     })),
   };
-  writeFileSync(opts.out, `${JSON.stringify(dump, null, 2)}\n`);
+  writeFileSync(opts.out, `${compact(dump)}\n`);
   console.log(`raw -> ${opts.out}`);
 }

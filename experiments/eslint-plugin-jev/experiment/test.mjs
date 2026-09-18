@@ -319,14 +319,29 @@ if (only !== "failsafe") {
       Object.keys(t.criterionAt).every((n) => ATOM_NAMES.includes(n)),
     `${ATOM_NAMES.length} criteria, ${Object.keys(t.criterionAt).length} cutoffs`,
   );
+  // Read the cutoffs from the map rather than hardcoding them: docs/22's
+  // addendum retuned four of them, and a test that pins the number fails on
+  // the retune instead of checking the behaviour.
+  const cutOf = (name) => t.criterionAt[name];
+  const lowest = ATOM_NAMES.reduce((a, b) => (cutOf(a) <= cutOf(b) ? a : b));
+  const highest = ATOM_NAMES.reduce((a, b) => (cutOf(a) >= cutOf(b) ? a : b));
   const atomTable = [
     // [atoms, expected messageId, why]
-    [{ api_default: 0.23 }, "criterion", "just over api_default's 0.22"],
-    [{ api_default: 0.21 }, null, "just under it"],
-    // The whole point of a per-criterion cutoff: 0.5 fires for one criterion
-    // and is silence for another, and a single global number cannot do that.
-    [{ unit_or_arithmetic: 0.5 }, "criterion", "0.50 is well over unit_or_arithmetic's 0.28"],
-    [{ lost_update: 0.5 }, null, "the same 0.50 is under lost_update's 0.73"],
+    [{ [lowest]: cutOf(lowest) + 0.01 }, "criterion", `just over ${lowest}'s cutoff`],
+    [{ [lowest]: cutOf(lowest) - 0.01 }, null, "just under it"],
+    // The whole point of a per-criterion cutoff: one probability fires for the
+    // lowest-cutoff criterion and is silence for the highest, and a single
+    // global number cannot do that.
+    [
+      { [lowest]: (cutOf(lowest) + cutOf(highest)) / 2 },
+      "criterion",
+      `the midpoint is over ${lowest}'s cutoff`,
+    ],
+    [
+      { [highest]: (cutOf(lowest) + cutOf(highest)) / 2 },
+      null,
+      `the same number is under ${highest}'s`,
+    ],
     [{ mystery_criterion: 0.85 }, "criterion", "an unknown name falls back to atomAt"],
     [{ mystery_criterion: 0.75 }, null, "and is silent under it"],
   ];
@@ -334,11 +349,16 @@ if (only !== "failsafe") {
     const got = decide({ score: null, confidence: null, bug: 0.1, atoms }, t)?.messageId ?? null;
     check(`${why} -> ${expected ?? "silent"}`, got === expected, `got ${got ?? "silent"}`);
   }
-  check(
-    "the criterion with the biggest margin over its own cutoff wins, not the biggest number",
-    firedAtom({ atoms: { api_default: 0.66, lost_update: 0.74 } }, t)?.name === "api_default",
-    JSON.stringify(firedAtom({ atoms: { api_default: 0.66, lost_update: 0.74 } }, t)),
-  );
+  {
+    // `lowest` at twice its cutoff beats `highest` barely over its own, even
+    // though the raw number is smaller.
+    const atoms = { [lowest]: cutOf(lowest) * 2, [highest]: cutOf(highest) + 0.01 };
+    check(
+      "the criterion with the biggest margin over its own cutoff wins, not the biggest number",
+      firedAtom({ atoms }, t)?.name === lowest,
+      `${JSON.stringify(atoms)} -> ${JSON.stringify(firedAtom({ atoms }, t))}`,
+    );
+  }
   check(
     "a named criterion outranks the score and the generic noul",
     decide({ score: 2.9, confidence: 0.9, bug: 0.95, atoms: { boundary: 0.6 } }, t)?.messageId ===
@@ -352,6 +372,13 @@ if (only !== "failsafe") {
   check(
     "a verdict with neither a score nor a criterion is silent",
     decide({ score: null, confidence: null, bug: null, atoms: null }, t) === null,
+  );
+  // docs/22's addendum raised four cutoffs off the false-positive boundary.
+  // The regression this guards is putting one back on it.
+  check(
+    "no cutoff sits below 0.25 (docs/22's addendum raised the boundary-hugging four)",
+    Object.values(t.criterionAt).every((c) => c >= 0.25),
+    JSON.stringify(t.criterionAt),
   );
 
   console.log("");
@@ -371,6 +398,22 @@ if (only !== "failsafe") {
     "the checklist rubric puts the criteria in the score question, not in new questions",
     JSON.stringify(questionsFor(oneUnit, "located", "checklist")).includes("api_default") &&
       !JSON.stringify(questionsFor(oneUnit, "located", "vague")).includes("api_default"),
+  );
+  check(
+    "omit drops a criterion from the REQUEST and shifts no index",
+    (() => {
+      const full = Object.keys(questionsFor(oneUnit, "located", "full"));
+      const less = Object.keys(questionsFor(oneUnit, "located", "full", [ATOM_NAMES[0]]));
+      const gone = full.filter((k) => !less.includes(k));
+      // a0-000 is the first criterion; a1..a7 must keep their own numbers, or
+      // verdictFrom would read the answers back under the wrong names.
+      return (
+        gone.length === 1 &&
+        gone[0] === "a0-000" &&
+        less.filter((k) => /^a\d-/.test(k)).join(",") ===
+          "a1-000,a2-000,a3-000,a4-000,a5-000,a6-000,a7-000"
+      );
+    })(),
   );
   check(
     "criterion NAMES never cross the wire as question keys",

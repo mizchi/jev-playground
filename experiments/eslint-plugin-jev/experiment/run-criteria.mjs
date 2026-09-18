@@ -79,6 +79,8 @@ function parseArgs(argv) {
       case "--from":
         opts.from = next();
         break;
+      case "--current-thresholds":
+        break;
       default:
         throw new Error(`unknown flag ${argv[i]}`);
     }
@@ -110,6 +112,7 @@ const keys = units.map(labelKey);
 const entryFor = new Map(units.map((u) => [labelKey(u), labelOf(u)]));
 const labelFor = new Map(units.map((u) => [labelKey(u), labelOf(u).label]));
 const coversFor = new Map(units.map((u) => [labelKey(u), labelOf(u).covers ?? null]));
+const tierFor = new Map(units.map((u) => [labelKey(u), labelOf(u).tier ?? null]));
 
 if (dump) {
   opts.repeat = dump.repeat;
@@ -167,7 +170,19 @@ for (const rubric of dump ? [] : opts.rubrics) {
 
 // --------------------------------------------------------------------- score
 
-const t = DEFAULT_THRESHOLDS;
+/**
+ * On replay, score with the thresholds the run was RECORDED with.
+ *
+ * Without this, retuning a cutoff silently rewrites every number in an
+ * already-published report, and `--from` stops being a record of anything.
+ * `--current-thresholds` opts into the other reading -- what today's defaults
+ * would have done to that run -- which is how the retune in docs/22's
+ * addendum was measured.
+ */
+const t =
+  dump && dump.thresholds && !process.argv.includes("--current-thresholds")
+    ? { ...DEFAULT_THRESHOLDS, ...dump.thresholds }
+    : DEFAULT_THRESHOLDS;
 const line = (...cells) => console.log(cells.join(""));
 const isOk = (label) => label === "clean" || label === "nearmiss";
 
@@ -178,7 +193,13 @@ function pool(rubric) {
     for (const key of keys) {
       const verdict = round.get(key);
       if (!verdict) continue;
-      out.push({ key, label: labelFor.get(key), covers: coversFor.get(key), verdict });
+      out.push({
+        key,
+        label: labelFor.get(key),
+        covers: coversFor.get(key),
+        tier: tierFor.get(key),
+        verdict,
+      });
     }
   }
   return out;
@@ -225,8 +246,9 @@ console.log(
 const namedBugs = keys.filter((k) => labelFor.get(k) === "bug" && coversFor.get(k) !== "unnamed");
 const unnamedBugs = keys.filter((k) => coversFor.get(k) === "unnamed");
 console.log(
-  `         of the bugs, ${namedBugs.length} are in a NAMED class and ` +
-    `${unnamedBugs.length} are held out (class not in the eight)`,
+  `         of the ${namedBugs.length + unnamedBugs.length} bugs, ${namedBugs.length} are in a NAMED class ` +
+    `and ${unnamedBugs.length} are held out; ${keys.filter((k) => tierFor.get(k) === "hard").length} ` +
+    `of all of them are \`hard\` (need knowledge outside the function's text)`,
 );
 console.log(`RUBRICS  ${opts.rubrics.join(", ")} x ${opts.repeat} repeat(s), arm ${opts.arm}`);
 console.log(
@@ -239,37 +261,54 @@ console.log(
 );
 
 console.log("");
-console.log("Q1/Q2  THE GATE, bug vs (clean+nearmiss), and the named/held-out split");
-line(
-  "  rubric     ",
-  "fires  ",
-  "caught      ",
-  "named       ",
-  "held out    ",
-  "false pos   ",
-  "balanced",
-);
+console.log("Q1  THE GATE, bug vs (clean+nearmiss)");
+line("  rubric     ", "fires  ", "caught      ", "false pos   ", "balanced");
 for (const rubric of opts.rubrics) {
   const rows = pool(rubric).filter((x) => x.label === "bug" || isOk(x.label));
   const c = confuseBool(rows.map((x) => ({ predicted: fires(x.verdict), truth: x.label === "bug" })));
-  const half = (which) => {
-    const sub = rows.filter(
-      (x) => x.label === "bug" && (which === "unnamed") === (x.covers === "unnamed"),
-    );
-    return `${sub.filter((x) => fires(x.verdict)).length}/${sub.length}`;
-  };
   line(
     `  ${rubric.padEnd(11)}`,
     `${String(c.tp + c.fp).padEnd(7)}`,
     `${`${c.tp}/${c.tp + c.fn}`.padEnd(12)}`,
-    `${half("named").padEnd(12)}`,
-    `${half("unnamed").padEnd(12)}`,
     `${`${c.fp}/${c.fp + c.tn}`.padEnd(12)}`,
     pct(c.balanced),
   );
 }
+
+console.log("");
+console.log("Q2  THE TWO AXES  -- is the class NAMED, and is the defect visible from the text?");
+line(
+  "  rubric     ",
+  "named/easy  ",
+  "named/hard  ",
+  "unnamed/easy  ",
+  "unnamed/hard  ",
+  "hard: named vs not",
+);
+for (const rubric of opts.rubrics) {
+  const rows = pool(rubric).filter((x) => x.label === "bug");
+  const cellOf = (named, tier) => {
+    const r = rows.filter((x) => (x.covers !== "unnamed") === named && x.tier === tier);
+    return { fired: r.filter((x) => fires(x.verdict)).length, n: r.length };
+  };
+  const nh = cellOf(true, "hard");
+  const uh = cellOf(false, "hard");
+  const rate = (c) => (c.n === 0 ? Number.NaN : c.fired / c.n);
+  const show = (c) => `${c.fired}/${c.n}`;
+  line(
+    `  ${rubric.padEnd(11)}`,
+    `${show(cellOf(true, "easy")).padEnd(12)}`,
+    `${show(nh).padEnd(12)}`,
+    `${show(cellOf(false, "easy")).padEnd(14)}`,
+    `${show(uh).padEnd(14)}`,
+    `${pct(rate(nh))} vs ${pct(rate(uh))}`,
+  );
+}
 console.log(
-  "  `named` are the 12 bugs whose class IS one of the eight criteria; `held out` are the 5 whose class is not.",
+  "  docs/22's first held-out set was all `unnamed/easy`, where naming makes no difference at all.",
+);
+console.log(
+  "  The hole is the `unnamed/hard` column, and its depth is the gap in the last one.",
 );
 
 console.log("");
@@ -523,10 +562,23 @@ if (jev.calls > 0) {
   );
 }
 
+/**
+ * Recordings are machine-read, so they are written compactly and the
+ * probabilities are rounded to 4 decimals. Every number this report prints is
+ * a 2- or 3-decimal figure and every cutoff has 2, so the rounding is lossless
+ * for the tables -- and it takes `out-loo.json` from 900 KB to a size worth
+ * committing. The replays are checked against the full-precision numbers.
+ */
+function compact(value) {
+  return JSON.stringify(value, (_key, v) =>
+    typeof v === "number" && !Number.isInteger(v) ? Number(v.toFixed(4)) : v,
+  );
+}
+
 if (opts.out) {
   writeFileSync(
     opts.out,
-    `${JSON.stringify(
+    `${compact(
       {
         at: new Date().toISOString(),
         model: jev.model,
@@ -545,8 +597,6 @@ if (opts.out) {
           ),
         })),
       },
-      null,
-      2,
     )}\n`,
   );
   console.log(`raw -> ${opts.out}`);
