@@ -147,19 +147,21 @@ pub fn Value::show_text(self : Value) -> String {
 }
 
 ///|
-/// An integer prints bare; anything else gets two decimals.
+/// Always two decimals, so `2` prints as `2.00`.
+///
+/// Every number in this language is a judgment's value — a probability in
+/// 0..1 or a score in 0..n — or a threshold literal, so a fixed two places is
+/// the right default and matches what a host reporting these numbers does
+/// (the permission hook's `toFixed(2)`). An integer special case would also be
+/// one more branch for the two implementations to disagree about.
 pub fn format_number(v : Double) -> String {
   let rounded = (v * 100.0 + (if v < 0.0 { -0.5 } else { 0.5 })).to_int()
-  if rounded % 100 == 0 {
-    "\{rounded / 100}"
-  } else {
-    let neg = rounded < 0
-    let mag = if neg { -rounded } else { rounded }
-    let whole = mag / 100
-    let frac = mag % 100
-    let digits = if frac < 10 { "0\{frac}" } else { "\{frac}" }
-    "\{if neg { "-" } else { "" }}\{whole}.\{digits}"
-  }
+  let neg = rounded < 0
+  let mag = if neg { -rounded } else { rounded }
+  let whole = mag / 100
+  let frac = mag % 100
+  let digits = if frac < 10 { "0\{frac}" } else { "\{frac}" }
+  "\{if neg { "-" } else { "" }}\{whole}.\{digits}"
 }
 
 ///|

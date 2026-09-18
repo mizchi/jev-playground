@@ -335,11 +335,12 @@ criteria を書けないポリシーは**正しく書けません**。そこで
 言語に文字列結合も代入も無いのでポリシーからは書けませんでした。
 `flagged(destructive, irreversible, ...)` が `threshold flag` 以上のものだけを
 「名前 値」で並べます(**束縛名を受ける**のが肝で、式を受けると名前が消える)。
-今は組み込みと同じ理由文が出ます:
+数値の桁も揃えました([15 §6](15-jevlang.md#6-正直な限界))。
+今は組み込みと同じ形の理由文が出ます(値の差は 2 回の独立したリクエストの分):
 
 ```
-組み込み: ... blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.88, outside_project 0.98, affects_others 0.71
-ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
+組み込み: ... blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
+ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.77
 ```
 
 3 つめは `match` の gate 条件の修正で、これは**言語側のバグ**でした
@@ -402,9 +403,10 @@ node hooks/test-gate.mjs --compare-policy
 - **`--policy` 経路は組み込み経路の監査ログの一部を持ちません**
   (`from_score` / `from_atoms` は `.jev` の中の中間変数なので、
   ログには `null` が入る)。理由文には permission と blast が入っています。
-- **数値の桁が組み込み経路と違います。** `.jev` の数値表示は整数を裸で出すので
-  `blast radius 2/3`、組み込みは `toFixed(2)` で `2.00/3`。
-  意味は同じですが見た目が揃いません([15 §6](15-jevlang.md#6-正直な限界))。
+- **理由文に閾値が入りません。** 組み込みは
+  `(confidence 0.99, ask at 0.5, deny at 1.5)` と閾値まで出しますが、
+  `.jev` から `threshold` 宣言を値として読む手段が無いので confidence までです。
+  文字列に直書きすれば出せますが、宣言と二重管理になって drift します。
 - **ポリシーファイルは信頼された入力です。** `.jev` は副作用を
   ホストに渡すだけなので任意コード実行はしませんが、
   **判定を全部 `defer` にするポリシーを置けばゲートは無効化できます**。

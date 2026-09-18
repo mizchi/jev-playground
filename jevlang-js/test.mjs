@@ -147,13 +147,14 @@ check("interpolation is parsed into parts", () => {
 // The table that keeps the two implementations from diffing on formatting
 // rather than on semantics. Must match jevlang_test.mbt exactly.
 check("numbers format the same way in both implementations", () => {
-  eq(formatNumber(1.0), "1");
-  eq(formatNumber(0.0), "0");
+  eq(formatNumber(1.0), "1.00");
+  eq(formatNumber(0.0), "0.00");
   eq(formatNumber(1.5), "1.50");
   eq(formatNumber(0.97), "0.97");
   eq(formatNumber(0.055), "0.06");
-  eq(formatNumber(2.0), "2");
+  eq(formatNumber(2.0), "2.00");
   eq(formatNumber(-1.25), "-1.25");
+  eq(formatNumber(3.0), "3.00");
 });
 
 // noul criteria go in `options`, which is how they join a judgment's

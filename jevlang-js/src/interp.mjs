@@ -549,7 +549,13 @@ function show(value) {
 }
 
 /**
- * An integer prints bare; anything else gets two decimals.
+ * Always two decimals, so `2` prints as `2.00`.
+ *
+ * Every number in this language is a judgment's value — a probability in
+ * 0..1 or a score in 0..n — or a threshold literal, so a fixed two places is
+ * the right default and matches what a host reporting these numbers does
+ * (the permission hook's `toFixed(2)`). An integer special case would also be
+ * one more branch for the two implementations to disagree about.
  *
  * `trunc(v * 100 +/- 0.5)` rather than `Math.round`, because Math.round breaks
  * ties toward +Infinity while MoonBit's `.to_int()` truncates toward zero —
@@ -557,7 +563,6 @@ function show(value) {
  */
 function formatNumber(v) {
   const rounded = Math.trunc(v * 100 + (v < 0 ? -0.5 : 0.5));
-  if (rounded % 100 === 0) return String(rounded / 100);
   const neg = rounded < 0;
   const mag = Math.abs(rounded);
   const whole = Math.floor(mag / 100);

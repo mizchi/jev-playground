@@ -148,13 +148,14 @@ test "interpolation is parsed into parts" {
 /// Both implementations render numbers through this, so a conformance diff
 /// means a semantic difference rather than a formatting one.
 test "numbers format the same way in both implementations" {
-  assert_eq(@jevlang.format_number(1.0), "1")
-  assert_eq(@jevlang.format_number(0.0), "0")
+  assert_eq(@jevlang.format_number(1.0), "1.00")
+  assert_eq(@jevlang.format_number(0.0), "0.00")
   assert_eq(@jevlang.format_number(1.5), "1.50")
   assert_eq(@jevlang.format_number(0.97), "0.97")
   assert_eq(@jevlang.format_number(0.055), "0.06")
-  assert_eq(@jevlang.format_number(2.0), "2")
+  assert_eq(@jevlang.format_number(2.0), "2.00")
   assert_eq(@jevlang.format_number(-1.25), "-1.25")
+  assert_eq(@jevlang.format_number(3.0), "3.00")
 }
 
 ///|

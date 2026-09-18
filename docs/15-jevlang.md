@@ -88,6 +88,7 @@ scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラ�
 | 閾値はコード側で決める([01](01-shell-risk.md#3-順序のある結論は-score-で聞く)) | `threshold noul = 0.5` が宣言。**質問文に閾値を書く場所が無い** |
 | 順序のある結論は `score`([01](01-shell-risk.md)) | `score(...)` は数値を返し、**条件に使うには比較が必須** |
 | 名前だけの choice が最安([00](00-api-notes.md#name-only)) | `choice` の選択肢に説明を書く構文が無い |
+| 数値はすべて judgment の値 | 表示は**常に小数 2 桁**。整数の特別扱いを持たない(§6) |
 
 そして**確率的な言語には record/replay が必須**だとわかりました。
 同じプログラムが毎回違う分岐を通るので、それ無しでは
@@ -366,6 +367,12 @@ let why = "permission ${permission}/2 (confidence ${pconf}), blast radius ${blas
 ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
 ```
 
+数値の桁も揃えました。`format_number` が整数を裸で出していたので
+`blast radius 2/3` になっていたのを、**常に小数 2 桁**に変えています
+(組み込みの `toFixed(2)` と同じ)。この言語の数値はすべて judgment の値か
+閾値リテラルなので 2 桁固定が素直で、整数の特別扱いは
+**2 実装がずれる分岐が 1 つ増える**だけでした。
+
 そして**ここで §3 の設計バグが出ました。** 1 つも撃たなかったときの言い換えに
 `match fired { "" => ... else => ... }` を使いたかったのですが、
 当初の実装は **subject を見ずに `else` 腕へ gate を付けていた**ので、
@@ -418,6 +425,12 @@ node hooks/test-gate.mjs --policy-logic
   **やった → §9。** `flagged()` を足して、理由文が
   `Flagged: destructive 0.98, irreversible 0.89, ...` を出せるようになりました。
   `+` は足していません(補間で足りた)。
-- **数値の桁が組み込み経路と違う。** `format_number` は整数を裸で出すので
-  `blast radius 2/3`、組み込みは `toFixed(2)` で `2.00/3`。
-  意味は同じですが、揃えるには `fixed(x, 2)` 相当が要ります。
+- ~~**数値の桁が組み込み経路と違う。**~~ **揃えた。** `format_number` は
+  常に小数 2 桁を出します(`2` → `2.00`)。この言語の数値はすべて
+  judgment の値(0..1 の確率か 0..n のスコア)か閾値リテラルなので、
+  2 桁固定が素直な既定で、整数の特別扱いは**2 実装がずれる分岐が 1 つ増える**だけでした。
+- **理由文に閾値を書けない。** 組み込みは
+  `(confidence 0.99, ask at 0.5, deny at 1.5)` と閾値まで出しますが、
+  `threshold` 宣言を値として読む手段が無いので、ポリシー側は confidence までです。
+  文字列に直書きすれば出せますが、**宣言と二重管理になって drift する**ので
+  やっていません。
