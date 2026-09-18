@@ -46,6 +46,11 @@ So `framing` is a setting, and its default here is **`cost`**. A resident
 agent's expensive error is the unnecessary fan-out — every spurious worker is a
 full-price session — and keeping a cheap agent cheap is what this is for.
 
+> **Read the cutoff section below before taking the 21 points at face value.**
+> Both columns above were scored at a shared 0.5, and the two wordings answer
+> on different scales. Give each its own cutoff and the gap narrows to 8
+> points: most of the dial was the threshold, not the wording.
+
 `--both` asks both wordings in one request. When they disagree, the request is
 on the boundary, and that is more useful than either answer alone.
 
@@ -66,6 +71,32 @@ All eight stay in the question even when the host cannot run them, because
 removing an option changes the question and the 22/22 was over all eight.
 A pattern the host cannot run is **substituted afterwards** from the same
 answer's probability distribution, at no extra request.
+
+## The two wordings cannot share a cutoff
+
+docs/31 §8 fitted the gate's cutoff on the same 38 scenarios, from the record,
+with no new requests. The finding was not the number but the reason there have
+to be two:
+
+| wording | min | max | mean(single) | mean(multi) | draw sd |
+| --- | --- | --- | --- | --- | --- |
+| cost named | 0.090 | 0.780 | 0.208 | 0.406 | 0.012 |
+| cost unnamed | 0.110 | 0.950 | 0.320 | 0.665 | 0.013 |
+
+**The two answer on different scales.** Read at a shared 0.5, the compressed
+one merely *looks* strict — which is a large part of what §2b measured as a
+framing effect. Give each its own cutoff and the plain-agreement gap between
+them narrows from 20 points (66 vs 89 of 114) to 8 (84 vs 93).
+
+So `GATE_AT` is `{ cost: 0.5, plain: 0.73 }`, and `gateAt: null` (the default)
+resolves from the framing. The shipped 0.5 was right — because it is the
+`cost` wording's zero-false-positive point on this corpus, not because it is a
+round number. The same 0.5 applied to `plain` is the **worst** of the nine
+configurations measured: held-out loss 1.167 against 0.579 for doing nothing.
+
+Six of those nine lost to always-single. A gate has to be compared against
+doing the cheap thing, which is docs/36 §5's lesson arriving in a second
+component.
 
 ## The cost lives in the policy, not the prompt
 
@@ -111,8 +142,10 @@ identical string and the across-task spread came in *below* the draw noise.
   cells hold 4 to 22 cases each.
 - The 22/22 topology figure is at the ceiling, so that corpus cannot compare
   ways of asking it — more confusable scenarios are needed.
-- `gateAt` (0.5) is unfitted. `experiments/hermes` found that under the strict
-  `cost` framing the gate answered 0.055–0.446 across eight varied turns —
-  **entirely below 0.5**, so at this default the gate almost never fires. That
-  is consistent with docs/31 §2b's 6/22 and it means the cutoff wants fitting
-  against docs/31's labelled scenarios, per the framing in use.
+- The cutoffs are fitted on 38 scenarios with 5 folds, which is small. The
+  `plain` figure of 0.73 in particular comes from a placement rule whose fold
+  cutoffs held still (0.70–0.73), not from a wide gap — all three wordings
+  come back `overlapping`, so no cutoff here is both sound and complete.
+- The fit is in the **asymmetric** regime (a false positive costing ~10× a
+  false negative). If errors are symmetric, `plain` at 0.5 is the better
+  configuration and these defaults are wrong for you; set `gateAt`.

@@ -287,6 +287,12 @@ test-orchestration: install-orchestration
 replay-orchestration: install-orchestration
     npm --prefix experiments/orchestration run demo
 
+# @inputs: experiments/orchestration/** experiments/shared/**
+# @cost: 0.4
+# Fit the gate's cutoff per framing on the same record (docs/31 §8). No API key.
+fit-orchestration: install-orchestration
+    npm --prefix experiments/orchestration run fit
+
 # @inputs: experiments/repair/** experiments/shared/**
 # @cost: 1.2
 # Check the repair corpus: every task starts red and the recorded truth is not stale
@@ -459,5 +465,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
     @echo "all green"

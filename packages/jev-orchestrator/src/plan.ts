@@ -9,6 +9,7 @@ import { Jev, noulOf, type SystemOneResponse } from "@jev-playground/jev-core";
 import {
   GATE,
   SIZE,
+  gateAtFor,
   STAY_SINGLE,
   TOPOLOGY,
   questionsFor,
@@ -59,7 +60,12 @@ export async function plan(
   input: PlanInput,
   opts: { config?: Partial<PlanConfig>; jev?: Jev } = {},
 ): Promise<PlanResult> {
-  const config: PlanConfig = { ...DEFAULT_PLAN_CONFIG, ...opts.config };
+  const merged: PlanConfig = { ...DEFAULT_PLAN_CONFIG, ...opts.config };
+  // The framing decides the cutoff, so it is resolved HERE -- once, where both
+  // are known -- rather than inside `decide()`, which is framing-free on
+  // purpose (docs/31 §2: the cost belongs in the policy, and the policy must
+  // not depend on how the question was worded beyond this one number).
+  const config: PlanConfig = { ...merged, gateAt: gateAtFor(merged.framing, opts.config?.gateAt) };
   const started = Date.now();
 
   let jev: Jev;
@@ -115,5 +121,7 @@ export {
   payloadOf,
   questionsFor,
   stateFor,
+  GATE_AT,
+  gateAtFor,
 } from "./questions.js";
 export type { Framing, Pattern, PlanInput } from "./questions.js";

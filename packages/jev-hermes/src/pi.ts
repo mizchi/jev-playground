@@ -54,7 +54,14 @@ import {
 } from "jev-skill-router";
 import { guard, type GuardConfig, type GuardResult } from "jev-guard";
 import { compact, entriesOf, totalTokens, type CompactConfig, type MessageLike } from "jev-compact";
-import { brief, decide as decidePlan, judgmentOf as planJudgment, type Plan } from "jev-orchestrator";
+import {
+  DEFAULT_ORCHESTRATOR_CONFIG,
+  brief,
+  decide as decidePlan,
+  gateAtFor,
+  judgmentOf as planJudgment,
+  type Plan,
+} from "jev-orchestrator";
 import { Budget, type BudgetConfig } from "./budget.js";
 import { HERMES_ROUTER } from "./tiers.js";
 import { askTurn, keyGroups, type TurnConfig } from "./turn.js";
@@ -71,7 +78,13 @@ export interface HermesSettings {
   skills?: Partial<SkillRouterConfig> & { enabled?: boolean; always?: string[]; never?: string[] };
   guard?: Partial<GuardConfig> & { enabled?: boolean };
   compact?: Partial<CompactConfig> & { enabled?: boolean; startAt?: number };
-  orchestrator?: { enabled?: boolean; framing?: "cost" | "plain"; advise?: "turn" | "tool" };
+  orchestrator?: {
+    enabled?: boolean;
+    framing?: "cost" | "plain";
+    advise?: "turn" | "tool";
+    /** Null or absent takes the framing's fitted cutoff (docs/31 §8). */
+    gateAt?: number | null;
+  };
   /** Ask the three per-turn components in one request. See turn.ts. */
   combine?: boolean;
 }
@@ -280,7 +293,16 @@ export default function hermes(pi: ExtensionAPI): void {
           outcome.skills = selectFrom(picks, noneApply, skillConfig).load;
         }
         if (wantsOrchestration) {
-          outcome.plan = decidePlan(planJudgment(res), { ...settings.orchestrator, ...config } as never);
+          // The cutoff comes from the FRAMING (docs/31 §8: the two wordings
+          // answer on different scales, so `plain` at 0.5 is the worst of the
+          // nine configurations measured). `plan()` does this resolution for
+          // its own callers; here `decide()` is called directly, so it is done
+          // here -- and explicitly, rather than through a cast that would hide
+          // which config field ended up in force.
+          outcome.plan = decidePlan(planJudgment(res), {
+            ...DEFAULT_ORCHESTRATOR_CONFIG,
+            gateAt: gateAtFor(config.framing, settings.orchestrator?.gateAt),
+          });
         }
       } else if (enabled("model")) {
         // No judgment: the model router's own no-judgment path, which returns

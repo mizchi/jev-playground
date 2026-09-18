@@ -13,6 +13,8 @@ import {
   DEFAULT_ORCHESTRATOR_CONFIG,
   DEFAULT_PLAN_CONFIG,
   GATE,
+  GATE_AT,
+  gateAtFor,
   PATTERNS,
   SIZE,
   STAY_SINGLE,
@@ -210,6 +212,61 @@ tests.push(
     ok(p.reason.includes("disagrees"), "the disagreement is not surfaced");
     eq(decide(judgment({ staySingle: 0.1 })).agreement, "agree");
     eq(decide(judgment({ staySingle: Number.NaN })).agreement, "unknown");
+  }),
+);
+
+tests.push(
+  check("the two framings do not share a cutoff", () => {
+    // The finding from docs/31 §8: the wordings answer on different scales
+    // (cost named tops out at 0.78 with means 0.208/0.406; cost unnamed reaches
+    // 0.95 with means 0.320/0.665). Read at a shared 0.5 the compressed one
+    // merely LOOKS strict. One number for both is the bug this asserts against.
+    ok(GATE_AT.cost !== GATE_AT.plain, "both framings were given the same cutoff");
+    ok(GATE_AT.plain > GATE_AT.cost, "the wider-scaled wording did not get the higher cutoff");
+    // The specific measured pair, so a drift shows up as a failure rather than
+    // as a quietly different policy.
+    eq(GATE_AT.cost, 0.5);
+    eq(GATE_AT.plain, 0.73);
+  }),
+);
+
+tests.push(
+  check("a pinned cutoff wins over the framing's fitted one", () => {
+    eq(gateAtFor("cost", null), GATE_AT.cost);
+    eq(gateAtFor("plain", undefined), GATE_AT.plain);
+    eq(gateAtFor("plain", 0.5), 0.5, "a caller's explicit cutoff was overridden: ");
+    // Zero is a real cutoff, not a missing one.
+    eq(gateAtFor("cost", 0), 0);
+  }),
+);
+
+tests.push(
+  check("the same gate answer decides differently under the two framings", () => {
+    // The consequence, spelled out. 0.60 is above `cost`'s 0.50 and below
+    // `plain`'s 0.73, so it splits under one wording and not the other --
+    // which is the whole reason the cutoff cannot be shared.
+    const at = (framing: "cost" | "plain"): ReturnType<typeof decide> =>
+      decide(judgment({ gate: 0.6 }), {
+        ...DEFAULT_ORCHESTRATOR_CONFIG,
+        gateAt: gateAtFor(framing, null),
+        unavailable: [],
+      });
+    eq(at("cost").split, true, "the strict wording did not fire at 0.60: ");
+    eq(at("plain").split, false, "the permissive wording fired at 0.60: ");
+  }),
+);
+
+tests.push(
+  check("an unresolved cutoff falls back to the default framing's, not to a bare 0.5", () => {
+    // docs/31 §8 measured `plain` at 0.5 as the WORST of nine configurations
+    // (held-out loss 1.167 against 0.579 for doing nothing), so a bare 0.5 is
+    // not a safe default for a framing nobody named. It happens to coincide
+    // with `cost`'s fitted number, which is why this asserts the SOURCE.
+    const p = decide(judgment({ gate: 0.6 }), { ...DEFAULT_ORCHESTRATOR_CONFIG, gateAt: null, unavailable: [] });
+    eq(p.split, true, "a null cutoff did not resolve to the cost framing's: ");
+    const below = decide(judgment({ gate: 0.4 }), { ...DEFAULT_ORCHESTRATOR_CONFIG, gateAt: null });
+    eq(below.split, false);
+    ok(below.reason.includes(String(GATE_AT.cost)), `the reason does not name the cutoff used: ${below.reason}`);
   }),
 );
 

@@ -8,18 +8,18 @@
  * belong here: how many workers, a ceiling, and a floor under which fanning
  * out is refused whatever the gate says.
  */
-import { PARALLEL, type Pattern } from "./questions.js";
+import { GATE_AT, PARALLEL, type Pattern } from "./questions.js";
 
 export interface OrchestratorConfig {
   /**
    * The gate fires at or above this.
    *
-   * Unfitted. docs/31 scored the gate against the skill's own labels at a
-   * 0.5 reading, and docs/25's rule stands: a cutoff belongs to a corpus.
-   * The one thing known about this number is the direction to move it --
-   * up refuses more splits, which for a resident agent is the safe side.
+   * Null means "use the cutoff fitted for the framing in use", which is what
+   * `plan()` resolves via `gateAtFor`. A number pins it regardless of framing,
+   * which is almost always the wrong thing -- see `GATE_AT` for why the two
+   * wordings cannot share one.
    */
-  gateAt: number;
+  gateAt: number | null;
   /** The most workers a plan may ask for. */
   maxWorkers: number;
   /**
@@ -37,7 +37,11 @@ export interface OrchestratorConfig {
 }
 
 export const DEFAULT_ORCHESTRATOR_CONFIG: OrchestratorConfig = {
-  gateAt: 0.5,
+  // Null, not 0.5: the cutoff belongs to the framing (see GATE_AT). `decide()`
+  // falls back to the `cost` framing's number when nobody resolved it, which
+  // is the shipped default framing, so a caller that ignores all of this gets
+  // the configuration docs/31 §8 measured as best in the asymmetric regime.
+  gateAt: null,
   maxWorkers: 3,
   minSize: 0.5,
   // `evolution` searches over workflows and `blackboard` wants a durable
@@ -88,21 +92,26 @@ function workersFor(pattern: Pattern, size: number, max: number): number {
  * change cannot quietly make "no judgment" mean "fan out".
  */
 export function decide(judgment: Judgment | null, config: OrchestratorConfig = DEFAULT_ORCHESTRATOR_CONFIG): Plan {
+  // A null cutoff means `plan()` did not resolve one from the framing. Fall
+  // back to the default framing's fitted number rather than to a round 0.5:
+  // docs/31 §8 measured `plain` at 0.5 as the worst configuration of the nine
+  // it tried, so a bare 0.5 is not a safe default for an unknown framing.
+  const gateAt = config.gateAt ?? GATE_AT.cost;
   if (!judgment || !Number.isFinite(judgment.gate)) {
     return { shape: "single", workers: 1, split: false, reason: "no judgment; one worker", agreement: "unknown" };
   }
   const agreement: Plan["agreement"] = !Number.isFinite(judgment.staySingle)
     ? "unknown"
-    : (judgment.gate >= config.gateAt) === judgment.staySingle < 0.5
+    : (judgment.gate >= gateAt) === judgment.staySingle < 0.5
       ? "agree"
       : "disagree";
 
-  if (judgment.gate < config.gateAt) {
+  if (judgment.gate < gateAt) {
     return {
       shape: "single",
       workers: 1,
       split: false,
-      reason: `the gate reads ${judgment.gate.toFixed(2)}, below ${config.gateAt}`,
+      reason: `the gate reads ${judgment.gate.toFixed(2)}, below ${gateAt}`,
       agreement,
     };
   }

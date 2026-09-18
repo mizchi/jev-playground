@@ -9,6 +9,9 @@
  * scenario's text or any question hands over the gate -- not the numbering,
  * not the boolean, not the pattern names.
  */
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { GATE_AT } from "../../packages/jev-orchestrator/src/questions.js";
 import {
   ARMS,
   BIG_ENOUGH,
@@ -203,6 +206,61 @@ check("the baseline falls for at least one of the skill's own traps", () => {
   // test -- that the words are present while the answer is single.
   const fooled = SCENARIOS.filter((s) => s.trap && ruleVerdict(s).multi !== goMulti(s.conditions));
   ok(fooled.length > 0, "no trap fools the keyword rule, so the traps are not word-shaped");
+});
+
+// --------------------------------------------------------- the fitted cutoffs
+
+check("the cutoffs jev-orchestrator ships are the ones this record supports", () => {
+  // `GATE_AT` is two numbers in a package, derived from the record in this
+  // directory by src/fit.ts. Nothing otherwise connects them, so a drift in
+  // either would leave the package claiming a measurement it no longer has.
+  // Both facts the configuration rests on are re-derived here from the raw
+  // rows, without importing the fitting code.
+  const path = resolve(import.meta.dirname, "records/orchestration.json");
+  if (!existsSync(path)) return;
+  const rows = (JSON.parse(readFileSync(path, "utf8")) as {
+    scenario: string;
+    arm: string;
+    decision: number;
+    decisionPlain: number;
+  }[]).filter((r) => r.arm === "all" && Number.isFinite(r.decision));
+  const label = new Map(SCENARIOS.map((s) => [s.id, s.topology !== "single"]));
+  const count = (value: (r: (typeof rows)[number]) => number, at: number) => {
+    let fp = 0;
+    let fn = 0;
+    let tp = 0;
+    for (const r of rows) {
+      const fires = value(r) >= at;
+      const positive = label.get(r.scenario) ?? false;
+      if (fires && !positive) fp += 1;
+      else if (!fires && positive) fn += 1;
+      else if (fires) tp += 1;
+    }
+    return { tp, fp, fn };
+  };
+
+  // (1) `cost` at 0.5 is that wording's zero-false-positive point. This is
+  // why the shipped default is right rather than merely round.
+  const cost = count((r) => r.decision, GATE_AT.cost);
+  eq(cost.fp, 0, `cost named at ${GATE_AT.cost} now has false positives: `);
+  ok(cost.tp > 0, "cost named at its cutoff catches nothing, so the gate is off");
+
+  // (2) `plain` at the same 0.5 is NOT, and by enough to lose to doing
+  // nothing when a false positive costs ten times a false negative. That is
+  // the whole reason the two framings cannot share a number.
+  const plainAtHalf = count((r) => r.decisionPlain, 0.5);
+  ok(plainAtHalf.fp > 0, "cost unnamed at 0.5 has no false positives; the fitted pair is stale");
+  const loss = (c: { fp: number; fn: number }) => (c.fp * 10 + c.fn) / rows.length;
+  const nothing = rows.filter((r) => label.get(r.scenario)).length / rows.length;
+  ok(
+    loss(plainAtHalf) > nothing,
+    `cost unnamed at 0.5 now beats always-single (${loss(plainAtHalf).toFixed(3)} vs ${nothing.toFixed(3)})`,
+  );
+  // And its own fitted cutoff does beat it, which is what makes it usable.
+  ok(
+    loss(count((r) => r.decisionPlain, GATE_AT.plain)) < nothing,
+    `cost unnamed at ${GATE_AT.plain} does not beat always-single`,
+  );
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

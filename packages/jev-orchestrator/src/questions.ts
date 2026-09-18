@@ -76,6 +76,49 @@ export const PARALLEL: ReadonlySet<Pattern> = new Set<Pattern>(["fanout", "super
 export type Framing = "cost" | "plain";
 
 /**
+ * The gate's cutoff, per framing, fitted on docs/31's 38 scenarios.
+ *
+ * `experiments/orchestration/src/fit.ts` (no API key; the record already
+ * exists) and its write-up in docs/31 §8. The headline reason these are two
+ * numbers and not one: THE TWO WORDINGS ANSWER ON DIFFERENT SCALES.
+ *
+ *   wording        min    max    mean(single)   mean(multi)   draw sd
+ *   cost named     0.090  0.780  0.208          0.406         0.012
+ *   cost unnamed   0.110  0.950  0.320          0.665         0.013
+ *
+ * Read at a shared 0.5, the compressed wording looks strict -- which is a
+ * large part of what docs/31 §2b measured as a framing effect. On plain
+ * agreement, giving each wording its own cutoff narrows the gap between them
+ * from 20 points (66 vs 89 of 114) to 8 (84 vs 93).
+ *
+ * The values below are NOT the accuracy-maximising cutoffs. They are the ones
+ * that minimise a cost-weighted loss in the regime a resident agent is in --
+ * an unnecessary worker is a whole extra session, so a false positive costs
+ * about ten times a false negative -- restricted to the placements whose
+ * cross-validation fold cutoffs held still (docs/25 §2). At penalty 10, six
+ * of the nine configurations tried came out WORSE than always-single, so this
+ * is a narrow target rather than a matter of taste:
+ *
+ *   wording        cutoff   tp/fp/fn/tn (held out)   loss   vs always-single
+ *   cost named     0.500    18/0/48/48               0.421  0.158 better
+ *   cost unnamed   0.730    36/2/30/46               0.439  0.140 better
+ *   cost unnamed   0.500    53/12/13/36              1.167  0.588 WORSE
+ *
+ * So `cost`'s shipped 0.5 was right, and it is right for a reason worth
+ * knowing: on this corpus it is that wording's zero-false-positive point.
+ * `plain` at the same 0.5 is the worst configuration measured.
+ *
+ * If errors are symmetric rather than asymmetric, these are the wrong numbers
+ * -- at penalty 1, `plain` at 0.5 wins. Set `gateAt` explicitly for that.
+ */
+export const GATE_AT: Record<Framing, number> = { cost: 0.5, plain: 0.73 };
+
+/** The fitted cutoff for a framing, or the caller's own if they pinned one. */
+export function gateAtFor(framing: Framing, pinned: number | null | undefined): number {
+  return typeof pinned === "number" ? pinned : GATE_AT[framing];
+}
+
+/**
  * The gate's two wordings, verbatim from docs/31's arms so the measured
  * numbers describe these strings and not a paraphrase of them.
  */
