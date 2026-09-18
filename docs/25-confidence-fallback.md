@@ -195,16 +195,47 @@ vlmkit の設計思想と同じ結論でもある。`check integrity` は「崩�
 プローブを in-page で書いたのは、vlmkit が Node 24 必須でこの環境が 22 だから
 という事情もあるが、driver に埋めるなら結局 in-page になる。
 
-## 6. chaosbringer 側への含意
+## 6. chaosbringer 側に入った(#142 / #143、どちらも merge 済み)
 
-`DriverCandidate` には **`bbox?` というフィールドが既にあって、crawler は一度も
-埋めていない**。つまり「ジオメトリを driver に渡す」入口は設計済みで、配線だけが
-無い。この実験の結果は、そこを埋める価値の見積もりになっている:
-**適合率 100% の無駄手検出器が、モデル呼び出し 0 回で手に入る。**
+本稿を書いた時点では、`DriverCandidate` に **`bbox?` というフィールドだけが
+あって crawler は一度も埋めていなかった**。入口は設計済みで配線が無い状態で、
+上の結果はそこを埋める価値の見積もりだった。いまは両方入っている。
 
-`minConfidence`([chaosbringer#142](https://github.com/mizchi/chaosbringer/pull/142)
-で追加した)は無駄ではない——「自信のない当て推量を実行しない」という目的には
+| | 入ったもの | 本稿の何に対応するか |
+| --- | --- | --- |
+| [#142](https://github.com/mizchi/chaosbringer/pull/142) | 候補一覧のステップ毎の作り直し、`DriverStep.currentUrl`、`aiDriver({ minConfidence })` | **05 §4** の指摘と、本稿が読もうとした信号 |
+| [#143](https://github.com/mizchi/chaosbringer/pull/143) | `bbox` を実際に埋める + `inViewport` / `inert` / `coveredBy` + `isObstructed()` | **本稿 §5** で効いたもの |
+
+つまり **05 が残した 2 つの信号が両方とも上流にある**。片方は
+「あったのに読んでいなかった」もの(`confidence`)、もう片方は
+「そもそも測っていなかった」もの(クリックが誰に届くか)で、
+効いたのは後者だった。
+
+`minConfidence` は無駄ではない——「自信のない当て推量を実行しない」という目的には
 そのまま効く。ただし**本稿の失敗モードには効かない**。両者は別の仕事をしている。
+
+### ただし上流の定義は本稿のプローブより狭い
+
+12/12 を出したのは `src/probes.ts` で、#143 に入ったものと**同じではない**。
+レビューを書きながら 2 か所を意図的に狭めた。どちらも
+「偽陽性は動くコントロールを飛ばさせるので、偽陰性より悪い」側に倒してある。
+
+| | 本稿のプローブ | #143 |
+| --- | --- | --- |
+| `inert` | `pointer-events: none` **または opacity < 0.4** | `pointer-events: none` **のみ** |
+| `coveredBy` | hit が自分と子孫でなければ報告 | **祖先と shadow host も除外** |
+| `enabled` | `disabled` / `aria-disabled` を見る | 不要(scrape が `:disabled` を先に落とす) |
+
+opacity を外したのは、**`opacity: 0.01` のボタンは普通にクリックできて、
+クリックは通る**から。「ユーザーに見えていたか」と「クリックが届くか」は
+別の問いで、後者だけが `TargetGeometry` の仕事である。祖先を外したのは、
+祖先が返ってくるのは大抵「その点で自分が hit-test 対象になっていない」
+ケースで、それは `inert` の話だからだ。shadow host の除外は必須で、
+`elementFromPoint` は shadow 内の点に対して**ホストを返す**うえ
+`host.contains(inner)` は false なので、入れないと
+**web component の中の全コントロールが「自分のホストに覆われている」と自称する。**
+
+だから **12/12 がそのまま上流で再現するとは言えない。** §8 の 1 本目がそれ。
 
 ## 7. わかったこと
 
@@ -221,8 +252,10 @@ vlmkit の設計思想と同じ結論でもある。`check integrity` は「崩�
 
 ## 8. 次に試すこと
 
-- `bbox` と `coveredBy` を chaosbringer の `DriverCandidate` に配線して、
-  同じ効果が `chaos({ driver })` 経由でも出るか。
+- **`chaos({ driver })` 経由で測り直す。** 配線は #143 で入ったが、12/12 を出したのは
+  本稿の in-page プローブで、上流の定義は §6 のとおり狭い。この盤面の 12 件は
+  全部「透明 backdrop に覆われた」ケースなので通ると思うが、
+  **思うと測ったは別**で、opacity を外した分がどこかで効いている可能性がある。
 - 無駄手の**別の種類**でも同じ非対称が出るか。ゲート済みボタン(state に材料が
   ある)は confidence が拾えていた。材料の有無で綺麗に分かれるなら、
   「confidence を読む前に、渡し忘れが無いか確かめる」が手順になる。
