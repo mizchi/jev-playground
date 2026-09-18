@@ -1,0 +1,205 @@
+///|
+/// Tests for the language itself: lexing, parsing, the hoisting analysis and
+/// number formatting. All of it runs without an API key, because none of it
+/// asks Jev anything — the parts that do are covered by
+/// `scripts/jevlang-conformance.sh`, which replays recorded transcripts
+/// through both implementations.
+
+///|
+let milk_program : String =
+  #|state {
+  #|  fridge: ["卵", "ビール"],
+  #|  wallet_yen: 100,
+  #|}
+  #|
+  #|threshold noul = 0.6
+  #|threshold gate = 0.4
+  #|
+  #|if noul("家に牛乳がない") {
+  #|  buy("牛乳")
+  #|}
+  #|
+  #|let result = match choice("100円で買うもの", ["プリン", "ビール"]) {
+  #|  "プリン" => buy("プリン")
+  #|  "ビール" => buy("ビール")
+  #|  else => buy("牛乳")
+  #|}
+  #|
+  #|let praised = score("${result} で褒められる確率", ["ない", "ある"])
+  #|
+
+///|
+test "parses the state block, thresholds and body" {
+  let program = @jevlang.parse(milk_program)
+  assert_eq(program.noul_threshold, 0.6)
+  assert_eq(program.gate_threshold, 0.4)
+  // noul + choice + gate + score
+  assert_eq(program.judgment_count, 4)
+  assert_eq(program.body.length(), 3)
+}
+
+///|
+test "the state block becomes the JSON that goes on the wire" {
+  let program = @jevlang.parse(milk_program)
+  let json = program.state.to_json()
+  match json {
+    Json::Object(m) => {
+      assert_eq(m.length(), 2)
+      match m.get("wallet_yen") {
+        Some(Json::Number(v, ..)) => assert_eq(v, 100.0)
+        _ => fail("wallet_yen should be a number")
+      }
+      match m.get("fridge") {
+        Some(Json::Array(items)) => assert_eq(items.length(), 2)
+        _ => fail("fridge should be an array")
+      }
+    }
+    _ => fail("the state should be an object")
+  }
+}
+
+///|
+/// The whole cost model: a question whose text is already known can ride the
+/// one batched request; one that interpolates a variable cannot.
+test "hoisting separates known questions from ones needing a runtime value" {
+  let program = @jevlang.parse(milk_program)
+  let (hoistable, lazy_count) = program.request_plan()
+  // noul, choice and the match's gate are all known up front.
+  assert_eq(hoistable, 3)
+  // `score("${result} ...")` has to wait for `result`.
+  assert_eq(lazy_count, 1)
+}
+
+///|
+test "a program with no interpolation hoists everything" {
+  let src =
+    #|if noul("牛乳がない") {
+    #|  buy("牛乳")
+    #|}
+    #|if noul("卵がない") {
+    #|  buy("卵")
+    #|}
+  let program = @jevlang.parse(src)
+  let (hoistable, lazy_count) = program.request_plan()
+  assert_eq(hoistable, 2)
+  assert_eq(lazy_count, 0)
+}
+
+///|
+/// A `match` without an `else` arm asks no gate question, so it costs one
+/// judgment rather than two.
+test "the gate question exists only when there is an else arm" {
+  let with_else_src =
+    #|let x = match choice("どれ", ["a", "b"]) {
+    #|  "a" => say("a")
+    #|  else => say("none")
+    #|}
+  let with_else = @jevlang.parse(with_else_src)
+  assert_eq(with_else.judgment_count, 2)
+  let without_else_src =
+    #|let x = match choice("どれ", ["a", "b"]) {
+    #|  "a" => say("a")
+    #|  "b" => say("b")
+    #|}
+  let without_else = @jevlang.parse(without_else_src)
+  assert_eq(without_else.judgment_count, 1)
+}
+
+///|
+test "lexing handles comments, escapes and non-ASCII identifiers" {
+  let src =
+    #|# a comment
+    #|牛乳を買う("a\nb")
+  let tokens = @jevlang.lex(src)
+  // ident ( str ) eof
+  assert_eq(tokens.length(), 5)
+  match tokens[0].tok {
+    TIdent(name) => assert_eq(name, "牛乳を買う")
+    _ => fail("the first token should be an identifier")
+  }
+  match tokens[2].tok {
+    TStr(parts) => {
+      assert_eq(parts.length(), 1)
+      match parts[0] {
+        Lit(s) => assert_eq(s, "a\nb")
+        Interp(_) => fail("no interpolation here")
+      }
+    }
+    _ => fail("the third token should be a string")
+  }
+}
+
+///|
+test "interpolation is parsed into parts" {
+  let tokens = @jevlang.lex("\"買った ${result} の評価\"")
+  match tokens[0].tok {
+    TStr(parts) => {
+      assert_eq(parts.length(), 3)
+      match parts[1] {
+        Interp(name) => assert_eq(name, "result")
+        Lit(_) => fail("the middle part should be an interpolation")
+      }
+    }
+    _ => fail("expected a string token")
+  }
+}
+
+///|
+/// Both implementations render numbers through this, so a conformance diff
+/// means a semantic difference rather than a formatting one.
+test "numbers format the same way in both implementations" {
+  assert_eq(@jevlang.format_number(1.0), "1")
+  assert_eq(@jevlang.format_number(0.0), "0")
+  assert_eq(@jevlang.format_number(1.5), "1.50")
+  assert_eq(@jevlang.format_number(0.97), "0.97")
+  assert_eq(@jevlang.format_number(0.055), "0.06")
+  assert_eq(@jevlang.format_number(2.0), "2")
+  assert_eq(@jevlang.format_number(-1.25), "-1.25")
+}
+
+///|
+test "the gate question text is fixed, because a transcript depends on it" {
+  assert_eq(
+    @jevlang.gate_question(["a", "b"]),
+    "次の選択肢のうち少なくとも 1 つが実際に当てはまる: a / b",
+  )
+}
+
+///|
+test "syntax errors carry a line and a column" {
+  let failed = try {
+    let _ = @jevlang.parse("let x = ")
+    false
+  } catch {
+    @jevlang.Syntax(line, _, _) => {
+      assert_eq(line, 1)
+      true
+    }
+    _ => false
+  }
+  assert_true(failed)
+}
+
+///|
+test "the state block rejects interpolation" {
+  let failed = try {
+    let _ = @jevlang.parse("state { a: \"${x}\" }")
+    false
+  } catch {
+    @jevlang.Syntax(_, _, _) => true
+    _ => false
+  }
+  assert_true(failed)
+}
+
+///|
+test "a choice with no options is rejected before it reaches the API" {
+  let failed = try {
+    let _ = @jevlang.parse("let x = choice(\"どれ\", [])")
+    false
+  } catch {
+    @jevlang.Syntax(_, _, msg) => msg.contains("at least one option")
+    _ => false
+  }
+  assert_true(failed)
+}

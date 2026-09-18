@@ -1,0 +1,23 @@
+# 閉じた世界の実演。やりたいことはタスクランナーの外にあるので、
+# 3 つの選択肢のどれも正解ではない。
+#
+# `choice` は必ずどれかを返す(docs/00)。ここで else 腕が効くのは
+# gate noul が「どれも当てはまらない」と言うから ——
+# 選択肢に「該当なし」を混ぜる作り方だと、難しいだけの問題まで
+# そこへ逃げてしまう(docs/13 §3)。
+state {
+  goal: "現在のブランチでプルリクエストを出したい",
+  runner: "npm scripts",
+  changed_files: ["src/api.ts"],
+}
+
+threshold gate = 0.5
+
+let picked = match choice("この作業に使うタスク", ["test", "lint", "build"]) {
+  "test" => run("test")
+  "lint" => run("lint")
+  "build" => run("build")
+  else => skip("gh pr create")
+}
+
+say("結果: ${picked}")

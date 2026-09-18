@@ -1,0 +1,43 @@
+{
+  "state": {
+    "goal": "現在のブランチでプルリクエストを出したい",
+    "runner": "npm scripts",
+    "changed_files": [
+      "src/api.ts"
+    ]
+  },
+  "answers": [
+    {
+      "kind": "choice",
+      "question": "この作業に使うタスク",
+      "options": [
+        "test",
+        "lint",
+        "build"
+      ],
+      "answer": {
+        "type": "choice",
+        "choice": "lint",
+        "confidence": 0.43,
+        "probabilities": {
+          "lint": 0.62,
+          "build": 0.21,
+          "test": 0.17
+        }
+      }
+    },
+    {
+      "kind": "gate",
+      "question": "次の選択肢のうち少なくとも 1 つが実際に当てはまる: test / lint / build",
+      "options": [
+        "test",
+        "lint",
+        "build"
+      ],
+      "answer": {
+        "type": "noul",
+        "noul": 0.4
+      }
+    }
+  ]
+}
