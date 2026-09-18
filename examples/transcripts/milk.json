@@ -1,0 +1,79 @@
+{
+  "state": {
+    "fridge": [
+      "卵",
+      "ビール",
+      "マヨネーズ"
+    ],
+    "wallet_yen": 100,
+    "wife_mood": "ふつう",
+    "day": "金曜日"
+  },
+  "answers": [
+    {
+      "kind": "noul",
+      "question": "家に牛乳がない",
+      "options": [],
+      "answer": {
+        "type": "noul",
+        "noul": 0.9
+      }
+    },
+    {
+      "kind": "choice",
+      "question": "100円余ったときに買うもの",
+      "options": [
+        "プリン",
+        "ビール",
+        "うまい棒"
+      ],
+      "answer": {
+        "type": "choice",
+        "choice": "ビール",
+        "confidence": 0.47,
+        "probabilities": {
+          "ビール": 0.65,
+          "うまい棒": 0.26,
+          "プリン": 0.09
+        }
+      }
+    },
+    {
+      "kind": "gate",
+      "question": "次の選択肢のうち少なくとも 1 つが実際に当てはまる: プリン / ビール / うまい棒",
+      "options": [
+        "プリン",
+        "ビール",
+        "うまい棒"
+      ],
+      "answer": {
+        "type": "noul",
+        "noul": 0.97
+      }
+    },
+    {
+      "kind": "score",
+      "question": "ビール を買ったことで妻に褒められる確率",
+      "options": [
+        "褒められない",
+        "何も言われない",
+        "褒められる"
+      ],
+      "answer": {
+        "type": "score",
+        "score": 0.96,
+        "confidence": 0.73,
+        "legend": {
+          "0": "褒められない",
+          "1": "何も言われない",
+          "2": "褒められる"
+        },
+        "probabilities": {
+          "0": 0.11,
+          "1": 0.82,
+          "2": 0.07
+        }
+      }
+    }
+  ]
+}

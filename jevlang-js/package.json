@@ -1,0 +1,8 @@
+{
+  "name": "jevlang",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A tiny DSL whose conditions are Jev judgments (JS implementation; see jevlang/ for MoonBit)",
+  "type": "module",
+  "bin": { "jevlang": "./bin/jevlang.mjs" }
+}
