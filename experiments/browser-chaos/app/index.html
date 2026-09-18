@@ -9,6 +9,17 @@
   button { margin: .2rem .3rem .2rem 0; padding: .3rem .6rem; }
   .muted { color: #666; font-size: .9rem; }
   .goal { background: #0a0; color: #fff; padding: 1rem; }
+  /*
+    The bug `?overlay=1` turns on: a tip card whose backdrop stays in the
+    layout after the card is styled away, so a transparent full-screen
+    layer keeps swallowing every click. This is a real and common CSS
+    mistake, and it is invisible in three ways at once — nothing renders,
+    nothing is logged, and the page text is unchanged. Only the geometry
+    knows. See docs/25.
+  */
+  #tip-backdrop { position: fixed; inset: 0; z-index: 50; background: transparent; }
+  #tip-card { position: fixed; right: 1rem; bottom: 1rem; z-index: 51;
+              background: #fffbe6; border: 1px solid #e0c000; padding: .6rem; }
 </style>
 </head>
 <body>
@@ -40,6 +51,18 @@
 <hr>
 <main id="view"></main>
 <p class="muted" id="status"></p>
+<!--
+  Only present with ?overlay=1. The card is visible and says something
+  harmless; the backdrop behind it is transparent, covers the whole
+  viewport, and eats every click until the card is dismissed. A picker
+  reading text sees a tip it can safely ignore, clicks the control it
+  wanted, and nothing happens — for as many steps as it has budget.
+-->
+<div id="tip-backdrop" hidden></div>
+<div id="tip-card" hidden>
+  <strong>New:</strong> dark mode is here.
+  <button type="button" id="tip-dismiss">Dismiss tip</button>
+</div>
 
 <script>
 const KEY = "chaos-target-progress";
@@ -165,6 +188,19 @@ function wire() {
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));
   on("wipe", () => { state = { ...blank }; save(state); go("#/home"); });
+}
+
+// `?overlay=1` arms the invisible-backdrop bug. Default off, so the
+// numbers in docs/05 keep reproducing.
+if (new URLSearchParams(location.search).get("overlay") === "1") {
+  const backdrop = document.getElementById("tip-backdrop");
+  const card = document.getElementById("tip-card");
+  backdrop.hidden = false;
+  card.hidden = false;
+  document.getElementById("tip-dismiss").addEventListener("click", () => {
+    backdrop.hidden = true;
+    card.hidden = true;
+  });
 }
 
 window.addEventListener("hashchange", render);
