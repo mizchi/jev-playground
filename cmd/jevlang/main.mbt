@@ -21,6 +21,7 @@ struct Opts {
   quiet : Bool
   record : String
   replay : String
+  state_file : String
 }
 
 ///|
@@ -149,16 +150,22 @@ async fn run(opts : Opts) -> Unit raise {
   } else {
     Some(@lib.Client::with_base_url(opts.api_key, opts.base_url))
   }
+  let injected_state = if opts.state_file.is_empty() {
+    None
+  } else {
+    Some(@json.parse(@fs.read_file(opts.state_file).text()))
+  }
   let interp = @lang.Interp::new(
     program,
     client?,
     model=opts.model,
     lazy_mode=opts.lazy_mode,
     replay?,
+    injected_state?,
   )
   let result = interp.run()
   if !opts.record.is_empty() {
-    let json = transcript_to_json(program.state.to_json(), interp.recorded)
+    let json = transcript_to_json(interp.effective_state(), interp.recorded)
     @fs.write_file(opts.record, @utf8.encode(json.stringify(indent=2)))
   }
   if opts.json_out {
@@ -254,6 +261,11 @@ async fn main {
         long="replay",
         about="Read answers from this transcript; makes no API calls.",
       ),
+      @argparse.OptionArg(
+        "state",
+        long="state",
+        about="JSON file merged over the program's own state block.",
+      ),
     ],
   )
   let matches = @argparse.parse(cmd) catch {
@@ -297,6 +309,7 @@ async fn main {
     quiet: matches.flags.get("quiet").unwrap_or(false),
     record: opt_value(matches, "record").unwrap_or(""),
     replay,
+    state_file: opt_value(matches, "state").unwrap_or(""),
   }
   run(opts) catch {
     @lang.Syntax(line, col, msg) => {

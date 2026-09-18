@@ -365,6 +365,19 @@ fn Parser::judgment(self : Parser) -> Expr raise {
   let question = self.expect_string()
   let options : Array[StrLit] = []
   if kind == "noul" {
+    // Optional `{true: "...", false: "..."}`. docs/14 is the argument for
+    // having this at all: the `false` criterion of an `exfiltrates` predicate
+    // is what decided whether an ordinary `git push` was denied, so a policy
+    // that cannot write one cannot be written correctly.
+    //
+    // The two descriptions live in `options`, so they take part in a
+    // judgment's transcript identity for free — the same question with
+    // different criteria really is a different question.
+    if self.eat_punct(",") {
+      let criteria = self.noul_criteria()
+      options.push(criteria.0)
+      options.push(criteria.1)
+    }
     self.expect_punct(")")
   } else {
     self.expect_punct(",")
@@ -383,6 +396,37 @@ fn Parser::judgment(self : Parser) -> Expr raise {
     }
   }
   EJudge({ kind, id: self.next_judgment_id(), question, options })
+}
+
+///|
+/// Returns (true_desc, false_desc); a missing side becomes an empty string.
+fn Parser::noul_criteria(self : Parser) -> (StrLit, StrLit) raise {
+  self.expect_punct("{")
+  let mut true_desc : StrLit? = None
+  let mut false_desc : StrLit? = None
+  while !self.at_punct("}") {
+    let is_true = self.at_keyword("true")
+    if !is_true && !self.at_keyword("false") {
+      self.fail("expected 'true' or 'false', found \{self.describe()}")
+    }
+    self.pos = self.pos + 1
+    self.expect_punct(":")
+    let text = self.expect_string()
+    if is_true {
+      true_desc = Some(text)
+    } else {
+      false_desc = Some(text)
+    }
+    if !self.eat_punct(",") {
+      break
+    }
+  }
+  self.expect_punct("}")
+  if true_desc is None && false_desc is None {
+    self.fail("noul criteria need at least a true or a false description")
+  }
+  let empty : StrLit = { parts: [Lit("")] }
+  (true_desc.unwrap_or(empty), false_desc.unwrap_or(empty))
 }
 
 ///|

@@ -66,9 +66,9 @@ moon run --target native cmd/jevlang -- examples/milk.jev
 moon run --target native cmd/jevlang -- examples/milk.jev --replay examples/transcripts/milk.json
 
 # テスト(どれも API キー不要)
-node jevlang-js/test.mjs                    # 10 件
-moon test --target native -p jevlang        # 17 件
-scripts/jevlang-conformance.sh              # 2 実装の一致
+node jevlang-js/test.mjs                    # 15 件
+moon test --target native -p jevlang        # 22 件
+scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラム)
 ```
 
 ---
@@ -104,6 +104,14 @@ scripts/jevlang-conformance.sh              # 2 実装の一致
 - judgment 3 種: `noul("...")` → 確率、`choice("...", [...])` → 選ばれた文字列、
   `score("...", [...])` → 数値
 - `conf(x)` — `x` を作った judgment の confidence
+- `noul("q", { true: "...", false: "..." })` — 真偽の境界を説明文で締める。
+  [14 §3](14-permission-hook.md#3-コーパスでは見つからないバグが出た) の
+  「`false` 側の文言が判定を決めた」がこの構文の存在理由です。
+  2 つの説明文は内部では `options` に入るので、transcript の同一性判定が
+  そのまま効きます(同じ質問文で criteria が違えば別の質問)
+- `--state <file>` — **ホストが state を注入できる**。プログラムの
+  `state { }` ブロックは既定値とドキュメントになり、実行時の値は
+  走らせる側が渡す。`.jev` を hook のポリシーにするにはこれが必要でした(§9)
 - それ以外の `name(...)` は**ホストの副作用**。`buy("牛乳")` は記録されて表示される。
   副作用は**第 1 引数に評価される**ので、`"プリン" => buy("プリン")` が
   `result` に `"プリン"` を束縛できる。
@@ -233,9 +241,13 @@ JS の `Math.round` は同値を **+∞ 方向**に、MoonBit の `.to_int()` �
 building the MoonBit implementation...
   ok   closed-world  (2 judgments, identical in both)
   ok   milk  (4 judgments, identical in both)
+  ok   policy  (9 judgments, identical in both)
 
-  2 identical, 0 differing
+  3 identical, 0 differing
 ```
+
+`policy` は §9 の permission hook のポリシーで、**noul の criteria と `conf()` を
+使う唯一のプログラム**なので、2 実装がずれるなら一番先にここでずれます。
 
 比較対象は `--json` 出力で、**両実装が一致しなければならないものだけ**を含みます
 (副作用、出力、束縛の順序、実際に消費された judgment)。
@@ -260,8 +272,9 @@ building the MoonBit implementation...
   そこで「答えが無い」エラーになります(黙って API を叩くより良い挙動だと思いますが、
   再録が要ります)。transcript の `state` は記録しているだけで、**照合していません** ——
   state を変えたのに古い transcript で replay すると、気づかず通ります。
-- **2 実装の一致はサンプル 2 本でしか確認していない。** 文法の隅
-  (`&&` の短絡、`!`、`conf()`、ネストした `if else if`)は
+- **2 実装の一致はサンプル 3 本でしか確認していない。** §9 の policy が
+  `&&` / `||` / `conf()` / noul criteria / ネストした `else if` を通るので
+  §5 の時点よりは広くなりましたが、`!` と `match` の非 choice subject は
   片方のユニットテストにあるだけで、**両実装を突き合わせてはいません**。
 - **エラーメッセージが両実装で違う。** 構文エラーの文面は揃えていないので、
   conformance の比較対象からも外してあります。
@@ -285,6 +298,44 @@ building the MoonBit implementation...
    手書き数値パーサの `0.6` → 0.6000000000000001(**閾値なので分岐が変わる**)と、
    負の半端値の丸め方向の不一致(§5)。
 
+## 9. 実際に使ってみた — permission hook のポリシー
+
+「この言語は何のためにあるのか」への答えを出しました。
+[14](14-permission-hook.md) の permission hook の判定を `.jev` で書き直しました
+(`hooks/policy.jev`、[14 §6b](14-permission-hook.md#6b-判定ロジックを-jev-で書く))。
+
+```bash
+node hooks/jev-permission-gate.mjs --policy hooks/policy.jev
+node hooks/test-gate.mjs --policy-logic      # 規則の 14 分岐を replay で検証(API 不要)
+node hooks/test-gate.mjs --compare-policy    # 実モデルで組み込みと比較
+```
+
+書けました。9 judgment が全部巻き上がって **1 リクエスト**、
+組み込みと同じです。そして **2 つの穴が見つかりました**:
+
+1. **`noul` に criteria を書く構文が無かった。** [14 §3](14-permission-hook.md#3-コーパスでは見つからないバグが出た) の
+   話の全体が「`false` 側の文言が判定を決めた」なので、
+   criteria を書けない言語ではポリシーを**正しく書けません**。追加しました。
+2. **state をホストから注入できなかった。** コマンドや git ブランチを
+   知っているのは hook で、ポリシーの著者ではない。`--state` を追加しました。
+
+つまり**実際の用途に当てると、言語に足りないものが出てきた** ——
+docs/14 §3 で「実運用の形に載せることが最後のテスト」と書いたことが、
+言語自身にも当てはまりました。
+
+そして hook 側の規律は守られています:インタプリタには
+**hook 自身のクライアント**(1 回だけ・ハードタイムアウト・リトライ無し)を
+渡しているので、ポリシーが勝手に寛容なクライアントを使うことはできません。
+レイテンシも変わりません(組み込み 230〜450 ms / ポリシー 235〜435 ms)。
+
+**replay がここで一番効きました。** 実モデルでの比較は 21/24 一致で 3 件食い違いますが、
+それは 2 回の独立したリクエストを比べているからで、
+**同じ答えに対して規則を比べる** `--policy-logic`(14/14)が
+「ロジックは一致している」を確定させています。
+確率的な判定を含むものを 2 つ比べるとき、
+**replay 無しでは実装差とモデルのばらつきが区別できない**という §4 の主張の、
+一番具体的な例になりました。
+
 ## 8. 次に試すこと
 
 - **副作用を宣言させる。** `effect buy(item)` を required にして、
@@ -296,6 +347,10 @@ building the MoonBit implementation...
   §6 の一番大きな穴。
 - **判断が 1 つで分岐が巨大なプログラムで巻き上げの損益分岐点を測る。**
   「速くて安い」が常に成り立つかは未検証(§6)。
-- **[14](14-permission-hook.md) の hook を `.jev` で書く。**
-  permission gate はまさに「state を見て ask/deny を決める決定木」なので、
-  `.jev` で書けるはず。書けたら、**この言語が何のためにあるのか**の答えになる。
+- ~~**[14](14-permission-hook.md) の hook を `.jev` で書く。**~~
+  **やった → §9。** 書けたが、`noul` の criteria と state 注入という
+  2 つの穴が出た(どちらも追加済み)。
+- **文字列結合か「発火した述語を並べる」組み込み。**
+  §9 のポリシーは理由文に述語の発火状況を出せません
+  (組み込み経路は `Flagged: destructive 0.98, ...` を出す)。
+  言語に `+` が無いのが理由で、ポリシーを実用品にするには要ります。

@@ -72,7 +72,15 @@ function apiQuestion(kind, question, options) {
     };
   }
   if (kind === "noul") {
-    return { type: "noul", instructions: question };
+    // A plain noul carries no criteria; two options mean a
+    // `{true: ..., false: ...}` block, which sharpens the boundary between
+    // the two answers (docs/14 section 3 is what this is for).
+    if (options.length !== 2) return { type: "noul", instructions: question };
+    return {
+      type: "noul",
+      instructions: question,
+      criteria: { true: options[0], false: options[1] },
+    };
   }
   if (kind === "choice") {
     // Options carry no descriptions: the name-only choice from docs/00, which
@@ -91,12 +99,15 @@ export class Interpreter {
    * @param {object} opts.jev          client, or null in replay mode
    * @param {boolean} opts.lazy        skip the batch; one request per judgment
    * @param {Array|null} opts.replay   recorded answers to read instead of asking
+   * @param {object|null} opts.state    host-supplied state, shallow-merged over
+   *                                    the program's own `state` block
    */
-  constructor(program, { jev = null, lazy = false, replay = null } = {}) {
+  constructor(program, { jev = null, lazy = false, replay = null, state = null } = {}) {
     this.program = program;
     this.jev = jev;
     this.lazy = lazy;
     this.replay = replay;
+    this.injectedState = state;
     this.scope = new Map();
     /** Batched answers, by judgment id. */
     this.answers = new Map();
@@ -111,8 +122,19 @@ export class Interpreter {
     this.lazyAsked = 0;
   }
 
+  /**
+   * The state every judgment sees.
+   *
+   * A host can supply its own, shallow-merged over the program's `state`
+   * block. That makes the block in the source a set of defaults and a piece
+   * of documentation, while the real values come from whoever is running the
+   * program -- which is the only way a `.jev` file can be a policy for
+   * something like a PreToolUse hook, where the command and the git branch
+   * are known to the host and not to the author.
+   */
   get state() {
-    return literalToJs(this.program.state);
+    const base = literalToJs(this.program.state);
+    return this.injectedState === null ? base : { ...base, ...this.injectedState };
   }
 
   // ---- the hoisting pass ---------------------------------------------

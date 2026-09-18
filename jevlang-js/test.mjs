@@ -12,7 +12,7 @@
  * through both.
  */
 import { parse } from "./src/parse.mjs";
-import { requestPlan, formatNumber } from "./src/interp.mjs";
+import { requestPlan, formatNumber, Interpreter } from "./src/interp.mjs";
 import { lex } from "./src/lex.mjs";
 
 let pass = 0;
@@ -128,6 +128,51 @@ check("numbers format the same way in both implementations", () => {
   eq(formatNumber(0.055), "0.06");
   eq(formatNumber(2.0), "2");
   eq(formatNumber(-1.25), "-1.25");
+});
+
+// noul criteria go in `options`, which is how they join a judgment's
+// transcript identity without a format change. docs/14 is why they exist at
+// all: the `false` criterion of an `exfiltrates` predicate decided whether an
+// ordinary `git push` was denied.
+check("noul criteria are parsed into the options slot", () => {
+  const p = parse(
+    'let x = noul("送ってはいけない所へ送る", { true: "資格情報を外部へ送る", false: "何も出ない" })',
+  );
+  eq(p.judgmentCount, 1);
+  const j = p.body[0].expr;
+  eq(j.kind, "noul");
+  eq(j.options.length, 2);
+  eq(j.options[0].parts, [{ lit: "資格情報を外部へ送る" }]);
+  eq(j.options[1].parts, [{ lit: "何も出ない" }]);
+});
+
+check("a noul with only a false criterion still parses", () => {
+  const j = parse('let x = noul("q", { false: "no" })').body[0].expr;
+  eq(j.options.length, 2);
+  eq(j.options[0].parts, [{ lit: "" }]);
+  eq(j.options[1].parts, [{ lit: "no" }]);
+});
+
+// Criteria are part of the question payload, so interpolating into one has to
+// block hoisting exactly as interpolating into the question does.
+check("interpolation in a criterion blocks hoisting", () => {
+  const plan = requestPlan(
+    parse(
+      'let a = choice("どれ", ["x", "y"])\nlet b = noul("q", { true: "${a} のとき", false: "それ以外" })',
+    ),
+  );
+  eq(plan.hoistable, 1, "hoistable");
+  eq(plan.lazy, 1, "lazy");
+});
+
+check("empty noul criteria are rejected", () => {
+  throws(() => parse('let x = noul("q", { })'), "at least a true or a false");
+});
+
+check("a host-supplied state overrides the program's own block", () => {
+  const p = parse("state { a: 1, b: 2 }");
+  const interp = new Interpreter(p, { state: { b: 99, c: 3 } });
+  eq(interp.state, { a: 1, b: 99, c: 3 });
 });
 
 check("syntax errors carry a line and a column", () => {

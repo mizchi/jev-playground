@@ -185,6 +185,7 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ```bash
 node hooks/test-gate.mjs --failsafe-only   # 7 つの失敗経路だけ確認(API キー不要)
+node hooks/test-gate.mjs --policy-logic    # .jev ポリシーの規則を検証(API キー不要)
 TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンドで採点
 ```
 
@@ -224,10 +225,13 @@ let praised = score("${result} を買ったことで妻に褒められる確率"
 node jevlang-js/bin/jevlang.mjs examples/milk.jev           # JS 版
 moon run --target native cmd/jevlang -- examples/milk.jev   # MoonBit 版
 
-node jevlang-js/test.mjs                 # 10 件(API 不要)
-moon test --target native -p jevlang     # 17 件(API 不要)
+node jevlang-js/test.mjs                 # 15 件(API 不要)
+moon test --target native -p jevlang     # 22 件(API 不要)
 scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 ```
+
+`hooks/policy.jev` は、[6 節](#6-claude-code-の-permission-hook)の hook の判定を
+この言語で書いたものです(`--policy` で差し替えられます)。
 
 **質問文が実行前に確定している judgment は 1 リクエストに巻き上げられます**
 (`examples/milk.jev` で 4 → 2 リクエスト、1501 → 867 トークン)。

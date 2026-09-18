@@ -46,7 +46,11 @@
  *    experiments/shared/jev.ts, which retries because it is collecting a
  *    corpus offline. Here a retry is worse than no answer.
  *
- * Flags: --allow-safe  also return `allow` for commands the gate rates safe
+ * Flags: --policy PATH  take the decision from a .jev program instead of the
+ *                       battery below (see hooks/policy.jev). The questions
+ *                       there are identical, so the verdicts should be too --
+ *                       `hooks/test-gate.mjs --compare-policy` checks that.
+ *        --allow-safe  also return `allow` for commands the gate rates safe
  *        --deny-max N  highest verdict to emit; `ask` never denies (default deny)
  *        --timeout MS  latency budget, default 2500
  *        --log PATH    append one JSON line per decision, for auditing
@@ -73,6 +77,7 @@ const DRY_RUN = flag("dry-run");
 const LOG_PATH = opt("log", "");
 const DENY_MAX = { allow: ALLOW, ask: ASK, deny: DENY }[opt("deny-max", "deny")] ?? DENY;
 const MODEL = opt("model", "jev-latest");
+const POLICY_PATH = opt("policy", "");
 const BASE_URL = process.env.TYPESAFEAI_BASE_URL ?? "https://api.typesafe.ai";
 
 /** Branches where "affects other people" is the default assumption. */
@@ -298,41 +303,94 @@ async function main() {
     ...(config.context ?? {}),
   };
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  let body;
+  /**
+   * One attempt, one hard timeout, no retries -- a retry would spend the
+   * latency budget that makes this usable at all. Shared by both the built-in
+   * battery and the .jev policy path, so the policy cannot quietly get a more
+   * forgiving client than the hook's own rules allow.
+   */
+  const askOnce = async (askState, questions) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const res = await fetch(`${BASE_URL}/v1/systemone`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ model: MODEL, state: askState, questions }),
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
   const started = Date.now();
-  try {
-    const res = await fetch(`${BASE_URL}/v1/systemone`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ model: MODEL, state, questions: QUESTIONS }),
-      signal: controller.signal,
-    });
-    if (!res.ok) defer(`HTTP ${res.status}`);
-    body = await res.json();
-  } catch (err) {
-    // One attempt only. A retry would spend the latency budget that makes this
-    // usable in the first place.
-    defer(`request failed: ${String(err).slice(0, 120)}`);
-  } finally {
-    clearTimeout(timer);
+  let verdict;
+  let explanation;
+  let answers = null;
+  let fromScore = null;
+  let fromAtoms = null;
+  let usage = null;
+
+  if (POLICY_PATH) {
+    // The decision logic lives in a .jev program instead of in this file, so
+    // the policy is editable data rather than code. The interpreter is loaded
+    // lazily so the built-in path pays nothing for it.
+    try {
+      const [{ parse }, { Interpreter }] = await Promise.all([
+        import("../jevlang-js/src/parse.mjs"),
+        import("../jevlang-js/src/interp.mjs"),
+      ]);
+      const program = parse(readFileSync(POLICY_PATH, "utf8"));
+      const interp = new Interpreter(program, {
+        // Only `ask` is used, so the hook's own client goes straight in.
+        jev: { ask: askOnce },
+        state,
+      });
+      const result = await interp.run();
+      usage = { requests: result.requests };
+      // The policy speaks by calling deny/ask/defer; the last one wins.
+      const spoken = result.effects.filter((e) =>
+        ["deny", "ask", "defer", "allow"].includes(e.name),
+      );
+      if (spoken.length === 0) {
+        defer(`policy ${POLICY_PATH} reached no decision`);
+      }
+      const last = spoken[spoken.length - 1];
+      const named = { allow: ALLOW, defer: -1, ask: ASK, deny: DENY }[last.name];
+      if (named === -1) {
+        defer(`policy deferred in ${Date.now() - started}ms: ${last.args[0] ?? ""}`);
+      }
+      verdict = named;
+      explanation = `Jev rates this ${VERDICT_NAME[verdict]} (policy ${basename(POLICY_PATH)}): ${last.args[0] ?? ""}`;
+    } catch (err) {
+      defer(`policy failed: ${String(err).slice(0, 160)}`);
+    }
+  } else {
+    let body;
+    try {
+      body = await askOnce(state, QUESTIONS);
+    } catch (err) {
+      defer(`request failed: ${String(err).slice(0, 120)}`);
+    }
+    answers = body?.answers;
+    if (!answers?.permission) defer("response had no permission answer");
+    usage = body.usage ?? null;
+
+    // Both readings, conservative side taken (docs/01 section 4).
+    fromScore = permissionGate(answers, thresholds);
+    fromAtoms = atomicRule(answers);
+    verdict = Math.max(fromScore, fromAtoms);
+    explanation = reason(answers, verdict, thresholds);
   }
 
-  const answers = body?.answers;
-  if (!answers?.permission) defer("response had no permission answer");
-
-  // Both readings, conservative side taken (docs/01 section 4).
-  const fromScore = permissionGate(answers, thresholds);
-  const fromAtoms = atomicRule(answers);
-  let verdict = Math.max(fromScore, fromAtoms);
   if (verdict > DENY_MAX) verdict = DENY_MAX;
-
   const elapsed = Date.now() - started;
-  const explanation = reason(answers, verdict, thresholds);
 
   if (LOG_PATH) {
     try {
@@ -343,12 +401,13 @@ async function main() {
           session: event.session_id ?? null,
           command,
           state,
+          policy: POLICY_PATH || null,
           verdict: VERDICT_NAME[verdict],
-          from_score: VERDICT_NAME[fromScore],
-          from_atoms: VERDICT_NAME[fromAtoms],
+          from_score: fromScore === null ? null : VERDICT_NAME[fromScore],
+          from_atoms: fromAtoms === null ? null : VERDICT_NAME[fromAtoms],
           answers,
           ms: elapsed,
-          usage: body.usage ?? null,
+          usage,
         }) + "\n",
       );
     } catch {
@@ -357,9 +416,12 @@ async function main() {
   }
 
   if (DRY_RUN) {
+    const how =
+      fromScore === null
+        ? `policy=${basename(POLICY_PATH)}`
+        : `score=${VERDICT_NAME[fromScore]}, atoms=${VERDICT_NAME[fromAtoms]}`;
     process.stderr.write(
-      `jev-permission-gate: ${VERDICT_NAME[verdict]} in ${elapsed}ms ` +
-        `(score=${VERDICT_NAME[fromScore]}, atoms=${VERDICT_NAME[fromAtoms]}) ${explanation}\n`,
+      `jev-permission-gate: ${VERDICT_NAME[verdict]} in ${elapsed}ms (${how}) ${explanation}\n`,
     );
     process.exit(0);
   }

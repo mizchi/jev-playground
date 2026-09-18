@@ -52,9 +52,17 @@ canon() {
 
 pass=0
 fail=0
-for program in examples/*.jev; do
+# hooks/policy.jev is in the list because it is the one program using noul
+# criteria and conf(), so it is where the two implementations are most likely
+# to drift. It needs an injected state, which is the .state.json convention.
+for program in examples/*.jev hooks/policy.jev; do
   name="$(basename "$program" .jev)"
   transcript="examples/transcripts/${name}.json"
+  state_file="examples/transcripts/${name}.state.json"
+  state_args=()
+  if [[ -f "$state_file" ]]; then
+    state_args=(--state "$state_file")
+  fi
   if [[ ! -f "$transcript" ]]; then
     echo "  SKIP ${name} (no transcript; record one with --record)"
     continue
@@ -62,12 +70,12 @@ for program in examples/*.jev; do
 
   js_out="$(mktemp)"
   mbt_out="$(mktemp)"
-  if ! node jevlang-js/bin/jevlang.mjs "$program" --replay "$transcript" --json 2>&1 | canon >"$js_out"; then
+  if ! node jevlang-js/bin/jevlang.mjs "$program" --replay "$transcript" "${state_args[@]+"${state_args[@]}"}" --json 2>&1 | canon >"$js_out"; then
     echo "  FAIL ${name}: the JS implementation errored"
     fail=$((fail + 1))
     continue
   fi
-  if ! "${MBT_RUN[@]}" "$program" --replay "$transcript" --json 2>/dev/null | canon >"$mbt_out"; then
+  if ! "${MBT_RUN[@]}" "$program" --replay "$transcript" "${state_args[@]+"${state_args[@]}"}" --json 2>/dev/null | canon >"$mbt_out"; then
     echo "  FAIL ${name}: the MoonBit implementation errored"
     fail=$((fail + 1))
     continue

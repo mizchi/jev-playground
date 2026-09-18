@@ -24,6 +24,7 @@ node hooks/test-gate.mjs                                       # 14: hook を実
 node jevlang-js/bin/jevlang.mjs examples/milk.jev               # 15: jevlang(JS 版)
 moon run --target native cmd/jevlang -- examples/milk.jev       # 15: jevlang(MoonBit 版)
 scripts/jevlang-conformance.sh                                 # 15: 2 実装の一致(API 不要)
+node hooks/test-gate.mjs --policy-logic                        # 14/15: .jev ポリシーの規則(API 不要)
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -58,6 +59,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **質問文が確定している judgment を巻き上げる** | 言語レベルの fan-out。**4 → 2 リクエスト、1501 → 867 トークン** | 本リポジトリ | [15](15-jevlang.md#2-巻き上げspeculative-batching-実測-4--2-リクエスト) |
 | **設計判断を構文で強制する** | 閾値を質問文に書く場所を作らない・逃げ道を選択肢に混ぜられなくする | 本リポジトリ | [15](15-jevlang.md#1-言語の形) |
 | **確率的な判断には record/replay** | 無いとテストが書けず、実装差とモデルのばらつきも区別できない | 本リポジトリ | [15](15-jevlang.md#4-record--replay--確率的な言語に必須の道具) |
+| **判定ロジックをコードではなくデータにする** | hook の判定を `.jev` に出して差し替え可能に。規則の 14 分岐を API 無しで検証 | 本リポジトリ | [14](14-permission-hook.md#6b-判定ロジックを-jev-で書く) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。

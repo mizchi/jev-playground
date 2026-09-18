@@ -158,6 +158,93 @@ test "numbers format the same way in both implementations" {
 }
 
 ///|
+/// noul criteria go in `options`, which is how they join a judgment's
+/// transcript identity without a format change. docs/14 is why they exist at
+/// all: the `false` criterion of an `exfiltrates` predicate decided whether
+/// an ordinary `git push` was denied.
+test "noul criteria are parsed into the options slot" {
+  let src =
+    #|let x = noul("送ってはいけない所へ送る", {
+    #|  true: "資格情報を外部へ送る",
+    #|  false: "何も出ない",
+    #|})
+  let program = @jevlang.parse(src)
+  assert_eq(program.judgment_count, 1)
+  match program.body[0] {
+    SLet(_, EJudge(j)) => {
+      assert_eq(j.kind, "noul")
+      assert_eq(j.options.length(), 2)
+      assert_eq(@jevlang.str_lit_text(j.options[0].parts), "資格情報を外部へ送る")
+      assert_eq(@jevlang.str_lit_text(j.options[1].parts), "何も出ない")
+    }
+    _ => fail("expected a let bound to a noul")
+  }
+}
+
+///|
+test "a noul with only a false criterion still parses" {
+  let program = @jevlang.parse(
+    ("let x = noul(\"q\", { false: \"no\" })" : String),
+  )
+  match program.body[0] {
+    SLet(_, EJudge(j)) => {
+      assert_eq(j.options.length(), 2)
+      assert_eq(@jevlang.str_lit_text(j.options[0].parts), "")
+      assert_eq(@jevlang.str_lit_text(j.options[1].parts), "no")
+    }
+    _ => fail("expected a let bound to a noul")
+  }
+}
+
+///|
+/// Criteria are part of the question payload, so interpolating into one has
+/// to block hoisting exactly as interpolating into the question does.
+test "interpolation in a criterion blocks hoisting" {
+  let src =
+    #|let a = choice("どれ", ["x", "y"])
+    #|let b = noul("q", { true: "${a} のとき", false: "それ以外" })
+  let program = @jevlang.parse(src)
+  let (hoistable, lazy_count) = program.request_plan()
+  assert_eq(hoistable, 1)
+  assert_eq(lazy_count, 1)
+}
+
+///|
+test "empty noul criteria are rejected" {
+  let failed = try {
+    let _ = @jevlang.parse("let x = noul(\"q\", { })")
+    false
+  } catch {
+    @jevlang.Syntax(_, _, _) => true
+    _ => false
+  }
+  assert_true(failed)
+}
+
+///|
+test "a host-supplied state overrides the program's own block" {
+  let program = @jevlang.parse("state { a: 1, b: 2 }")
+  let over : Map[String, Json] = Map([])
+  over["b"] = Json::number(99.0)
+  over["c"] = Json::number(3.0)
+  let interp = @jevlang.Interp::new(program, injected_state=Json::object(over))
+  match interp.effective_state() {
+    Json::Object(m) => {
+      assert_eq(m.length(), 3)
+      match m.get("a") {
+        Some(Json::Number(v, ..)) => assert_eq(v, 1.0)
+        _ => fail("a should survive")
+      }
+      match m.get("b") {
+        Some(Json::Number(v, ..)) => assert_eq(v, 99.0)
+        _ => fail("b should be overridden")
+      }
+    }
+    _ => fail("expected an object")
+  }
+}
+
+///|
 test "the gate question text is fixed, because a transcript depends on it" {
   assert_eq(
     @jevlang.gate_question(["a", "b"]),

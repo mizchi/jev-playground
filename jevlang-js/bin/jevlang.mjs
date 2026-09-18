@@ -8,6 +8,7 @@
  *                     every judgment whose text is already known into ONE
  *                     request, so --lazy is what the batching is measured
  *                     against.
+ *   --state <file>    JSON merged over the program's own state block
  *   --record <file>   write every answer to a transcript
  *   --replay <file>   read answers from a transcript; makes no API calls
  *   --json            machine-readable result, for cross-implementation checks
@@ -29,7 +30,7 @@ const opt = (n, d = null) => {
 const file = argv.find((a) => !a.startsWith("--") && !isOptionValue(a));
 function isOptionValue(a) {
   const i = argv.indexOf(a);
-  return i > 0 && ["--record", "--replay", "--model"].includes(argv[i - 1]);
+  return i > 0 && ["--record", "--replay", "--model", "--state"].includes(argv[i - 1]);
 }
 
 if (!file) {
@@ -41,6 +42,7 @@ const LAZY = flag("lazy");
 const JSON_OUT = flag("json");
 const QUIET = flag("quiet") || JSON_OUT;
 const RECORD = opt("record");
+const STATE = opt("state");
 const REPLAY = opt("replay");
 
 async function main() {
@@ -52,7 +54,13 @@ async function main() {
   // a silent API call -- that is what makes replayed runs comparable.
   const jev = replay === null ? new Jev({ model: opt("model", "jev-latest") }) : null;
 
-  const interp = new Interpreter(program, { jev, lazy: LAZY, replay: replay?.answers ?? null });
+  const injected = STATE ? JSON.parse(readFileSync(STATE, "utf8")) : null;
+  const interp = new Interpreter(program, {
+    jev,
+    lazy: LAZY,
+    replay: replay?.answers ?? null,
+    state: injected,
+  });
   const result = await interp.run();
 
   if (RECORD) {

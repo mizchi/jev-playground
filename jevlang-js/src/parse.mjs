@@ -17,13 +17,14 @@
  *   cmp        := unary (('>='|'<='|'=='|'!='|'>'|'<') unary)?
  *   unary      := '!' unary | primary
  *   primary    := num | str | 'true' | 'false' | ident
- *               | 'noul' '(' expr ')'
+ *               | 'noul' '(' str (',' noulCriteria)? ')'
  *               | 'choice' '(' expr ',' array ')'
  *               | 'score' '(' expr ',' array ')'
  *               | 'conf' '(' ident ')'
  *               | matchExpr
  *               | ident '(' args ')'          -- an effect
  *               | '(' expr ')'
+ *   noulCriteria := '{' ('true'|'false') ':' str (',' ...)* ','? '}'
  *   matchExpr  := 'match' expr '{' arm* ('else' '=>' expr ','?)? '}'
  *   arm        := str '=>' expr ','?
  *
@@ -222,6 +223,17 @@ export function parse(source) {
     const question = stringExpr();
     let options = [];
     if (kind === "noul") {
+      // Optional `{true: "...", false: "..."}`. docs/14 is the argument for
+      // having this at all: the `false` criterion of an `exfiltrates`
+      // predicate is what decided whether an ordinary `git push` was denied,
+      // so a policy that cannot write one cannot be written correctly.
+      //
+      // The two descriptions are stored in `options`, which means they take
+      // part in a judgment's transcript identity for free -- the same
+      // question with different criteria really is a different question.
+      if (eat(",")) {
+        options = noulCriteria();
+      }
       expect(")", "')'");
     } else {
       expect(",", "','");
@@ -233,6 +245,30 @@ export function parse(source) {
       }
     }
     return { k: "judge", kind, id: nextJudgmentId(), question, options };
+  }
+
+  /** Returns [trueDesc, falseDesc]; a missing side becomes an empty string. */
+  function noulCriteria() {
+    expect("{", "'{' with true/false criteria");
+    let trueDesc = null;
+    let falseDesc = null;
+    while (!at("}")) {
+      const which = peek().type;
+      if (which !== "true" && which !== "false") {
+        fail(`expected 'true' or 'false', found ${describe(peek())}`);
+      }
+      next();
+      expect(":", "':'");
+      if (which === "true") trueDesc = stringExpr();
+      else falseDesc = stringExpr();
+      if (!eat(",")) break;
+    }
+    expect("}", "'}'");
+    if (trueDesc === null && falseDesc === null) {
+      fail("noul criteria need at least a true or a false description");
+    }
+    const empty = { k: "str", parts: [{ lit: "" }] };
+    return [trueDesc ?? empty, falseDesc ?? empty];
   }
 
   function matchExpr() {

@@ -68,6 +68,13 @@ priv struct Site {
 ///|
 pub struct Interp {
   program : Program
+  /// Host-supplied state, shallow-merged over the program's `state` block.
+  /// That makes the block in the source a set of defaults and a piece of
+  /// documentation, while the real values come from whoever runs the program
+  /// — the only way a `.jev` file can be a policy for something like a
+  /// PreToolUse hook, where the command and the git branch are known to the
+  /// host and not to the author.
+  injected_state : Json?
   client : @lib.Client?
   model : String
   lazy_mode : Bool
@@ -92,9 +99,11 @@ pub fn Interp::new(
   model? : String,
   lazy_mode? : Bool,
   replay? : Array[Recorded],
+  injected_state? : Json,
 ) -> Interp {
   {
     program,
+    injected_state,
     client,
     model: model.unwrap_or("jev-latest"),
     lazy_mode: lazy_mode.unwrap_or(false),
@@ -130,7 +139,18 @@ fn api_question(kind : String, question : String, options : Array[String]) -> @l
       false_desc="どの選択肢も当てはまらない",
     )
   } else if kind == "noul" {
-    @lib.Question::noul(question)
+    // A plain noul carries no criteria; two options mean a
+    // `{true: ..., false: ...}` block, which sharpens the boundary between
+    // the two answers (docs/14 section 3 is what this is for).
+    if options.length() == 2 {
+      @lib.Question::noul(
+        question,
+        true_desc=options[0],
+        false_desc=options[1],
+      )
+    } else {
+      @lib.Question::noul(question)
+    }
   } else if kind == "choice" {
     // Name-only choices: the cheapest form (docs/00), and docs/13 measured it
     // at 90% on a 53-item roster from names alone.
@@ -334,13 +354,36 @@ async fn Interp::ask(
     Some(client) => {
       self.requests = self.requests + 1
       let resp = client.system_one({
-        state: self.program.state.to_json(),
+        state: self.effective_state(),
         model: self.model,
         questions,
       })
       self.input_tokens = self.input_tokens + resp.input_tokens
       resp
     }
+  }
+}
+
+///|
+/// The state every judgment sees: the program's own block, with any
+/// host-supplied keys overriding it.
+pub fn Interp::effective_state(self : Interp) -> Json {
+  let base = self.program.state.to_json()
+  match (self.injected_state, base) {
+    (None, _) => base
+    (Some(Json::Object(over)), Json::Object(under)) => {
+      let merged : Map[String, Json] = Map([])
+      for k, v in under {
+        merged[k] = v
+      }
+      for k, v in over {
+        merged[k] = v
+      }
+      Json::object(merged)
+    }
+    // A non-object injection replaces the block outright: the state is
+    // allowed to be any JSON value, not only an object.
+    (Some(other), _) => other
   }
 }
 
