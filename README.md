@@ -16,6 +16,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
+| `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
 ([まとめと優先順位](docs/README.md))。
@@ -145,6 +146,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
 | [12](docs/12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
 | [13](docs/13-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
+| [14](docs/14-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -169,6 +171,23 @@ npx tsx src/run.ts --repeat 5                         # 実装を伏せて合否
 cd experiments/task-picker && npm install
 npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正しいものを選ばせる
 ```
+
+## 6. Claude Code の permission hook
+
+`hooks/jev-permission-gate.mjs` は、Bash コマンドの実行許可を Jev に判定させる
+`PreToolUse` hook です(**依存ゼロの Node スクリプト 1 枚、ビルド不要**)。
+既定では `ask` / `deny` しか返さず、安全と判定したときは何も出さないので、
+**あなた自身の permission ルールを上書きしません**。
+
+```bash
+node hooks/test-gate.mjs --failsafe-only   # 7 つの失敗経路だけ確認(API キー不要)
+TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンドで採点
+```
+
+有効化は `hooks/settings.example.json` の `hooks` ブロックを `.claude/settings.json` に
+コピーします(閾値と文脈は `hooks/jev-gate.json.example` 参照)。
+**このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
+Bash がゲートされてしまうので。実測値と設計の理由は [docs/14](docs/14-permission-hook.md)。
 
 ## 補足
 
