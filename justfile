@@ -93,6 +93,12 @@ test-jevlang-js:
 conformance: moon-build
     scripts/jevlang-conformance.sh
 
+# @inputs: docs/**
+# @cost: 0.1
+# Check every docs/NN-*.md#anchor still points at a heading that exists
+check-doc-anchors:
+    node scripts/check-doc-anchors.mjs
+
 # @inputs: hooks/**
 # @cost: 1.0
 # Check that all seven of the permission hook's failure paths defer
@@ -159,5 +165,5 @@ replay-task-filter: install-task-filter
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter
     @echo "all green"
