@@ -22,6 +22,7 @@
  *               | 'score' '(' expr ',' array ')'
  *               | 'conf' '(' ident ')'
  *               | 'flagged' '(' ident (',' ident)* ')'
+ *               | 'threshold_of' '(' ('noul'|'gate'|'flag') ')'
  *               | matchExpr
  *               | ident '(' args ')'          -- an effect
  *               | '(' expr ')'
@@ -35,6 +36,7 @@
 import { lex, JevSyntaxError } from "./lex.mjs";
 
 const JUDGMENTS = new Set(["noul", "choice", "score"]);
+const THRESHOLD_NAMES = ["noul", "gate", "flag"];
 
 export function parse(source) {
   const tokens = lex(source);
@@ -200,6 +202,20 @@ export function parse(source) {
         const target = expect("ident", "a variable name").text;
         expect(")", "')'");
         return { k: "conf", name: target };
+      }
+      // Reads a `threshold` declaration back as a number, so a cutoff used
+      // by the language and a cutoff mentioned in a message cannot drift
+      // apart. The name is a bare identifier and is checked here rather than
+      // at runtime, so a typo is a syntax error.
+      if (name === "threshold_of") {
+        next();
+        expect("(", "'('");
+        const which = expect("ident", "a threshold name").text;
+        if (!THRESHOLD_NAMES.includes(which)) {
+          fail(`unknown threshold '${which}'; expected ${THRESHOLD_NAMES.join(", ")}`);
+        }
+        expect(")", "')'");
+        return { k: "threshold", name: which };
       }
       // `flagged(a, b, c)` renders the ones at or above `threshold flag` as
       // "a 0.98, c 0.73". It takes bare identifiers rather than expressions
@@ -370,7 +386,7 @@ export function parse(source) {
       next();
       const name = expect("ident", "a threshold name").text;
       if (!(name in thresholds)) {
-        fail(`unknown threshold '${name}'; expected 'noul', 'gate' or 'flag'`);
+        fail(`unknown threshold '${name}'; expected ${THRESHOLD_NAMES.join(", ")}`);
       }
       expect("=", "'='");
       thresholds[name] = expect("num", "a number").value;

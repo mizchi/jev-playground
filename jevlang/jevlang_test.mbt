@@ -268,6 +268,72 @@ async test "flagged rejects a value that is not a judgment" {
 }
 
 ///|
+/// Reading a `threshold` declaration back means a cutoff the language uses
+/// and a cutoff a message mentions cannot drift apart.
+async test "threshold_of reads the declarations back" {
+  // Interpolation takes a bare identifier, so a read has to be bound first.
+  let src =
+    #|threshold noul = 0.6
+    #|threshold gate = 0.4
+    #|threshold flag = 0.7
+    #|let n = threshold_of(noul)
+    #|let g = threshold_of(gate)
+    #|let f = threshold_of(flag)
+    #|say("noul ${n} gate ${g} flag ${f}")
+  let interp = @jevlang.Interp::new(@jevlang.parse(src))
+  let result = interp.run()
+  assert_eq(result.output[0], "noul 0.60 gate 0.40 flag 0.70")
+}
+
+///|
+async test "threshold_of defaults to 0.5 when nothing is declared" {
+  let src =
+    #|let f = threshold_of(flag)
+    #|say("${f}")
+  let interp = @jevlang.Interp::new(@jevlang.parse(src))
+  assert_eq(interp.run().output[0], "0.50")
+}
+
+///|
+test "threshold_of rejects an unknown name at parse time" {
+  let failed = try {
+    let _ = @jevlang.parse("say(flagged())")
+    false
+  } catch {
+    @jevlang.Syntax(_, _, _) => true
+    _ => false
+  }
+  assert_true(failed)
+  let failed2 = try {
+    let _ = @jevlang.parse(("let x = threshold_of(nope)" : String))
+    false
+  } catch {
+    @jevlang.Syntax(_, _, msg) => msg.contains("unknown threshold")
+    _ => false
+  }
+  assert_true(failed2)
+}
+
+///|
+/// A let-bound number works in a comparison and in interpolation, which is
+/// what lets a policy name its own cutoffs once and use them in both the
+/// rule and the reason string. No judgments, so no requests.
+async test "a let-bound number serves as both a cutoff and a message value" {
+  let src =
+    #|let deny_at = 1.5
+    #|let value = 1.9
+    #|if value >= deny_at {
+    #|  say("deny at ${deny_at}")
+    #|}
+  let program = @jevlang.parse(src)
+  assert_eq(program.judgment_count, 0)
+  let interp = @jevlang.Interp::new(program)
+  let result = interp.run()
+  assert_eq(result.output[0], "deny at 1.50")
+  assert_eq(result.requests, 0)
+}
+
+///|
 /// The gate exists because `choice` always returns one of its options. A
 /// plain string subject has no closed world to escape, so matching on one
 /// must not ask a question about nothing — and that makes `match` usable as

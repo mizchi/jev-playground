@@ -66,8 +66,8 @@ moon run --target native cmd/jevlang -- examples/milk.jev
 moon run --target native cmd/jevlang -- examples/milk.jev --replay examples/transcripts/milk.json
 
 # テスト(どれも API キー不要)
-node jevlang-js/test.mjs                    # 20 件
-moon test --target native -p jevlang        # 27 件
+node jevlang-js/test.mjs                    # 24 件
+moon test --target native -p jevlang        # 31 件
 scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラム)
 ```
 
@@ -105,6 +105,9 @@ scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラ�
 - judgment 3 種: `noul("...")` → 確率、`choice("...", [...])` → 選ばれた文字列、
   `score("...", [...])` → 数値
 - `conf(x)` — `x` を作った judgment の confidence
+- `threshold_of(noul)` / `threshold_of(gate)` / `threshold_of(flag)` —
+  **`threshold` 宣言を数値として読み戻す**。言語が使う切れ目とメッセージが
+  言う切れ目が drift しないため。名前は**パース時に検査**するので、綴り間違いは構文エラー
 - `flagged(a, b, c)` — **`threshold flag` 以上のものだけを「名前 値」で並べる**
   (`"destructive 0.98, privileged 0.55"`)。**束縛名をそのまま受ける**のが要点で、
   式を受けると名前が消えてしまう。理由文に「どの述語が撃ったか」を出すための
@@ -394,6 +397,61 @@ node hooks/test-gate.mjs --policy-logic
   -> 16/16 branches of the rule behave as specified
 ```
 
+### 追記 2: 理由文に閾値を出す —— 必要だったのは別の機能だった
+
+組み込み経路は `(confidence 0.99, ask at 0.50, deny at 1.50)` と閾値まで出します。
+ポリシー側で同じことをやろうとして、最初は
+**「`threshold` 宣言を値として読む手段が無い」**のが原因だと書きました。
+**これは誤診でした。**
+
+ポリシーの `deny_at = 1.5` / `ask_at = 0.5` は
+**`permission` スコアに対するポリシー自身の定数**で、言語の
+`threshold noul` / `gate` / `flag`(noul を条件にする閾値・gate の閾値・
+flagged の下限)とは別物です。必要だったのは宣言の読み出しではなく
+**定数に名前を付けること**で、それは `let` で最初からできました:
+
+```jev
+let ask_at = 0.5
+let deny_at = 1.5
+
+let deny_by_score = permission >= deny_at      # 判定で使う
+# ...そして同じ名前を理由文で使う
+let why = "permission ${permission}/2 (confidence ${pconf}, ask at ${ask_at}, deny at ${deny_at}), ..."
+```
+
+**数字を 1 回だけ書いて、判定と理由文の両方から使う。** 2 箇所に書けば必ず drift します。
+judgment は 1 つも増えません(`let` は数値の束縛なのでリクエスト 0 件)。
+
+そのうえで **`threshold_of(name)`** も足しました。こちらは
+「言語の宣言を読む」もので、ポリシーでは述語の下限に使っています:
+
+```jev
+threshold flag = 0.5
+let fired_at = threshold_of(flag)
+
+let deny_by_atoms = exfiltrates > fired_at || obfuscated > 0.7 || blast >= 2.5
+```
+
+**合成規則が「撃った」とみなす下限**と、**`flagged()` が理由文に載せる下限**が
+これで必ず同じ数になります。宣言側を動かせば両方が動く。
+名前はパース時に検査するので、`threshold_of(nope)` は構文エラーです。
+
+結果、2 つの理由文は**形も桁も一致**しました(値の差は 2 回の独立したリクエスト分):
+
+```
+組み込み: permission 1.99/2 (confidence 0.99, ask at 0.50, deny at 1.50), blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.85, outside_project 0.98, affects_others 0.66
+ポリシー: permission 1.99/2 (confidence 0.99, ask at 0.50, deny at 1.50), blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.72
+```
+
+(組み込み側も閾値を `toFixed(2)` に揃えました。スコアは元から 2 桁だったので、
+閾値だけ `0.5` と出ていたのが不揃いでした。)
+
+**ここでも言語の制限を自分で踏みました。** テストに
+`say("noul ${threshold_of(noul)}")` と書いて構文エラーになりました ——
+`${}` に書けるのは**識別子だけ**で、これは §2 の巻き上げ解析を
+自明に保つための制限です。一度 `let` で束縛すれば通ります。
+**制限が正しく働いた**わけですが、書く側としては引っかかる場所だと分かりました。
+
 そして hook 側の規律は守られています:インタプリタには
 **hook 自身のクライアント**(1 回だけ・ハードタイムアウト・リトライ無し)を
 渡しているので、ポリシーが勝手に寛容なクライアントを使うことはできません。
@@ -425,12 +483,12 @@ node hooks/test-gate.mjs --policy-logic
   **やった → §9。** `flagged()` を足して、理由文が
   `Flagged: destructive 0.98, irreversible 0.89, ...` を出せるようになりました。
   `+` は足していません(補間で足りた)。
+- ~~**理由文に閾値を書けない。**~~ **書ける。** ただし
+  **必要だったのは「宣言を読む」ことではありませんでした**(§9 の追記 2)。
 - ~~**数値の桁が組み込み経路と違う。**~~ **揃えた。** `format_number` は
   常に小数 2 桁を出します(`2` → `2.00`)。この言語の数値はすべて
   judgment の値(0..1 の確率か 0..n のスコア)か閾値リテラルなので、
   2 桁固定が素直な既定で、整数の特別扱いは**2 実装がずれる分岐が 1 つ増える**だけでした。
-- **理由文に閾値を書けない。** 組み込みは
-  `(confidence 0.99, ask at 0.5, deny at 1.5)` と閾値まで出しますが、
-  `threshold` 宣言を値として読む手段が無いので、ポリシー側は confidence までです。
-  文字列に直書きすれば出せますが、**宣言と二重管理になって drift する**ので
-  やっていません。
+- **`${}` に書けるのは識別子だけ** なので、`${threshold_of(flag)}` は書けず
+  一度 `let` で束縛する必要があります。§2 の巻き上げ解析を自明に保つための
+  制限で、意図どおりではありますが、**この制限を自分のテストで踏みました**(§9)。

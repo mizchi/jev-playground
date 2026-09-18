@@ -225,8 +225,8 @@ let praised = score("${result} を買ったことで妻に褒められる確率"
 node jevlang-js/bin/jevlang.mjs examples/milk.jev           # JS 版
 moon run --target native cmd/jevlang -- examples/milk.jev   # MoonBit 版
 
-node jevlang-js/test.mjs                 # 20 件(API 不要)
-moon test --target native -p jevlang     # 27 件(API 不要)
+node jevlang-js/test.mjs                 # 24 件(API 不要)
+moon test --target native -p jevlang     # 31 件(API 不要)
 scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 ```
 

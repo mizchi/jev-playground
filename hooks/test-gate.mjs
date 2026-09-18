@@ -320,7 +320,14 @@ async function policyLogic() {
       name: "the reason names the predicates that fired",
       vals: { permission: 1.6, destructive: 0.9, irreversible: 0.8, privileged: 0.55 },
       expect: "deny",
-      reasonHas: ["destructive 0.90", "irreversible 0.80", "privileged 0.55"],
+      reasonHas: [
+        "destructive 0.90",
+        "irreversible 0.80",
+        "privileged 0.55",
+        // The cutoffs are named once in the policy and reused here, so this
+        // also pins that they cannot drift from the rule.
+        "ask at 0.50, deny at 1.50",
+      ],
       reasonLacks: ["exfiltrates", "obfuscated", "affects_others"],
     },
     {

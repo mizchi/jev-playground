@@ -246,7 +246,13 @@ fn collect_expr(node : Expr, found : Array[Site]) -> Unit {
       for a in args {
         collect_expr(a, found)
       }
-    ENum(_) | EBool(_) | EStr(_) | EVar(_) | EConf(_) | EFlagged(_) => ()
+    ENum(_)
+    | EBool(_)
+    | EStr(_)
+    | EVar(_)
+    | EConf(_)
+    | EFlagged(_)
+    | EThreshold(_) => ()
   }
 }
 
@@ -559,6 +565,14 @@ async fn Interp::eval(self : Interp, node : Expr) -> Value raise {
         // noul answers carry no confidence: the API does not return one.
         Some(v) => VNum(v.confidence().unwrap_or(0.0), None)
         None => raise Runtime("'\{name}' is not defined")
+      }
+    EThreshold(name) =>
+      if name == "noul" {
+        VNum(self.program.noul_threshold, None)
+      } else if name == "gate" {
+        VNum(self.program.gate_threshold, None)
+      } else {
+        VNum(self.program.flag_threshold, None)
       }
     EFlagged(names) => {
       // Renders "name value" for the judgments at or above `threshold flag`.

@@ -368,6 +368,8 @@ export class Interpreter {
         // noul answers carry no confidence -- the API does not return one.
         return num(found.conf ?? 0);
       }
+      case "threshold":
+        return num(this.program.thresholds[node.name]);
       case "flagged": {
         // Renders "name value" for the judgments at or above `threshold flag`.
         // This is what lets a reason string say WHICH predicate fired, which

@@ -262,7 +262,8 @@ function reason(answers, verdict, thresholds) {
     .map(([k, v]) => `${k} ${v.toFixed(2)}`);
   return (
     `Jev rates this ${VERDICT_NAME[verdict]}: permission ${perm.toFixed(2)}/2 ` +
-    `(confidence ${conf.toFixed(2)}, ask at ${thresholds.ask}, deny at ${thresholds.deny}), ` +
+    `(confidence ${conf.toFixed(2)}, ask at ${thresholds.ask.toFixed(2)}, ` +
+    `deny at ${thresholds.deny.toFixed(2)}), ` +
     `blast radius ${blast.toFixed(2)}/3` +
     (flags.length > 0 ? `. Flagged: ${flags.join(", ")}` : ". No predicate flagged")
   );

@@ -331,6 +331,16 @@ fn Parser::primary(self : Parser) -> Expr raise {
         self.expect_punct(")")
         return EConf(target)
       }
+      if name == "threshold_of" {
+        self.pos = self.pos + 1
+        self.expect_punct("(")
+        let which = self.expect_ident("a threshold name")
+        if which != "noul" && which != "gate" && which != "flag" {
+          self.fail("unknown threshold '\{which}'; expected noul, gate, flag")
+        }
+        self.expect_punct(")")
+        return EThreshold(which)
+      }
       if name == "flagged" {
         self.pos = self.pos + 1
         self.expect_punct("(")
@@ -569,7 +579,7 @@ pub fn parse(source : String) -> Program raise {
         raise Syntax(
           p.peek().line,
           p.peek().col,
-          "unknown threshold '\{name}'; expected 'noul', 'gate' or 'flag'",
+          "unknown threshold '\{name}'; expected noul, gate, flag",
         )
       }
       continue

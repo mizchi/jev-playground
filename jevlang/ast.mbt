@@ -74,6 +74,10 @@ pub(all) enum Expr {
   /// "a 0.98, c 0.73". Takes bare names rather than expressions precisely so
   /// the NAMES survive: the point is to say which predicate fired.
   EFlagged(Array[String])
+  /// `threshold_of(noul)` — reads a `threshold` declaration back as a number,
+  /// so a cutoff the language uses and a cutoff a message mentions cannot
+  /// drift apart. The name is validated at parse time.
+  EThreshold(String)
   ENot(Expr)
   /// op is "&&" or "||"
   ELogic(String, Expr, Expr)

@@ -220,6 +220,49 @@ check("flagged rejects a value that is not a judgment", async () => {
   );
 });
 
+// Reading a `threshold` declaration back means a cutoff the language uses and
+// a cutoff a message mentions cannot drift apart.
+check("threshold_of reads the declarations back", async () => {
+  // Interpolation takes a bare identifier, so a read has to be bound first.
+  const src = [
+    "threshold noul = 0.6",
+    "threshold gate = 0.4",
+    "threshold flag = 0.7",
+    "let n = threshold_of(noul)",
+    "let g = threshold_of(gate)",
+    "let f = threshold_of(flag)",
+    'say("noul ${n} gate ${g} flag ${f}")',
+  ].join("\n");
+  const result = await new Interpreter(parse(src)).run();
+  eq(result.output, ["noul 0.60 gate 0.40 flag 0.70"]);
+});
+
+check("threshold_of defaults to 0.5 when nothing is declared", async () => {
+  const src = ["let f = threshold_of(flag)", 'say("${f}")'].join("\n");
+  const result = await new Interpreter(parse(src)).run();
+  eq(result.output, ["0.50"]);
+});
+
+check("threshold_of rejects an unknown name at parse time", () => {
+  throws(() => parse("let x = threshold_of(nope)"), "unknown threshold");
+});
+
+// A let-bound number works in a comparison and in interpolation, which is what
+// lets a policy name its own cutoffs once and use them in both the rule and
+// the reason string. No judgments, so no requests.
+check("a let-bound number serves as both a cutoff and a message value", async () => {
+  const src = [
+    "let deny_at = 1.5",
+    "let value = 1.9",
+    'if value >= deny_at { say("deny at ${deny_at}") }',
+  ].join("\n");
+  const p = parse(src);
+  eq(p.judgmentCount, 0, "judgment count");
+  const result = await new Interpreter(p).run();
+  eq(result.output, ["deny at 1.50"]);
+  eq(result.requests, 0, "requests");
+});
+
 // The gate exists because `choice` always returns one of its options. A plain
 // string subject has no closed world to escape, so matching on one must not
 // ask a question about nothing — and that makes `match` usable as an ordinary

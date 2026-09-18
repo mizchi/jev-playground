@@ -322,7 +322,7 @@ hook 側は `--policy` が指定されたとき、組み込みの質問と合成
 ポリシーは 9 judgment 全部が巻き上げ可能なので **1 リクエスト**。
 組み込みと同じです([15 §2](15-jevlang.md#2-巻き上げspeculative-batching-実測-4--2-リクエスト))。
 
-**書けたことで、言語に足りない機能が 3 つ出てきました**(どれも追加済み)。
+**書けたことで、言語に足りない機能が 4 つ出てきました**(どれも追加済み)。
 [15](15-jevlang.md) 時点の `noul(...)` には **true/false の criteria を書く構文が無かった**。
 §3 の話の全体が「`false` 側の文言が判定を決めた」なので、
 criteria を書けないポリシーは**正しく書けません**。そこで
@@ -335,15 +335,23 @@ criteria を書けないポリシーは**正しく書けません**。そこで
 言語に文字列結合も代入も無いのでポリシーからは書けませんでした。
 `flagged(destructive, irreversible, ...)` が `threshold flag` 以上のものだけを
 「名前 値」で並べます(**束縛名を受ける**のが肝で、式を受けると名前が消える)。
-数値の桁も揃えました([15 §6](15-jevlang.md#6-正直な限界))。
-今は組み込みと同じ形の理由文が出ます(値の差は 2 回の独立したリクエストの分):
+数値の桁も閾値の表示も揃えました。今は**形も桁も一致**します
+(値の差は 2 回の独立したリクエストの分):
 
 ```
-組み込み: ... blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
-ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.77
+組み込み: permission 1.99/2 (confidence 0.99, ask at 0.50, deny at 1.50), blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.85, outside_project 0.98, affects_others 0.66
+ポリシー: permission 1.99/2 (confidence 0.99, ask at 0.50, deny at 1.50), blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.72
 ```
 
-3 つめは `match` の gate 条件の修正で、これは**言語側のバグ**でした
+3 つめは**閾値をポリシーから使えるようにすること**。組み込みは
+`(confidence 0.99, ask at 0.50, deny at 1.50)` と閾値まで出します。
+これは `let ask_at = 0.5` のように**定数に名前を付けて判定と理由文の両方から
+使う**だけで済みました(数字を 2 箇所に書けば必ず drift する)。
+併せて `threshold_of(flag)` で**言語の宣言を読み戻せる**ようにしたので、
+合成規則が「撃った」とみなす下限と `flagged()` の下限が必ず同じ数になります。
+詳細は [15 §9 の追記 2](15-jevlang.md#追記-2-理由文に閾値を出す--必要だったのは別の機能だった)。
+
+4 つめは `match` の gate 条件の修正で、これは**言語側のバグ**でした
 ([15 §3](15-jevlang.md#3-choice-に対する-else-腕は-gate-noul-を生やす))。
 「1 つも撃たなかったとき」の言い換えに文字列の `match` を使いたかったのですが、
 当初は subject を見ずに `else` 腕へ gate を付けていたので、
@@ -403,10 +411,7 @@ node hooks/test-gate.mjs --compare-policy
 - **`--policy` 経路は組み込み経路の監査ログの一部を持ちません**
   (`from_score` / `from_atoms` は `.jev` の中の中間変数なので、
   ログには `null` が入る)。理由文には permission と blast が入っています。
-- **理由文に閾値が入りません。** 組み込みは
-  `(confidence 0.99, ask at 0.5, deny at 1.5)` と閾値まで出しますが、
-  `.jev` から `threshold` 宣言を値として読む手段が無いので confidence までです。
-  文字列に直書きすれば出せますが、宣言と二重管理になって drift します。
+
 - **ポリシーファイルは信頼された入力です。** `.jev` は副作用を
   ホストに渡すだけなので任意コード実行はしませんが、
   **判定を全部 `defer` にするポリシーを置けばゲートは無効化できます**。
