@@ -3,7 +3,7 @@
 TypeSafe AI の System One モデル **Jev** を MoonBit から触るためのプレイグラウンド。
 Jev は「文字列ではなく**型付きの確率判断**を返す」意思決定専用モデルです(unstructured state in, typed probabilistic decisions out)。
 
-このリポジトリには次の 4 つの部品が入っています。
+このリポジトリの構成:
 
 | パッケージ | 内容 |
 | --- | --- |
@@ -11,6 +11,14 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/jev` | 単発質問 CLI(モデル一覧・state に対する型付き質問) |
 | `cmd/gomoku` | 五目並べで Jev 同士を対戦させる CLI(毎手、盤面+着手候補を Jev に判断させる) |
 | `cmd/gomoku_gif` | 対局ログ(各手の実測ミリ秒付き)を**実時間再生の GIF** に変換するツール |
+| `cmd/patterns` | 公式ドキュメントの[意思決定パターン](https://docs.typesafe.ai/patterns)を実 API に対して走らせ、効果を実測する CLI |
+| `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
+| `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
+| `report/` | 実験 CLI 共通の整形と応答アクセサ |
+| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト) |
+
+**どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
+([まとめと優先順位](docs/README.md))。
 
 ## 必要なもの
 
@@ -60,7 +68,11 @@ moon run --target native cmd/jev -- --state-file state.json --questions-file que
 {
   "is_spam": {
     "type": "noul",
-    "instructions": "This message is spam."
+    "instructions": "This message is spam.",
+    "criteria": {
+      "true": "Unsolicited advertising",
+      "false": "A legitimate conversation"
+    }
   },
   "tone": {
     "type": "choice",
@@ -70,6 +82,11 @@ moon run --target native cmd/jev -- --state-file state.json --questions-file que
       "neutral": "Calm and factual",
       "frustrated": "Angry or upset"
     }
+  },
+  "handler": {
+    "type": "choice",
+    "instructions": "Which handler owns this? (選択肢名だけで解釈させる形)",
+    "criteria": { "billing": null, "technical": null, "sales": null }
   },
   "urgency": {
     "type": "score",
@@ -111,6 +128,36 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 
 `gomoku_gif` のオプション: `--scale`(セル辺長 px)、`--padding`、`--hold-cs`(最終フレーム表示、1/100 秒)、
 `--max-cs`(フレーム遅延の上限)、`--loop` は未対応(GIF は常にループ再生)。
+
+## 5. 五目並べ以外のパターン(実測レポートは docs/)
+
+どの問題形状が Jev に向いているかを実 API で測った結果は [`docs/`](docs/) にあります。
+各レポートは生の数値と再現コマンド付きです。
+
+| # | 内容 |
+| --- | --- |
+| [00](docs/00-api-notes.md) | API の実挙動(スキーマに書かれていない上限・挙動、公式パターン集の実測) |
+| [01](docs/01-shell-risk.md) | シェルコマンドの危険度判定 — エージェントの実行許可ゲート |
+| [02](docs/02-moba.md) | ヘッドレス 3v3 MOBA(視界と戦場の霧)を Jev にチーム操作させる |
+| [03](docs/03-chess.md) | チェス、Jev vs Claude Sonnet 5 |
+| [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
+| [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
+| [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
+
+一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
+(順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
+[まとめ表](docs/README.md#効いたパターン要約)に効果と落とし穴を並べてあります。
+
+実行:
+
+```bash
+moon run --target native cmd/patterns --                   # 公式パターン集の実測
+moon run --target native cmd/shellrisk --                  # シェルコマンド判定
+moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
+```
+
+TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成)は
+[`experiments/`](experiments/) 以下で、各ディレクトリで `npm install` してから走ります。
 
 ## 補足
 

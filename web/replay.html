@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Lane Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Chivo:wght@600;800&family=JetBrains+Mono:wght@500;700&display=swap"
+/>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --panel: #ffffff;
+    --panel2: #f3f6fb;
+    --line: #d4dbe7;
+    --text: #131a26;
+    --muted: #5a6678;
+    --a: #0284c7;
+    --b: #c026a6;
+    --hpg: #16a34a;
+    --hpy: #d97706;
+    --hpr: #dc2626;
+    --gold: #b7791f;
+    --node: #b9c3d4;
+    --shadow: 0 1px 2px rgba(20, 30, 50, 0.08), 0 6px 20px rgba(20, 30, 50, 0.06);
+    color-scheme: light;
+  }
+  /* dark tokens (system default: only prefers-color-scheme separates the two) */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1320;
+      --panel: #161d2c;
+      --panel2: #101524;
+      --line: #29334a;
+      --text: #e7ecf6;
+      --muted: #8b98b0;
+      --a: #38bdf8;
+      --b: #f472b6;
+      --hpg: #4ade80;
+      --hpy: #fbbf24;
+      --hpr: #f87171;
+      --gold: #f5c451;
+      --node: #38445c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+  /* dark tokens (explicit toggle) */
+  :root[data-theme="dark"] {
+    --bg: #0e1320;
+    --panel: #161d2c;
+    --panel2: #101524;
+    --line: #29334a;
+    --text: #e7ecf6;
+    --muted: #8b98b0;
+    --a: #38bdf8;
+    --b: #f472b6;
+    --hpg: #4ade80;
+    --hpy: #fbbf24;
+    --hpr: #f87171;
+    --gold: #f5c451;
+    --node: #38445c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Chivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 14px 132px; /* room for the fixed transport bar */
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 {
+    font-size: 20px; font-weight: 800; letter-spacing: 0.02em; margin: 0;
+    text-transform: uppercase;
+  }
+  .brand .sub { color: var(--muted); font-size: 12.5px; letter-spacing: 0.03em; }
+  .theme-btn {
+    font: inherit; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  }
+  .theme-btn:hover { color: var(--text); }
+
+  .matchbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; box-shadow: var(--shadow);
+  }
+  .side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .side .dot { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .side.a .dot { background: var(--a); }
+  .side.b .dot { background: var(--b); }
+  .side .who { font-weight: 700; }
+  .side .comp { color: var(--muted); font-size: 12.5px; }
+  .vs { color: var(--muted); font-weight: 800; letter-spacing: 0.1em; }
+  .verdict { margin-left: auto; font-weight: 800; letter-spacing: 0.03em; }
+  .verdict small { display: block; color: var(--muted); font-weight: 500; font-size: 11.5px; letter-spacing: 0; }
+
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 1fr);
+    gap: 14px;
+    align-items: start;
+  }
+  @media (max-width: 760px) { .stage { grid-template-columns: 1fr; } }
+
+  .board {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; box-shadow: var(--shadow); position: relative;
+  }
+  .board svg { width: 100%; height: auto; display: block; }
+  .event-toast {
+    position: absolute; left: 12px; right: 12px; bottom: 10px;
+    background: color-mix(in srgb, var(--panel2) 88%, transparent);
+    border: 1px solid var(--line); border-left: 3px solid var(--gold);
+    border-radius: 8px; padding: 7px 11px; font-size: 12.5px; color: var(--text);
+    min-height: 0; pointer-events: none;
+  }
+  .event-toast:empty { display: none; }
+
+  .rail { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card h2 {
+    margin: 0; padding: 9px 13px; font-size: 11.5px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .tag { width: 9px; height: 9px; border-radius: 2px; }
+  .team-a h2 .tag { background: var(--a); }
+  .team-b h2 .tag { background: var(--b); }
+
+  .champ {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    padding: 8px 13px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    align-items: center;
+  }
+  .champ:last-child { border-bottom: none; }
+  .champ .who { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .champ .role {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.03em; color: var(--bg);
+    background: var(--muted); border-radius: 4px; padding: 1px 5px; text-transform: uppercase; flex: none;
+  }
+  .team-a .champ .role { background: var(--a); }
+  .team-b .champ .role { background: var(--b); }
+  .champ .kind { font-weight: 700; font-size: 13.5px; }
+  .champ .wall { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .champ .kd { color: var(--muted); font-size: 12px; text-align: right; }
+  .champ .barwrap { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+  .bar { flex: 1; height: 7px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 24%, transparent); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 4px; transition: width 0.14s linear; }
+  .champ .hp { font-size: 11.5px; color: var(--muted); min-width: 62px; text-align: right; }
+  .champ.dead { opacity: 0.5; }
+  .champ.dead .barwrap i { background: var(--muted) !important; }
+
+  .feed { max-height: 190px; overflow-y: auto; }
+  .feed .row {
+    display: flex; gap: 9px; padding: 6px 13px; font-size: 12.5px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+  }
+  .feed .row:last-child { border-bottom: none; }
+  .feed .row .t { color: var(--muted); flex: none; }
+  .feed .row.now { background: color-mix(in srgb, var(--gold) 15%, transparent); }
+  .feed .empty { padding: 12px 13px; color: var(--muted); font-size: 12.5px; }
+
+  .transport {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: color-mix(in srgb, var(--panel) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+  }
+  .transport .inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btns { display: flex; gap: 6px; }
+  .transport button.ctl {
+    font: inherit; width: 40px; height: 34px; border-radius: 8px; cursor: pointer;
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    display: grid; place-items: center;
+  }
+  .transport button.ctl.play { width: 48px; background: var(--gold); color: #1a1400; border-color: transparent; font-weight: 800; }
+  .transport button.ctl:hover { border-color: var(--muted); }
+  .scrub { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 10px; }
+  input[type="range"] { width: 100%; accent-color: var(--gold); }
+  .ticklabel { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .ticklabel b { color: var(--text); }
+  .speed { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  select.speed-sel { font: inherit; font-size: 12px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; }
+  .loadbtn { font: inherit; font-size: 12px; color: var(--muted); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+  .loadbtn:hover { color: var(--text); }
+
+  .drop-hint {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 9;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+  }
+  .drop-hint.show { display: grid; }
+  .drop-hint .box { border: 2px dashed var(--gold); border-radius: 16px; padding: 30px 40px; font-size: 15px; color: var(--text); background: var(--panel); }
+
+  .empty-state { padding: 40px 16px; text-align: center; color: var(--muted); }
+  .empty-state b { color: var(--text); }
+  a { color: var(--a); }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Lane&nbsp;Replay</h1>
+      <span class="sub">compressed 3v3 · 2 lanes + jungle · fog of war</span>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button">Theme</button>
+  </header>
+
+  <div class="matchbar" id="matchbar" hidden>
+    <span class="side a"><span class="dot"></span><span class="who" id="whoA">A</span><span class="comp" id="compA"></span></span>
+    <span class="vs">VS</span>
+    <span class="side b"><span class="dot"></span><span class="who" id="whoB">B</span><span class="comp" id="compB"></span></span>
+    <span class="verdict" id="verdict"></span>
+  </div>
+
+  <div class="stage" id="stage" hidden>
+    <div class="board">
+      <svg id="svg" viewBox="0 0 520 300" role="img" aria-label="MOBA map replay"></svg>
+      <div class="event-toast" id="toast"></div>
+    </div>
+    <div class="rail">
+      <div class="card team-a">
+        <h2><span class="tag"></span><span id="hdrA">Team A</span></h2>
+        <div id="rosterA"></div>
+      </div>
+      <div class="card team-b">
+        <h2><span class="tag"></span><span id="hdrB">Team B</span></h2>
+        <div id="rosterB"></div>
+      </div>
+      <div class="card">
+        <h2>Kill feed</h2>
+        <div class="feed" id="feed"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <p><b>Drop a replay file</b> (a <span class="num">.jsonl</span> written by
+    <span class="num">cmd/moba --replay</span> or the referee) anywhere on this page,
+    or use <b>Load</b> below.</p>
+    <p>Loading the bundled sample…</p>
+  </div>
+</div>
+
+<div class="transport" id="transport" hidden>
+  <div class="inner">
+    <div class="btns">
+      <button class="ctl" id="stepBack" type="button" title="Step back (←)" aria-label="Step back">⏮</button>
+      <button class="ctl play" id="playBtn" type="button" title="Play / pause (space)" aria-label="Play">▶</button>
+      <button class="ctl" id="stepFwd" type="button" title="Step forward (→)" aria-label="Step forward">⏭</button>
+    </div>
+    <div class="scrub">
+      <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Timeline" />
+    </div>
+    <span class="ticklabel">tick <b class="num" id="tickNow">0</b> / <span class="num" id="tickMax">0</span></span>
+    <span class="speed">
+      <label for="speedSel">speed</label>
+      <select class="speed-sel" id="speedSel">
+        <option value="0.5">0.5×</option>
+        <option value="1">1×</option>
+        <option value="2" selected>2×</option>
+        <option value="4">4×</option>
+        <option value="8">8×</option>
+      </select>
+    </span>
+    <button class="loadbtn" id="loadBtn" type="button">Load…</button>
+    <input type="file" id="fileInput" accept=".jsonl,.json,.txt,application/json" hidden />
+  </div>
+</div>
+
+<div class="drop-hint" id="dropHint"><div class="box">Drop the replay to load it</div></div>
+
+<script>
+"use strict";
+(function () {
+  // ---- theme toggle (per-viewer convenience; storage optional) ----------
+  var root = document.documentElement;
+  function storedTheme() { try { return localStorage.getItem("lane-replay-theme"); } catch (e) { return null; } }
+  function applyTheme(t) { if (t) root.setAttribute("data-theme", t); else root.removeAttribute("data-theme"); }
+  applyTheme(storedTheme());
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme");
+    var isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = isDark ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("lane-replay-theme", next); } catch (e) {}
+  });
+
+  // ---- board geometry ---------------------------------------------------
+  // Derive x/y for each node from its name: prefix a_/m_/b_ gives the column,
+  // lane gives the row, bases sit centre. Purely from the file's meta.nodes.
+  var COLX = { base_a: 44, a: 168, m: 260, b: 352, base_b: 476 };
+  var ROWY = { top: 74, jungle: 150, bot: 226, base: 150 };
+  function nodePos(node) {
+    var name = node.name;
+    var x, y;
+    if (name === "a_base") { x = COLX.base_a; y = ROWY.base; }
+    else if (name === "b_base") { x = COLX.base_b; y = ROWY.base; }
+    else {
+      var pfx = name.charAt(0); // a / m / b
+      x = pfx === "a" ? COLX.a : pfx === "m" ? COLX.m : COLX.b;
+      y = ROWY[node.lane] != null ? ROWY[node.lane] : ROWY.base;
+    }
+    return { x: x, y: y };
+  }
+
+  // ---- state ------------------------------------------------------------
+  var meta = null, frames = [], result = null;
+  var champInfo = {};       // id -> {team, role, kind, deals, max_hp, frontline}
+  var posByName = {};       // node name -> {x,y}
+  var nodeById = {};        // id -> node
+  var idx = 0, playing = false, timer = null;
+  var svg = document.getElementById("svg");
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function el(tag, attrs, kids) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (kids) kids.forEach(function (c) { e.appendChild(c); });
+    return e;
+  }
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+  function hpColor(frac) { return frac > 0.6 ? "var(--hpg)" : frac > 0.3 ? "var(--hpy)" : "var(--hpr)"; }
+  function teamVar(team) { return team === "A" ? "var(--a)" : "var(--b)"; }
+  function roleShort(role) { return role === "jungle" ? "jg" : role === "top" ? "top" : role === "bot" ? "bot" : role; }
+  function isFront(info) {
+    if (typeof info.frontline === "boolean") return info.frontline;
+    return info.kind === "tank" || info.kind === "bruiser";
+  }
+
+  // ---- parse ------------------------------------------------------------
+  function parse(text) {
+    var m = null, fs = [], res = null;
+    text.split(/\r?\n/).forEach(function (line) {
+      line = line.trim();
+      if (!line) return;
+      var o;
+      try { o = JSON.parse(line); } catch (e) { return; }
+      if (o.type === "meta") m = o;
+      else if (o.type === "frame") fs.push(o);
+      else if (o.type === "result") res = o;
+    });
+    return { meta: m, frames: fs, result: res };
+  }
+
+  function load(text) {
+    var p = parse(text);
+    if (!p.meta || !p.frames.length) {
+      document.getElementById("emptyState").innerHTML =
+        "<p><b>That file didn't parse as a replay.</b></p><p>Expected JSON lines: a <span class='num'>meta</span> header, then <span class='num'>frame</span> lines.</p>";
+      return;
+    }
+    meta = p.meta; frames = p.frames; result = p.result;
+    champInfo = {}; nodeById = {}; posByName = {};
+    (meta.champions || []).forEach(function (c) { champInfo[c.id] = c; });
+    (meta.nodes || []).forEach(function (n) { nodeById[n.id] = n; posByName[n.name] = nodePos(n); });
+    setupBoard();
+    setupMatchbar();
+    setupRoster();
+    var scrub = document.getElementById("scrub");
+    scrub.max = String(frames.length - 1);
+    scrub.value = "0";
+    idx = 0;
+    document.getElementById("tickMax").textContent = meta.max_ticks != null ? meta.max_ticks : frames[frames.length - 1].tick;
+    document.getElementById("emptyState").hidden = true;
+    document.getElementById("matchbar").hidden = false;
+    document.getElementById("stage").hidden = false;
+    document.getElementById("transport").hidden = false;
+    render();
+  }
+
+  // ---- static board (edges + node labels + structure/champ slots) -------
+  var champLayer, structLayer;
+  function setupBoard() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    // edges (dedup undirected pairs)
+    var seen = {};
+    var edgeG = el("g", {});
+    (meta.nodes || []).forEach(function (n) {
+      (n.adj || []).forEach(function (adjName) {
+        var key = [n.name, adjName].sort().join("|");
+        if (seen[key]) return; seen[key] = 1;
+        var p = posByName[n.name], q = posByName[adjName];
+        if (!p || !q) return;
+        edgeG.appendChild(el("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y, stroke: "var(--line)", "stroke-width": 3, "stroke-linecap": "round" }));
+      });
+    });
+    svg.appendChild(edgeG);
+
+    // node discs + labels
+    var nodeG = el("g", {});
+    (meta.nodes || []).forEach(function (n) {
+      var p = posByName[n.name];
+      nodeG.appendChild(el("circle", { cx: p.x, cy: p.y, r: 5, fill: "var(--node)" }));
+      // Name always below the node; champions fan upward and the structure HP
+      // sits above, so nothing collides with the label.
+      var t = el("text", {
+        x: p.x, y: p.y + 22,
+        "text-anchor": "middle", "font-size": 9.5, fill: "var(--muted)",
+        "font-family": "JetBrains Mono, monospace"
+      });
+      t.textContent = n.name;
+      nodeG.appendChild(t);
+    });
+    svg.appendChild(nodeG);
+
+    structLayer = el("g", {});
+    svg.appendChild(structLayer);
+    champLayer = el("g", {});
+    svg.appendChild(champLayer);
+  }
+
+  function clear(layer) { while (layer.firstChild) layer.removeChild(layer.firstChild); }
+
+  // ---- per-frame board render ------------------------------------------
+  function renderBoard(frame) {
+    clear(structLayer);
+    (frame.structures || []).forEach(function (s) {
+      var p = posByName[s.at]; if (!p) return;
+      var alive = s.hp > 0;
+      var isBase = s.kind === "base";
+      var size = isBase ? 34 : 26;
+      var frac = Math.max(0, s.hp) / (s.max_hp || 1);
+      var col = teamVar(s.team);
+      // structure footprint behind the node (base drawn as a rotated diamond)
+      var rectAttrs = {
+        x: p.x - size / 2, y: p.y - size / 2, width: size, height: size, rx: isBase ? 8 : 6,
+        fill: alive ? "color-mix(in srgb, " + col + " 14%, transparent)" : "transparent",
+        stroke: alive ? col : "var(--line)",
+        "stroke-width": alive ? 2 : 1.5,
+        "stroke-dasharray": alive ? "none" : "3 3",
+        opacity: alive ? 1 : 0.55
+      };
+      if (isBase) rectAttrs.transform = "rotate(45 " + p.x + " " + p.y + ")";
+      structLayer.appendChild(el("rect", rectAttrs));
+      if (alive) {
+        var hpt = el("text", {
+          x: p.x, y: p.y - size / 2 - 4, "text-anchor": "middle", "font-size": 8.5,
+          fill: frac > 0.3 ? "var(--muted)" : "var(--hpr)", "font-family": "JetBrains Mono, monospace"
+        });
+        hpt.textContent = s.hp;
+        structLayer.appendChild(hpt);
+      }
+    });
+
+    clear(champLayer);
+    // group living champs by node so co-located ones fan out
+    var byNode = {};
+    (frame.champs || []).forEach(function (c) {
+      if (!c.alive) return;
+      (byNode[c.at] = byNode[c.at] || []).push(c);
+    });
+    Object.keys(byNode).forEach(function (name) {
+      var p = posByName[name]; if (!p) return;
+      var list = byNode[name];
+      list.forEach(function (c, i) {
+        var info = champInfo[c.id] || {};
+        var n = list.length;
+        // fan out around the node centre
+        var ang = -Math.PI / 2 + (i - (n - 1) / 2) * 0.7;
+        var rr = n > 1 ? 13 : 0;
+        var cx = p.x + Math.cos(ang) * rr, cy = p.y + Math.sin(ang) * rr;
+        var frac = Math.max(0, c.hp) / (info.max_hp || 1);
+        var col = teamVar(info.team);
+        var g = el("g", {});
+        // hp ring
+        var R = 9;
+        var circ = 2 * Math.PI * R;
+        g.appendChild(el("circle", { cx: cx, cy: cy, r: R, fill: "var(--panel)", stroke: "color-mix(in srgb, var(--muted) 35%, transparent)", "stroke-width": 2 }));
+        g.appendChild(el("circle", {
+          cx: cx, cy: cy, r: R, fill: "none", stroke: hpColor(frac), "stroke-width": 2.5,
+          "stroke-dasharray": (circ * frac).toFixed(2) + " " + circ.toFixed(2),
+          "stroke-linecap": "round", transform: "rotate(-90 " + cx + " " + cy + ")"
+        }));
+        // body dot
+        g.appendChild(el("circle", { cx: cx, cy: cy, r: 6, fill: col }));
+        if (isFront(info)) g.appendChild(el("circle", { cx: cx, cy: cy, r: 6, fill: "none", stroke: "var(--text)", "stroke-width": 1.4, opacity: 0.85 }));
+        var lab = el("text", { x: cx, y: cy + 3, "text-anchor": "middle", "font-size": 8, "font-weight": 700, fill: "#fff", "font-family": "Chivo, sans-serif" });
+        lab.textContent = (roleShort(info.role) || "?").charAt(0).toUpperCase();
+        g.appendChild(lab);
+        var title = el("title", {});
+        title.textContent = info.team + "_" + (info.role || "?") + " (" + (info.kind || "?") + ")  hp " + c.hp + "/" + (info.max_hp || "?") + "  g" + c.gold;
+        g.appendChild(title);
+        champLayer.appendChild(g);
+      });
+    });
+  }
+
+  // ---- matchbar + roster ------------------------------------------------
+  function setupMatchbar() {
+    document.getElementById("whoA").textContent = "A " + (meta.a_policy || "");
+    document.getElementById("whoB").textContent = "B " + (meta.b_policy || "");
+    document.getElementById("compA").textContent = "[" + (meta.comp_a || []).join(" / ") + "]";
+    document.getElementById("compB").textContent = "[" + (meta.comp_b || []).join(" / ") + "]";
+    var v = document.getElementById("verdict");
+    if (result) {
+      var w = result.winner === "A" ? "A wins" : result.winner === "B" ? "B wins" : "Draw";
+      v.innerHTML = esc(w) + "<small>" + esc(result.reason || "") + "</small>";
+      v.style.color = result.winner === "A" ? "var(--a)" : result.winner === "B" ? "var(--b)" : "var(--muted)";
+    } else { v.textContent = ""; }
+  }
+
+  function teamIds(team) {
+    return (meta.champions || []).filter(function (c) { return c.team === team; }).map(function (c) { return c.id; });
+  }
+  var rosterRows = {}; // id -> {root, hpbar, hptext, kd, cls}
+  function setupRoster() {
+    document.getElementById("hdrA").textContent = "Team A · " + (meta.a_policy || "");
+    document.getElementById("hdrB").textContent = "Team B · " + (meta.b_policy || "");
+    ["A", "B"].forEach(function (team) {
+      var host = document.getElementById(team === "A" ? "rosterA" : "rosterB");
+      host.innerHTML = "";
+      teamIds(team).forEach(function (id) {
+        var info = champInfo[id];
+        var row = document.createElement("div");
+        row.className = "champ";
+        row.innerHTML =
+          '<div class="who"><span class="role">' + esc(roleShort(info.role)) + '</span>' +
+          '<span class="kind">' + esc(info.kind) + '</span>' +
+          (isFront(info) ? '<span class="wall">wall</span>' : '') +
+          '<span class="deals" style="color:var(--muted);font-size:11px">' + esc(info.deals || "") + '</span></div>' +
+          '<div class="kd num" data-kd></div>' +
+          '<div class="barwrap"><span class="bar"><i data-hp></i></span><span class="hp num" data-hptext></span></div>';
+        host.appendChild(row);
+        rosterRows[id] = {
+          root: row,
+          hp: row.querySelector("[data-hp]"),
+          hptext: row.querySelector("[data-hptext]"),
+          kd: row.querySelector("[data-kd]")
+        };
+      });
+    });
+  }
+
+  function renderRoster(frame) {
+    var byId = {};
+    (frame.champs || []).forEach(function (c) { byId[c.id] = c; });
+    Object.keys(rosterRows).forEach(function (id) {
+      var c = byId[id]; var info = champInfo[id]; var r = rosterRows[id];
+      if (!c) return;
+      var frac = Math.max(0, c.hp) / (info.max_hp || 1);
+      if (c.alive) {
+        r.root.classList.remove("dead");
+        r.hp.style.width = (frac * 100).toFixed(0) + "%";
+        r.hp.style.background = hpColor(frac);
+        r.hptext.textContent = c.hp + " / " + info.max_hp;
+      } else {
+        r.root.classList.add("dead");
+        r.hp.style.width = "0%";
+        r.hptext.textContent = "dead " + c.respawn;
+      }
+      r.kd.textContent = "g" + c.gold + "  " + c.kills + "/" + c.deaths;
+    });
+  }
+
+  // ---- kill feed --------------------------------------------------------
+  function renderFeed(upto) {
+    var feed = document.getElementById("feed");
+    var rows = [];
+    for (var i = 0; i <= upto && i < frames.length; i++) {
+      var f = frames[i];
+      if (f.event) rows.push({ tick: f.tick, text: f.event, now: i === upto });
+    }
+    if (!rows.length) { feed.innerHTML = '<div class="empty">No kills or structures down yet.</div>'; return; }
+    feed.innerHTML = rows.map(function (r) {
+      return '<div class="row' + (r.now ? " now" : "") + '"><span class="t num">t' + r.tick + '</span><span>' + esc(r.text) + "</span></div>";
+    }).join("");
+    var last = feed.querySelector(".row:last-child");
+    if (last) last.scrollIntoView({ block: "nearest" });
+  }
+
+  // ---- render one frame -------------------------------------------------
+  function render() {
+    if (!frames.length) return;
+    if (idx < 0) idx = 0;
+    if (idx > frames.length - 1) idx = frames.length - 1;
+    var frame = frames[idx];
+    renderBoard(frame);
+    renderRoster(frame);
+    renderFeed(idx);
+    document.getElementById("scrub").value = String(idx);
+    document.getElementById("tickNow").textContent = frame.tick;
+    var toast = document.getElementById("toast");
+    toast.textContent = frame.event || "";
+    if (idx === frames.length - 1 && result && !frame.event) {
+      var w = result.winner === "A" ? "A" : result.winner === "B" ? "B" : "nobody";
+      toast.textContent = "Game over — " + (result.winner === "draw" ? "draw" : w + " wins") + " · " + (result.reason || "");
+    }
+  }
+
+  // ---- transport --------------------------------------------------------
+  function setPlaying(on) {
+    playing = on && idx < frames.length - 1;
+    var btn = document.getElementById("playBtn");
+    btn.textContent = playing ? "❚❚" : "▶";
+    btn.setAttribute("aria-label", playing ? "Pause" : "Play");
+    if (timer) { clearInterval(timer); timer = null; }
+    if (playing) {
+      var tps = parseFloat(document.getElementById("speedSel").value) || 2;
+      timer = setInterval(function () {
+        if (idx >= frames.length - 1) { setPlaying(false); return; }
+        idx++; render();
+      }, 1000 / tps);
+    }
+  }
+  document.getElementById("playBtn").addEventListener("click", function () { setPlaying(!playing); });
+  document.getElementById("stepFwd").addEventListener("click", function () { setPlaying(false); idx++; render(); });
+  document.getElementById("stepBack").addEventListener("click", function () { setPlaying(false); idx--; render(); });
+  document.getElementById("scrub").addEventListener("input", function (e) { setPlaying(false); idx = parseInt(e.target.value, 10) || 0; render(); });
+  document.getElementById("speedSel").addEventListener("change", function () { if (playing) setPlaying(true); });
+  document.addEventListener("keydown", function (e) {
+    if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === " ") { e.preventDefault(); setPlaying(!playing); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setPlaying(false); idx++; render(); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); setPlaying(false); idx--; render(); }
+  });
+
+  // ---- file loading -----------------------------------------------------
+  var fileInput = document.getElementById("fileInput");
+  document.getElementById("loadBtn").addEventListener("click", function () { fileInput.click(); });
+  fileInput.addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function () { setPlaying(false); load(String(rd.result)); }; rd.readAsText(f);
+  });
+  var hint = document.getElementById("dropHint");
+  var dragDepth = 0;
+  window.addEventListener("dragenter", function (e) { e.preventDefault(); dragDepth++; hint.classList.add("show"); });
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("dragleave", function (e) { e.preventDefault(); dragDepth--; if (dragDepth <= 0) hint.classList.remove("show"); });
+  window.addEventListener("drop", function (e) {
+    e.preventDefault(); dragDepth = 0; hint.classList.remove("show");
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function () { setPlaying(false); load(String(rd.result)); }; rd.readAsText(f);
+  });
+
+  // ---- boot: try the bundled sample -------------------------------------
+  fetch("sample.jsonl").then(function (r) {
+    if (!r.ok) throw new Error("no sample");
+    return r.text();
+  }).then(function (t) { load(t); }).catch(function () {
+    document.getElementById("emptyState").innerHTML =
+      "<p><b>Drop a replay file</b> (a <span class='num'>.jsonl</span> from " +
+      "<span class='num'>cmd/moba --replay</span> or the referee) anywhere on this page, or use <b>Load…</b> below.</p>";
+    document.getElementById("transport").hidden = false;
+  });
+})();
+</script>
+</body>
+</html>

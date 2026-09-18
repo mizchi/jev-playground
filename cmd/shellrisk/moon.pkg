@@ -1,0 +1,13 @@
+import {
+  "mizchi/jev-playground/lib",
+  "mizchi/jev-playground/report",
+  "moonbitlang/async",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/argparse",
+  "moonbitlang/core/env",
+  "moonbitlang/x/sys",
+}
+
+supported_targets = "+native"
+
+pkgtype(kind: "executable")

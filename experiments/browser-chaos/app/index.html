@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chaos target</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; }
+  nav a { margin-right: .75rem; }
+  button { margin: .2rem .3rem .2rem 0; padding: .3rem .6rem; }
+  .muted { color: #666; font-size: .9rem; }
+  .goal { background: #0a0; color: #fff; padding: 1rem; }
+</style>
+</head>
+<body>
+<!--
+  A deliberately gated shop. The only way to #/confirm is
+
+    products -> add to cart -> cart -> checkout-1 (fill email) -> next
+             -> checkout-2 (fill address) -> next -> checkout-3 -> place order
+
+  Every screen also carries decoys, and two of them undo progress ("Empty
+  cart", "Delete account"). Progress lives in sessionStorage so it survives
+  the reloads the crawler does between pages.
+
+  Nothing here is Jev-specific: it is just an app where the interesting state
+  is many correct clicks deep, which is where a random walk falls over.
+-->
+<nav>
+  <a href="#/home">Home</a>
+  <a href="#/products">Products</a>
+  <a href="#/cart">Cart</a>
+  <a href="#/settings">Settings</a>
+  <a href="#/about">About</a>
+  <a href="#/help">Help</a>
+  <a href="#/faq">FAQ</a>
+  <a href="#/blog">Blog</a>
+  <a href="#/contact">Contact</a>
+  <a href="#/danger">Account</a>
+</nav>
+<hr>
+<main id="view"></main>
+<p class="muted" id="status"></p>
+
+<script>
+const KEY = "chaos-target-progress";
+const blank = { cart: 0, email: "", address: "", step: 0, ordered: false };
+
+function load() {
+  try { return { ...blank, ...JSON.parse(sessionStorage.getItem(KEY) || "{}") }; }
+  catch { return { ...blank }; }
+}
+function save(s) {
+  try { sessionStorage.setItem(KEY, JSON.stringify(s)); } catch {}
+}
+let state = load();
+function update(patch) { state = { ...state, ...patch }; save(state); render(); }
+
+// Every state the app has entered, for the harness to read back.
+window.__visited = window.__visited || [];
+
+const decoys = (names) => names
+  .map((n) => `<button type="button" data-decoy="1">${n}</button>`)
+  .join("");
+
+const routes = {
+  "#/home": () => `
+    <h1>Welcome</h1>
+    <p>Browse the catalogue to get started.</p>
+    ${decoys(["Subscribe to newsletter", "Take the tour", "Dismiss banner", "Change language"])}`,
+
+  "#/products": () => `
+    <h1>Products</h1>
+    <p>Three things you can buy.</p>
+    <button type="button" id="add">Add Widget to cart</button>
+    <button type="button" id="add2">Add Gadget to cart</button>
+    ${decoys(["Sort by price", "Filter in stock", "Add Widget to wishlist", "Compare selected", "Share catalogue"])}`,
+
+  "#/cart": () => state.cart > 0 ? `
+    <h1>Cart</h1>
+    <p>${state.cart} item(s) in your cart.</p>
+    <button type="button" id="checkout">Proceed to checkout</button>
+    <button type="button" id="empty">Empty cart</button>
+    ${decoys(["Apply promo code", "Save cart for later", "Continue shopping"])}` : `
+    <h1>Cart</h1>
+    <p>Your cart is empty. Add something from Products first.</p>
+    ${decoys(["Apply promo code", "Continue shopping"])}`,
+
+  "#/checkout-1": () => state.cart === 0 ? `
+    <h1>Checkout</h1><p>Nothing to check out.</p>` : `
+    <h1>Checkout — step 1 of 3</h1>
+    <label for="email">Email address</label>
+    <input id="email" type="email" placeholder="you@example.com" value="${state.email}">
+    <button type="button" id="next1">Continue to delivery</button>
+    <button type="button" id="back1">Back to cart</button>
+    ${decoys(["Use a different account", "Checkout as guest"])}`,
+
+  "#/checkout-2": () => !state.email ? `
+    <h1>Checkout</h1><p>Enter your email first.</p>` : `
+    <h1>Checkout — step 2 of 3</h1>
+    <label for="address">Delivery address</label>
+    <input id="address" type="text" placeholder="1 Example Street" value="${state.address}">
+    <button type="button" id="next2">Continue to payment</button>
+    <button type="button" id="back2">Back to email</button>
+    ${decoys(["Pick up in store", "Add delivery note"])}`,
+
+  "#/checkout-3": () => !state.address ? `
+    <h1>Checkout</h1><p>Enter your address first.</p>` : `
+    <h1>Checkout — step 3 of 3</h1>
+    <p>Widget, delivered to ${state.address}.</p>
+    <button type="button" id="place">Place order</button>
+    <button type="button" id="back3">Back to delivery</button>
+    ${decoys(["Add gift wrap", "Apply store credit"])}`,
+
+  "#/confirm": () => `
+    <h1 class="goal">Order placed — thank you!</h1>
+    <p>This is the deepest state in the app.</p>`,
+
+  "#/danger": () => `
+    <h1>Account</h1>
+    <button type="button" id="wipe">Delete account and all data</button>
+    ${decoys(["Export data", "Change password", "Enable two-factor"])}`,
+};
+
+for (const dead of ["#/settings", "#/about", "#/help", "#/faq", "#/blog", "#/contact"]) {
+  const name = dead.slice(2);
+  routes[dead] = () => `
+    <h1>${name}</h1>
+    <p>Nothing important happens here.</p>
+    ${decoys([`Edit ${name}`, "Send feedback", "Print page", "Copy link"])}`;
+}
+
+function render() {
+  const hash = location.hash || "#/home";
+  const view = routes[hash] || (() => `<h1>Not found</h1>`);
+  document.getElementById("view").innerHTML = view();
+  document.title = `Chaos target — ${hash}`;
+  if (window.__visited[window.__visited.length - 1] !== hash) window.__visited.push(hash);
+  document.getElementById("status").textContent =
+    `cart=${state.cart} email=${state.email ? "set" : "empty"} ` +
+    `address=${state.address ? "set" : "empty"} ordered=${state.ordered}`;
+  wire();
+}
+
+function go(hash) { location.hash = hash; }
+
+function wire() {
+  const on = (id, fn) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("click", fn);
+  };
+  on("add", () => update({ cart: state.cart + 1 }));
+  on("add2", () => update({ cart: state.cart + 1 }));
+  on("checkout", () => go("#/checkout-1"));
+  on("empty", () => update({ cart: 0, step: 0 }));
+  on("next1", () => {
+    const v = (document.getElementById("email") || {}).value || "";
+    if (v.trim()) { update({ email: v.trim() }); go("#/checkout-2"); }
+  });
+  on("next2", () => {
+    const v = (document.getElementById("address") || {}).value || "";
+    if (v.trim()) { update({ address: v.trim() }); go("#/checkout-3"); }
+  });
+  on("place", () => { update({ ordered: true }); go("#/confirm"); });
+  on("back1", () => go("#/cart"));
+  on("back2", () => go("#/checkout-1"));
+  on("back3", () => go("#/checkout-2"));
+  on("wipe", () => { state = { ...blank }; save(state); go("#/home"); });
+}
+
+window.addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>

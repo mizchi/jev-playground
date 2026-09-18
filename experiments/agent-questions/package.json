@@ -1,0 +1,9 @@
+{
+  "name": "jev-agent-questions",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Can a coding agent write the Jev questions? (docs/04-agent-built-prompts.md)",
+  "type": "module",
+  "scripts": { "bench": "tsx src/run.ts" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

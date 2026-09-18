@@ -1,0 +1,10 @@
+{
+  "name": "jev-escalation",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Confidence-gated escalation: does low confidence predict a worse decision? (docs/07-escalation.md)",
+  "type": "module",
+  "scripts": { "bench": "tsx src/run.ts" },
+  "dependencies": { "chess.js": "^1.4.0" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

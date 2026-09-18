@@ -1,0 +1,10 @@
+{
+  "name": "jev-chess",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Jev vs Claude Sonnet 5 at chess (docs/03-chess.md)",
+  "type": "module",
+  "scripts": { "play": "tsx src/run.ts" },
+  "dependencies": { "chess.js": "^1.4.0" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

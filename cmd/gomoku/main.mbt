@@ -290,11 +290,9 @@ async fn pick_move(
     "recent_moves": Json(history),
   })
   let qs : Map[String, @lib.Question] = Map([])
-  qs["move"] = @lib.Question::Choice(
-    Some(
-      "Which empty cell should you play? Choose the single best move for this position.",
-    ),
+  qs["move"] = @lib.Question::choice(
     criteria,
+    instructions="Which empty cell should you play? Choose the single best move for this position.",
   )
   let req : @lib.SystemOneRequest = { state, model, questions: qs, }
   let fallback = default_move(board, stone)

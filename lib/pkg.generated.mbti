@@ -6,11 +6,13 @@ import {
 }
 
 // Values
+pub let max_choices : Int
 
 // Errors
 pub(all) suberror ApiError {
   Http(Int, String, String)
   InvalidResponse(String)
+  InvalidRequest(String)
 } derive(@debug.Debug)
 
 // Types and methods
@@ -40,12 +42,17 @@ pub fn Model::from_json(Json) -> Self raise
 pub fn Model::to_json(Self) -> Json
 
 pub(all) enum Question {
-  Noul(String?, String?, String?)
-  Choice(String?, Map[String, String])
-  Score(String?, Array[String])
+  Noul(Json?, Json?, Json?)
+  Choice(Json?, Map[String, Json])
+  Score(Json?, Array[Json])
 }
+pub fn Question::choice(Map[String, String], instructions? : String) -> Self
+pub fn Question::choice_of(Array[String], instructions? : String) -> Self
 pub fn Question::from_json(Json) -> Self raise
+pub fn Question::noul(String, true_desc? : String, false_desc? : String) -> Self
+pub fn Question::score(Array[String], instructions? : String) -> Self
 pub fn Question::to_json(Self) -> Json
+pub fn Question::validate(Self, String) -> Unit raise
 
 pub(all) struct SystemOneRequest {
   state : Json
@@ -53,6 +60,7 @@ pub(all) struct SystemOneRequest {
   questions : Map[String, Question]
 }
 pub fn SystemOneRequest::to_json(Self) -> Json
+pub fn SystemOneRequest::validate(Self) -> Unit raise
 
 pub(all) struct SystemOneResponse {
   model : String

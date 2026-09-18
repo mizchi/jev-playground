@@ -1,0 +1,99 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/jev-playground/moba"
+
+// Values
+pub const A_BASE : Int = 0
+
+pub const B_BASE : Int = 4
+
+pub const N_NODES : Int = 11
+
+pub const TEAM_A : Int = 1
+
+pub const TEAM_B : Int = 2
+
+pub let adjacency : Array[Array[Int]]
+
+pub fn base_of(Int) -> Int
+
+pub fn camp_gold(Int) -> Int
+
+pub fn hops(Int, Int) -> Int
+
+pub let node_lane : Array[String]
+
+pub fn node_name(Int) -> String
+
+pub let node_names : Array[String]
+
+pub fn scripted_action(Game, Champ) -> Action
+
+pub fn step_toward(Int, Int) -> Int
+
+// Errors
+
+// Types and methods
+pub(all) enum Action {
+  Move(Int)
+  AttackChamp(Int)
+  AttackStructure
+  Farm
+  Recall
+  Hold
+} derive(Eq)
+pub fn Action::to_string(Self) -> String
+
+pub struct Champ {
+  id : Int
+  name : String
+  team : Int
+  role : String
+  mut hp : Int
+  max_hp : Int
+  mut node : Int
+  mut gold : Int
+  mut respawn : Int
+  mut kills : Int
+  mut deaths : Int
+}
+pub fn Champ::alive(Self) -> Bool
+
+pub struct Game {
+  champs : Array[Champ]
+  structures : Array[Structure]
+  mut tick : Int
+  mut winner : Int
+  log : Array[String]
+}
+pub fn Game::base_exposed(Self, Int) -> Bool
+pub fn Game::champs_at(Self, Int, Int) -> Array[Champ]
+pub fn Game::lane_objective(Self, Int, String) -> Int
+pub fn Game::legal_actions(Self, Champ) -> Array[Action]
+pub fn Game::new() -> Self
+pub fn Game::observation(Self, Int, Memory) -> Json
+pub fn Game::render(Self) -> String
+pub fn Game::step(Self, Map[Int, Action]) -> Unit
+pub fn Game::structure_at(Self, Int) -> Structure?
+pub fn Game::structure_hp(Self, Int) -> Int
+pub fn Game::visible_enemies(Self, Int) -> Array[Champ]
+pub fn Game::vision(Self, Int) -> Array[Bool]
+
+pub struct Memory {
+  last_seen_node : Array[Int]
+  last_seen_tick : Array[Int]
+}
+pub fn Memory::new() -> Self
+pub fn Memory::observe(Self, Game, Int) -> Unit
+
+pub struct Structure {
+  node : Int
+  team : Int
+  mut hp : Int
+  max_hp : Int
+  is_base : Bool
+}
+pub fn Structure::alive(Self) -> Bool
+
+// Type aliases
+
+// Traits

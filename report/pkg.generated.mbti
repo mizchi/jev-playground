@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/jev-playground/report"
+
+import {
+  "mizchi/jev-playground/lib",
+}
+
+// Values
+pub fn choice_at(@lib.SystemOneResponse, String) -> (String, Double)
+
+pub fn clip(String, Int) -> String
+
+pub fn d0(Double) -> String
+
+pub fn d1(Double) -> String
+
+pub fn d2(Double) -> String
+
+pub fn d3(Double) -> String
+
+pub fn fixed(Double, Int) -> String
+
+pub fn header(String, String) -> Unit
+
+pub fn noul_at(@lib.SystemOneResponse, String) -> Double
+
+pub fn numeric_answer(@lib.Answer) -> Double?
+
+pub fn pad(String, Int) -> String
+
+pub fn pad_left(String, Int) -> String
+
+pub fn probs_at(@lib.SystemOneResponse, String) -> Map[String, Double]
+
+pub fn probs_line(Map[String, Double]) -> String
+
+pub fn render_answer(@lib.Answer) -> String
+
+pub fn rule(Int) -> Unit
+
+pub fn score_at(@lib.SystemOneResponse, String) -> (Double, Double)
+
+pub fn top_others(Map[String, Double], String, Int) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

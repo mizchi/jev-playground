@@ -2,3 +2,6 @@ _build/
 .mooncakes/
 .openseek/
 .DS_Store
+node_modules/
+experiments/*/out/
+experiments/*/out-*.log

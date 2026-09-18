@@ -1,0 +1,9 @@
+{
+  "name": "jev-guardrails",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Reproduction of docs.typesafe.ai/cookbooks/llm_guardrails (docs/09-guardrails.md)",
+  "type": "module",
+  "scripts": { "demo": "tsx src/run.ts" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

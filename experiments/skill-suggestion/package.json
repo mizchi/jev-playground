@@ -1,0 +1,12 @@
+{
+  "name": "jev-skill-suggestion",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Reproduction of docs.typesafe.ai/cookbooks/skill_suggestion over mizchi/skills (docs/08-skill-suggestion.md)",
+  "type": "module",
+  "scripts": {
+    "roster": "tsx src/roster.ts",
+    "eval": "tsx src/run.ts"
+  },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}
