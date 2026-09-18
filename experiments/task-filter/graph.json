@@ -1,0 +1,451 @@
+{
+  "tasks": [
+    {
+      "name": "a11y",
+      "deps": [
+        "build-web"
+      ],
+      "doc": "Check the rendered pages against the accessibility rules",
+      "body": [
+        "pnpm playwright test a11y/ --config a11y.config.ts"
+      ],
+      "inputs": [
+        "web/**"
+      ],
+      "cost": 85,
+      "groups": []
+    },
+    {
+      "name": "audit",
+      "deps": [
+        "install"
+      ],
+      "doc": "Look up every installed dependency against the vulnerability database",
+      "body": [
+        "pnpm audit --audit-level=high"
+      ],
+      "inputs": [
+        "pnpm-lock.yaml"
+      ],
+      "cost": 14,
+      "groups": []
+    },
+    {
+      "name": "build-api",
+      "deps": [
+        "build-shared",
+        "codegen"
+      ],
+      "doc": "Compile the API server",
+      "body": [
+        "pnpm --filter @acme/api build"
+      ],
+      "inputs": [
+        "api/**"
+      ],
+      "cost": 24,
+      "groups": []
+    },
+    {
+      "name": "build-shared",
+      "deps": [
+        "install"
+      ],
+      "doc": "Compile the shared domain package that every other workspace imports",
+      "body": [
+        "pnpm --filter @acme/shared build"
+      ],
+      "inputs": [
+        "packages/shared/**"
+      ],
+      "cost": 12,
+      "groups": []
+    },
+    {
+      "name": "build-ui",
+      "deps": [
+        "install",
+        "build-shared"
+      ],
+      "doc": "Compile the shared React component library",
+      "body": [
+        "pnpm --filter @acme/ui build"
+      ],
+      "inputs": [
+        "packages/ui/**"
+      ],
+      "cost": 18,
+      "groups": []
+    },
+    {
+      "name": "build-web",
+      "deps": [
+        "build-ui",
+        "codegen"
+      ],
+      "doc": "Type-check and bundle the web app for production",
+      "body": [
+        "pnpm --filter @acme/web build"
+      ],
+      "inputs": [
+        "web/**"
+      ],
+      "cost": 46,
+      "groups": []
+    },
+    {
+      "name": "bundle-size",
+      "deps": [
+        "build-web"
+      ],
+      "doc": "Fail the build if the web bundle grew past its budget",
+      "body": [
+        "pnpm size-limit"
+      ],
+      "inputs": [
+        "web/**"
+      ],
+      "cost": 40,
+      "groups": []
+    },
+    {
+      "name": "ci",
+      "deps": [
+        "lint",
+        "fmt-check",
+        "typecheck-web",
+        "typecheck-api",
+        "test-shared",
+        "test-ui",
+        "test-web-unit",
+        "test-api-unit",
+        "test-api-integration",
+        "e2e-web",
+        "e2e-auth",
+        "a11y",
+        "bundle-size",
+        "audit",
+        "license-check",
+        "docs-links",
+        "docs-build",
+        "infra-plan",
+        "build-web",
+        "build-api"
+      ],
+      "doc": "Everything CI runs on a pull request",
+      "body": [
+        "@echo \"all green\""
+      ],
+      "inputs": [],
+      "cost": 0,
+      "groups": [
+        "meta"
+      ]
+    },
+    {
+      "name": "codegen",
+      "deps": [
+        "install"
+      ],
+      "doc": "Regenerate the typed GraphQL client and server stubs from the schema",
+      "body": [
+        "pnpm graphql-codegen --config codegen.yml"
+      ],
+      "inputs": [
+        "api/schema.graphql"
+      ],
+      "cost": 8,
+      "groups": []
+    },
+    {
+      "name": "db-migrate",
+      "deps": [
+        "install"
+      ],
+      "doc": "Apply every pending database migration to the test database",
+      "body": [
+        "pnpm --filter @acme/api migrate:up"
+      ],
+      "inputs": [
+        "api/migrations/**"
+      ],
+      "cost": 12,
+      "groups": []
+    },
+    {
+      "name": "docs-build",
+      "deps": [
+        "install"
+      ],
+      "doc": "Build the documentation site, API reference included",
+      "body": [
+        "pnpm typedoc && pnpm vitepress build docs"
+      ],
+      "inputs": [
+        "docs/**",
+        "packages/*/src/**/*.ts"
+      ],
+      "cost": 27,
+      "groups": []
+    },
+    {
+      "name": "docs-links",
+      "deps": [],
+      "doc": "Resolve every link in the documentation and fail on a dead one",
+      "body": [
+        "pnpm lychee --no-progress 'docs/**/*.md' README.md"
+      ],
+      "inputs": [
+        "docs/**/*.md",
+        "README.md"
+      ],
+      "cost": 6,
+      "groups": []
+    },
+    {
+      "name": "e2e-auth",
+      "deps": [
+        "build-web",
+        "build-api"
+      ],
+      "doc": "Drive sign-in, sign-out, session expiry and password reset in a browser",
+      "body": [
+        "pnpm playwright test e2e/auth/"
+      ],
+      "inputs": [
+        "web/**",
+        "api/**",
+        "e2e/auth/**"
+      ],
+      "cost": 140,
+      "groups": []
+    },
+    {
+      "name": "e2e-web",
+      "deps": [
+        "build-web",
+        "build-api"
+      ],
+      "doc": "Drive the whole product in a browser against a live API",
+      "body": [
+        "pnpm playwright test e2e/"
+      ],
+      "inputs": [
+        "web/**",
+        "api/**",
+        "e2e/**"
+      ],
+      "cost": 320,
+      "groups": []
+    },
+    {
+      "name": "fmt-check",
+      "deps": [],
+      "doc": "Check that every file is formatted, changing nothing",
+      "body": [
+        "pnpm prettier --check ."
+      ],
+      "inputs": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.md",
+        "**/*.json",
+        ".prettierrc"
+      ],
+      "cost": 4,
+      "groups": []
+    },
+    {
+      "name": "infra-plan",
+      "deps": [
+        "infra-validate"
+      ],
+      "doc": "Diff the Terraform sources against the deployed infrastructure",
+      "body": [
+        "terraform -chdir=infra plan -detailed-exitcode"
+      ],
+      "inputs": [
+        "infra/**/*.tf",
+        "infra/**/*.tfvars"
+      ],
+      "cost": 48,
+      "groups": []
+    },
+    {
+      "name": "infra-validate",
+      "deps": [],
+      "doc": "Check that the Terraform sources parse and type-check",
+      "body": [
+        "terraform -chdir=infra validate"
+      ],
+      "inputs": [
+        "infra/**/*.tf"
+      ],
+      "cost": 5,
+      "groups": []
+    },
+    {
+      "name": "install",
+      "deps": [],
+      "doc": "Install the workspace's dependencies from the lockfile",
+      "body": [
+        "pnpm install --frozen-lockfile"
+      ],
+      "inputs": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "*/package.json",
+        "packages/*/package.json"
+      ],
+      "cost": 35,
+      "groups": []
+    },
+    {
+      "name": "license-check",
+      "deps": [
+        "install"
+      ],
+      "doc": "Fail on a dependency whose licence is not on the allowed list",
+      "body": [
+        "pnpm licenses list --json | node scripts/check-licences.mjs"
+      ],
+      "inputs": [
+        "pnpm-lock.yaml"
+      ],
+      "cost": 9,
+      "groups": []
+    },
+    {
+      "name": "lint",
+      "deps": [
+        "install"
+      ],
+      "doc": "Report lint problems across the workspace, warnings included",
+      "body": [
+        "pnpm eslint . --max-warnings 0"
+      ],
+      "inputs": [
+        "**/*.ts",
+        "**/*.tsx",
+        ".eslintrc.cjs"
+      ],
+      "cost": 31,
+      "groups": []
+    },
+    {
+      "name": "test-api-integration",
+      "deps": [
+        "build-api",
+        "db-migrate"
+      ],
+      "doc": "Run the API suite that talks to a real Postgres and a real Redis",
+      "body": [
+        "pnpm --filter @acme/api test:integration"
+      ],
+      "inputs": [
+        "api/**",
+        "api/migrations/**"
+      ],
+      "cost": 95,
+      "groups": []
+    },
+    {
+      "name": "test-api-unit",
+      "deps": [
+        "codegen",
+        "build-shared"
+      ],
+      "doc": "Run the API server's unit suite",
+      "body": [
+        "pnpm --filter @acme/api test:unit"
+      ],
+      "inputs": [
+        "api/**"
+      ],
+      "cost": 21,
+      "groups": []
+    },
+    {
+      "name": "test-shared",
+      "deps": [
+        "build-shared"
+      ],
+      "doc": "Run the shared package's unit suite",
+      "body": [
+        "pnpm --filter @acme/shared test"
+      ],
+      "inputs": [
+        "packages/shared/**"
+      ],
+      "cost": 9,
+      "groups": []
+    },
+    {
+      "name": "test-ui",
+      "deps": [
+        "build-ui"
+      ],
+      "doc": "Run the component library's unit and snapshot suites",
+      "body": [
+        "pnpm --filter @acme/ui test"
+      ],
+      "inputs": [
+        "packages/ui/**"
+      ],
+      "cost": 26,
+      "groups": []
+    },
+    {
+      "name": "test-web-unit",
+      "deps": [
+        "codegen",
+        "build-shared"
+      ],
+      "doc": "Run the web app's unit suite under jsdom",
+      "body": [
+        "pnpm --filter @acme/web test:unit"
+      ],
+      "inputs": [
+        "web/**"
+      ],
+      "cost": 38,
+      "groups": []
+    },
+    {
+      "name": "typecheck-api",
+      "deps": [
+        "codegen",
+        "build-shared"
+      ],
+      "doc": "Type-check the API server without emitting",
+      "body": [
+        "pnpm --filter @acme/api exec tsc --noEmit"
+      ],
+      "inputs": [
+        "api/**/*.ts",
+        "packages/*/src/**/*.ts"
+      ],
+      "cost": 16,
+      "groups": []
+    },
+    {
+      "name": "typecheck-web",
+      "deps": [
+        "codegen",
+        "build-shared"
+      ],
+      "doc": "Type-check the web app without emitting",
+      "body": [
+        "pnpm --filter @acme/web exec tsc --noEmit"
+      ],
+      "inputs": [
+        "web/**/*.ts",
+        "web/**/*.tsx",
+        "packages/*/src/**/*.ts"
+      ],
+      "cost": 22,
+      "groups": []
+    }
+  ],
+  "source": "just --dump (/home/user/jev-playground/experiments/task-filter)"
+}
