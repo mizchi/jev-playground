@@ -1,10 +1,17 @@
 {
   "name": "@mizchi/eslint-plugin-jev",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "An ESLint rule whose verdict comes from Jev: a per-function review score and named review criteria, batched (docs/21, docs/22)",
   "type": "module",
   "exports": "./src/index.mjs",
-  "bin": { "jev-warm": "./src/warm.mjs" },
+  "bin": {
+    "jev-warm": "./src/warm.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "README.ja.md"
+  ],
   "scripts": {
     "test": "node experiment/test.mjs",
     "truth": "node experiment/truth.mjs",

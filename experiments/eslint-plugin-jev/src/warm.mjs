@@ -53,6 +53,8 @@ export function parseArgs(argv) {
     cache: undefined,
     concurrency: 4,
     model: undefined,
+    /** Overrides TYPESAFEAI_API_KEY. */
+    apiKey: undefined,
     force: false,
     dryRun: false,
     minLines: undefined,
@@ -75,6 +77,7 @@ export function parseArgs(argv) {
     else if (a === "--cache") opts.cache = next();
     else if (a === "--concurrency") opts.concurrency = Number.parseInt(next(), 10);
     else if (a === "--model") opts.model = next();
+    else if (a === "--api-key") opts.apiKey = next();
     else if (a === "--min-lines") opts.minLines = Number.parseInt(next(), 10);
     else if (a === "--include-callbacks") opts.includeCallbacks = true;
     else if (a === "--force") opts.force = true;
@@ -458,7 +461,7 @@ async function main() {
     entries[key] = entry;
   }
 
-  const jev = new Jev({ model: opts.model });
+  const jev = new Jev({ model: opts.model, apiKey: opts.apiKey });
   let stored = 0;
   if (doQuality) stored += await warmQuality(opts, jev, entries);
   if (doRules) stored += await warmRules(opts, jev, entries);

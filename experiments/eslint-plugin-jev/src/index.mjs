@@ -90,6 +90,11 @@ const schema = [
       onMiss: { enum: ["silent", "report", "ask"] },
       /** Only meaningful with onMiss "ask". Milliseconds. */
       timeout: { type: "integer", minimum: 100 },
+      /**
+       * Only meaningful with onMiss "ask". Overrides `TYPESAFEAI_API_KEY` for
+       * the child process; the rule itself never talks to the network.
+       */
+      apiKey: { type: "string" },
     },
     additionalProperties: false,
   },
@@ -179,6 +184,7 @@ const quality = {
               file: relative(process.cwd(), filename),
               source: sourceCode.getText(),
               cache: options.cache ?? null,
+              apiKey: options.apiKey ?? null,
               rubric,
               units: missing.map((u) => ({
                 key: keyOf(u, rubric),
@@ -271,6 +277,8 @@ const ruleSchema = [
       cache: { type: "string" },
       onMiss: { enum: ["silent", "report", "ask"] },
       timeout: { type: "integer", minimum: 100 },
+      /** Only meaningful with onMiss "ask"; see `jev/quality`. */
+      apiKey: { type: "string" },
     },
     additionalProperties: false,
   },
@@ -410,6 +418,7 @@ const rule = {
             file: relative(process.cwd(), filename),
             source: sourceCode.getText(),
             cache: options.cache ?? null,
+            apiKey: options.apiKey ?? null,
             batchSize,
             matches: missing.map((m) => ({
               key: ruleMatchKey(m.rule, m.text),

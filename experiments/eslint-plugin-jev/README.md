@@ -1,13 +1,15 @@
 # @mizchi/eslint-plugin-jev
 
+English | [日本語](./README.ja.md)
+
 CAUTION: **This is a joke implementation at this point and has not been evaluated yet. Whether you trust this lint or not is entirely up to you.**
 
 Two ESLint rules whose verdict comes from a model instead of from a pattern:
 
 | rule | what you write | what it judges |
 | --- | --- | --- |
-| `jev/quality` | nothing | every function, against a fixed question set and eight named defect classes |
 | `jev/rule` | **a selector and a sentence** | every node the selector matched, against your sentence |
+| `jev/quality` | nothing | every function, against a fixed question set and eight named defect classes |
 
 `jev/rule` is the one that does not exist in any other linter: you write the
 node selector as code and the predicate as one line of prose. Every function
@@ -20,9 +22,9 @@ in a file is asked in a single [Jev](https://typesafe.ai) request.
  15:8  warning  Jev would push back on `formatYen` but is not sure -- worth a human look rather than a fix    jev/quality
 ```
 
-> **Status: experiment.** This is not published to npm (`"private": true`) and
-> has never been run on a real repository — the numbers below come from a
-> 15-file, 78-function labelled corpus. The cutoffs are *fitted to that corpus*
+> **Status: experiment.** It is published to npm as-is, but has never been run
+> on a real repository — the numbers below come from a 15-file, 78-function
+> labelled corpus. The cutoffs are *fitted to that corpus*
 > and are the first thing you should retune. See [Limits](#limits).
 
 ---
@@ -76,7 +78,7 @@ they are judged as part of the function they sit in.
 ## Install
 
 ```bash
-npm install --save-dev eslint-plugin-jev   # not published; see Status above
+npm install --save-dev @mizchi/eslint-plugin-jev
 ```
 
 From this repository:
@@ -91,17 +93,8 @@ warm pass also uses, so that it finds functions the same way the rule does.
 
 ## Quick start
 
-```bash
-export TYPESAFEAI_API_KEY=...
-
-# 1. Ask. 15 requests for 78 functions, ~$0.004.
-npx jev-warm "src/**/*.js" --rubric full
-
-# 2. Lint. No network, no API key, 31 ms for 12 files.
-npx eslint src
-```
-
-`eslint.config.mjs`:
+Start with `jev/rule`: one convention your team has and no linter ships, written
+as a selector (code) and a sentence (prose). `eslint.config.mjs`:
 
 ```js
 import jev from "@mizchi/eslint-plugin-jev";
@@ -111,14 +104,53 @@ export default [
     files: ["**/*.js"],
     plugins: { jev },
     rules: {
-      "jev/quality": ["warn", { rubric: "full" }],
+      "jev/rule": ["warn", {
+        rules: [
+          {
+            id: "fetch-timeout",
+            selector: "CallExpression[callee.name='fetch']",
+            rule: "Every fetch call must pass a timeout (AbortSignal.timeout or similar).",
+            note: "Not a violation when a retry wrapper around it already sets one.",
+          },
+        ],
+      }],
     },
   },
 ];
 ```
 
-Or take the preset, which is `warn` with `onMiss: "silent"` and everything else
-left at its default:
+```bash
+export TYPESAFEAI_API_KEY=...   # or `--api-key` below, or the `apiKey` option
+
+# 1. Ask. One request per file; the rules are read from your real config.
+npx jev-warm "src/**/*.js" --config eslint.config.mjs
+
+# 2. Lint. No network, no API key.
+npx eslint src
+```
+
+```
+ 12:3  warning  fetch-timeout: Every fetch call must pass a timeout (violation, 2.74/3 confidence 0.74; reports at 2.00)  jev/rule
+```
+
+Then, if you also want every function reviewed against a fixed question set,
+add `jev/quality` next to it:
+
+```js
+rules: {
+  "jev/rule": ["warn", { rules: [/* as above */] }],
+  "jev/quality": ["warn", { rubric: "full" }],
+},
+```
+
+```bash
+# `--config` warms jev/rule; `--rubric` must match jev/quality's option.
+# 15 requests for 78 functions, ~$0.004. Lint is still 31 ms for 12 files.
+npx jev-warm "src/**/*.js" --config eslint.config.mjs --rubric full
+```
+
+Or take the preset, which is `jev/quality` alone, `warn` with `onMiss: "silent"`
+and everything else left at its default:
 
 ```js
 import jev from "@mizchi/eslint-plugin-jev";
@@ -144,26 +176,9 @@ reason: the selector is trivial and the predicate is a week of AST work.
 `CallExpression[callee.name='fetch']` takes ten seconds. "…without a timeout,
 unless it is inside a retry wrapper that already sets one" does not get written.
 
-So write the selector as code and the predicate as a sentence:
-
-```js
-"jev/rule": ["warn", {
-  rules: [
-    {
-      id: "fetch-timeout",
-      selector: "CallExpression[callee.name='fetch']",
-      rule: "fetch は必ずタイムアウト (AbortSignal.timeout など) を渡すこと",
-      note: "リトライラッパの内側で既に設定されている場合は違反ではない",
-    },
-  ],
-}],
-```
-
-```
- 12:3  warning  fetch-timeout: fetch は必ずタイムアウトを渡すこと (violation, 2.74/3 confidence 0.74; reports at 2.00)  jev/rule
-```
-
-The division of labour is the whole idea:
+So write the selector as code and the predicate as a sentence — the
+`fetch-timeout` rule in [Quick start](#quick-start) is the whole shape. The
+division of labour is the whole idea:
 
 | | who does it | fails how |
 | --- | --- | --- |
@@ -203,6 +218,7 @@ functions applies, plus:
 | `reportAt` | number 0–3 | `2` | the cutoff for rules without their own `at`. |
 | `unsureBelow` | number 0–1 | `0.5` | under this confidence a finding is worded as a question (`ruleUnsure`). |
 | `batchSize` | integer | `256` | matches per request. A self-imposed cap — see [Cost and scale](#cost-and-scale). |
+| `apiKey` | string | — | only with `onMiss: "ask"`: the key the child process uses, over `TYPESAFEAI_API_KEY`. |
 
 Messages: `rule`, `ruleUnsure`, `ruleMissing` (with `onMiss: "report"`), and
 `ruleConfig` for a malformed entry or an unparseable selector. That last one is
@@ -314,6 +330,7 @@ One rule, `jev/quality`. Every option:
 | `cache` | string | `".jev-quality.json"` | path to the verdict cache, relative to cwd. |
 | `onMiss` | `"silent"` \| `"report"` \| `"ask"` | `"silent"` | [what to do with no cached verdict](#onmiss-what-happens-with-no-cached-verdict). |
 | `timeout` | integer >= 100 | `30000` | ms, only meaningful with `onMiss: "ask"`. |
+| `apiKey` | string | — | only meaningful with `onMiss: "ask"`: the key the child process sends, overriding `TYPESAFEAI_API_KEY`. The rule itself never talks to the network, and the key never appears in a message. |
 
 Unknown options are a config error (`additionalProperties: false`).
 
@@ -448,6 +465,7 @@ behave differently depending on the shell.
 | `--cache <path>` | `.jev-quality.json` | where to write the verdicts. |
 | `--concurrency <n>` | `4` | requests in flight. |
 | `--model <id>` | server default | Jev model. |
+| `--api-key <key>` | `$TYPESAFEAI_API_KEY` | the API key, when the environment is not where you keep it. |
 | `--min-lines <n>` | `3` | must match the rule. |
 | `--include-callbacks` | off | must match the rule. |
 | `--force` | off | re-ask everything, ignoring cached entries. |
@@ -471,7 +489,7 @@ nothing.
 
 | variable | what for |
 | --- | --- |
-| `TYPESAFEAI_API_KEY` | required by the warm pass and by `onMiss: "ask"`. Never read by the rule itself. |
+| `TYPESAFEAI_API_KEY` | used by the warm pass and by `onMiss: "ask"` unless `--api-key` / the `apiKey` option is given. Never read by the rule itself. |
 | `TYPESAFEAI_BASE_URL` | override the API endpoint. |
 | `JEV_QUALITY_CACHE` | default cache path (the `cache` option wins). |
 | `JEV_QUALITY_ARM` | default arm for `onMiss: "ask"`. |
@@ -630,7 +648,7 @@ Read these before putting it in front of a team:
 ```bash
 npm install
 
-npm test                     # 105 checks, no API key needed
+npm test                     # 109 checks, no API key needed
 npm run truth                # the labels, proved by running the code
 npm run rules                # the ad-hoc rules' recorded run, no API key
 npm run replay               # docs/21's numbers, re-derived, no API key

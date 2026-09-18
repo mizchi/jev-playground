@@ -14,7 +14,8 @@
  * worse than a rule that says nothing.
  */
 import { ESLint, Linter } from "eslint";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import plugin from "../src/index.mjs";
@@ -38,7 +39,7 @@ import {
   verdictFrom,
   withThresholds,
 } from "../src/judge.mjs";
-import { planBatches } from "../src/warm.mjs";
+import { parseArgs, planBatches } from "../src/warm.mjs";
 import {
   DEFAULT_RULE_THRESHOLDS,
   INLINE_LIMIT,
@@ -74,6 +75,45 @@ function check(name, ok, detail = "") {
 }
 
 const tmp = mkdtempSync(join(tmpdir(), "jev-quality-"));
+
+/**
+ * A stand-in for the API that records every Authorization header and answers
+ * 500, so a blocking child reaches the wire and still fails into silence.
+ *
+ * It runs in its own process: the rule under test blocks this one on
+ * `execFileSync`, so a server on this event loop would never answer.
+ */
+async function captureAuthServer() {
+  const log = join(tmp, `auth-${Math.random().toString(36).slice(2)}.log`);
+  const script = `
+    const { createServer } = require("node:http");
+    const { appendFileSync } = require("node:fs");
+    createServer((req, res) => {
+      appendFileSync(process.argv[1], (req.headers.authorization ?? "") + "\\n");
+      res.statusCode = 500;
+      res.end("{}");
+    }).listen(0, "127.0.0.1", function () { process.stdout.write(String(this.address().port) + "\\n"); });
+  `;
+  const child = spawn(process.execPath, ["-e", script, log], { stdio: ["ignore", "pipe", "inherit"] });
+  const port = await new Promise((resolve) => {
+    child.stdout.once("data", (d) => resolve(Number.parseInt(String(d), 10)));
+  });
+  const savedKey = process.env.TYPESAFEAI_API_KEY;
+  const savedUrl = process.env.TYPESAFEAI_BASE_URL;
+  delete process.env.TYPESAFEAI_API_KEY;
+  process.env.TYPESAFEAI_BASE_URL = `http://127.0.0.1:${port}`;
+  return {
+    seen() {
+      return existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean) : [];
+    },
+    async close() {
+      if (savedKey !== undefined) process.env.TYPESAFEAI_API_KEY = savedKey;
+      if (savedUrl === undefined) delete process.env.TYPESAFEAI_BASE_URL;
+      else process.env.TYPESAFEAI_BASE_URL = savedUrl;
+      child.kill();
+    },
+  };
+}
 
 /** Lint one snippet with one set of rule options, and never let it throw. */
 async function lint(code, options, { filename = "sample.js" } = {}) {
@@ -240,6 +280,28 @@ if (only !== "unit") {
   if (baseUrl === undefined) delete process.env.TYPESAFEAI_BASE_URL;
   else process.env.TYPESAFEAI_BASE_URL = baseUrl;
 
+  // The `apiKey` option must reach the child process and the wire, without
+  // any environment variable: a config-supplied key is how CI without a
+  // shell environment (or a monorepo with several keys) uses `onMiss: "ask"`.
+  {
+    const api = await captureAuthServer();
+    try {
+      const { threw, messages } = await lint(SUBJECT, {
+        cache: join(tmp, "ask-apikey-quality.json"),
+        onMiss: "ask",
+        apiKey: "from-the-option",
+        timeout: 15_000,
+      });
+      check(
+        "`apiKey` option reaches the wire for jev/quality with no env var",
+        threw === null && messages.length === 0 && api.seen().includes("Bearer from-the-option"),
+        threw ? `threw ${threw.message}` : `saw ${JSON.stringify(api.seen())}`,
+      );
+    } finally {
+      await api.close();
+    }
+  }
+
   // `onMiss: "report"` is the ONE case that is allowed to speak on a miss,
   // and it must say "no verdict" rather than pretend to have one.
   {
@@ -294,6 +356,11 @@ if (only !== "unit") {
 // ---------------------------------------------------------------------- unit
 
 if (only !== "failsafe") {
+  console.log("");
+  console.log("THE WARM PASS  (flags the rule and the pass must agree on, plus the key)");
+  check("`--api-key` is parsed", parseArgs(["--api-key", "k-1"]).apiKey === "k-1");
+  check("`--api-key` defaults to undefined", parseArgs([]).apiKey === undefined);
+
   console.log("");
   console.log("THE GATE  (docs/21 retuned these numbers; the table is what it settled on)");
   const t = DEFAULT_THRESHOLDS;
@@ -696,6 +763,26 @@ if (only !== "unit") {
       threw === null && messages.length === 0,
       threw ? `threw ${threw.message}` : `${messages.length} finding(s)`,
     );
+  }
+
+  {
+    const api = await captureAuthServer();
+    try {
+      const { threw, messages } = await lintRule(SORTED, {
+        rules: [SORT_RULE],
+        cache: join(tmp, "ask-apikey-rule.json"),
+        onMiss: "ask",
+        apiKey: "from-the-option",
+        timeout: 15_000,
+      });
+      check(
+        "`apiKey` option reaches the wire for jev/rule with no env var",
+        threw === null && messages.length === 0 && api.seen().includes("Bearer from-the-option"),
+        threw ? `threw ${threw.message}` : `saw ${JSON.stringify(api.seen())}`,
+      );
+    } finally {
+      await api.close();
+    }
   }
 
   // A malformed entry is the one case that SHOULD say something: a rule that

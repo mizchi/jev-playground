@@ -71,12 +71,18 @@ async function askRules(req, jev) {
   return verdicts;
 }
 
+/** The client for one request: the config's `apiKey` wins over the env. */
+function clientFor(req) {
+  return new Jev({
+    apiKey: req.apiKey || undefined,
+    model: process.env.JEV_QUALITY_MODEL || undefined,
+    retries: 1,
+  });
+}
+
 async function main() {
   const req = JSON.parse(readFileSync(0, "utf8"));
-  if (req.kind === "rules") {
-    const jev = new Jev({ model: process.env.JEV_QUALITY_MODEL || undefined, retries: 1 });
-    return askRules(req, jev);
-  }
+  if (req.kind === "rules") return askRules(req, clientFor(req));
   const units = req.units ?? [];
   if (units.length === 0) return {};
 
@@ -84,7 +90,7 @@ async function main() {
   // once, and each question names its function by name and line range.
   const arm = process.env.JEV_QUALITY_ARM || "located";
   const rubric = req.rubric || "vague";
-  const jev = new Jev({ model: process.env.JEV_QUALITY_MODEL || undefined, retries: 1 });
+  const jev = clientFor(req);
   const res = await jev.askSplitting(
     stateFor(req.file, req.source, units, arm),
     questionsFor(units, arm, rubric),
