@@ -21,6 +21,9 @@ cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 12: ESLint の�
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 13: タスク選択
 node hooks/test-gate.mjs --failsafe-only                       # 14: hook のフェイルセーフ(API 不要)
 node hooks/test-gate.mjs                                       # 14: hook を実物で採点
+node jevlang-js/bin/jevlang.mjs examples/milk.jev               # 15: jevlang(JS 版)
+moon run --target native cmd/jevlang -- examples/milk.jev       # 15: jevlang(MoonBit 版)
+scripts/jevlang-conformance.sh                                 # 15: 2 実装の一致(API 不要)
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -52,6 +55,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **逃げ道は選択肢ではなく別の noul にする** | noul ゲート **18/18** 対 選択肢に混ぜて 16/18。混ぜると難問がそこへ逃げる | 本リポジトリ | [13](13-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする) |
 | **原子信号と総合質問の保守側を採る** | スコア単独 90.3%・原子単独 61.1% に対し **保守側 94.4%**(同一応答で比較) | 本リポジトリ | [14](14-permission-hook.md#2-判定そのもの) |
 | **失敗は「判断なし」に落とす** | hook の 7 失敗経路すべてが通常フローに戻る。allow にも deny にも倒さない | 本リポジトリ | [14](14-permission-hook.md#1-精度より先に決めるべき-3-つの性質) |
+| **質問文が確定している judgment を巻き上げる** | 言語レベルの fan-out。**4 → 2 リクエスト、1501 → 867 トークン** | 本リポジトリ | [15](15-jevlang.md#2-巻き上げspeculative-batching-実測-4--2-リクエスト) |
+| **設計判断を構文で強制する** | 閾値を質問文に書く場所を作らない・逃げ道を選択肢に混ぜられなくする | 本リポジトリ | [15](15-jevlang.md#1-言語の形) |
+| **確率的な判断には record/replay** | 無いとテストが書けず、実装差とモデルのばらつきも区別できない | 本リポジトリ | [15](15-jevlang.md#4-record--replay--確率的な言語に必須の道具) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -82,6 +88,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | オフラインの正解率で質問文が妥当だと思う | `exfiltrates` の `false` が「外向き転送が無い」だった。23/24 を取ったまま、hook にした 1 発目で**普通の `git push` を deny**([14](14-permission-hook.md#3-コーパスでは見つからないバグが出た)) |
 | 保守側採用を「安全だから無害」だと思う | 誤った述語の害も増幅する。スコアが allow 0.43 と言っているのを原子述語が deny に引き上げた([14](14-permission-hook.md#3-コーパスでは見つからないバグが出た)) |
 | ゲートに `allow` を返させる | ユーザーが設定した permission ルールを上書き承認してしまう。狭める方向にだけ使う([14](14-permission-hook.md#1-精度より先に決めるべき-3-つの性質)) |
+| 確率的な実行を replay 無しでテストしようとする | 分岐が毎回変わるので期待値が書けず、実装差とモデルのばらつきが区別できない([15](15-jevlang.md#4-record--replay--確率的な言語に必須の道具)) |
+| 手書きの数値パーサで閾値を読む | `0.6` が 0.6000000000000001 になり、境界で分岐が変わる。小数部は整数で溜めて最後に 1 回割る([15](15-jevlang.md#5-2-実装であることが実際に効いた)) |
 | シナジーの機構を実装せず編成だけ変える | ピールや耐性が効かないと前衛はただの的で raw DPS が勝つ。効果は機構を入れて初めて測れる([11](11-synergy.md#2-チャンピオンに多様性を持たせる)) |
 | リトライ無しのクライアントで API を叩きすぎる | レート制限で全 hold、対称ゲームが 350-350 で膠着する([11](11-synergy.md#1-相互キルの同時処理)) |
 
@@ -104,6 +112,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [12](12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡して、実装を伏せたまま合否を当てさせる | ✅ |
 | [13](13-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか(提案 J の検証) | ✅ |
 | [14](14-permission-hook.md) | Claude Code の `PreToolUse` hook として実装する(提案 C の検証) | ✅ |
+| [15](15-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語(JS 版 / MoonBit 版) | ✅ |
 
 ## この探索から見えている一般則
 
@@ -154,3 +163,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
     「API が落ちたらどうなるか」。hook では全失敗経路を**判断なし = 通常フロー**に
     落とす(allow に倒せば黙って承認、deny に倒せば障害で停止)。
     そしてゲートは**狭める方向にだけ**使う([14](14-permission-hook.md#1-精度より先に決めるべき-3-つの性質))。
+14. **設計判断は構文で強制できる。** ライブラリなら「閾値はコード側に置け」は
+    お願いだが、言語なら**質問文に閾値を書く場所を作らない**で済む。
+    同じく「逃げ道は選択肢ではなく別の問い」も、`else` 腕が gate noul を生やす
+    設計にすれば**混ぜる書き方が存在しなくなる**([15](15-jevlang.md))。
+15. **確率的な判断を含む実行には record/replay を最初から入れる。**
+    同じ入力で分岐が変わるので、無いとテストが書けない。
+    そして**実装やモデルを比べるときの唯一の土台**になる([15](15-jevlang.md#4-record--replay--確率的な言語に必須の道具))。
