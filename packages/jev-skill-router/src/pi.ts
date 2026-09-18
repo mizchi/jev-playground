@@ -162,7 +162,17 @@ export default function jevSkillRouter(pi: ExtensionAPI): void {
           display: false,
           details: { skill: pick.skill.name, path: pick.skill.path, level: pick.level, why: pick.why },
         },
-        { deliverAs: "nextTurn" },
+        // `steer`, not `nextTurn`. A skill is context for the turn that
+        // asked for it, and `before_agent_start` fires before that turn
+        // runs -- so `nextTurn` delivers it one turn too late and a
+        // single-turn session never sees it at all.
+        //
+        // This shipped as `nextTurn` and docs/38 §4 caught it by checking
+        // the provider's payload for the skill's own text: the router chose
+        // `counting-lines` correctly at level 2.98 and the body never
+        // reached the model. All three modes were then measured against the
+        // wire -- `steer` and `followUp` both arrive, `nextTurn` does not.
+        { deliverAs: "steer" },
       );
     }
     if (injected.length > 0) pi.appendEntry(LOADED_ENTRY, { turn: event.prompt.slice(0, 120), injected });

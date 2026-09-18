@@ -1,11 +1,11 @@
-# まとめ — Jev で 35 本作って測って分かったこと
+# まとめ — Jev で 36 本作って測って分かったこと
 
 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)(TypeSafe AI の System One モデル)は
 **文字列ではなく型付きの確率判断を返す**意思決定専用モデルです。
 noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3 種だけ。
 入力 $0.042/MTok・出力無料・レイテンシ 125〜730 ms。
 
-**この速度と価格が何を可能にするのか**を、35 本のレポート(1 本は提案)で測りました。
+**この速度と価格が何を可能にするのか**を、36 本のレポート(1 本は提案)で測りました。
 各レポートは生の数値と再現コマンド付き([索引](README.md))。
 
 ---

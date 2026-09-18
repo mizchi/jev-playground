@@ -11,3 +11,6 @@ hooks/out-*.jsonl
 experiments/*/.jev-quality*.json
 packages/node_modules/
 packages/*/node_modules/
+
+# docs/38's harness writes these: the skills it hands pi, and pi's own caches.
+experiments/agent/skills/

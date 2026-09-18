@@ -421,6 +421,24 @@ typecheck-packages: install-packages
 install-hermes:
     npm --prefix experiments/hermes install
 
+# @inputs: experiments/agent/package.json
+# @cost: 9.0
+# Install the in-pi harness's dev dependencies, including pi itself
+install-agent:
+    npm --prefix experiments/agent install
+
+# @inputs: experiments/agent/**
+# @cost: 1.0
+# The sandbox rail, the scenarios, and the recorded in-pi run (docs/38). No API key.
+test-agent: install-agent
+    npm --prefix experiments/agent test
+
+# @inputs: experiments/agent/** packages/**
+# @cost: 1.0
+# Re-derive docs/38's tables from the recorded pi sessions. No API key.
+replay-agent: install-agent
+    npm --prefix experiments/agent run demo
+
 # @inputs: experiments/hermes/** packages/**
 # @cost: 1.0
 # Check the combine record: the turns differ, both ways ask the same questions,
@@ -471,5 +489,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
     @echo "all green"
