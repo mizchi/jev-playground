@@ -452,6 +452,17 @@ export interface Logistic {
   a: number;
   b: number;
   iterations: number;
+  /**
+   * False when the fit did not produce finite coefficients.
+   *
+   * Added after docs/33 spent a table printing `AUC 0.000` -- the call site
+   * had passed `{value, positive}` where this function destructures
+   * `{x, y}`, so every `x` was undefined and `a` and `b` came back NaN. A
+   * NaN model then compares false against everything and the AUC collapses
+   * to zero, which looks like a result. It is not one, and a caller should
+   * be able to see that without reading the coefficients.
+   */
+  fitted: boolean;
 }
 
 /**
@@ -500,7 +511,8 @@ export function logisticFit(
     used = it + 1;
     if (Math.abs(da) + Math.abs(db) < 1e-9) break;
   }
-  return { a, b, iterations: used };
+  const fitted = Number.isFinite(a) && Number.isFinite(b);
+  return { a, b, iterations: used, fitted };
 }
 
 export function logisticP(model: Logistic, x: number): number {

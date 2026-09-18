@@ -91,6 +91,12 @@ install-orchestration:
 install-repair:
     npm --prefix experiments/repair install
 
+# @inputs: experiments/review/package.json experiments/review/package-lock.json
+# @cost: 0.6
+# Install the review experiment's dev dependencies
+install-review:
+    npm --prefix experiments/review install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -281,6 +287,24 @@ replay-repair: install-repair
 repair-truth: install-repair
     npm --prefix experiments/repair run truth
 
+# @inputs: experiments/review/** experiments/repair/** experiments/shared/**
+# @cost: 0.7
+# Check the review corpus: every green base is green and the truth is not stale
+test-review: install-review
+    npm --prefix experiments/review test
+
+# @inputs: experiments/review/** experiments/shared/**
+# @cost: 0.6
+# Re-derive docs/33's tables from the recorded judgments
+replay-review: install-review
+    npm --prefix experiments/review run demo
+
+# @inputs: experiments/review/** experiments/repair/**
+# @cost: 45.0
+# Re-measure which diffs keep each suite green, plus coverage and similarity
+review-truth: install-review
+    npm --prefix experiments/review run truth
+
 # @inputs: docs/** README.md experiments/**/README*.md
 # @cost: 0.1
 # Every relative Markdown link and heading anchor across the repository
@@ -318,5 +342,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review check-links
     @echo "all green"
