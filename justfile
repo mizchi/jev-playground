@@ -137,6 +137,12 @@ replay-tiers: install-eslint-plugin
 replay-loo: install-eslint-plugin
     npm --prefix experiments/eslint-plugin-jev run replay:loo
 
+# @inputs: experiments/eslint-plugin-jev/**
+# @cost: 1.0
+# Re-derive docs/24's ad-hoc rule report from the recorded run
+replay-rules: install-eslint-plugin
+    npm --prefix experiments/eslint-plugin-jev run rules
+
 # @inputs: experiments/task-filter/**
 # @cost: 0.4
 # Check the task filter's graph, oracle and request invariants
@@ -153,5 +159,5 @@ replay-task-filter: install-task-filter
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo test-task-filter replay-task-filter
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter
     @echo "all green"

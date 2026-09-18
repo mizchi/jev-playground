@@ -16,6 +16,7 @@
         "replay-criteria",
         "replay-tiers",
         "replay-loo",
+        "replay-rules",
         "test-task-filter",
         "replay-task-filter"
       ],
@@ -182,6 +183,22 @@
         "experiments/eslint-plugin-jev/**"
       ],
       "cost": 0.5,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-rules",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Re-derive docs/24's ad-hoc rule report from the recorded run",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev run rules"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 1,
       "reset": null,
       "groups": []
     },

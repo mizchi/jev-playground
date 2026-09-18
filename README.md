@@ -16,7 +16,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
-| `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標、ファイル単位でバッチ) |
+| `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標 + **セレクタ 1 個と 1 文で書く ad-hoc ルール**、ファイル単位でバッチ) |
 | `experiments/task-filter` | **タスク/テストランナーの filter** — `just` の依存グラフ + diff で「今何を走らせるか」を採点 |
 | `justfile` | このリポジトリのチェックをタスクグラフにしたもの(`just ci` で全部、`just test-lib` で 1 つ) |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
@@ -169,6 +169,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
 | [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
 | [23](docs/23-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
+| [24](docs/24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -197,9 +198,15 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ## 6. eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン
 
-`experiments/eslint-plugin-jev` は**本物の ESLint プラグイン**です。関数ごとに
-「レビューでどれだけ押し返すか」を `score` で出し、**ファイル 1 個ぶんの全関数を
-1 リクエストで**聞きます(依存ゼロ、ビルド不要)。
+`experiments/eslint-plugin-jev` は**本物の ESLint プラグイン**で、ルールは 2 つです。
+
+| ルール | 書くもの | 判定対象 |
+| --- | --- | --- |
+| `jev/quality` | なし | 全関数を固定の質問セット + 8 指標で |
+| `jev/rule` | **セレクタと 1 文** | セレクタに当たったノードを、その文で |
+
+`jev/quality` は関数ごとに「レビューでどれだけ押し返すか」を `score` で出し、
+**ファイル 1 個ぶんの全関数を 1 リクエストで**聞きます(依存ゼロ、ビルド不要)。
 
 ```
   1:8  warning  Jev thinks `compareTokens` does the wrong thing for some realistic
@@ -208,12 +215,14 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                    # 59 件(fail-safe 12 + ロジック 47)、API 不要
+npm test                                    # 105 件、API 不要
 npm run truth                               # ラベルをコード実行で検証、API 不要
 npm run replay                              # 記録から全数値を再計算、API 不要
+npm run rules                               # jev/rule の記録済み判定、API 不要
 
-TYPESAFEAI_API_KEY=... npm run warm         # 78 関数を 15 リクエスト、$0.001
-TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
+TYPESAFEAI_API_KEY=... npm run warm         # jev/quality: 78 関数を 15 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run warm:rules   # jev/rule: 49 ノードを 12 リクエスト、$0.001
+TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む(両ルール)
 ```
 
 **ESLint のルールは同期関数で `await` できない**のが本題です。判定を事前に
@@ -230,7 +239,8 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 指摘が名前で返ります:
 
 ```
-  8:8  warning  `median` matches the review criterion `api_default` (0.35, its cutoff is 0.22)
+  5:8  warning  `applyDiscount` matches the review criterion `unit_or_arithmetic` (0.94, its cutoff is 0.28)
+ 13:8  warning  `increment` matches the review criterion `lost_update` (0.93, its cutoff is 0.73)
 ```
 
 ただし**名前を付けても戻ったのは見逃し 6 個のうち 2 個**で、
@@ -241,6 +251,55 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 naming の有無にかかわらず 15/15 で、**特定の API の挙動を知らないと見えない**バグで
 14% → 52% になります。そして **8 指標は重複していて、抜いて本当に困るのは 1 個だけ**
 (`api_default`、9/12 → 4/12)。→ [docs/22](docs/22-code-criteria.md)
+
+### `jev/rule` — まだ存在しないルールを自然言語で書く
+
+**セレクタだけコードで書き、述語は 1 文で書きます。**
+`CallExpression[callee.name='fetch']` は 10 秒で書けて、「ただしリトライ
+ラッパの内側で既にタイムアウトが設定されている場合を除く」は 1 週間かかる —
+チームの規約が lint ルールにならない理由はいつもこれです。
+
+```js
+"jev/rule": ["warn", { rules: [{
+  id: "fetch-timeout",
+  selector: "CallExpression[callee.name='fetch']",
+  rule: "fetch は必ずタイムアウト (AbortSignal.timeout など) を渡すこと",
+  note: "リトライラッパの内側で既に設定されている場合は違反ではない",
+}] }],
+```
+
+当たったノードごとに `score` を付け、**1 リクエストに最大 256 件**まで詰めます
+(実際にはファイル単位のまとまりの方が先に効きます)。**セレクタはわざと
+広く書く**のが正解で、`score` の 0 は「セレクタが余計なものを拾った」を意味します。
+
+コーパスで 5 ルール・49 ノードを 12 リクエスト・**$0.0011** で判定して、
+**7 件の指摘。うち自信のある 5 件は 5/5 が本物のバグ**でした。外した 1 件は
+意図的に catch している関数で、**confidence 0.31 なので「指摘」ではなく
+「質問」として出ました**。
+
+効くかどうかを読むのは閾値ではなく **gap**(違反と残りの点数差)です:
+
+```
+rule                        cutoff  matches  reported  widest gap  cutoff in gap
+no-string-built-query         2.50       20         2        1.82  yes
+atomic-read-modify-write      2.00        7         1        1.79  yes
+no-stringly-arithmetic        2.00       14         1        2.16  yes
+no-swallowed-catch            1.50        4         2        0.77  yes
+```
+
+gap が広ければ閾値はどこに置いても同じ答えになり、**gap が狭いのは閾値の問題
+ではなく文の問題**です。実際 5 ルール中 2 つは最初の文が失敗(gap 0.16 と 0.28)し、
+文を書き直して 2.16 と 0.77 になりました。閾値は質問に入らないので、
+`at` を変えても再質問はゼロです。
+
+一方、**セレクタは静かに失敗します**。当たらなかったノードはどの閾値でも
+質問されず、レポートにも出ません(コーパスのバグ 1 件をこれで落としました)。
+
+実測と、gap をどう読むかは → [docs/23](docs/24-adhoc-rules.md)
+
+プラグインとしての使い方(flat config、オプション全表、warm パスの CLI、閾値の
+チューニング、ルールの書き方、限界)は
+[experiments/eslint-plugin-jev/README.md](experiments/eslint-plugin-jev/README.md)。
 
 ## 7. Claude Code の permission hook
 
@@ -335,7 +394,7 @@ moon test --target native -p jevlang     # 31 件(API 不要)
 scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 ```
 
-`hooks/policy.jev` は、[6 節](#6-claude-code-の-permission-hook)の hook の判定を
+`hooks/policy.jev` は、[7 節](#7-claude-code-の-permission-hook)の hook の判定を
 この言語で書いたものです(`--policy` で差し替えられます)。
 
 **質問文が実行前に確定している judgment は 1 リクエストに巻き上げられます**
