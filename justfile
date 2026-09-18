@@ -61,6 +61,12 @@ install-threshold-fit:
 install-otel-triage:
     npm --prefix experiments/otel-triage install
 
+# @inputs: experiments/bilingual/package.json experiments/bilingual/package-lock.json
+# @cost: 0.6
+# Install the translation-check experiment's dev dependencies
+install-bilingual:
+    npm --prefix experiments/bilingual install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -179,6 +185,18 @@ test-otel-triage: install-otel-triage
 replay-otel-triage: install-otel-triage
     npm --prefix experiments/otel-triage run demo
 
+# @inputs: experiments/bilingual/** experiments/shared/** experiments/eslint-plugin-jev/README.md experiments/eslint-plugin-jev/README.ja.md
+# @cost: 0.9
+# Check that the parallel READMEs still align, and that the rules stay quiet on them
+test-bilingual: install-bilingual
+    npm --prefix experiments/bilingual test
+
+# @inputs: experiments/bilingual/** experiments/shared/**
+# @cost: 0.9
+# Re-derive docs/28's tables from the recorded judgments
+replay-bilingual: install-bilingual
+    npm --prefix experiments/bilingual run demo
+
 # @inputs: eslint.config.mjs eslint.rules.mjs hooks/** jevlang-js/** experiments/eslint-plugin-jev/**
 # @cost: 0.7
 # Lint this repository against its own prose conventions (docs/26), from the
@@ -210,5 +228,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual
     @echo "all green"

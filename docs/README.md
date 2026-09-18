@@ -60,6 +60,9 @@ node experiments/eslint-plugin-jev/experiment/rules-report.mjs \
 cd experiments/otel-triage     && npm i && npm test                 # 27: シミュレータと検知器の不変条件(API 不要)
 cd experiments/otel-triage     && npm run demo                      # 27: 記録から再集計(API 不要)
 cd experiments/otel-triage     && npx tsx src/run.ts --arm aggregate --repeat 3  # 27: 異常検知のトリアージ
+cd experiments/bilingual       && npm i && npm test                 # 28: 対訳の整列と規則の不変条件(API 不要)
+cd experiments/bilingual       && npm run demo                      # 28: 記録から再集計(API 不要)
+cd experiments/bilingual       && npx tsx src/run.ts --arm section --repeat 3   # 28: 英日が同じことを言っているか
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -117,6 +120,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **セレクタは広く書いてよい(level 0 が吸う)** | わざと広くした `TemplateLiteral` 422 件のうち **398 件が「当てはまらない」・誤検出 0** | 本リポジトリ | [26](26-repo-rules.md#1-一回目の実行--579-判定29-秒00135) |
 | **観測データは集計を渡す(生ログより安くて強い)** | 集計 2026 トークンで cause 24/30、生ログを足すと 7441 トークンで 18/30 | 本リポジトリ | [27](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか) |
 | **サンプリング規則は質問の一部** | 同じ件数・同じトークン数で、うるさい順に選ぶと誤ページ **27 件・均等なら 6 件** | 本リポジトリ | [27](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか) |
+| **翻訳の同期は「diff + 判断」で割る** | 数値と識別子は差分で 26/30・誤検出 0、意味の 4 クラスは判断が 2 つ埋める(84/90・誤検出 0) | 本リポジトリ | [28](28-bilingual.md#2-判断は何を足すか) |
+| **原子述語は「どこがどう違うか」まで返す** | omission で `omits` 0.95、addition で `adds` 0.98、数値差で `numbers_agree` 0.03 | 本リポジトリ | [28](28-bilingual.md#2-判断は何を足すか) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -195,6 +200,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 観測データを「とりあえず全部」state に入れる | 5 分の窓が **16/16 で上限超過**。`log_flood` は 15,200 件のうち 107 件しか送られない([27 §6](27-otel-triage.md#6-全部送るの値段--16-窓すべてが上限に当たる)) |
 | JSON のトークン数を 4 文字 = 1 トークンで見積もる | telemetry の JSON は **2.4 文字 = 1 トークン**。全窓で `max_tokens_exceeded`([27 §6](27-otel-triage.md#6-全部送るの値段--16-窓すべてが上限に当たる)) |
 | 異常検知で「何も問題ない」を判断に期待する | 逃げ道を別 noul にしても健全な 18 窓で発火 **0〜4 件**。沈黙は算術にしか担保できない([27 §5](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか)) |
+| 「この範囲に無い」を判定するときに範囲を広げる | 文書全体を足すと omission が **1.84 → 0.57**。**文脈は答えの隠れ場所を与える**([28 §4](28-bilingual.md#4-文書全体を渡すと悪くなるそして機構が見える)) |
+| 言語をまたぐ比較で生の数値 diff を使う | 英語 "one request" 対 日本語「1 リクエスト」。faithful な 20 対のうち **14 対を誤検出**([28 §1](28-bilingual.md#1-先に-diff-を書く)) |
 
 ## レポート
 
@@ -228,6 +235,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [25](25-thresholds.md) | 閾値を当てはめる部品(質問ごと・ホールドアウト・draw・コスト重み付け) | ✅ |
 | [26](26-repo-rules.md) | 実リポジトリで `jev/rule` を走らせる — 散文の規約を自分のコード 9,315 行に当てる | ✅ |
 | [27](27-otel-triage.md) | otel の異常検知のトリアージ(検知はコード・severity は算術・cause は判断) | ✅ |
+| [28](28-bilingual.md) | 英語と日本語が同じことを言っているか(実物の対訳 + 8 種の変異) | ✅ |
 
 ## この探索から見えている一般則
 
