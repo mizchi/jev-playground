@@ -23,13 +23,35 @@ export interface OrchestratorConfig {
   /** The most workers a plan may ask for. */
   maxWorkers: number;
   /**
-   * Below this size answer, stay single however the gate reads.
+   * Below this size answer, stay single however the gate reads. 0 is off.
    *
    * The floor is in code, not in the question, and it is the whole of the
    * cost model: a second worker's fixed cost does not shrink with the task,
    * so a small task cannot repay it. docs/31's `big_enough` is condition (4)
    * of the documented rule, and this is that condition applied as a veto
    * rather than as a term in a boolean the gate was measured not to need.
+   *
+   * IT DEFAULTS TO OFF, on a measurement, and the reasoning is worth having
+   * because the mechanism is not wrong -- its position is. docs/31 §9:
+   *
+   *   A veto sits BEHIND the gate; it only sees requests the gate passed. And
+   *   §8 fitted `gateAt` to each wording's ZERO-FALSE-POSITIVE point. Behind a
+   *   filter that is never wrong there is nothing to catch, so every veto
+   *   removes a true positive: at the shipped cutoffs the floor of 0.5 killed
+   *   4 of 18 correct splits under `cost` and 9 of 33 under `plain`, and
+   *   caught none.
+   *
+   *   Sweeping the two together does find a better in-sample cell -- gateAt
+   *   0.4 with minSize 0.3, loss 0.368 against 0.421 for the gate alone. But
+   *   cross-validating the SELECTION (pick the pair on four folds, score on
+   *   the fifth) costs 0.842, worse than every fixed option and worse than
+   *   always-single's 0.579. Five folds picked three different pairs. The
+   *   cell is a cliff: `fp` swings hard for small gate movements and `fp` is
+   *   what the loss weighs.
+   *
+   * So the floor stays in the code and out of the default. Turn it on for a
+   * gate you have reason to think has false positives -- which is the case it
+   * was written for, and not the case this corpus is.
    */
   minSize: number;
   /** Patterns this host cannot run. Trimmed from the plan, with a reason. */
@@ -43,7 +65,9 @@ export const DEFAULT_ORCHESTRATOR_CONFIG: OrchestratorConfig = {
   // the configuration docs/31 §8 measured as best in the asymmetric regime.
   gateAt: null,
   maxWorkers: 3,
-  minSize: 0.5,
+  // Off. docs/31 §9 -- see `minSize` above for why a veto behind a
+  // zero-false-positive gate can only destroy correct decisions.
+  minSize: 0,
   // `evolution` searches over workflows and `blackboard` wants a durable
   // shared board; neither is something a single pi session can do, so the
   // default host cannot offer them. Naming them here rather than deleting

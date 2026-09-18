@@ -147,16 +147,33 @@ tests.push(
 );
 
 tests.push(
-  check("the size floor vetoes a fired gate, and says why", () => {
+  check("the size floor vetoes a fired gate when it is on, and says why", () => {
     // The cost lives in code. docs/31 §2 is the reason: naming the cost in
     // the PROMPT moved the gate 21 points and skewed every error one way.
     // A veto applied to an answer cannot change the answer.
-    const p = decide(judgment({ size: 0.2 }));
+    const on = { ...DEFAULT_ORCHESTRATOR_CONFIG, minSize: 0.5, unavailable: [] };
+    const p = decide(judgment({ size: 0.2 }), on);
     eq(p.shape, "single");
     eq(p.split, false);
     ok(p.reason.includes("fixed cost does not shrink"), `the reason does not explain the veto: ${p.reason}`);
     // And it is a floor, not a gate: raise the size and it splits.
-    eq(decide(judgment({ size: 0.9 })).split, true);
+    eq(decide(judgment({ size: 0.9 }), on).split, true);
+  }),
+);
+
+tests.push(
+  check("the size floor is OFF by default, and 0 means never", () => {
+    // docs/31 §9. The mechanism is fine; its position is the problem -- a veto
+    // behind a gate fitted to its zero-false-positive point can only remove
+    // correct decisions. At the shipped cutoffs a floor of 0.5 killed 4 of 18
+    // correct splits and caught none.
+    eq(DEFAULT_ORCHESTRATOR_CONFIG.minSize, 0);
+    // A tiny task whose gate fired still splits, because the floor is off.
+    const p = decide(judgment({ size: 0.01 }), { ...DEFAULT_ORCHESTRATOR_CONFIG, unavailable: [] });
+    eq(p.split, true, "the floor vetoed although it is off: ");
+    // 0 must mean never rather than "always", since a probability is never
+    // below 0. Asserted because `size < minSize` reads either way at a glance.
+    eq(decide(judgment({ size: 0 }), { ...DEFAULT_ORCHESTRATOR_CONFIG, unavailable: [] }).split, true);
   }),
 );
 

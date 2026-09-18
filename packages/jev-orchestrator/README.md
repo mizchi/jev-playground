@@ -108,6 +108,16 @@ the size floor, the worker cap and the gate cutoff are all applied after.
 A pipeline shape (`sequential`, `handoff`) never gets more than two workers:
 three workers on a pipeline is three workers waiting.
 
+**The size floor is off by default**, and that is docs/31 §9's result rather
+than a simplification. `minSize` is a veto *behind* the gate, and §8 put the
+gate at its zero-false-positive point — so everything reaching the veto is a
+genuine multi and every veto destroys a correct decision: 4 of 18 under `cost`
+and 9 of 33 under `plain`, with none caught. Sweeping the two together finds a
+better in-sample cell (gateAt 0.4 with minSize 0.3, loss 0.368 against 0.421),
+but cross-validating that *selection* costs 0.842 — worse than every fixed
+option and worse than doing nothing. Turn the floor on for a gate you have
+reason to think has false positives; this one does not.
+
 ## What it does not do
 
 **It advises; it does not dispatch.** Pi's extension surface has no way to spawn

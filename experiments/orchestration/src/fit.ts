@@ -39,13 +39,16 @@ import {
   confusion,
   crossValidate,
   drawNoise,
+  groupFolds,
   place,
   separation,
   type Confusion,
   type Placement,
   type Sample,
 } from "../../shared/thresholds.js";
-import { SCENARIOS } from "./scenarios.js";
+import { SCENARIOS, type Pattern } from "./scenarios.js";
+import { DEFAULT_ORCHESTRATOR_CONFIG, decide } from "../../../packages/jev-orchestrator/src/plan.js";
+import { GATE_AT } from "../../../packages/jev-orchestrator/src/questions.js";
 
 interface Row {
   scenario: string;
@@ -337,6 +340,190 @@ function reportConfig(byFraming: Map<string, Sample[]>): void {
   );
 }
 
+/**
+ * `minSize` -- the size floor, fitted jointly with the gate it sits behind.
+ *
+ * docs/29 §10's lesson, applied to this file's own previous section. §7 fitted
+ * `gateAt` while holding `minSize` at its shipped 0.5, which is exactly the
+ * component-at-a-time mistake that report warns about -- and it has a
+ * consequence §7 did not look for.
+ *
+ * `minSize` is a VETO BEHIND the gate: it only ever fires on a request the
+ * gate already passed. So what it can do is entirely determined by what the
+ * gate lets through, and §7 chose the gate's ZERO-FALSE-POSITIVE cutoffs.
+ * Behind a filter with no false positives there is nothing left to catch:
+ * every veto removes a true positive. That is structural, not a quirk of this
+ * corpus, and it is the third form of the same lesson (docs/25 the tool,
+ * docs/31 §8 the wording, docs/29 §10 the stage behind the cutoff).
+ */
+function reportMinSize(rows: Row[]): void {
+  console.log(`\n§8 \`minSize\` -- the veto behind the gate\n`);
+  const label = new Map(SCENARIOS.map((s) => [s.id, s.topology !== "single"]));
+  const declared = new Map(SCENARIOS.map((s) => [s.id, s.conditions.bigEnough]));
+
+  console.log("  wording        gateAt   rows reaching the veto   of those, genuinely multi");
+  const framings = [
+    { name: "cost named", key: "decision" as const, gate: GATE_AT.cost },
+    { name: "cost unnamed", key: "decisionPlain" as const, gate: GATE_AT.plain },
+  ];
+  for (const { name, key, gate } of framings) {
+    const fired = rows.filter((r) => r[key] >= gate);
+    const multi = fired.filter((r) => label.get(r.scenario)).length;
+    console.log(
+      `  ${pad(name, 14)} ${num(gate, 2).padStart(6)}   ${String(fired.length).padStart(22)}   ` +
+        `${String(multi).padStart(25)}${multi === fired.length ? "  (all of them)" : ""}`,
+    );
+  }
+
+  console.log("\n  wording        minSize   vetoes   rightly   WRONGLY");
+  for (const { name, key, gate } of framings) {
+    const fired = rows.filter((r) => r[key] >= gate);
+    for (const minSize of [0.0, 0.3, 0.5, 0.7]) {
+      const vetoed = fired.filter((r) => r.bigEnough < minSize);
+      const rightly = vetoed.filter((r) => !label.get(r.scenario)).length;
+      console.log(
+        `  ${pad(minSize === 0 ? name : "", 14)} ${num(minSize, 1).padStart(7)}   ${String(vetoed.length).padStart(6)}   ` +
+          `${String(rightly).padStart(7)}   ${String(vetoed.length - rightly).padStart(7)}` +
+          (minSize === DEFAULT_ORCHESTRATOR_CONFIG.minSize ? "   <- shipped" : ""),
+      );
+    }
+  }
+
+  console.log(
+    "\n  >> AT THE GATE §7 FITTED, the veto is pure loss. That cutoff is the gate's\n" +
+      "     zero-false-positive point, so everything reaching the veto is a genuine\n" +
+      "     multi and every veto destroys a correct decision -- 4 of 18 under the\n" +
+      "     default framing, 9 of 33 under the other, and 0 caught either way.\n" +
+      "     That is not an argument for deleting the floor. It is an argument that\n" +
+      "     §7 should not have fitted the gate with the floor held fixed: a veto\n" +
+      "     behind a filter can only be worth something if the filter lets something\n" +
+      "     through. The grid below sweeps them together.\n",
+  );
+
+  // Is there a gate low enough that the veto earns its place? The two have to
+  // be swept together, which is the whole point.
+  console.log("  the joint grid, cost named, penalty 10 (a false positive costs 10x a miss):\n");
+  console.log("    gateAt   minSize   tp    fp   fn    loss   vs always-single");
+  const n = rows.length;
+  const misses = rows.filter((r) => label.get(r.scenario)).length;
+  const nothing = misses / n;
+  let best = { at: Number.NaN, floor: Number.NaN, loss: Number.POSITIVE_INFINITY };
+  for (const gateAt of [0.2, 0.3, 0.4, 0.5]) {
+    for (const minSize of [0.0, 0.3, 0.5, 0.7]) {
+      let tp = 0;
+      let fp = 0;
+      let fn = 0;
+      for (const r of rows) {
+        // The shipped policy, with the gate's own answers.
+        const plan = decide(
+          {
+            gate: r.decision,
+            topology: (r.topology as Pattern | null) ?? null,
+            topologyConfidence: 1,
+            probabilities: {},
+            staySingle: r.staySingle,
+            size: r.bigEnough,
+          },
+          { ...DEFAULT_ORCHESTRATOR_CONFIG, gateAt, minSize, unavailable: [] },
+        );
+        const positive = label.get(r.scenario) ?? false;
+        if (plan.split && positive) tp += 1;
+        else if (plan.split) fp += 1;
+        else if (positive) fn += 1;
+      }
+      const loss = (fp * 10 + fn) / n;
+      if (loss < best.loss) best = { at: gateAt, floor: minSize, loss };
+      console.log(
+        `    ${num(gateAt, 1).padStart(6)}   ${num(minSize, 1).padStart(7)}   ${String(tp).padStart(3)}  ` +
+          `${String(fp).padStart(4)}  ${String(fn).padStart(3)}   ${num(loss).padStart(5)}   ` +
+          (loss < nothing ? `${num(nothing - loss)} better` : `${num(loss - nothing)} WORSE`),
+      );
+    }
+  }
+  console.log(`\n    -> best in-sample: gateAt ${num(best.at, 1)}, minSize ${num(best.floor, 1)}, loss ${num(best.loss)}`);
+
+  // In-sample, and a 4x4 grid on 38 scenarios overfits readily -- so the
+  // SELECTION itself is cross-validated: pick the pair on four folds, score it
+  // on the fifth, pool. This is what "fitting the pair" is actually worth.
+  const grid: [number, number][] = [];
+  for (const gateAt of [0.2, 0.3, 0.4, 0.5]) for (const minSize of [0.0, 0.3, 0.5, 0.7]) grid.push([gateAt, minSize]);
+  const folds = groupFolds(
+    rows.map((r) => ({ value: 0, positive: false, group: r.scenario })),
+    5,
+  );
+  const tally = (on: Row[], gateAt: number, minSize: number): { tp: number; fp: number; fn: number } => {
+    let tp = 0;
+    let fp = 0;
+    let fn = 0;
+    for (const r of on) {
+      const plan = decide(
+        {
+          gate: r.decision,
+          topology: (r.topology as Pattern | null) ?? null,
+          topologyConfidence: 1,
+          probabilities: {},
+          staySingle: r.staySingle,
+          size: r.bigEnough,
+        },
+        { ...DEFAULT_ORCHESTRATOR_CONFIG, gateAt, minSize, unavailable: [] },
+      );
+      const positive = label.get(r.scenario) ?? false;
+      if (plan.split && positive) tp += 1;
+      else if (plan.split) fp += 1;
+      else if (positive) fn += 1;
+    }
+    return { tp, fp, fn };
+  };
+
+  console.log("\n  cross-validating the SELECTION (pick on four folds, score on the fifth):\n");
+  console.log("    candidate                    held-out loss   picked by n folds");
+  const picked = new Map<string, number>();
+  let pooled = { tp: 0, fp: 0, fn: 0 };
+  for (const held of folds) {
+    const inHeld = new Set(held);
+    const train = rows.filter((r) => !inHeld.has(r.scenario));
+    const test = rows.filter((r) => inHeld.has(r.scenario));
+    let localBest = { pair: grid[0], loss: Number.POSITIVE_INFINITY };
+    for (const pair of grid) {
+      const c = tally(train, pair[0], pair[1]);
+      const loss = (c.fp * 10 + c.fn) / train.length;
+      if (loss < localBest.loss) localBest = { pair, loss };
+    }
+    const key = `gateAt ${localBest.pair[0].toFixed(1)}, minSize ${localBest.pair[1].toFixed(1)}`;
+    picked.set(key, (picked.get(key) ?? 0) + 1);
+    const c = tally(test, localBest.pair[0], localBest.pair[1]);
+    pooled = { tp: pooled.tp + c.tp, fp: pooled.fp + c.fp, fn: pooled.fn + c.fn };
+  }
+  const fittedLoss = (pooled.fp * 10 + pooled.fn) / n;
+  for (const [key, count] of [...picked].sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${pad(key, 28)} ${"".padStart(13)}   ${count}`);
+  }
+  console.log(`    ${pad("(the fitted pair, pooled)", 28)} ${num(fittedLoss).padStart(13)}`);
+  for (const [gateAt, minSize, what] of [
+    [GATE_AT.cost, DEFAULT_ORCHESTRATOR_CONFIG.minSize ?? 0.5, "shipped before this fit"],
+    [GATE_AT.cost, 0, "shipped gate, veto off"],
+  ] as const) {
+    const c = tally(rows, gateAt, minSize);
+    console.log(
+      `    ${pad(`gateAt ${num(gateAt, 1)}, minSize ${num(minSize, 1)}`, 28)} ${num((c.fp * 10 + c.fn) / n).padStart(13)}   ${what}`,
+    );
+  }
+  console.log(
+    `    ${pad("always-single", 28)} ${num(nothing).padStart(13)}   the baseline to beat`,
+  );
+
+  // For reference: the component on its own, against its declared condition.
+  // docs/31 §3 already did this per scenario (30/38); this is per row.
+  let right = 0;
+  for (const r of rows) if (r.bigEnough >= 0.5 === declared.get(r.scenario)) right += 1;
+  console.log(
+    `\n  For reference, \`big_enough\` against condition (4) as each scenario declares it:\n` +
+      `  ${right}/${rows.length} at a 0.5 cut. docs/31 §3 measured the same thing per scenario (30/38,\n` +
+      "  AUC 0.936) -- the question is FINE. What is wrong is where its answer is used:\n" +
+      "  as a veto behind a gate that has already stopped being wrong.",
+  );
+}
+
 function main(): void {
   if (!existsSync(RECORD)) {
     console.log("no records/orchestration.json; run `npx tsx src/run.ts --arm all --repeat 3`");
@@ -363,6 +550,7 @@ function main(): void {
   reportLoss(byFraming);
   reportMargin(byFraming);
   reportConfig(byFraming);
+  reportMinSize(rows);
   console.log("");
 }
 

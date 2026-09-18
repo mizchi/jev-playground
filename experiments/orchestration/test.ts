@@ -12,6 +12,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { GATE_AT } from "../../packages/jev-orchestrator/src/questions.js";
+import { DEFAULT_ORCHESTRATOR_CONFIG } from "../../packages/jev-orchestrator/src/policy.js";
 import {
   ARMS,
   BIG_ENOUGH,
@@ -261,6 +262,42 @@ check("the cutoffs jev-orchestrator ships are the ones this record supports", ()
     loss(count((r) => r.decisionPlain, GATE_AT.plain)) < nothing,
     `cost unnamed at ${GATE_AT.plain} does not beat always-single`,
   );
+});
+
+check("the size floor is off because nothing reaches it correctly", () => {
+  // docs/31 §9. `minSize` sits behind `gateAt`, and `GATE_AT` is each
+  // wording's zero-false-positive point -- so everything reaching the veto is
+  // a genuine multi and every veto is a mistake. Re-derived from the raw rows
+  // so the package's `minSize: 0` cannot drift back to a floor while the
+  // record still says a floor can only lose.
+  const path = resolve(import.meta.dirname, "records/orchestration.json");
+  if (!existsSync(path)) return;
+  const rows = (JSON.parse(readFileSync(path, "utf8")) as {
+    scenario: string;
+    arm: string;
+    decision: number;
+    decisionPlain: number;
+    bigEnough: number;
+  }[]).filter((r) => r.arm === "all" && Number.isFinite(r.decision));
+  const label = new Map(SCENARIOS.map((s) => [s.id, s.topology !== "single"]));
+
+  for (const [key, gate] of [["decision", GATE_AT.cost], ["decisionPlain", GATE_AT.plain]] as const) {
+    const fired = rows.filter((r) => (r[key] as number) >= gate);
+    ok(fired.length > 0, `${key}: nothing reaches the veto at all, so the gate is off`);
+    // Everything the gate passes is genuinely multi: that is what makes any
+    // veto behind it a pure loss.
+    const wrong = fired.filter((r) => !label.get(r.scenario));
+    eq(wrong.length, 0, `${key}: the gate now has false positives, so a floor could help again: `);
+    // And a floor of 0.5 would destroy correct decisions rather than catch any.
+    const vetoed = fired.filter((r) => r.bigEnough < 0.5);
+    ok(vetoed.length > 0, `${key}: a 0.5 floor vetoes nothing, so this check proves nothing`);
+    eq(
+      vetoed.filter((r) => !label.get(r.scenario)).length,
+      0,
+      `${key}: a 0.5 floor now catches something, so re-read docs/31 §9: `,
+    );
+  }
+  eq(DEFAULT_ORCHESTRATOR_CONFIG.minSize, 0, "the package ships a floor the record says can only lose: ");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
