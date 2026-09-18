@@ -21,7 +21,7 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | **`jevdsl`** | MoonBit から `match` できる薄いラッパー。3 種を `(result, confidence)` に揃えて guard に閾値を書く | [20](20-jevdsl.md) |
 | **`hooks/jev-permission-gate.mjs`** | **Claude Code の `PreToolUse` hook。** Bash の実行許可を Jev が判定。依存ゼロの Node 1 枚、判定ロジックは `.jev` に外出し | [18](18-permission-hook.md) |
 | **`eslint-plugin-jev`** | **本物の ESLint プラグイン。** 関数ごとのレビュー score + 8 つの名前付き指標。ファイル 1 個 = 1 リクエスト | [21](21-eslint-plugin-jev.md) [22](22-code-criteria.md) |
-| **`jev/rule`** | **まだ存在しないルールを自然言語で書く。** ノードセレクタだけコードで書き、違反かどうかは 1 文で聞く | [23](23-adhoc-rules.md) |
+| **`jev/rule`** | **まだ存在しないルールを自然言語で書く。** ノードセレクタだけコードで書き、違反かどうかは 1 文で聞く | [24](24-adhoc-rules.md) |
 
 ### ゲームとエージェントに載せた
 
