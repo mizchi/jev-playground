@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "Optional. Rename to .claude/jev-gate.json (or hooks/jev-gate.json) to",
+    "override the gate's defaults. Every field is optional.",
+    "",
+    "`thresholds` reads the ordered `permission` score, which runs 0..2.",
+    "docs/01 measured 0.5 / 1.5 as the split that agreed with the labels 23",
+    "times out of 24. Raising `deny` toward 2 makes the gate ask where it",
+    "would have refused; lowering `ask` toward 0 makes it ask about more.",
+    "These live in config precisely because the questions do not have to",
+    "change to retune them (docs/01 section 3).",
+    "",
+    "`context` is merged into the state verbatim. This is the highest-value",
+    "field here: docs/01 section 2 found the structured context was the single",
+    "biggest lever, and the things the model cannot infer -- which paths are",
+    "production, how many people share the repo -- are exactly what belongs",
+    "here. The same `rm -rf` flips from allow to block on this alone."
+  ],
+  "thresholds": { "ask": 0.5, "deny": 1.5 },
+  "protected_branches": ["main", "master", "production", "release"],
+  "context": {
+    "collaborators": 42,
+    "production_paths": ["/srv/data", "./data"],
+    "notes": "./data is a bind mount of the production volume"
+  }
+}
