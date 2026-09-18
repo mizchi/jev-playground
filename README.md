@@ -25,8 +25,13 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
 ([索引](docs/README.md))。
-**20 本ぶんの「やったこと / わかったこと」を端的にまとめたものは
-[`docs/summary.md`](docs/summary.md)** —— ここから読むのが早いです。
+読む順に 3 つの入口があります:
+
+| | 何が書いてあるか |
+| --- | --- |
+| [**docs/practice.md**](docs/practice.md) | **Jev を使うときに順番に決めること**(手順書・やってはいけないこと一覧) |
+| [**docs/findings.md**](docs/findings.md) | **実験ごとに何がわかったか**(1 本 = 1 ブロック) |
+| [**docs/summary.md**](docs/summary.md) | やったこと / わかったことの端的な要約 |
 
 ## 必要なもの
 
@@ -144,7 +149,9 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 
 | # | 内容 |
 | --- | --- |
-| [まとめ](docs/summary.md) | **20 本ぶんの「やったこと / わかったこと」**(ここから読む) |
+| [practice](docs/practice.md) | **実践ガイド** — 使うときに順番に決めること |
+| [findings](docs/findings.md) | **実験ごとに何がわかったか** |
+| [summary](docs/summary.md) | やったこと / わかったことの要約 |
 | [00](docs/00-api-notes.md) | API の実挙動(スキーマに書かれていない上限・挙動、公式パターン集の実測) |
 | [01](docs/01-shell-risk.md) | シェルコマンドの危険度判定 — エージェントの実行許可ゲート |
 | [02](docs/02-moba.md) | ヘッドレス 3v3 MOBA(視界と戦場の霧)を Jev にチーム操作させる |
