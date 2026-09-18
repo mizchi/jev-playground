@@ -36,6 +36,7 @@ import {
   scoreKey,
   stateFor,
   verdictFrom,
+  withThresholds,
 } from "../src/judge.mjs";
 import { planBatches } from "../src/warm.mjs";
 
@@ -380,6 +381,30 @@ if (only !== "failsafe") {
     Object.values(t.criterionAt).every((c) => c >= 0.25),
     JSON.stringify(t.criterionAt),
   );
+  {
+    // Overriding ONE cutoff must not drop the other seven onto `atomAt`. A
+    // shallow spread did exactly that, and the damage is invisible: muting the
+    // noisy criterion quietly stops seven others reporting.
+    const muted = withThresholds({ criterionAt: { unescaped_composition: 1.01 } });
+    check(
+      "overriding one cutoff keeps the other seven",
+      ATOM_NAMES.every((n) => muted.criterionAt[n] === (n === "unescaped_composition" ? 1.01 : t.criterionAt[n])),
+      JSON.stringify(muted.criterionAt),
+    );
+    const other = ATOM_NAMES.find((n) => n !== "unescaped_composition");
+    check(
+      "a criterion left alone still fires just over its own cutoff",
+      decide(
+        { score: null, confidence: null, bug: 0.1, atoms: { [other]: cutOf(other) + 0.01 } },
+        { criterionAt: { unescaped_composition: 1.01 } },
+      )?.messageId === "criterion",
+      `${other} at ${(cutOf(other) + 0.01).toFixed(2)}`,
+    );
+    check(
+      "and the muted one cannot fire at any probability",
+      firedAtom({ atoms: { unescaped_composition: 1 } }, muted) === null,
+    );
+  }
 
   console.log("");
   console.log("RUBRICS");

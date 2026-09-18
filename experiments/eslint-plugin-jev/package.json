@@ -5,6 +5,7 @@
   "description": "An ESLint rule whose verdict comes from Jev: a per-function review score and named review criteria, batched (docs/21, docs/22)",
   "type": "module",
   "exports": "./src/index.mjs",
+  "bin": { "jev-warm": "./src/warm.mjs" },
   "scripts": {
     "test": "node experiment/test.mjs",
     "truth": "node experiment/truth.mjs",

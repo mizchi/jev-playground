@@ -37,7 +37,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 import { collectUnits, DEFAULT_SELECTION } from "./functions.mjs";
-import { DEFAULT_THRESHOLDS, RUBRICS, decide, keyOf, levelName } from "./judge.mjs";
+import { RUBRICS, decide, keyOf, levelName, withThresholds } from "./judge.mjs";
 import { lookup, readCacheMemo } from "./cache.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -130,7 +130,7 @@ const quality = {
 
   create(context) {
     const options = context.options?.[0] ?? {};
-    const thresholds = { ...DEFAULT_THRESHOLDS, ...options };
+    const thresholds = withThresholds(options);
     const selection = {
       minLines: options.minLines ?? DEFAULT_SELECTION.minLines,
       includeCallbacks: options.includeCallbacks ?? DEFAULT_SELECTION.includeCallbacks,

@@ -205,7 +205,7 @@ npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正�
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                    # 59 件(fail-safe 12 + ロジック 47)、API 不要
+npm test                                    # 62 件(fail-safe 12 + ロジック 50)、API 不要
 npm run truth                               # ラベルをコード実行で検証、API 不要
 npm run replay                              # 記録から全数値を再計算、API 不要
 
@@ -227,7 +227,8 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 指摘が名前で返ります:
 
 ```
-  8:8  warning  `median` matches the review criterion `api_default` (0.35, its cutoff is 0.22)
+  5:8  warning  `applyDiscount` matches the review criterion `unit_or_arithmetic` (0.94, its cutoff is 0.28)
+ 13:8  warning  `increment` matches the review criterion `lost_update` (0.93, its cutoff is 0.73)
 ```
 
 ただし**名前を付けても戻ったのは見逃し 6 個のうち 2 個**で、
@@ -238,6 +239,10 @@ TYPESAFEAI_API_KEY=... npm run lint         # eslint が Jev の判定を読む
 naming の有無にかかわらず 15/15 で、**特定の API の挙動を知らないと見えない**バグで
 14% → 52% になります。そして **8 指標は重複していて、抜いて本当に困るのは 1 個だけ**
 (`api_default`、9/12 → 4/12)。→ [docs/22](docs/22-code-criteria.md)
+
+プラグインとしての使い方(flat config、オプション全表、warm パスの CLI、閾値の
+チューニング、限界)は
+[experiments/eslint-plugin-jev/README.md](experiments/eslint-plugin-jev/README.md)。
 
 ## 7. Claude Code の permission hook
 
@@ -332,7 +337,7 @@ moon test --target native -p jevlang     # 31 件(API 不要)
 scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 ```
 
-`hooks/policy.jev` は、[6 節](#6-claude-code-の-permission-hook)の hook の判定を
+`hooks/policy.jev` は、[7 節](#7-claude-code-の-permission-hook)の hook の判定を
 この言語で書いたものです(`--policy` で差し替えられます)。
 
 **質問文が実行前に確定している judgment は 1 リクエストに巻き上げられます**
