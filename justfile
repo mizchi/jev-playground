@@ -381,20 +381,46 @@ router-harder: install-router
 
 # @inputs: packages/**
 # @cost: 1.0
-# Check the two routers: question shapes, the policy's totality, the cost ladder.
+# Check the five components: question shapes, the policies' totality, the cost
+# ladder, the guard's fail-safe paths, the compactor's structural constraints.
 # No API key, no network, no pi
 test-packages: install-packages
     npm --prefix packages/jev-core test
     npm --prefix packages/jev-model-router test
     npm --prefix packages/jev-skill-router test
+    npm --prefix packages/jev-guard test
+    npm --prefix packages/jev-compact test
+    npm --prefix packages/jev-orchestrator test
+    npm --prefix packages/jev-hermes test
 
 # @inputs: packages/**
 # @cost: 3.4
-# Type-check both routers against pi's real extension API
+# Type-check every component against pi's real extension API
 typecheck-packages: install-packages
     packages/node_modules/.bin/tsc --noEmit --strict --target es2023 --module nodenext \
       --moduleResolution nodenext --skipLibCheck \
-      packages/jev-core/src/*.ts packages/jev-model-router/src/*.ts packages/jev-skill-router/src/*.ts
+      packages/jev-core/src/*.ts packages/jev-model-router/src/*.ts packages/jev-skill-router/src/*.ts \
+      packages/jev-guard/src/*.ts packages/jev-compact/src/*.ts packages/jev-orchestrator/src/*.ts \
+      packages/jev-hermes/src/*.ts
+
+# @inputs: experiments/hermes/package.json
+# @cost: 8.0
+# Install the combine measurement's dev dependencies
+install-hermes:
+    npm --prefix experiments/hermes install
+
+# @inputs: experiments/hermes/** packages/**
+# @cost: 1.0
+# Check the combine record: the turns differ, both ways ask the same questions,
+# the record is balanced and stores raw answers.
+test-hermes: install-hermes
+    npm --prefix experiments/hermes test
+
+# @inputs: experiments/hermes/** packages/**
+# @cost: 1.0
+# One request per turn against three: the tables, from the record, no API key.
+replay-hermes: install-hermes
+    npm --prefix experiments/hermes run demo
 
 # @inputs: docs/** README.md experiments/**/README*.md packages/**/README.md
 # @cost: 0.1
@@ -433,5 +459,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
     @echo "all green"

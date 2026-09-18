@@ -55,6 +55,22 @@ export interface RouterConfig {
   /** Below this, never move DOWN the ladder. docs/21 §7's lesson. */
   minConfidence: number;
   /**
+   * Above this, either escape hatch sends the work to the top rung.
+   *
+   * Was a hard-coded 0.7 until `experiments/hermes` measured where the
+   * answers actually land: over eight deliberately varied turns,
+   * `underspecified` separated the extremes cleanly (0.060 for "rename this
+   * variable", 0.954 for "make the dashboard better") and put SIX OF EIGHT in
+   * 0.606..0.729. A cutoff at 0.70 sits in the middle of that cluster, which
+   * is the worst place for it: most traffic lands within one draw-deviation
+   * of the boundary, so which side it falls on is not a property of the
+   * request. docs/25's subject, found by accident.
+   *
+   * The default stays 0.7 so existing behaviour is unchanged and the number
+   * is now visible rather than buried. `jev-hermes` sets its own.
+   */
+  escalateAt: number;
+  /**
    * A downgrade is refused above this much conversation, because the cheaper
    * model has to rebuild the prompt cache.
    *
@@ -113,6 +129,7 @@ export const DEFAULT_CONFIG: RouterConfig = {
   fallback: "claude-sonnet-5",
   cuts: null,
   minConfidence: 0.5,
+  escalateAt: 0.7,
   downgradeMaxContextTokens: 40_000,
   effort: DEFAULT_EFFORT,
   timeoutMs: 10_000,

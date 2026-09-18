@@ -100,9 +100,9 @@ export function decide(input: {
   // An unreadable request is not a cheap request. Both escape hatches send the
   // work up rather than down, because the cost of being wrong is asymmetric:
   // too strong wastes money, too weak wastes the turn AND the money.
-  if (judgment.underspecified > 0.7 || judgment.oversized > 0.7) {
+  if (judgment.underspecified > config.escalateAt || judgment.oversized > config.escalateAt) {
     const top = config.tiers.length - 1;
-    const reason = judgment.underspecified > 0.7 ? "underspecified" : "oversized";
+    const reason = judgment.underspecified > config.escalateAt ? "underspecified" : "oversized";
     return settle(Math.max(currentRung, top), reason, effortName());
   }
 
