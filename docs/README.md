@@ -132,7 +132,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | noul の criteria をトップレベルに置く | サーバーが黙って無視する。エラーは出ない([00](00-api-notes.md#noul-criteria)) |
 | エージェントに質問を書かせて評価しない | 同じプロンプトで 10/24〜23/24 に振れる([04](04-agent-built-prompts.md#1-結果-書かせたままでは当たらないばらつきが巨大)) |
 | score の閾値を分布を見ずに決める | rubric が実際に出す値と噛み合わず全部下位に落ちる([04](04-agent-built-prompts.md#2-原因は設計ではなく閾値だった)) |
-| driver の候補一覧をステップ毎に作り直さない | SPA では 2 手目以降が古い候補から選ぶ([05](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない)) |
+| driver の候補一覧をステップ毎に作り直さない | SPA では 2 手目以降が古い候補から選ぶ([05](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない))。上流は [#142](https://github.com/mizchi/chaosbringer/pull/142) で修正済み |
 | confidence を無駄手の検出器に使う | 無駄手 13 件のうち 12 件が **0.99 以上**。低い手は「正しいが手応えのない手」だった([25](25-confidence-fallback.md#4-校正-confidence-は何を測っていたのか)) |
 | `takePreciseCoverage` を 1 発で全体像として読む | 未カバーは時間とともに消え、カウンタは毎 take リセットされる([26](26-coverage-guidance.md#2-計測側で-3-回転んだどれももっともらしい出力を出す)) |
 | 解決しないセレクタで「効果なし」を数える | 押せないボタンが「効かないボタン」に化ける。実験は失敗せず**きれいな結果**を返す([26 §2.3](26-coverage-guidance.md#23-セレクタが-1-つも当たっていなかったこれが一番痛い)) |
@@ -217,6 +217,22 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [26](26-coverage-guidance.md) | カバレッジ誘導 — 同じ事実を state に置くかゴールに置くか | ✅ |
 | [27](27-nl-test-generation.md) | 1 文から Playwright spec を生成し、ミューテーションで採点する | ✅ |
 | [28](28-perf-automation.md) | 計測 → 診断 → 適用 → 再計測([lightbringer](https://github.com/mizchi/lightbringer) の手法を借用) | ✅ |
+
+## 上流に入ったもの
+
+この探索から [chaosbringer](https://github.com/mizchi/chaosbringer) に 2 本入った。
+どちらも「Jev を賢くする」側ではなく、**driver に渡す情報**の側である。
+
+| PR | 中身 | 出どころ |
+| --- | --- | --- |
+| [#142](https://github.com/mizchi/chaosbringer/pull/142) | 候補一覧をステップ毎に作り直す / `DriverStep.currentUrl` / `aiDriver({ minConfidence })` | [05 §4](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない) の指摘、[25](25-confidence-fallback.md) が読もうとした信号 |
+| [#143](https://github.com/mizchi/chaosbringer/pull/143) | `DriverCandidate.bbox` を実際に埋める + `inViewport` / `inert` / `coveredBy` / `isObstructed()` | [25 §5](25-confidence-fallback.md#5-効いたのはモデルに聞かないほうだった) で効いたもの |
+
+**効いたのは後者だった。** 前者(`confidence`)は「あったのに読んでいなかった」信号で、
+読んでも無駄手は拾えなかった。後者は「そもそも測っていなかった」信号で、12/12 当てた。
+ただし上流の定義は本稿のプローブより意図的に狭いので、**その 12/12 が
+`chaos({ driver })` 経由でそのまま出るかは測っていない**
+([25 §6](25-confidence-fallback.md#6-chaosbringer-側に入った142--143どちらも-merge-済み))。
 
 ## この探索から見えている一般則
 

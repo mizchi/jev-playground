@@ -96,6 +96,21 @@ Jev の 1 ラン(20 手中の最初の 11 手で注文完了):
 
 ## 4. chaosbringer 側への指摘: driver の候補一覧が 1 ページ 1 回しか作られない
 
+> **追記: これは [chaosbringer#142](https://github.com/mizchi/chaosbringer/pull/142)
+> で直った(merge 済み)。** 候補は 2 手目以降、毎ステップ作り直される。
+> 回帰テストは、ボタンが別のボタンに置き換わるページを実際に crawl して
+> 「`Finish` は crawl 到着時に存在しないので、2 手目でそれを提示された driver は
+> 作り直された一覧を渡されたとしか説明がつかない」を見る形にした。
+> 同じ PR で `DriverStep.currentUrl` と `aiDriver({ minConfidence })` も入った。
+> 前者は `src/jev-driver.ts` の `liveUrl()` が回避していたもの——`step.url` は
+> ページ訪問の URL でハッシュ遷移では動かないので、driver 側で
+> `step.page.url()` を読み直していた。ジオメトリは
+> [#143](https://github.com/mizchi/chaosbringer/pull/143) で入った。
+> 経緯と、上流の定義が本稿のプローブより狭い点は
+> [25 §6](25-confidence-fallback.md#6-chaosbringer-側に入った142--143どちらも-merge-済み)。
+>
+> 以下は指摘した当時の記述をそのまま残す。
+
 `src/jev-driver.ts` は chaosbringer の `Driver` インターフェース実装そのままで、
 `chaos({ driver })` に差せて実際に動く(実測でリクエストが飛ぶ)。
 ただし **SPA では期待どおりに働かない**。
