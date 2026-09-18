@@ -97,6 +97,18 @@ install-repair:
 install-review:
     npm --prefix experiments/review install
 
+# @inputs: experiments/roguelike/package.json experiments/roguelike/package-lock.json
+# @cost: 0.6
+# Install the roguelike experiment's dev dependencies
+install-roguelike:
+    npm --prefix experiments/roguelike install
+
+# @inputs: experiments/tension/package.json experiments/tension/package-lock.json
+# @cost: 0.6
+# Install the tension experiment's dev dependencies
+install-tension:
+    npm --prefix experiments/tension install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -305,6 +317,37 @@ replay-review: install-review
 review-truth: install-review
     npm --prefix experiments/review run truth
 
+# @inputs: experiments/roguelike/** experiments/shared/**
+# @cost: 1.1
+# Check the NetHack harness: glyphs, geometry, action sets, probe truths.
+# The live-game check is skipped when nethack-console is not installed
+test-roguelike: install-roguelike
+    npm --prefix experiments/roguelike test
+
+# @inputs: experiments/roguelike/** experiments/shared/**
+# @cost: 0.6
+# Re-derive docs/34's tables from the recorded screens and games
+replay-roguelike: install-roguelike
+    npm --prefix experiments/roguelike run demo
+
+# @inputs: experiments/roguelike/**
+# @cost: 900.0
+# Re-record the baseline games and the screen corpus. Needs nethack-console
+roguelike-walk: install-roguelike
+    npm --prefix experiments/roguelike run walk -- --games 3 --actions 500 --every 12
+
+# @inputs: experiments/tension/** experiments/shared/**
+# @cost: 0.6
+# Check the game rules, the exhaustive solver and the trajectory statistics
+test-tension: install-tension
+    npm --prefix experiments/tension test
+
+# @inputs: experiments/tension/** experiments/shared/**
+# @cost: 0.6
+# Re-derive docs/35's tables from the recorded self-play
+replay-tension: install-tension
+    npm --prefix experiments/tension run demo
+
 # @inputs: docs/** README.md experiments/**/README*.md
 # @cost: 0.1
 # Every relative Markdown link and heading anchor across the repository
@@ -342,5 +385,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension check-links
     @echo "all green"

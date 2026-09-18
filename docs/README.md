@@ -79,6 +79,15 @@ cd experiments/repair          && npx tsx src/run.ts --replay --verify  # 32: �
 cd experiments/review          && npm i && npm test                 # 33: 緑の基準が緑か・truth が古くないか
 cd experiments/review          && npm run demo                      # 33: 記録から再集計(API 不要)
 cd experiments/review          && npx tsx src/dupes.ts              # 33: similarity-ts をこのリポジトリに当てる
+apt-get install -y nethack-console                                  # 34: 本物の NetHack 3.6.7(tmux も要る)
+cd experiments/roguelike       && npm i && npm test                 # 34: 画面の読みと行動集合の不変条件(API 不要)
+cd experiments/roguelike       && npm run demo                      # 34: 記録から再集計(API 不要)
+cd experiments/roguelike       && npm run walk -- --games 3          # 34: ベースラインと画面 corpus(API 不要)
+cd experiments/roguelike       && npx tsx src/run.ts --perceive      # 34: 画面を読めているか
+cd experiments/roguelike       && npx tsx src/run.ts --play --games 3 # 34: 実際に遊ばせる
+cd experiments/tension         && npm i && npm test                 # 35: 規則・solver・統計量の不変条件(API 不要)
+cd experiments/tension         && npm run demo                      # 35: 記録から再集計(API 不要)
+cd experiments/tension         && npx tsx src/run.ts --play --repeat 6 # 35: jev 同士で 5 種を対戦
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
@@ -248,6 +257,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 無料の基準線を「賢くないはず」と決めてかかる | 候補生成順がそのまま事前分布で、無作為 7.69 回に対し **3.00 回**。コードのコメントを測って訂正した([32 §2](32-repair.md#2-テスト実行回数)) |
 | 「機械的な指標だから渡せば良くなる」と思う | ラベルを分けない指標はプロンプトでも分けない。トークン +69%・AUC −0.02・`risk` は 89% → 85%([33 §2](33-review.md#2-4-通りのレビュー)) |
 | diff が小さいことを安全の証拠にする | `add-return` は 5/5 間違えて全部「安全」。1 行足すだけで関数がそこで戻る([33 §4](33-review.md#4-どこで間違えるか)) |
+| 「この手はどうでもいい」を confidence が言うと思う | どの手も結果を変えられないゲームでも `doubt` 0.418。**実測レンジは 0.42〜0.77 で下側が丸ごと無い**([35 §1.1](35-tension.md#11-doubt-には床がある)) |
+| confidence が合っているから中身も合っていると思う | 反転ルールの盤で**着手は 81% 正しいのに**、confidence は**反転前**の criticality を +0.81 で追う([35 §3](35-tension.md#3-一番はっきりした結果-盤の絵が書かれた規則に勝つ)) |
+| ベースラインのサマリ行を見て動いていると思う | 「500 ターン・却下 0 件」の裏で `west east west east` を 400 回。**1 手ずつのトレースでしか見えない**([34 §0](34-roguelike.md#0-harness--本物を動かす)) |
 
 ## レポート
 
@@ -287,6 +299,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [31](31-orchestration.md) | 文書化されたゲート(multi-agent-orchestration)は聞く方が良いのか組み立てる方が良いのか | ✅ |
 | [32](32-repair.md) | パッチはコードが作り、判断は並べるだけの修復ループ(ラベルは `node --test` の終了コード) | ✅ |
 | [33](33-review.md) | 機械的な指標を渡すとレビューは良くなるのか(261 件の 1 行 diff + similarity-ts) | ✅ |
+| [34](34-roguelike.md) | 本物の NetHack 3.6.7 を tmux で駆動する — 80×24 の AA 画面を読めるのか、遊べるのか | ✅ |
+| [35](35-tension.md) | ゲームの面白さは confidence の変動に出るのか(完全に解けるゲーム 5 種で照合) | ✅ |
 
 ## この探索から見えている一般則
 
