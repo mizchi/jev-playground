@@ -1,4 +1,6 @@
-# eslint-plugin-jev
+# @mizchi/eslint-plugin-jev
+
+CAUTION: **This is a joke implementation at this point and has not been evaluated yet. Whether you trust this lint or not is entirely up to you.**
 
 Two ESLint rules whose verdict comes from a model instead of from a pattern:
 
@@ -102,7 +104,7 @@ npx eslint src
 `eslint.config.mjs`:
 
 ```js
-import jev from "eslint-plugin-jev";
+import jev from "@mizchi/eslint-plugin-jev";
 
 export default [
   {
@@ -119,7 +121,7 @@ Or take the preset, which is `warn` with `onMiss: "silent"` and everything else
 left at its default:
 
 ```js
-import jev from "eslint-plugin-jev";
+import jev from "@mizchi/eslint-plugin-jev";
 
 export default [jev.configs.recommended];
 ```
