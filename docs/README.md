@@ -20,6 +20,9 @@ cd experiments/browser-chaos  && npm i && npx tsx src/run-spa.ts # 05: ブラウ
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
+cd experiments/task-filter    && npm i && npm test                  # 21: filter の不変条件(API 不要)
+cd experiments/task-filter    && npx tsx src/run.ts --repeat 3       # 21: タスク filter
+cd experiments/task-filter    && npx tsx src/cli.ts --base main      # 21: 手元の diff に対して使う
 node hooks/test-gate.mjs --failsafe-only                       # 18: hook のフェイルセーフ(API 不要)
 node hooks/test-gate.mjs                                       # 18: hook を実物で採点
 node jevlang-js/bin/jevlang.mjs examples/milk.jev               # 19: jevlang(JS 版)
@@ -65,6 +68,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **確率的な判断には record/replay** | 無いとテストが書けず、実装差とモデルのばらつきも区別できない | 本リポジトリ | [19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具) |
 | **判定ロジックをコードではなくデータにする** | hook の判定を `.jev` に出して差し替え可能に。規則と理由文の 16 分岐を API 無しで検証 | 本リポジトリ | [18](18-permission-hook.md#6b-判定ロジックを-jev-で書く) |
 | **3 種を `(result, confidence)` に揃える** | `match` の形が同じになり、guard に閾値が書ける。noul は confidence を導出する必要あり | 本リポジトリ | [20](20-jevdsl.md#1-result-confidence-に揃えるとき-noul-だけ困る) |
+| **グラフはコードに、判断は Jev に** | 前提と順序を閉包に任せてゴールだけ採点。**検出 15/15 を保って machine time 68.6%**(t=1.25 で 75.8%)削減 | 本リポジトリ | [21](21-task-filter.md#3-結果--検出を落とさず-686-削る) |
+| **意図が書かれていないなら diff の中身を渡す** | パスだけでは無害な変更の判別が **0.482(コイン投げ)**。hunk を渡すと 0.183 | 本リポジトリ | [21](21-task-filter.md#4-文脈は効いた--17-との違いは意図が書かれているかどうか) |
+| **閾値をコストで重み付けする** | 4 秒のタスクが 1.24 対 1.25 で落ちる。「10 秒以下は無条件」で 44/45 → **45/45**、代償 0.5 分 | 本リポジトリ | [21](21-task-filter.md#7-安いタスクに同じ閾値を使ってはいけない) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -104,6 +110,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | リトライ無しのクライアントで API を叩きすぎる | レート制限で全 hold、対称ゲームが 350-350 で膠着する([11](11-synergy.md#1-相互キルの同時処理)) |
 | ドラフトの良し悪しを 1 つの policy だけで判定する | scripted に弱い編成が Jev には強い。順位は policy 依存([12](12-comeback.md)) |
 | 弱い基準で観測した「取り返し」を一般化する | 基準を上げると蒸発する。本当に弱い編成 classic は scripted に 5-1 → smart に 0-6([12](12-comeback.md#8-追記--強い-bot-を基準にすると取り返し幅は縮む)) |
+| 依存グラフをプロンプトに載せる | 前提はコードの閉包が既に解いている。削減 68.6% → 66.3% でトークンは 1.3 倍([21](21-task-filter.md#5-グラフはプロンプトではなくコードに置く)) |
+| glob の affected 判定だけでフィルタする | `a11y` の `@inputs` が `web/**` で変更が `packages/ui` にある類を落とす。15/15 → **14/15**([21](21-task-filter.md#2-グラフは要る--glob-だけでは不健全)) |
+| 全タスクに同じ閾値を使う | 4 秒のタスクを飛ばして 4 秒節約し、**その変更で赤くなる唯一のチェック**を失う([21](21-task-filter.md#7-安いタスクに同じ閾値を使ってはいけない)) |
+| 逃げ道の noul の閾値を 0.5 に決め打つ | 無害側の平均が 0.479 で、0.5 は谷ではなく山の上。0.4 なら検出 6/15 → 9/15 で副作用は増えない([21](21-task-filter.md#6-何も走らせないは別の-noul-にすると安全なゲートになる)) |
 
 ## レポート
 
@@ -127,6 +137,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [18](18-permission-hook.md) | Claude Code の `PreToolUse` hook として実装する(提案 C の検証) | ✅ |
 | [19](19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語(JS 版 / MoonBit 版) | ✅ |
 | [20](20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) | 📝 |
+| [21](21-task-filter.md) | タスク/テストランナーの filter(`just` の依存グラフ + タスクごとの `score`) | ✅ |
 
 ## この探索から見えている一般則
 
@@ -165,10 +176,14 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
     **散文で情報が尽きる**。一覧を渡して選ばせる設計では、
     精度への投資先は質問文ではなく**項目名と 1 行の説明**
     ([17](17-task-picker.md))。
-11. **state を盛る前に、ゴール文で足りているか確かめる。** 4〜8 では構造化 state が
-    最大のレバーだったが、タスク選択では `changed_files` も直前の終了コードも
-    **1 件も動かさなかった**。効くのは**意図が曖昧なとき**で、
-    意図が 1 文で明示されているなら文脈は払い損([17](17-task-picker.md#5-リポジトリの文脈は要らなかった))。
+11. **state を盛る前に、ゴール文で足りているか確かめる —— 逆に、ゴール文が無いなら文脈が唯一の情報源。**
+    4〜8 では構造化 state が最大のレバーだったが、タスク選択では `changed_files` も
+    直前の終了コードも **1 件も動かさなかった**([17](17-task-picker.md#5-リポジトリの文脈は要らなかった))。
+    21 で同じことを**ゴール文なし**(入力は diff だけ)で測ると反転して、
+    **パスだけでは無害な変更の判別が 0.482(コイン投げ)まで落ち、hunk を渡すと 0.183 になる**。
+    つまり仮説「文脈が効くのは意図が曖昧なときだけ」は当たりで、
+    **意図を書けるなら 1 文書くのが一番安く、書けないなら hunk まで払う**
+    ([21](21-task-filter.md#4-文脈は効いた--17-との違いは意図が書かれているかどうか))。
 12. **オフラインの正解率は質問文の妥当性を保証しない。** コーパスに無いクラスの穴は
     コーパスでは見えない。23/24 を取った `exfiltrates` の文言は、hook にした 1 発目で
     普通の `git push` を deny した。**実運用の形に載せることが最後のテスト**で、
@@ -184,3 +199,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 15. **確率的な判断を含む実行には record/replay を最初から入れる。**
     同じ入力で分岐が変わるので、無いとテストが書けない。
     そして**実装やモデルを比べるときの唯一の土台**になる([19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具))。
+16. **構造の分かっている部分はコードに、判断だけを Jev に渡す。** 依存グラフを
+    プロンプトに載せると削減が 68.6% → 66.3% に落ちてトークンが 1.3 倍になるのに、
+    同じグラフを**閉包としてコードに置くと無料で正確**になる。
+    前提・順序・到達可能性のように**規則で解ける部分を判断に混ぜない**のが安いだけでなく強い。
+    言い換えると、Jev に聞くべきなのは**規則で書けないところだけ**
+    (この diff は振る舞いを変えるか / この suite は今回関係あるか)
+    ([21](21-task-filter.md#5-グラフはプロンプトではなくコードに置く))。

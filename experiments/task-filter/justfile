@@ -1,0 +1,201 @@
+# The task graph under test: a pnpm-monorepo-shaped CI, written as real `just`
+# recipes so the dependency edges come from `just --dump --dump-format json`
+# rather than from a hand-written table (src/graph.ts).
+#
+# Three things per recipe, and each is read by a different part of the
+# experiment:
+#
+#   dependencies        -- `just`'s own edges. The graph, and the only source of
+#                          ordering and prerequisites. Jev never reasons about
+#                          these; the closure adds them after the fact.
+#   the last comment    -- `just`'s doc comment. One line of prose, which
+#                          docs/17 measured as the difference between 90% and
+#                          100% on task selection, so every recipe has one.
+#   # @inputs / # @cost -- annotations. `just` keeps only the LAST comment line
+#                          as the doc, so these lines are invisible to it and
+#                          are parsed out of this file's text. @inputs is what a
+#                          turbo.json / bazel srcs would declare; @cost is the
+#                          recipe's wall-clock seconds in CI.
+#
+# What each recipe can actually CATCH is deliberately NOT in here -- that is the
+# oracle's hidden ground truth (src/oracle.ts), the same split docs/16 and
+# docs/17 used: the name and the prose are the spec, the behaviour is hidden.
+
+# ---------------------------------------------------------------- foundation
+
+# @inputs: package.json pnpm-lock.yaml */package.json packages/*/package.json
+# @cost: 35
+# Install the workspace's dependencies from the lockfile
+install:
+    pnpm install --frozen-lockfile
+
+# @inputs: api/schema.graphql
+# @cost: 8
+# Regenerate the typed GraphQL client and server stubs from the schema
+codegen: install
+    pnpm graphql-codegen --config codegen.yml
+
+# @inputs: packages/shared/**
+# @cost: 12
+# Compile the shared domain package that every other workspace imports
+build-shared: install
+    pnpm --filter @acme/shared build
+
+# @inputs: packages/ui/**
+# @cost: 18
+# Compile the shared React component library
+build-ui: install build-shared
+    pnpm --filter @acme/ui build
+
+# @inputs: web/**
+# @cost: 46
+# Type-check and bundle the web app for production
+build-web: build-ui codegen
+    pnpm --filter @acme/web build
+
+# @inputs: api/**
+# @cost: 24
+# Compile the API server
+build-api: build-shared codegen
+    pnpm --filter @acme/api build
+
+# ---------------------------------------------------------------- static checks
+
+# @inputs: web/**/*.ts web/**/*.tsx packages/*/src/**/*.ts
+# @cost: 22
+# Type-check the web app without emitting
+typecheck-web: codegen build-shared
+    pnpm --filter @acme/web exec tsc --noEmit
+
+# @inputs: api/**/*.ts packages/*/src/**/*.ts
+# @cost: 16
+# Type-check the API server without emitting
+typecheck-api: codegen build-shared
+    pnpm --filter @acme/api exec tsc --noEmit
+
+# @inputs: **/*.ts **/*.tsx .eslintrc.cjs
+# @cost: 31
+# Report lint problems across the workspace, warnings included
+lint: install
+    pnpm eslint . --max-warnings 0
+
+# @inputs: **/*.ts **/*.tsx **/*.md **/*.json .prettierrc
+# @cost: 4
+# Check that every file is formatted, changing nothing
+fmt-check:
+    pnpm prettier --check .
+
+# ---------------------------------------------------------------- tests
+
+# @inputs: packages/shared/**
+# @cost: 9
+# Run the shared package's unit suite
+test-shared: build-shared
+    pnpm --filter @acme/shared test
+
+# @inputs: packages/ui/**
+# @cost: 26
+# Run the component library's unit and snapshot suites
+test-ui: build-ui
+    pnpm --filter @acme/ui test
+
+# @inputs: web/**
+# @cost: 38
+# Run the web app's unit suite under jsdom
+test-web-unit: codegen build-shared
+    pnpm --filter @acme/web test:unit
+
+# @inputs: api/**
+# @cost: 21
+# Run the API server's unit suite
+test-api-unit: codegen build-shared
+    pnpm --filter @acme/api test:unit
+
+# @inputs: api/migrations/**
+# @cost: 12
+# Apply every pending database migration to the test database
+db-migrate: install
+    pnpm --filter @acme/api migrate:up
+
+# @inputs: api/** api/migrations/**
+# @cost: 95
+# Run the API suite that talks to a real Postgres and a real Redis
+test-api-integration: build-api db-migrate
+    pnpm --filter @acme/api test:integration
+
+# ---------------------------------------------------------------- browser suites
+
+# @inputs: web/** api/** e2e/**
+# @cost: 320
+# Drive the whole product in a browser against a live API
+e2e-web: build-web build-api
+    pnpm playwright test e2e/
+
+# @inputs: web/** api/** e2e/auth/**
+# @cost: 140
+# Drive sign-in, sign-out, session expiry and password reset in a browser
+e2e-auth: build-web build-api
+    pnpm playwright test e2e/auth/
+
+# @inputs: web/**
+# @cost: 85
+# Check the rendered pages against the accessibility rules
+a11y: build-web
+    pnpm playwright test a11y/ --config a11y.config.ts
+
+# @inputs: web/**
+# @cost: 40
+# Fail the build if the web bundle grew past its budget
+bundle-size: build-web
+    pnpm size-limit
+
+# ---------------------------------------------------------------- supply chain
+
+# @inputs: pnpm-lock.yaml
+# @cost: 14
+# Look up every installed dependency against the vulnerability database
+audit: install
+    pnpm audit --audit-level=high
+
+# @inputs: pnpm-lock.yaml
+# @cost: 9
+# Fail on a dependency whose licence is not on the allowed list
+license-check: install
+    pnpm licenses list --json | node scripts/check-licences.mjs
+
+# ---------------------------------------------------------------- docs & infra
+
+# @inputs: docs/**/*.md README.md
+# @cost: 6
+# Resolve every link in the documentation and fail on a dead one
+docs-links:
+    pnpm lychee --no-progress 'docs/**/*.md' README.md
+
+# @inputs: docs/** packages/*/src/**/*.ts
+# @cost: 27
+# Build the documentation site, API reference included
+docs-build: install
+    pnpm typedoc && pnpm vitepress build docs
+
+# @inputs: infra/**/*.tf
+# @cost: 5
+# Check that the Terraform sources parse and type-check
+infra-validate:
+    terraform -chdir=infra validate
+
+# @inputs: infra/**/*.tf infra/**/*.tfvars
+# @cost: 48
+# Diff the Terraform sources against the deployed infrastructure
+infra-plan: infra-validate
+    terraform -chdir=infra plan -detailed-exitcode
+
+# ---------------------------------------------------------------- aggregate
+
+# The `all` baseline is this recipe's prerequisite closure, so "run everything"
+# is a real recipe rather than a list the experiment maintains by hand. It is
+# excluded from scoring by its group (see src/graph.ts).
+
+# Everything CI runs on a pull request
+[group('meta')]
+ci: lint fmt-check typecheck-web typecheck-api test-shared test-ui test-web-unit test-api-unit test-api-integration e2e-web e2e-auth a11y bundle-size audit license-check docs-links docs-build infra-plan build-web build-api
+    @echo "all green"
