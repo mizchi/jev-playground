@@ -78,16 +78,16 @@ export const MUTATIONS: Mutation[] = [
     rationale: "The same edit on the other side of the same agreement.",
   },
   {
-    id: "jevlang_threshold_default",
-    branch: "fix/stricter-noul-default",
-    subject: "jevlang: default the noul threshold to 0.6",
+    id: "jevlang_threshold_strictness",
+    branch: "fix/strict-threshold",
+    subject: "jevlang: make the noul threshold a strict comparison",
     file: "jevlang/interp.mbt",
-    find: "0.5",
-    replace: "0.6",
+    find: "VProb(p) => p >= self.program.noul_threshold",
+    replace: "VProb(p) => p > self.program.noul_threshold",
     rationale:
-      "Moving a default cutoff, the kind of change docs/01 §3 says belongs in " +
-      "the policy rather than the question. Whether anything pins the default " +
-      "is the question.",
+      "A one-character change at a cutoff boundary, which docs/09 lists as its " +
+      "own pitfall: a decision sitting exactly on the threshold flips. It also " +
+      "has to hold identically in the other implementation.",
   },
 
   // -------------------------------------------------- the match-able wrapper
@@ -146,8 +146,8 @@ export const MUTATIONS: Mutation[] = [
     branch: "fix/gate-timeout",
     subject: "hooks: shorten the gate's request timeout",
     file: "hooks/jev-permission-gate.mjs",
-    find: "1500",
-    replace: "150",
+    find: 'opt("timeout", "2500")',
+    replace: 'opt("timeout", "250")',
     rationale:
       "docs/18's budget is a few hundred milliseconds, so shortening the " +
       "timeout looks defensible. The fail-safe tests are about what happens " +
@@ -167,15 +167,16 @@ export const MUTATIONS: Mutation[] = [
       "`packages/*/package.json` matching one segment and matching any.",
   },
   {
-    id: "eslint_plugin_cache_key",
-    branch: "fix/cache-key-collisions",
-    subject: "eslint-plugin-jev: shorten the cache key",
-    file: "experiments/eslint-plugin-jev/src/cache.mjs",
-    find: '"hex").slice(0, 16)',
-    replace: '"hex").slice(0, 4)',
+    id: "eslint_plugin_report_at",
+    branch: "chore/report-more",
+    subject: "eslint-plugin-jev: report from 1.2 instead of 1.5",
+    file: "experiments/eslint-plugin-jev/src/judge.mjs",
+    find: "  reportAt: 1.5,",
+    replace: "  reportAt: 1.2,",
     rationale:
-      "A shorter key reads better in the recorded JSON. The plugin's whole " +
-      "sync path is a hash lookup, so the key is load-bearing.",
+      "Lowering a cutoff to catch more, which docs/22 measured as a real " +
+      "trade (recall against the correctness of the name). The thresholds are " +
+      "data, so moving one should be cheap.",
   },
 
   // -------------------------------------------------- changes that break nothing
@@ -184,8 +185,10 @@ export const MUTATIONS: Mutation[] = [
     branch: "docs/fix-client-comment",
     subject: "lib: fix a typo in the client's header comment",
     file: "lib/client.mbt",
-    find: "///|",
-    replace: "///|\n/// (typo fixed: reponse -> response)",
+    find: "/// Minimal client for the TypeSafe AI Jev API",
+    replace:
+      "/// Minimal client for the TypeSafe AI Jev API.\n" +
+      "/// One request per question set; the caller owns retries.",
     rationale:
       "A comment in the busiest MoonBit file. The control for docs/23's " +
       "comment_typo scenario, this time with the answer measured.",
