@@ -1,0 +1,16 @@
+{
+  "name": "jev-orchestration",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Does a documented multi-agent gate compose better from atomic predicates than from one judgment? (docs/31-orchestration.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

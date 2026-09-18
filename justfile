@@ -79,6 +79,12 @@ install-skill-select:
 install-skill-pick:
     npm --prefix experiments/skill-pick install
 
+# @inputs: experiments/orchestration/package.json experiments/orchestration/package-lock.json
+# @cost: 0.6
+# Install the multi-agent-gate experiment's dev dependencies
+install-orchestration:
+    npm --prefix experiments/orchestration install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -239,6 +245,18 @@ replay-skill-pick: install-skill-pick
 pick-skills DIR=".": install-skill-pick
     npx --prefix experiments/skill-pick tsx experiments/skill-pick/src/pick.ts {{DIR}} --stage1-only
 
+# @inputs: experiments/orchestration/** experiments/shared/**
+# @cost: 0.4
+# Check that the two corpus labels agree, and that the gate never reaches a payload
+test-orchestration: install-orchestration
+    npm --prefix experiments/orchestration test
+
+# @inputs: experiments/orchestration/** experiments/shared/**
+# @cost: 0.4
+# Re-derive docs/31's tables from the recorded judgments
+replay-orchestration: install-orchestration
+    npm --prefix experiments/orchestration run demo
+
 # @inputs: docs/** README.md experiments/**/README*.md
 # @cost: 0.1
 # Every relative Markdown link and heading anchor across the repository
@@ -276,5 +294,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration check-links
     @echo "all green"

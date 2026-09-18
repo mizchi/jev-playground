@@ -70,6 +70,9 @@ cd experiments/skill-pick      && npm i && npm test                 # 30: ロス
 cd experiments/skill-pick      && npm run demo                      # 30: 記録から再集計(API 不要)
 npx tsx experiments/skill-pick/src/pick.ts . --stage1-only          # 30: 道具。461 skill から短縮リスト(API 不要)
 npx tsx experiments/skill-pick/src/pick.ts . --prior --intent "..."  # 30: 1 リクエスト $0.0004
+cd experiments/orchestration   && npm i && npm test                 # 31: ラベル一致とラベル漏れ(API 不要)
+cd experiments/orchestration   && npm run demo                      # 31: 記録から再集計(API 不要)
+cd experiments/orchestration   && npx tsx src/run.ts --arm all --repeat 3  # 31: ゲートを 5 通りに読む
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
@@ -137,6 +140,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **全問で同一の文字列は state に置く(上限が 2 倍になる)** | criteria を 1 問ごとに繰り返すと 1 問 251 トークン・260 問で上限。state に 1 回置くと 118 トークン・520 問まで入り、答えはレベル一致 95% | 461 skill のロスター | [30](30-skill-pick.md#7-criteria-の文字列の値段) |
 | **候補が多いほど提案は悪くなる(curate されていないなら)** | recall 63% → 100% で P@12 は 0.25 → 0.19。増えた 387 件は「どのリポジトリにも当てはまる」実在 skill | 461 skill のロスター | [30](30-skill-pick.md#3-上げるべきは-recall-ではなかった) |
 | **「どこでも高い」を引く —— 判断に対する IDF** | skill ごとの他プロジェクト平均を引くと、全件で AP 0.19 → 0.29、P@12 0.19 → 0.23 | 461 skill のロスター | [30](30-skill-pick.md#6-どこでも高いものを引く) |
+| **質問にコストを書くかどうかが保守性のダイヤル** | 同じ決定・同じ state で、第 2 ワーカーのコストを先に述べると 58%(誤り 16 件すべてが「分けない」)、述べないと 79%(+4/−4) | multi-agent-orchestration | [31](31-orchestration.md#2-聞くか組み立てるか) |
+| **原子が全部当たっていても結合を間違えると落ちる** | 条件 3 を規則に入れると、4 つの原子が正しいまま 4/4 → **0/4** | multi-agent-orchestration | [31](31-orchestration.md#4-太字の-1-文が何点ぶんか) |
+| **表の行をそのまま choice の criteria にする** | 8 パターンの "Use for" 列で **22/22**、パターン同士の取り違えは 0 件 | multi-agent-orchestration | [31](31-orchestration.md#5-トポロジーの-choice) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -223,6 +229,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 候補プールを広げて選択を良くしようとする | curate されていない 387 件を足すと P@12 が 0.25 → 0.19。判断は正しく、`code-reviewer` はどこにでも当てはまる([30 §5](30-skill-pick.md#5-判断が好む-distractor-を読む)) |
 | 前段(prefilter)を recall で評価する | recall 100% の「前段なし」が P@12 最下位。読むのは**ユーザーが読む 12 行**([30 §3](30-skill-pick.md#3-上げるべきは-recall-ではなかった)) |
 | 語彙の重なりだけで候補を絞り切る | k をいくら増やしても recall は **85% で止まる** —— 欲しい行の 15% はプロジェクト文と語彙を共有していない([30 §2](30-skill-pick.md#2-無料の前段は何を残すか)) |
+| 書いてあるブール式を「分解すれば良くなる」と思う | 組み立てて 30/38・そのまま聞いて 30/38 で**同点**。分解の値打ちは正解率ではなく理由が出ること([31 §2](31-orchestration.md#2-聞くか組み立てるか)) |
+| choice の confidence で「該当なし」を拾う | 強制された選択と本物の選択は **AUC 0.601** —— ほぼ見分けられない。逃げ道は別の noul([31 §5b](31-orchestration.md#5b-逃げ道を外すと)) |
 
 ## レポート
 
@@ -259,6 +267,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [28](28-bilingual.md) | 英語と日本語が同じことを言っているか(実物の対訳 + 8 種の変異) | ✅ |
 | [29](29-skill-select.md) | コンテキストに入らない skill カタログから選ぶ(mizchi/skills の実物 98 行 + 7 arm) | ✅ |
 | [30](30-skill-pick.md) | 461 個の実在 skill から選ぶ道具 — 何が入るか、前段は何を買うか、評価ループ | ✅ |
+| [31](31-orchestration.md) | 文書化されたゲート(multi-agent-orchestration)は聞く方が良いのか組み立てる方が良いのか | ✅ |
 
 ## この探索から見えている一般則
 
