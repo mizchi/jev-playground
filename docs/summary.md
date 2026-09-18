@@ -1,11 +1,11 @@
-# まとめ — Jev で 24 本作って測って分かったこと
+# まとめ — Jev で 25 本作って測って分かったこと
 
 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)(TypeSafe AI の System One モデル)は
 **文字列ではなく型付きの確率判断を返す**意思決定専用モデルです。
 noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3 種だけ。
 入力 $0.042/MTok・出力無料・レイテンシ 125〜730 ms。
 
-**この速度と価格が何を可能にするのか**を、24 本のレポート(1 本は提案)で測りました。
+**この速度と価格が何を可能にするのか**を、25 本のレポート(1 本は提案)で測りました。
 各レポートは生の数値と再現コマンド付き([索引](README.md))。
 
 ---
@@ -36,6 +36,12 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | **シナジーと取り返し** | AD/AP・前衛の機構を実装、handicap sweep | 弱い編成+Jev が 強い編成+scripted に **5-1** | [11](11-synergy.md) [12](12-comeback.md) |
 | **チェス** | Jev vs Claude Sonnet 5、**同じ合法手リスト**を渡す | **両サイドで Jev の勝ち**、0.3 s/手 対 13〜24 s/手 | [03](03-chess.md) |
 | **ブラウザ探索** | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に | 8 手深いゴール到達 **0/3 → 3/3** | [05](05-browser-chaos.md) |
+
+### 監視に載せた
+
+| | 何 | 結果 | 出典 |
+| --- | --- | --- | --- |
+| **異常検知のトリアージ** | 6 サービスを 16 通りに壊した OTLP の窓に対し、検知はコード・トリアージを Jev | **severity は規則が 16/16 で完勝**、cause はログ本文を伏せると規則 4/10 対 Jev 21/30 | [27](27-otel-triage.md) |
 
 ### 判定・分類を測った
 

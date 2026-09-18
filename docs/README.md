@@ -57,6 +57,9 @@ npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コ�
 experiments/eslint-plugin-jev/node_modules/.bin/eslint .             # 26: このリポジトリを自分の規約で lint(API 不要)
 node experiments/eslint-plugin-jev/experiment/rules-report.mjs \
   --cache experiments/eslint-plugin-jev/experiment/out-repo-rules.json --rules eslint.rules.mjs  # 26: 記録から再集計
+cd experiments/otel-triage     && npm i && npm test                 # 27: シミュレータと検知器の不変条件(API 不要)
+cd experiments/otel-triage     && npm run demo                      # 27: 記録から再集計(API 不要)
+cd experiments/otel-triage     && npx tsx src/run.ts --arm aggregate --repeat 3  # 27: 異常検知のトリアージ
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -112,6 +115,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **読むのは閾値ではなく gap(違反と残りの点数差)** | gap が広ければ閾値はどこでも同じ答え。**狭いのは閾値ではなく質問の問題**で、校正では直らない | 本リポジトリ | [24](24-adhoc-rules.md#1-読むのは閾値ではなく-gap) |
 | **gap の隣に band(答えがどのレベルに居るか)を出す** | 狭い gap は「違反が無い」と「文が働いていない」の両方に見える。実コードでは前者が普通 | 本リポジトリ | [26](26-repo-rules.md#4-gap-の隣に-band-を置いた) |
 | **セレクタは広く書いてよい(level 0 が吸う)** | わざと広くした `TemplateLiteral` 422 件のうち **398 件が「当てはまらない」・誤検出 0** | 本リポジトリ | [26](26-repo-rules.md#1-一回目の実行--579-判定29-秒00135) |
+| **観測データは集計を渡す(生ログより安くて強い)** | 集計 2026 トークンで cause 24/30、生ログを足すと 7441 トークンで 18/30 | 本リポジトリ | [27](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか) |
+| **サンプリング規則は質問の一部** | 同じ件数・同じトークン数で、うるさい順に選ぶと誤ページ **27 件・均等なら 6 件** | 本リポジトリ | [27](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか) |
 | **閾値は gap の真ん中に置く(清潔な側の縁ではなく)** | 同じ検出 23/36 で、ホールドアウトの誤検出が **24 件 → 7 件** | 本リポジトリ | [25](25-thresholds.md#3-境界ではなく-gap-の真ん中に置く) |
 | **当てはめた閾値は当てはめていない標本で採点する** | in-sample の「誤検出 0」は構造上そうなるだけ。上乗せ 10 件の半分が消える(23/36 → **18/36**) | 本リポジトリ | [25](25-thresholds.md#2-in-sample-の誤検出-0は情報がない) |
 | **閾値をコストの関数にする(定数の床ではなく)** | 検出 18/18 を保って削減 73.5% → **81.4%**。判断を抜いた同じ規則は 40.9% | 本リポジトリ | [25](25-thresholds.md#5-閾値をコストの関数にする23-11-の宿題) |
@@ -186,6 +191,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 判断できない条件を note の例外に書く | 「これはテストのプローブである」は catch 節から見えない。**ブロックの中に証拠がある例外だけが効いた**([26 §5](26-repo-rules.md#5-文を書き直す--subject-を広げる--3-draft-測ってどれも直らなかった)) |
 | ESLint の設定ブロックを足してルールが増えたと思う | オプションはマージされず**最後のブロックが勝つ**。`hooks/**` 用のブロックが他 7 ルールをそこから消していた([26 §7](26-repo-rules.md#7-設定の罠-3-つ)) |
 | コメントを証拠にするルールでキャッシュを信じる | キーはノードのテキストで**コメントはノードの外**。直しても古い判定が残る([26 §7](26-repo-rules.md#7-設定の罠-3-つ)) |
+| 測れる量の算術を判断に投げる | 「人を起こすか」は SLO の割合の算術。規則は **16/16・誤ページ 0**、Jev は誤ページ 6〜27([27 §3](27-otel-triage.md#3-severity--算術が完勝する)) |
+| 観測データを「とりあえず全部」state に入れる | 5 分の窓が **16/16 で上限超過**。`log_flood` は 15,200 件のうち 107 件しか送られない([27 §6](27-otel-triage.md#6-全部送るの値段--16-窓すべてが上限に当たる)) |
+| JSON のトークン数を 4 文字 = 1 トークンで見積もる | telemetry の JSON は **2.4 文字 = 1 トークン**。全窓で `max_tokens_exceeded`([27 §6](27-otel-triage.md#6-全部送るの値段--16-窓すべてが上限に当たる)) |
+| 異常検知で「何も問題ない」を判断に期待する | 逃げ道を別 noul にしても健全な 18 窓で発火 **0〜4 件**。沈黙は算術にしか担保できない([27 §5](27-otel-triage.md#5-同じ件数の生ログをうるさい順に選ぶか均等に選ぶか)) |
 
 ## レポート
 
@@ -218,6 +227,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [24](24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 | ✅ |
 | [25](25-thresholds.md) | 閾値を当てはめる部品(質問ごと・ホールドアウト・draw・コスト重み付け) | ✅ |
 | [26](26-repo-rules.md) | 実リポジトリで `jev/rule` を走らせる — 散文の規約を自分のコード 9,315 行に当てる | ✅ |
+| [27](27-otel-triage.md) | otel の異常検知のトリアージ(検知はコード・severity は算術・cause は判断) | ✅ |
 
 ## この探索から見えている一般則
 

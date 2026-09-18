@@ -55,6 +55,12 @@ install-task-filter:
 install-threshold-fit:
     npm --prefix experiments/threshold-fit install
 
+# @inputs: experiments/otel-triage/package.json experiments/otel-triage/package-lock.json
+# @cost: 0.6
+# Install the triage experiment's dev dependencies
+install-otel-triage:
+    npm --prefix experiments/otel-triage install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -161,6 +167,18 @@ test-task-filter: install-task-filter
 replay-task-filter: install-task-filter
     npm --prefix experiments/task-filter exec -- tsx experiments/task-filter/src/run.ts --replay
 
+# @inputs: experiments/otel-triage/** experiments/shared/**
+# @cost: 0.9
+# Check the telemetry simulator, the detector, and that no label reaches the state
+test-otel-triage: install-otel-triage
+    npm --prefix experiments/otel-triage test
+
+# @inputs: experiments/otel-triage/** experiments/shared/**
+# @cost: 0.9
+# Re-derive docs/27's tables from the recorded judgments
+replay-otel-triage: install-otel-triage
+    npm --prefix experiments/otel-triage run demo
+
 # @inputs: eslint.config.mjs eslint.rules.mjs hooks/** jevlang-js/** experiments/eslint-plugin-jev/**
 # @cost: 0.7
 # Lint this repository against its own prose conventions (docs/26), from the
@@ -192,5 +210,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage
     @echo "all green"
