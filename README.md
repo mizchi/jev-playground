@@ -144,6 +144,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
 | [12](docs/12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
+| [13](docs/13-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -164,6 +165,9 @@ TypeScript 側の実験(チェス・ブラウザ探索・エージェント生�
 cd experiments/eslint-oracle && npm install
 npx tsx src/truth.ts                                 # ESLint の正解ラベルだけ(API 不要)
 npx tsx src/run.ts --repeat 5                         # 実装を伏せて合否を当てさせる(要 API)
+
+cd experiments/task-picker && npm install
+npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正しいものを選ばせる
 ```
 
 ## 補足
