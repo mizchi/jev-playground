@@ -84,7 +84,7 @@ scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラ�
 | --- | --- |
 | 質問のバンドルは 21x 速く 8x 安い([00](00-api-notes.md#speculative-fan-out)) | **質問文が実行前に確定している judgment を 1 リクエストに巻き上げる**。実測 4 リクエスト → **2**、1501 → **867 トークン** |
 | `choice` は必ず選ぶ([00](00-api-notes.md#closed-world)) | `match` の `else` 腕が **gate noul を別の質問として増やす** |
-| 逃げ道は選択肢に混ぜるより別の noul([13](13-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする)) | gate は `criteria` に「該当なし」を足さない。**構文上、混ぜられない** |
+| 逃げ道は選択肢に混ぜるより別の noul([17](17-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする)) | gate は `criteria` に「該当なし」を足さない。**構文上、混ぜられない** |
 | 閾値はコード側で決める([01](01-shell-risk.md#3-順序のある結論は-score-で聞く)) | `threshold noul = 0.5` が宣言。**質問文に閾値を書く場所が無い** |
 | 順序のある結論は `score`([01](01-shell-risk.md)) | `score(...)` は数値を返し、**条件に使うには比較が必須** |
 | 名前だけの choice が最安([00](00-api-notes.md#name-only)) | `choice` の選択肢に説明を書く構文が無い |
@@ -113,7 +113,7 @@ scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラ�
   式を受けると名前が消えてしまう。理由文に「どの述語が撃ったか」を出すための
   最小の道具で、文字列結合が無いこの言語では他に書く手段がありません(§9)
 - `noul("q", { true: "...", false: "..." })` — 真偽の境界を説明文で締める。
-  [14 §3](14-permission-hook.md#3-コーパスでは見つからないバグが出た) の
+  [18 §3](18-permission-hook.md#3-コーパスでは見つからないバグが出た) の
   「`false` 側の文言が判定を決めた」がこの構文の存在理由です。
   2 つの説明文は内部では `options` に入るので、transcript の同一性判定が
   そのまま効きます(同じ質問文で criteria が違えば別の質問)
@@ -188,7 +188,7 @@ requests = 1 + (実行時の値に依存する judgment の数)
 直した副作用として、**`match` が文字列の switch として使えます** ——
 この言語で条件式に一番近いものです。
 
-ここが [13](13-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする) の実測を
+ここが [17](17-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする) の実測を
 そのまま構文にしたところで、**選択肢に「該当なし」を混ぜる書き方は
 この言語には存在しません**(混ぜると難しいだけの問題までそこへ逃げて、
 `lying` が 18/24 → 15/24 に落ちたのが実測)。
@@ -308,7 +308,7 @@ building the MoonBit implementation...
    補間を識別子 1 つに制限して解析を自明にした(§2)。
 3. **逃げ道を「別の問い」にする設計は構文で強制できる。**
    `else` 腕が gate noul を生やし、選択肢に「該当なし」を混ぜる書き方は
-   言語に存在しない([13](13-task-picker.md) の実測をそのまま意味論にした)(§3)。
+   言語に存在しない([17](17-task-picker.md) の実測をそのまま意味論にした)(§3)。
 4. **閾値をコード側に置く([01](01-shell-risk.md))は型で強制できる。**
    `score` の値は比較しないと条件にならない(§1)。
 5. **確率的な言語には record/replay が要る。** 無いとテストが書けず、
@@ -320,8 +320,8 @@ building the MoonBit implementation...
 ## 9. 実際に使ってみた — permission hook のポリシー
 
 「この言語は何のためにあるのか」への答えを出しました。
-[14](14-permission-hook.md) の permission hook の判定を `.jev` で書き直しました
-(`hooks/policy.jev`、[14 §6b](14-permission-hook.md#6b-判定ロジックを-jev-で書く))。
+[18](18-permission-hook.md) の permission hook の判定を `.jev` で書き直しました
+(`hooks/policy.jev`、[18 §6b](18-permission-hook.md#6b-判定ロジックを-jev-で書く))。
 
 ```bash
 node hooks/jev-permission-gate.mjs --policy hooks/policy.jev
@@ -332,14 +332,14 @@ node hooks/test-gate.mjs --compare-policy    # 実モデルで組み込みと比
 書けました。9 judgment が全部巻き上がって **1 リクエスト**、
 組み込みと同じです。そして **2 つの穴が見つかりました**:
 
-1. **`noul` に criteria を書く構文が無かった。** [14 §3](14-permission-hook.md#3-コーパスでは見つからないバグが出た) の
+1. **`noul` に criteria を書く構文が無かった。** [18 §3](18-permission-hook.md#3-コーパスでは見つからないバグが出た) の
    話の全体が「`false` 側の文言が判定を決めた」なので、
    criteria を書けない言語ではポリシーを**正しく書けません**。追加しました。
 2. **state をホストから注入できなかった。** コマンドや git ブランチを
    知っているのは hook で、ポリシーの著者ではない。`--state` を追加しました。
 
 つまり**実際の用途に当てると、言語に足りないものが出てきた** ——
-docs/14 §3 で「実運用の形に載せることが最後のテスト」と書いたことが、
+docs/18 §3 で「実運用の形に載せることが最後のテスト」と書いたことが、
 言語自身にも当てはまりました。
 
 ### 追記: 理由文に述語の発火を出す
@@ -476,7 +476,7 @@ let deny_by_atoms = exfiltrates > fired_at || obfuscated > 0.7 || blast >= 2.5
   §6 の一番大きな穴。
 - **判断が 1 つで分岐が巨大なプログラムで巻き上げの損益分岐点を測る。**
   「速くて安い」が常に成り立つかは未検証(§6)。
-- ~~**[14](14-permission-hook.md) の hook を `.jev` で書く。**~~
+- ~~**[18](18-permission-hook.md) の hook を `.jev` で書く。**~~
   **やった → §9。** 書けたが、`noul` の criteria と state 注入という
   2 つの穴が出た(どちらも追加済み)。
 - ~~**文字列結合か「発火した述語を並べる」組み込み。**~~

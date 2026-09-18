@@ -2,7 +2,7 @@
  * A task-runner roster, shaped like a real pnpm monorepo's `package.json`
  * scripts.
  *
- * The experiment mirrors docs/12: Jev is shown the task NAME and nothing else,
+ * The experiment mirrors docs/16: Jev is shown the task NAME and nothing else,
  * while the ground truth is defined by what the task's COMMAND actually does.
  * So `command` is the hidden implementation and the name is the spec, and a
  * task whose name oversells or undersells its command is the near-miss case.

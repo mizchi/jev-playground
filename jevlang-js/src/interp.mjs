@@ -16,7 +16,7 @@
  *    is free to batch, `score("${result} で褒められる確率")` is not.
  *
  * 2. THE ESCAPE HATCH IS ITS OWN QUESTION. `choice` always returns one of the
- *    options (docs/00's closed world). docs/13 then measured the two ways of
+ *    options (docs/00's closed world). docs/17 then measured the two ways of
  *    offering a way out and found them unequal: a separate noul caught 18/18
  *    where mixing "(none of these)" into the options caught 16/18 AND dragged
  *    the hard-but-answerable cases down, because difficulty and
@@ -74,7 +74,7 @@ function apiQuestion(kind, question, options) {
   if (kind === "noul") {
     // A plain noul carries no criteria; two options mean a
     // `{true: ..., false: ...}` block, which sharpens the boundary between
-    // the two answers (docs/14 section 3 is what this is for).
+    // the two answers (docs/18 section 3 is what this is for).
     if (options.length !== 2) return { type: "noul", instructions: question };
     return {
       type: "noul",
@@ -84,7 +84,7 @@ function apiQuestion(kind, question, options) {
   }
   if (kind === "choice") {
     // Options carry no descriptions: the name-only choice from docs/00, which
-    // docs/13 then measured at 90% on a 53-item roster from names alone.
+    // docs/17 then measured at 90% on a 53-item roster from names alone.
     const criteria = {};
     for (const option of options) criteria[option] = null;
     return { type: "choice", instructions: question, criteria };

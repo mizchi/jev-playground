@@ -256,7 +256,7 @@ export function parse(source) {
     const question = stringExpr();
     let options = [];
     if (kind === "noul") {
-      // Optional `{true: "...", false: "..."}`. docs/14 is the argument for
+      // Optional `{true: "...", false: "..."}`. docs/18 is the argument for
       // having this at all: the `false` criterion of an `exfiltrates`
       // predicate is what decided whether an ordinary `git push` was denied,
       // so a policy that cannot write one cannot be written correctly.
@@ -325,7 +325,7 @@ export function parse(source) {
     }
     expect("}", "'}'");
     // An `else` arm over a `choice` needs a way to mean "none of these options
-    // applies". The measured answer (docs/13) is a SEPARATE noul, not an extra
+    // applies". The measured answer (docs/17) is a SEPARATE noul, not an extra
     // choice option: mixing "(none of these)" into the options costs accuracy
     // on the hard-but-answerable cases. So the gate gets its own judgment id.
     //

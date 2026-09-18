@@ -13,7 +13,7 @@
 ///    stays lazy. That split is the language's whole cost model.
 ///
 /// 2. THE ESCAPE HATCH IS ITS OWN QUESTION. `choice` always returns one of the
-///    options. docs/13 measured a separate noul at 18/18 against 16/18 for
+///    options. docs/17 measured a separate noul at 18/18 against 16/18 for
 ///    mixing "(none of these)" into the options — and the mixed form also
 ///    dragged down the hard-but-answerable cases. So `match`'s `else` arm is
 ///    driven by a gate noul, and it wins below the gate threshold whatever
@@ -141,7 +141,7 @@ fn api_question(kind : String, question : String, options : Array[String]) -> @l
   } else if kind == "noul" {
     // A plain noul carries no criteria; two options mean a
     // `{true: ..., false: ...}` block, which sharpens the boundary between
-    // the two answers (docs/14 section 3 is what this is for).
+    // the two answers (docs/18 section 3 is what this is for).
     if options.length() == 2 {
       @lib.Question::noul(
         question,
@@ -152,7 +152,7 @@ fn api_question(kind : String, question : String, options : Array[String]) -> @l
       @lib.Question::noul(question)
     }
   } else if kind == "choice" {
-    // Name-only choices: the cheapest form (docs/00), and docs/13 measured it
+    // Name-only choices: the cheapest form (docs/00), and docs/17 measured it
     // at 90% on a 53-item roster from names alone.
     @lib.Question::choice_of(options, instructions=question)
   } else {

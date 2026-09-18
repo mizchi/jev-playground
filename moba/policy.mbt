@@ -51,6 +51,28 @@ pub fn Game::lane_objective(self : Game, team : Int, lane : String) -> Int {
 }
 
 ///|
+/// The one structure a smart team concentrates on: the enemy's lowest-HP
+/// standing tower (finish what is already hurt), or the base once both towers
+/// are down. Every champion targets the SAME node, so the team groups instead
+/// of splitting one champion per lane — which is the scripted bot's main flaw.
+pub fn Game::smart_objective(self : Game, team : Int) -> Int {
+  let enemy = if team == TEAM_A { TEAM_B } else { TEAM_A }
+  let mut best_node = -1
+  let mut best_hp = 1 << 30
+  for s in self.structures {
+    if s.team == enemy && s.alive() && !s.is_base && s.hp < best_hp {
+      best_hp = s.hp
+      best_node = s.node
+    }
+  }
+  if best_node >= 0 {
+    best_node
+  } else {
+    base_of(enemy)
+  }
+}
+
+///|
 /// The scripted opponent: retreat when low, fight when it has the numbers,
 /// otherwise push its own lane and farm. Deliberately a decent-but-simple
 /// bot, so beating it means something and losing to it means something.
@@ -112,6 +134,109 @@ pub fn scripted_action(g : Game, c : Champ) -> Action {
   }
   // Walk toward this champion's objective; farm when already on the way.
   let target = g.lane_objective(c.team, c.role)
+  if c.node == target {
+    if legal.contains(Farm) {
+      return Farm
+    }
+    return Hold
+  }
+  let next = step_toward(c.node, target)
+  if next != c.node && legal.contains(Move(next)) {
+    return Move(next)
+  }
+  if legal.contains(Farm) {
+    return Farm
+  }
+  Hold
+}
+
+///|
+/// A stronger baseline. Two disciplines the scripted bot lacks:
+///
+/// - **Grouping.** Every champion pushes ONE shared objective
+///   (`smart_objective`) instead of its own lane, so the team concentrates
+///   force — a tower falls ~3x faster and a fight is fought with the numbers.
+/// - **Disciplined trading.** It commits to a fight only with a body advantage
+///   or a frontline to eat the focus, and pulls out before feeding a tower or a
+///   lost trade (siege-and-reset). Because it is grouped, pulling back and
+///   returning together is a siege rather than a passive recall.
+///
+/// It plays a fair policy — only its own node's enemies and public structure
+/// HP, never global vision. Used as the raised baseline in docs/12.
+pub fn smart_action(g : Game, c : Champ) -> Action {
+  let legal = g.legal_actions(c)
+  if legal.is_empty() {
+    return Hold
+  }
+  let base = base_of(c.team)
+  let enemy_team = if c.team == TEAM_A { TEAM_B } else { TEAM_A }
+  let here_enemies = g.champs_at(c.node, enemy_team)
+  let here_allies = g.champs_at(c.node, c.team)
+  fn softest() -> Champ {
+    let mut pick = here_enemies[0]
+    for e in here_enemies {
+      if e.hp < pick.hp {
+        pick = e
+      }
+    }
+    pick
+  }
+
+  // Take a kill that is right here, no matter what.
+  let finishable = here_enemies.filter(e => e.hp <= 15)
+  if !finishable.is_empty() {
+    return AttackChamp(finishable[0].id)
+  }
+  let low = c.hp * 100 < c.max_hp * 35
+  if !here_enemies.is_empty() {
+    // Commit only with a numbers edge or a frontline to soak the focus;
+    // otherwise disengage rather than trade badly, and reset if low.
+    let mut have_front = false
+    for a in here_allies {
+      if a.frontline {
+        have_front = true
+      }
+    }
+    let outnumber = here_allies.length() > here_enemies.length()
+    let even_ok = here_allies.length() == here_enemies.length() &&
+      c.hp * 100 > c.max_hp * 50
+    if outnumber || even_ok || (have_front && c.hp * 100 > c.max_hp * 40) {
+      return AttackChamp(softest().id)
+    }
+    if low && legal.contains(Recall) {
+      return Recall
+    }
+    let away = step_toward(c.node, base)
+    if away != c.node && legal.contains(Move(away)) {
+      return Move(away)
+    }
+    return AttackChamp(softest().id)
+  }
+  // On an enemy structure: COMMIT to the break when grouped (2+ here) or nearly
+  // done, even at low HP — a grouped tower dive trades bodies for a tower and
+  // wins the race, which is exactly what the scripted bot is too timid to do.
+  // Only reset (recall) when sieging alone and low.
+  if legal.contains(AttackStructure) {
+    let grouped = here_allies.length() >= 2
+    let nearly = match g.structure_at(c.node) {
+      Some(s) =>
+        s.hp <= c.damage_to(STRUCT_ARMOR, STRUCT_MR) * here_allies.length()
+      None => false
+    }
+    if grouped || nearly || !low {
+      return AttackStructure
+    }
+    if legal.contains(Recall) {
+      return Recall
+    }
+    return AttackStructure
+  }
+  // No fight, no structure here: reset if low, else converge on the one team
+  // objective so the team breaks it together.
+  if low && legal.contains(Recall) {
+    return Recall
+  }
+  let target = g.smart_objective(c.team)
   if c.node == target {
     if legal.contains(Farm) {
       return Farm

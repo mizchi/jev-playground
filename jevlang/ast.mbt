@@ -52,7 +52,7 @@ pub(all) struct JudgeNode {
 ///|
 /// `match` over a string. An `else` arm implies a gate judgment: `choice`
 /// always returns one of its options, so "none of these applies" has to be
-/// asked separately. docs/13 measured that a separate noul beats mixing a
+/// asked separately. docs/17 measured that a separate noul beats mixing a
 /// "(none of these)" option into the choice, which is why `gate_id` exists
 /// rather than an extra entry in `options`.
 pub(all) struct MatchNode {

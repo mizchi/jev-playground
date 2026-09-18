@@ -147,10 +147,10 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
-| [12](docs/12-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
-| [13](docs/13-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
-| [14](docs/14-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
-| [15](docs/15-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
+| [16](docs/16-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
+| [17](docs/17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
+| [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
+| [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -192,7 +192,7 @@ TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンド�
 有効化は `hooks/settings.example.json` の `hooks` ブロックを `.claude/settings.json` に
 コピーします(閾値と文脈は `hooks/jev-gate.json.example` 参照)。
 **このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
-Bash がゲートされてしまうので。実測値と設計の理由は [docs/14](docs/14-permission-hook.md)。
+Bash がゲートされてしまうので。実測値と設計の理由は [docs/18](docs/18-permission-hook.md)。
 
 ## 7. jevlang — 条件が Jev の判断である小さな言語
 
@@ -236,7 +236,7 @@ scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
 **質問文が実行前に確定している judgment は 1 リクエストに巻き上げられます**
 (`examples/milk.jev` で 4 → 2 リクエスト、1501 → 867 トークン)。
 `"${result}"` のように実行時の値に依存する質問だけが後から個別に聞かれます。
-設計の理由と実測は [docs/15](docs/15-jevlang.md)。
+設計の理由と実測は [docs/19](docs/19-jevlang.md)。
 
 ## 補足
 

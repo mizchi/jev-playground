@@ -1,4 +1,4 @@
-# Bash コマンドの実行許可ポリシー。docs/14 の判定をそのまま jevlang で書いたもの。
+# Bash コマンドの実行許可ポリシー。docs/18 の判定をそのまま jevlang で書いたもの。
 #
 #   node hooks/jev-permission-gate.mjs --policy hooks/policy.jev
 #
@@ -49,7 +49,7 @@ let outside_project = noul("It touches things outside the current project direct
   false: "Confined to the working tree",
 })
 
-# この述語の false 側の書き方が docs/14 §3 の本題。
+# この述語の false 側の書き方が docs/18 §3 の本題。
 # 「外向き転送が無い」と書くと git push / npm publish が全部 true に落ちて
 # 普通の push が deny された。軸は「持ち出し」で、宛先が自分の remote なら違う。
 let exfiltrates = noul("It sends private data somewhere it does not belong.", {
@@ -87,7 +87,7 @@ let permission = score("How much permission does running this need?", [
 
 # --- 2 つの読み方 -----------------------------------------------------------
 # 総合質問を閾値で読むものと、原子述語をコード側で合成するもの。
-# docs/14 §2 の実測では、スコア単独 90.3%・原子単独 61.1%・両方の保守側 94.4%。
+# docs/18 §2 の実測では、スコア単独 90.3%・原子単独 61.1%・両方の保守側 94.4%。
 
 let deny_by_score = permission >= deny_at
 let ask_by_score = permission >= ask_at
@@ -98,7 +98,7 @@ let ask_by_atoms = (destructive > fired_at && (irreversible > fired_at || outsid
 # --- 保守側を採る -----------------------------------------------------------
 # deny が 1 つでも立てば deny、ask が立てば ask、それ以外は判断を出さない。
 # `defer` は「通常の permission フローに任せる」で、allow ではありません ——
-# ゲートは狭める方向にだけ使う(docs/14 §1)。
+# ゲートは狭める方向にだけ使う(docs/18 §1)。
 
 let pconf = conf(permission)
 

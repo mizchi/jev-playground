@@ -47,6 +47,7 @@ pub fn Game::replay_meta(
             "magic"
           },
         ),
+        "frontline": Json(c.frontline),
         "max_hp": Json(c.max_hp),
         "armor": Json(c.armor),
         "magic_resist": Json(c.mr),

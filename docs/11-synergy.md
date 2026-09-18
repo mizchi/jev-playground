@@ -4,7 +4,7 @@
 耐性なし)。ここでは (1) [10 §5](10-jev-vs-jev.md#5-正直な限界) で指摘した**相互キルの先手有利を消し**、
 (2) チャンピオンに**多様性**(AD/AP・耐性・HP・前衛)を持たせ、
 (3) **正しいシナジーを選ぶと勝つのか**を測り、(4) **Jev に編成を選ばせる**。
-さらにゲームを**ログに保存して TUI で再生**できるようにした(Web 版は後で)。
+さらにゲームを**ログに保存して再生**できるようにした(TUI 版に続き **Web 版**も: `web/replay.html`)。
 
 再現:
 
@@ -147,7 +147,7 @@ Jev would draft: meta (conf 0.76)   → アリーナ最強の編成を引いた
 ドラフトという新しい問題形でもそのまま効いた例だ。Jev の推論を強くしたのではなく、
 **判断に要る数値を渡し忘れなかった**から選べた。
 
-## 6. ログとリプレイ(TUI)
+## 6. ログとリプレイ(TUI と Web)
 
 ゲームは **JSON Lines** で記録する: 先頭に `meta`(マップとロスターを埋め込む — **自己完結**)、
 毎 tick の `frame`(全チャンピオンの HP・位置・gold・kill、全構造物、そのtickのイベント)、末尾に `result`。
@@ -174,8 +174,18 @@ a_base base150 a_jg           m_jg           b_jg           b_base base150
   ...
 ```
 
-**まず TUI**、というリクエストどおり。ファイルは自己完結なので、後で作る **Web 版は同じファイル**を
-読めばよく、game パッケージに依存しない(replayer 自身も game を import していない)。
+**まず TUI**、というリクエストどおり。ファイルが自己完結(meta にマップとロスターを埋め込む)なので、
+**Web 版 `web/replay.html` は同じファイルをそのまま読む** —— 依存ライブラリなしの 1 枚 HTML で、
+SVG 盤面(チーム色のチャンピオン + HP リング + 構造物)、両チームのスコアボード、キルフィード、
+再生バー(play/pause・ステップ・スクラブ・速度)を出す。`.jsonl` をドラッグ&ドロップするか、
+同梱の `web/sample.jsonl` を開いて再生する。ブラウザで `web/replay.html` を開けば動く
+(fetch を使う都合上、`web/` を簡易サーバで配信するのが確実)。
+
+```bash
+moon run --target native cmd/moba -- --a jev --b scripted \
+  --a-comp tank,marksman,mage --b-comp marksman,assassin,marksman --replay web/sample.jsonl
+python3 -m http.server -d web 8000   # → http://localhost:8000/replay.html
+```
 
 ## 7. 正直な限界
 
@@ -206,4 +216,4 @@ a_base base150 a_jg           m_jg           b_jg           b_base base150
 - juggernaut(armor 偏重)を足して AD/AP のタイブレークを主レバーに引き上げる。
 - 集団で 1 レーンに寄る強い scripted bot を作り、フルゲームでもシナジーが出るか(§4 の宿題)。
 - Jev にドラフト**させて**からそのまま Jev 同士で対戦させ、「選んで勝つ」を一気通貫で測る。
-- リプレイの **Web 版**(同じ JSON Lines を読む)。
+- ~~リプレイの **Web 版**(同じ JSON Lines を読む)。~~ → **§6 で追加(`web/replay.html`)。**

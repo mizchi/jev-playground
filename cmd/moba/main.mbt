@@ -30,6 +30,21 @@ struct Opts {
   /// Ask Jev to draft a composition from the raw archetype stats, and compare
   /// its ranking to the empirical arena. Needs an API key.
   draft : Bool
+  /// Comeback scenario: can a WRONG draft played with correct actions (Jev)
+  /// recover against a RIGHT draft played with poor actions (scripted)? Needs
+  /// an API key.
+  comeback : Bool
+  /// --comeback: the wrong-draft and right-draft comp names.
+  comeback_bad : String
+  comeback_good : String
+  /// --comeback: the "poor actions" baseline policy (scripted or smart).
+  comeback_baseline : String
+  /// Boundary sweep: same comp both sides, Jev handicapped, find where the
+  /// recovery fails. Needs an API key.
+  boundary : Bool
+  /// Per-team stat handicap in percent (100 = full). Scales attack and HP.
+  hcap_a : Int
+  hcap_b : Int
   /// If non-empty, write the last game's replay to this file as JSON lines.
   replay : String
 }
@@ -195,7 +210,12 @@ async fn play_game(
   stats : Stats,
   index : Int,
 ) -> GameResult {
-  let g = @game.Game::with_comps(opts.comp_a, opts.comp_b)
+  let g = @game.Game::with_handicap(
+    opts.comp_a,
+    opts.comp_b,
+    opts.hcap_a,
+    opts.hcap_b,
+  )
   let mem_a = @game.Memory::new()
   let mem_b = @game.Memory::new()
   let replay = [
@@ -242,7 +262,11 @@ async fn play_game(
       } else {
         for c in g.champs {
           if c.team == team && c.alive() {
-            actions[c.id] = @game.scripted_action(g, c)
+            actions[c.id] = if kind == "smart" {
+              @game.smart_action(g, c)
+            } else {
+              @game.scripted_action(g, c)
+            }
           }
         }
       }
@@ -478,6 +502,286 @@ fn run_tournament(max_ticks : Int) -> Unit {
 }
 
 ///|
+/// One boundary cell: same comp both sides, the Jev team handicapped to `pct`
+/// percent stats, the baseline team at full. Jev plays the handicapped side on
+/// both sides for `n` games each (cancels side effect). Returns the Jev team's
+/// record (wins, losses, draws).
+async fn boundary_cell(
+  base : Opts,
+  client : @lib.Client,
+  stats : Stats,
+  comp : Array[String],
+  baseline : String,
+  pct : Int,
+  n : Int,
+) -> (Int, Int, Int) {
+  let mut wins = 0
+  let mut losses = 0
+  let mut draws = 0
+  for side in [0, 1] {
+    for i in 0..<n {
+      // The handicapped Jev team is on `side`; the full baseline is the other.
+      let o = if side == 0 {
+        cell_opts(base, "jev", comp, baseline, comp, pct, 100, "")
+      } else {
+        cell_opts(base, baseline, comp, "jev", comp, 100, pct, "")
+      }
+      let r = play_game(o, client, stats, i)
+      let jev_team = if side == 0 { @game.TEAM_A } else { @game.TEAM_B }
+      if r.winner == 0 {
+        draws += 1
+      } else if r.winner == jev_team {
+        wins += 1
+      } else {
+        losses += 1
+      }
+    }
+  }
+  (wins, losses, draws)
+}
+
+///|
+/// The boundary sweep. Both teams draft the SAME comp, so the only differences
+/// are the Jev team's stat handicap and that Jev pilots it while the baseline
+/// bot pilots the full-stat mirror. Sweeping the handicap down finds where
+/// Jev's action edge can no longer buy back the deficit — the point at which a
+/// draft/economy gap becomes unrecoverable. A weak baseline (scripted) gives
+/// the largest recoverable deficit; a stronger one (smart) shrinks it.
+async fn run_boundary(opts : Opts, client : @lib.Client) -> Unit {
+  let comp = opts.comp_a
+  let baseline = opts.comeback_baseline
+  let n = if opts.games < 2 { 4 } else { opts.games }
+  let pcts = [100, 80, 60, 40, 25]
+  @report.header(
+    "MOBA boundary — how large a deficit can correct actions buy back",
+    "same comp [\{comp.join("/")}] both sides; Jev(handicapped) vs \{baseline}(full)",
+  )
+  let stats = Stats::new()
+  println("  Jev pilots the handicapped side (both sides, \{n} games each)\n")
+  println("  handicap   Jev(bad) W-L-D   →")
+  let mut crossed = false
+  for pct in pcts {
+    let (w, l, d) = boundary_cell(opts, client, stats, comp, baseline, pct, n)
+    let verdict = if w > l {
+      "recovers"
+    } else if l > w {
+      "cannot"
+    } else {
+      "even"
+    }
+    let mark = if w <= l && !crossed {
+      crossed = true
+      "  <- boundary"
+    } else {
+      ""
+    }
+    println(
+      "   \{pad("\{pct}%", 9)} \{pad("\{w}-\{l}-\{d}", 8)}      \{verdict}\{mark}",
+    )
+  }
+  println("")
+  println(
+    "  Jev's action edge (vs \{baseline}) buys back a deficit down to the boundary above.",
+  )
+  if stats.requests > 0 {
+    println(
+      "  \{stats.requests} Jev requests, \{stats.input_tokens} input tokens (~$\{@report.fixed(stats.input_tokens.to_double() / 1000000.0 * 0.042, 4)})",
+    )
+  }
+  println("")
+}
+
+///|
+/// A named composition's champion picks, or classic×3 if the name is unknown.
+fn comp_by_name(name : String) -> Array[String] {
+  for c in @game.tournament_comps {
+    if c.name == name {
+      return c.picks
+    }
+  }
+  ["classic", "classic", "classic"]
+}
+
+///|
+/// A per-cell Opts: same account/model, but the policies and comps of one
+/// matchup, and never a nested special mode.
+fn cell_opts(
+  base : Opts,
+  team_a : String,
+  comp_a : Array[String],
+  team_b : String,
+  comp_b : Array[String],
+  hcap_a : Int,
+  hcap_b : Int,
+  replay : String,
+) -> Opts {
+  {
+    api_key: base.api_key,
+    base_url: base.base_url,
+    model: base.model,
+    team_a,
+    team_b,
+    comp_a,
+    comp_b,
+    games: 1,
+    max_ticks: base.max_ticks,
+    verbose: false,
+    tournament: false,
+    arena: false,
+    draft: false,
+    comeback: false,
+    comeback_bad: base.comeback_bad,
+    comeback_good: base.comeback_good,
+    comeback_baseline: base.comeback_baseline,
+    boundary: false,
+    hcap_a,
+    hcap_b,
+    replay,
+  }
+}
+
+///|
+/// One comeback cell: the BAD comp is run on both sides (to cancel any side
+/// effect) for `n` games each, against the GOOD comp. Returns the BAD comp's
+/// record (wins, losses, draws) from its own perspective. If `record` is set,
+/// the first game the BAD comp WINS is written there — a real comeback to watch.
+async fn comeback_cell(
+  base : Opts,
+  client : @lib.Client,
+  stats : Stats,
+  bad : Array[String],
+  good : Array[String],
+  bad_policy : String,
+  good_policy : String,
+  n : Int,
+  record : String,
+) -> (Int, Int, Int) {
+  let mut wins = 0
+  let mut losses = 0
+  let mut draws = 0
+  let mut recorded = false
+  for side in [0, 1] {
+    for i in 0..<n {
+      let o = if side == 0 {
+        cell_opts(base, bad_policy, bad, good_policy, good, 100, 100, "")
+      } else {
+        cell_opts(base, good_policy, good, bad_policy, bad, 100, 100, "")
+      }
+      let r = play_game(o, client, stats, i)
+      let bad_team = if side == 0 { @game.TEAM_A } else { @game.TEAM_B }
+      if r.winner == 0 {
+        draws += 1
+      } else if r.winner == bad_team {
+        wins += 1
+        if record != "" && !recorded && side == 0 {
+          @fs.write_file(record, r.replay.join("\n") + "\n")
+          recorded = true
+        }
+      } else {
+        losses += 1
+      }
+    }
+  }
+  (wins, losses, draws)
+}
+
+///|
+/// The comeback scenario. A "wrong grand strategy" is a bad draft (glass_ad:
+/// three squishy carries, no frontline, one damage type). Correct actions are
+/// Jev; poor actions are the scripted bot. Three cells, all with the SAME two
+/// comps, differing only in who plays well:
+///
+///   1. equal play  (scripted vs scripted) — is the draft gap real at all?
+///   2. the scenario (BAD+Jev vs GOOD+scripted) — do correct actions recover it?
+///   3. the ceiling  (BAD+Jev vs GOOD+Jev) — does the draft reassert when both
+///      sides play well?
+///
+/// If (1) says GOOD wins, (2) says BAD recovers, and (3) says GOOD wins again,
+/// the reading is clean: a wrong draft is recoverable against a weaker player,
+/// not against an equal one — correct actions buy back a modest draft deficit.
+async fn run_comeback(opts : Opts, client : @lib.Client) -> Unit {
+  let bad_name = opts.comeback_bad
+  let good_name = opts.comeback_good
+  let base_policy = opts.comeback_baseline
+  let bad = comp_by_name(bad_name)
+  let good = comp_by_name(good_name)
+  let n = if opts.games < 2 { 4 } else { opts.games }
+  @report.header(
+    "MOBA comeback — a wrong draft, recovered by correct actions",
+    "BAD=\{bad_name} [\{bad.join("/")}]  vs  GOOD=\{good_name} [\{good.join("/")}]",
+  )
+  let stats = Stats::new()
+  println(
+    "  correct actions = Jev, poor actions = \{base_policy}; BAD plays both sides\n",
+  )
+
+  // 1. Equal play: baseline vs baseline (both bots are deterministic, so 1
+  //    game per side is enough).
+  let (e_w, e_l, e_d) = comeback_cell(
+    opts, client, stats, bad, good, base_policy, base_policy, 1, "",
+  )
+  // 2. The scenario: BAD played by Jev, GOOD played by the baseline bot.
+  let (s_w, s_l, s_d) = comeback_cell(
+    opts,
+    client,
+    stats,
+    bad,
+    good,
+    "jev",
+    base_policy,
+    n,
+    opts.replay,
+  )
+  // 3. The ceiling: both sides played by Jev.
+  let (c_w, c_l, c_d) = comeback_cell(
+    opts, client, stats, bad, good, "jev", "jev", n, "",
+  )
+  fn verdict(w : Int, l : Int) -> String {
+    if w > l {
+      "BAD recovers"
+    } else if l > w {
+      "GOOD wins"
+    } else {
+      "even"
+    }
+  }
+
+  let bl = base_policy
+  println(
+    "  cell                                          BAD(\{bad_name}) W-L-D   →",
+  )
+  println(
+    "   1. equal play  \{pad(bl, 8)} vs \{pad(bl, 8)}         \{pad("\{e_w}-\{e_l}-\{e_d}", 7)} \{verdict(e_w, e_l)}",
+  )
+  println(
+    "   2. scenario    BAD+Jev  vs GOOD+\{pad(bl, 8)}     \{pad("\{s_w}-\{s_l}-\{s_d}", 7)} \{verdict(s_w, s_l)}",
+  )
+  println(
+    "   3. ceiling     BAD+Jev  vs GOOD+Jev           \{pad("\{c_w}-\{c_l}-\{c_d}", 7)} \{verdict(c_w, c_l)}",
+  )
+  println("")
+  if e_l > e_w && s_w > s_l {
+    println(
+      "  → the draft gap is real (cell 1), but correct actions buy it back (cell 2).",
+    )
+  }
+  if c_l >= c_w && s_w > s_l {
+    println(
+      "  → and it only holds against a weaker player: with both sides on Jev, the draft wins again (cell 3).",
+    )
+  }
+  if opts.replay != "" {
+    println("  a recovered game (BAD+Jev won) is at \{opts.replay}")
+  }
+  if stats.requests > 0 {
+    println(
+      "  \{stats.requests} Jev requests, \{stats.input_tokens} input tokens (~$\{@report.fixed(stats.input_tokens.to_double() / 1000000.0 * 0.042, 4)})",
+    )
+  }
+  println("")
+}
+
+///|
 /// Ask Jev to rank the compositions from the raw archetype stats and the bare
 /// mechanics — without being told that a frontline or mixed damage is good —
 /// then set its ranking beside the empirical arena. The question this answers:
@@ -669,6 +973,16 @@ async fn main {
         long="draft",
         about="Ask Jev to rank the comps from the raw archetype stats, vs the empirical arena.",
       ),
+      @argparse.FlagArg(
+        "comeback",
+        long="comeback",
+        about="Can a wrong draft + correct actions (Jev) recover vs a right draft + poor actions (scripted)?",
+      ),
+      @argparse.FlagArg(
+        "boundary",
+        long="boundary",
+        about="Sweep a stat handicap on the Jev team (same comp both sides) to find the unrecoverable deficit.",
+      ),
     ],
     options=[
       @argparse.OptionArg(
@@ -726,6 +1040,33 @@ async fn main {
         long="replay",
         about="Write the last game's replay to this file (JSON lines) for cmd/moba_replay.",
       ),
+      @argparse.OptionArg(
+        "bad",
+        long="bad",
+        about="--comeback: the WRONG-draft comp name (default glass_ad).",
+      ),
+      @argparse.OptionArg(
+        "good",
+        long="good",
+        about="--comeback: the RIGHT-draft comp name (default bruiser_mix).",
+      ),
+      @argparse.OptionArg(
+        "baseline",
+        long="baseline",
+        about="--comeback/--boundary: the poor-actions baseline policy, scripted or smart (default scripted).",
+      ),
+      @argparse.OptionArg(
+        "hcap-a",
+        long="hcap-a",
+        default_values=["100"],
+        about="Team A stat handicap in percent (100 = full); scales attack and HP.",
+      ),
+      @argparse.OptionArg(
+        "hcap-b",
+        long="hcap-b",
+        default_values=["100"],
+        about="Team B stat handicap in percent (100 = full); scales attack and HP.",
+      ),
     ],
   )
   let matches = @argparse.parse(cmd) catch {
@@ -755,6 +1096,13 @@ async fn main {
     tournament: matches.flags.get("tournament").unwrap_or(false),
     arena: matches.flags.get("arena").unwrap_or(false),
     draft: matches.flags.get("draft").unwrap_or(false),
+    comeback: matches.flags.get("comeback").unwrap_or(false),
+    comeback_bad: opt_value(matches, "bad").unwrap_or("glass_ad"),
+    comeback_good: opt_value(matches, "good").unwrap_or("bruiser_mix"),
+    comeback_baseline: opt_value(matches, "baseline").unwrap_or("scripted"),
+    boundary: matches.flags.get("boundary").unwrap_or(false),
+    hcap_a: parse_int(opt_value(matches, "hcap-a"), 100),
+    hcap_b: parse_int(opt_value(matches, "hcap-b"), 100),
     replay: opt_value(matches, "replay").unwrap_or(""),
   }
   // The tournament and arena are scripted-only, so they need neither a valid
@@ -762,15 +1110,23 @@ async fn main {
   let offline = opts.tournament || opts.arena
   if !offline {
     for kind in [opts.team_a, opts.team_b] {
-      if kind != "jev" && kind != "scripted" {
-        @stdio.stderr.write("moba: team policy must be jev or scripted\n")
+      if kind != "jev" && kind != "scripted" && kind != "smart" {
+        @stdio.stderr.write(
+          "moba: team policy must be jev, scripted, or smart\n",
+        )
         @sys.exit(1)
         return
       }
     }
   }
   let needs_api = !offline &&
-    (opts.draft || opts.team_a == "jev" || opts.team_b == "jev")
+    (
+      opts.draft ||
+      opts.comeback ||
+      opts.boundary ||
+      opts.team_a == "jev" ||
+      opts.team_b == "jev"
+    )
   if needs_api && api_key.is_empty() {
     @stdio.stderr.write(
       "moba: no API key; set TYPESAFEAI_API_KEY or pass --api-key\n",
@@ -814,6 +1170,14 @@ async fn run(opts : Opts) -> Unit {
   }
   if opts.draft {
     run_draft(client, opts.model, opts.max_ticks)
+    return
+  }
+  if opts.comeback {
+    run_comeback(opts, client)
+    return
+  }
+  if opts.boundary {
+    run_boundary(opts, client)
     return
   }
   let stats = Stats::new()

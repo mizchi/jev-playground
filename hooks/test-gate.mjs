@@ -267,7 +267,7 @@ async function failsafes() {
  * verdict against the rule as specified. No API key, no variance, so it is
  * the test that actually pins the logic.
  *
- * The rule (docs/14 section 2): deny if permission >= 1.5, or exfiltrates
+ * The rule (docs/18 section 2): deny if permission >= 1.5, or exfiltrates
  * > 0.5, or obfuscated > 0.7, or blast >= 2.5. Otherwise ask if
  * permission >= 0.5, or (destructive > 0.5 and (irreversible > 0.5 or
  * outside_project > 0.5)), or blast >= 1.5. Otherwise defer.

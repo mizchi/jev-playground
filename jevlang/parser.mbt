@@ -391,7 +391,7 @@ fn Parser::judgment(self : Parser) -> Expr raise {
   let question = self.expect_string()
   let options : Array[StrLit] = []
   if kind == "noul" {
-    // Optional `{true: "...", false: "..."}`. docs/14 is the argument for
+    // Optional `{true: "...", false: "..."}`. docs/18 is the argument for
     // having this at all: the `false` criterion of an `exfiltrates` predicate
     // is what decided whether an ordinary `git push` was denied, so a policy
     // that cannot write one cannot be written correctly.
@@ -477,7 +477,7 @@ fn Parser::match_expr(self : Parser) -> Expr raise {
   }
   self.expect_punct("}")
   // An `else` arm over a `choice` needs a way to say "none of these applies",
-  // and docs/13 measured that it belongs in its own noul rather than as an
+  // and docs/17 measured that it belongs in its own noul rather than as an
   // extra choice option. The id is taken after the arms so the JS
   // implementation numbers judgments the same way.
   //

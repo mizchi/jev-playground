@@ -160,7 +160,7 @@ test "numbers format the same way in both implementations" {
 
 ///|
 /// noul criteria go in `options`, which is how they join a judgment's
-/// transcript identity without a format change. docs/14 is why they exist at
+/// transcript identity without a format change. docs/18 is why they exist at
 /// all: the `false` criterion of an `exfiltrates` predicate decided whether
 /// an ordinary `git push` was denied.
 test "noul criteria are parsed into the options slot" {

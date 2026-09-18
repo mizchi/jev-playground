@@ -137,13 +137,43 @@ pub fn Game::new() -> Game {
 /// A game with an explicit archetype per lane for each side. `comp_a[i]` and
 /// `comp_b[i]` are the archetype keys for the top / jungle / bot champions.
 pub fn Game::with_comps(comp_a : Array[String], comp_b : Array[String]) -> Game {
+  Game::with_handicap(comp_a, comp_b, 100, 100)
+}
+
+///|
+/// Like `with_comps`, but each team's champions have their attack AND HP scaled
+/// to `pct` percent (100 = full). A handicap is a single continuous knob for
+/// "this team's draft/economy is behind by X", used by the boundary sweep in
+/// docs/12 to find how large a deficit correct actions can still buy back.
+pub fn Game::with_handicap(
+  comp_a : Array[String],
+  comp_b : Array[String],
+  pct_a : Int,
+  pct_b : Int,
+) -> Game {
   let champs = []
   let roles = ["top", "jungle", "bot"]
   let a_start = [1, 8, 5]
   let b_start = [3, 10, 7]
-  fn make(i : Int, team : Int, start : Int, comp : Array[String]) -> Champ {
+  fn scale(x : Int, pct : Int) -> Int {
+    let v = x * pct / 100
+    if v < 1 {
+      1
+    } else {
+      v
+    }
+  }
+
+  fn make(
+    i : Int,
+    team : Int,
+    start : Int,
+    comp : Array[String],
+    pct : Int,
+  ) -> Champ {
     let k = kind_of(comp[i])
     let prefix = if team == TEAM_A { "A" } else { "B" }
+    let hp = scale(k.max_hp, pct)
     {
       id: (if team == TEAM_A { 0 } else { 3 }) + i,
       name: "\{prefix}_\{roles[i]}",
@@ -151,12 +181,12 @@ pub fn Game::with_comps(comp_a : Array[String], comp_b : Array[String]) -> Game 
       role: roles[i],
       kind: k.key,
       dmg_type: k.dmg_type,
-      attack: k.attack,
+      attack: scale(k.attack, pct),
       armor: k.armor,
       mr: k.mr,
       frontline: k.frontline,
-      hp: k.max_hp,
-      max_hp: k.max_hp,
+      hp,
+      max_hp: hp,
       node: start,
       gold: 0,
       respawn: 0,
@@ -166,10 +196,10 @@ pub fn Game::with_comps(comp_a : Array[String], comp_b : Array[String]) -> Game 
   }
 
   for i in 0..<3 {
-    champs.push(make(i, TEAM_A, a_start[i], comp_a))
+    champs.push(make(i, TEAM_A, a_start[i], comp_a, pct_a))
   }
   for i in 0..<3 {
-    champs.push(make(i, TEAM_B, b_start[i], comp_b))
+    champs.push(make(i, TEAM_B, b_start[i], comp_b, pct_b))
   }
   let structures = [
     { node: 1, team: TEAM_A, hp: 100, max_hp: 100, is_base: false, },

@@ -5,10 +5,10 @@
  *   TYPESAFEAI_API_KEY=... npx tsx src/run.ts [--repeat 3] [--roster medium]
  *                                             [--arms names,commands] [--scale]
  *
- * Built in the shape of docs/12 on purpose: Jev sees the task NAME, and the
+ * Built in the shape of docs/16 on purpose: Jev sees the task NAME, and the
  * ground truth is what the task's COMMAND actually does. A roster where some
  * names oversell or undersell their command is the near-miss case, and the
- * prediction from 12 is that those are where it breaks.
+ * prediction from 16 is that those are where it breaks.
  *
  * Two things are measured that a plain accuracy number hides:
  *  - the closed world (docs/00). Six scenarios have NO right answer, and
