@@ -44,10 +44,22 @@ export interface CandidateFacts {
 
 export interface ProbedCandidate {
   index: number;
+  /**
+   * How the harness acts on this element *now*. Stamped per step, so it
+   * is correct and worthless to write down — see the note in PROBE.
+   */
   selector: string;
   description: string;
   type: "click" | "input";
   facts: CandidateFacts;
+  /**
+   * How a *generated test* should find this element later. The stamped
+   * selector cannot go in a file: it is an attribute this probe wrote and
+   * the next step overwrites. docs/27 emits `#id` when there is one and
+   * `getByRole(role, { name })` otherwise, which is also the difference
+   * between a test that survives a renamed button and one that does not.
+   */
+  locator: { id?: string; role: "link" | "button" | "textbox"; name: string };
 }
 
 export interface ScreenFacts {
@@ -139,6 +151,11 @@ const PROBE = `(() => {
       selector: selector,
       description: description,
       type: isField ? "input" : "click",
+      locator: {
+        id: id || undefined,
+        role: tag === "a" ? "link" : isField ? "textbox" : "button",
+        name: name,
+      },
       facts: {
         enabled: !el.disabled && el.getAttribute("aria-disabled") !== "true",
         inViewport: inViewport,

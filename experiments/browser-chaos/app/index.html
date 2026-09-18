@@ -77,6 +77,26 @@ const blank = { cart: 0, email: "", address: "", step: 0, ordered: false };
   the numbers in docs/05 keep reproducing.
 */
 const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
+
+/*
+  `?bug=NAME` breaks one thing on purpose, for docs/27: a generated test
+  is only worth keeping if it fails when the app does. Each mutation is
+  the smallest edit that breaks one real behaviour, and the app keeps
+  running so a shallow "replay the clicks" test still walks the whole
+  flow — which is the point. Off by default.
+
+    cart    Add-to-cart stops adding. The flow still renders, but the
+            cart never fills.
+    order   Place-order navigates to the confirmation without recording
+            the order. The happy path *looks* complete.
+    gate    Checkout step 2 stops requiring an email, so the flow can be
+            completed with nothing filled in. A missing validation.
+    label   The two Continue buttons are renamed. Nothing is broken --
+            this one is here to ask whether a generated test is brittle.
+    slow    Every re-render is delayed 400ms, to ask whether the
+            generated test waits or races.
+*/
+const BUG = new URLSearchParams(location.search).get("bug") || "";
 const extra = { promo: false, compared: false, newsletter: false, wrapped: false };
 
 function applyPromoCode() { extra.promo = true; render(); }
@@ -129,16 +149,16 @@ const routes = {
     <h1>Checkout — step 1 of 3</h1>
     <label for="email">Email address</label>
     <input id="email" type="email" placeholder="you@example.com" value="${state.email}">
-    <button type="button" id="next1">Continue to delivery</button>
+    <button type="button" id="next1">${BUG === "label" ? "Next step" : "Continue to delivery"}</button>
     <button type="button" id="back1">Back to cart</button>
     ${decoys(["Use a different account", "Checkout as guest"])}`,
 
-  "#/checkout-2": () => !state.email ? `
+  "#/checkout-2": () => (!state.email && BUG !== "gate") ? `
     <h1>Checkout</h1><p>Enter your email first.</p>` : `
     <h1>Checkout — step 2 of 3</h1>
     <label for="address">Delivery address</label>
     <input id="address" type="text" placeholder="1 Example Street" value="${state.address}">
-    <button type="button" id="next2">Continue to payment</button>
+    <button type="button" id="next2">${BUG === "label" ? "Next step" : "Continue to payment"}</button>
     <button type="button" id="back2">Back to email</button>
     ${decoys(["Pick up in store", "Add delivery note"])}`,
 
@@ -169,6 +189,11 @@ for (const dead of ["#/settings", "#/about", "#/help", "#/faq", "#/blog", "#/con
 }
 
 function render() {
+  if (BUG === "slow" && !render.inFlight) {
+    render.inFlight = true;
+    setTimeout(() => { render.inFlight = false; render(); }, 400);
+    return;
+  }
   const hash = location.hash || "#/home";
   const view = routes[hash] || (() => `<h1>Not found</h1>`);
   document.getElementById("view").innerHTML = view();
@@ -191,8 +216,8 @@ function wire() {
     const el = document.getElementById(id);
     if (el) el.addEventListener("click", fn);
   };
-  on("add", () => update({ cart: state.cart + 1 }));
-  on("add2", () => update({ cart: state.cart + 1 }));
+  on("add", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
+  on("add2", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
   on("checkout", () => go("#/checkout-1"));
   on("empty", () => update({ cart: 0, step: 0 }));
   on("next1", () => {
@@ -203,7 +228,7 @@ function wire() {
     const v = (document.getElementById("address") || {}).value || "";
     if (v.trim()) { update({ address: v.trim() }); go("#/checkout-3"); }
   });
-  on("place", () => { update({ ordered: true }); go("#/confirm"); });
+  on("place", () => { if (BUG !== "order") update({ ordered: true }); go("#/confirm"); });
   on("back1", () => go("#/cart"));
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));

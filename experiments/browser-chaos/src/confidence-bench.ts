@@ -67,6 +67,11 @@ export interface StepLog {
   error?: string;
   /** The geometry said this pick was unclickable, whether or not we used it. */
   wasBlocked: boolean;
+  /** What was done, and how a generated test could find it again. */
+  action: "click" | "fill";
+  locator: ProbedCandidate["locator"];
+  /** The value typed, for a fill. */
+  value?: string;
 }
 
 export interface RunResult {
@@ -78,7 +83,7 @@ export interface RunResult {
 }
 
 /** Type-aware fill values, as in spa-bench. */
-function fillValue(description: string): string {
+export function fillValue(description: string): string {
   if (description.includes("email")) return "test@example.com";
   if (description.includes("address") || description.includes("Address")) return "1 Example Street";
   return "test input";
@@ -90,6 +95,12 @@ function fillValue(description: string): string {
  * element that intercepted it, which is the most useful sentence available
  * and costs nothing to pass on.
  */
+/**
+ * ANSI colour codes, as a constructed regex rather than a literal: an
+ * escape byte in a source file is invisible in a diff and in review.
+ */
+const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[\\d+m`, "g");
+
 async function perform(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; error?: string }> {
   try {
     const el = page.locator(c.selector).first();
@@ -102,8 +113,7 @@ async function perform(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; e
     // line and any "intercepts pointer events" clause are the whole
     // content, and the clause is the good part: it names the element that
     // took the click, which is exactly what the geometry probe reports.
-    // eslint-disable-next-line no-control-regex
-    const raw = (err instanceof Error ? err.message : String(err)).replace(/\[\d+m/g, "");
+    const raw = (err instanceof Error ? err.message : String(err)).replace(ANSI_SGR, "");
     // Anchored at the opening tag, not at `<[^>]+>`: the interceptor is
     // logged as `<div id="tip-backdrop"></div> intercepts …`, and the lazy
     // form matches the closing tag, throwing away the id — the only part
@@ -421,6 +431,9 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       advanced: depthOf() > depthBefore,
       error: outcome.error,
       wasBlocked,
+      action: chosen.type === "input" ? "fill" : "click",
+      locator: chosen.locator,
+      ...(chosen.type === "input" ? { value: fillValue(chosen.description) } : {}),
     };
     log.push(row);
     await afterStep?.(row);
