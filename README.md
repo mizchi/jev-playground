@@ -166,6 +166,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
 | [21](docs/21-eslint-plugin-jev.md) | eslint-plugin-jev — 判定を Jev がやる ESLint プラグイン(関数ごとの score) |
 | [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
+| [23](docs/23-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -290,6 +291,8 @@ gap が広ければ閾値はどこに置いても同じ答えになり、**gap �
 
 一方、**セレクタは静かに失敗します**。当たらなかったノードはどの閾値でも
 質問されず、レポートにも出ません(コーパスのバグ 1 件をこれで落としました)。
+
+実測と、gap をどう読むかは → [docs/23](docs/23-adhoc-rules.md)
 
 プラグインとしての使い方(flat config、オプション全表、warm パスの CLI、閾値の
 チューニング、ルールの書き方、限界)は
