@@ -1,0 +1,29 @@
+{
+  "name": "jev-skill-router",
+  "version": "0.1.0",
+  "description": "Ask Jev which skills a context calls for, over a catalogue too large to fit in one. Standalone CLI and library, plus a Pi extension.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": ["pi-package", "pi-extension", "jev", "typesafe", "skills"],
+  "main": "./src/route.ts",
+  "exports": { ".": "./src/route.ts", "./pi": "./src/pi.ts" },
+  "bin": { "jev-skill-router": "./src/cli.ts" },
+  "pi": { "extensions": ["./src/pi.ts"] },
+  "files": ["src", "README.md"],
+  "engines": { "node": ">=22.19.0" },
+  "scripts": { "test": "tsx test.ts" },
+  "dependencies": { "@jev-playground/jev-core": "*" },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-ai": { "optional": true },
+    "@earendil-works/pi-coding-agent": { "optional": true }
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

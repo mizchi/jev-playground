@@ -88,6 +88,11 @@ cd experiments/roguelike       && npx tsx src/run.ts --play --games 3 # 34: 実�
 cd experiments/tension         && npm i && npm test                 # 35: 規則・solver・統計量の不変条件(API 不要)
 cd experiments/tension         && npm run demo                      # 35: 記録から再集計(API 不要)
 cd experiments/tension         && npx tsx src/run.ts --play --repeat 6 # 35: jev 同士で 5 種を対戦
+npm --prefix packages install                                       # 36: 2 つの router の workspace
+npm --prefix packages/jev-model-router test                          # 36: 質問の形と policy の全域性(API 不要)
+npm --prefix packages/jev-skill-router test                          # 36: カタログの分割と cutoff(API 不要)
+packages/jev-model-router/src/cli.ts "fix the failing auth test"     # 36: モデルを 1 件選ぶ($0.00003)
+packages/jev-skill-router/src/cli.ts --dir ~/.claude/skills --dry-run "..." # 36: 無料の前段だけ見る
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
@@ -303,6 +308,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [33](33-review.md) | 機械的な指標を渡すとレビューは良くなるのか(261 件の 1 行 diff + similarity-ts) | ✅ |
 | [34](34-roguelike.md) | 本物の NetHack 3.6.7 を tmux で駆動する — 80×24 の AA 画面を読めるのか、遊べるのか(記憶を渡す arm 追記) | ✅ |
 | [35](35-tension.md) | ゲームの面白さは confidence の変動に出るのか(完全に解けるゲーム 5 種で照合) | ✅ |
+| [36](36-routers.md) | model router と skill router の設計ノート — スタンドアロン + pi plugin([`packages/`](../packages/)) | 📝 |
 
 ## この探索から見えている一般則
 

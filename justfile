@@ -109,6 +109,12 @@ install-roguelike:
 install-tension:
     npm --prefix experiments/tension install
 
+# @inputs: packages/package.json packages/*/package.json packages/package-lock.json
+# @cost: 2.6
+# Install the publishable packages' workspace, including pi's types
+install-packages:
+    npm --prefix packages install
+
 # ---------------------------------------------------------------- MoonBit checks
 
 # @inputs: lib/** cmd/** moba/** report/** jevlang/** jevdsl/** moon.mod
@@ -348,7 +354,24 @@ test-tension: install-tension
 replay-tension: install-tension
     npm --prefix experiments/tension run demo
 
-# @inputs: docs/** README.md experiments/**/README*.md
+# @inputs: packages/**
+# @cost: 1.0
+# Check the two routers: question shapes, the policy's totality, the cost ladder.
+# No API key, no network, no pi
+test-packages: install-packages
+    npm --prefix packages/jev-core test
+    npm --prefix packages/jev-model-router test
+    npm --prefix packages/jev-skill-router test
+
+# @inputs: packages/**
+# @cost: 3.4
+# Type-check both routers against pi's real extension API
+typecheck-packages: install-packages
+    packages/node_modules/.bin/tsc --noEmit --strict --target es2023 --module nodenext \
+      --moduleResolution nodenext --skipLibCheck \
+      packages/jev-core/src/*.ts packages/jev-model-router/src/*.ts packages/jev-skill-router/src/*.ts
+
+# @inputs: docs/** README.md experiments/**/README*.md packages/**/README.md
 # @cost: 0.1
 # Every relative Markdown link and heading anchor across the repository
 check-links:
@@ -385,5 +408,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages check-links
     @echo "all green"
