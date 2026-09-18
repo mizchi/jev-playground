@@ -354,6 +354,31 @@ test-tension: install-tension
 replay-tension: install-tension
     npm --prefix experiments/tension run demo
 
+# @inputs: experiments/router/package.json experiments/router/package-lock.json
+# @cost: 0.6
+# Install the router evaluation's dev dependencies
+install-router:
+    npm --prefix experiments/router install
+
+# @inputs: experiments/router/** experiments/repair/** experiments/review/** packages/**
+# @cost: 4.0
+# Check the router corpus: the prompt hides the answer, the composed tasks
+# parse and fail, and each arm sees only what its name says
+test-router: install-router
+    npm --prefix experiments/router test
+
+# @inputs: experiments/router/** packages/**
+# @cost: 0.6
+# Re-derive docs/36 §5's tables from the recorded labels and judgments
+replay-router: install-router
+    npm --prefix experiments/router run demo
+
+# @inputs: experiments/router/** experiments/review/**
+# @cost: 90.0
+# Re-compose the harder corpus from review's recorded breaking edits
+router-harder: install-router
+    npm --prefix experiments/router exec -- tsx src/harder.ts
+
 # @inputs: packages/**
 # @cost: 1.0
 # Check the two routers: question shapes, the policy's totality, the cost ladder.
@@ -408,5 +433,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router check-links
     @echo "all green"

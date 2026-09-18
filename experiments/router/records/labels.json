@@ -1,0 +1,33 @@
+{
+"prompt": "The tests under test/ are failing. Fix the source under src/ so that all tests pass. Do not modify any test file.",
+"tiers": [{"label":"haiku","model":"claude-haiku-4-5-20251001","price":1},{"label":"sonnet","model":"claude-sonnet-5","price":3},{"label":"opus","model":"claude-opus-5","price":15}],
+"attempts": [
+{"task":"accumulate","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":19282,"corpus":"easy"},
+{"task":"andor","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":20419,"corpus":"easy"},
+{"task":"append","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":16996,"corpus":"easy"},
+{"task":"await","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":18232,"corpus":"easy"},
+{"task":"bounds","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":20650,"corpus":"easy"},
+{"task":"clamp","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":16268,"corpus":"easy"},
+{"task":"dedup","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":22024,"corpus":"easy"},
+{"task":"equals","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":16628,"corpus":"easy"},
+{"task":"guard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":20891,"corpus":"easy"},
+{"task":"lastindex","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":17805,"corpus":"easy"},
+{"task":"missing-return","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":14822,"corpus":"easy"},
+{"task":"negate","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":14337,"corpus":"easy"},
+{"task":"normalise","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":26671,"corpus":"easy"},
+{"task":"sort","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":18609,"corpus":"easy"},
+{"task":"sum","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":22660,"corpus":"easy"},
+{"task":"swap","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":21397,"corpus":"easy"},
+{"task":"truthy","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":19430,"corpus":"easy"},
+{"task":"two-bugs-b","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":23656,"corpus":"easy"},
+{"task":"two-bugs-c","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":25207,"corpus":"easy"},
+{"task":"two-bugs-d","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":21454,"corpus":"easy"},
+{"task":"two-bugs-e","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":25545,"corpus":"easy"},
+{"task":"andor-k2","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":23791},
+{"task":"andor-k3","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":28141},
+{"task":"append-k2","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":19945},
+{"task":"append-k3","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":21712},
+{"task":"await-k2","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":18766},
+{"task":"await-k3","corpus":"hard","tier":"haiku","repeat":0,"passed":true,"untouched":false,"ms":20260}
+]
+}

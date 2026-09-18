@@ -93,6 +93,11 @@ npm --prefix packages/jev-model-router test                          # 36: 質�
 npm --prefix packages/jev-skill-router test                          # 36: カタログの分割と cutoff(API 不要)
 packages/jev-model-router/src/cli.ts "fix the failing auth test"     # 36: モデルを 1 件選ぶ($0.00003)
 packages/jev-skill-router/src/cli.ts --dir ~/.claude/skills --dry-run "..." # 36: 無料の前段だけ見る
+cd experiments/router          && npm i && npm test                 # 36 §5: corpus とラベルの不変条件(API 不要)
+cd experiments/router          && npm run demo                      # 36 §5: 記録から再集計(API 不要)
+cd experiments/router          && npx tsx src/harder.ts             # 36 §5: 難しい題材を機械的に合成(API 不要)
+cd experiments/router          && npx tsx src/label.ts --corpus hard # 36 §5: どの段が実際に直せるか(claude CLI)
+cd experiments/router          && npx tsx src/ask.ts                # 36 §5: router の予測
 node tools/check-links.mjs                                          # docs の相対リンクとアンカー全部
 ```
 
