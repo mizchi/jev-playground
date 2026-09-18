@@ -29,6 +29,12 @@ export interface Task {
   inputs: string[];
   /** Seconds from `# @cost:`. */
   cost: number;
+  /**
+   * Shell from `# @reset:`, run before the recipe when measuring costs in
+   * isolation. A build system's cache makes a task's cost depend on what ran
+   * before it, so the cost table is measured with each cache cleared.
+   */
+  reset: string | null;
   /** `just` groups. A recipe in `meta` is an aggregate, not a goal. */
   groups: string[];
 }
@@ -57,10 +63,18 @@ interface JustDump {
   >;
 }
 
-/** `# @inputs: a b c` / `# @cost: 42`, keyed by the recipe they precede. */
-function annotations(justfile: string): Map<string, { inputs: string[]; cost: number }> {
-  const out = new Map<string, { inputs: string[]; cost: number }>();
-  let pending: { inputs: string[]; cost: number } = { inputs: [], cost: 0 };
+interface Note {
+  inputs: string[];
+  cost: number;
+  reset: string | null;
+}
+
+const EMPTY: Note = { inputs: [], cost: 0, reset: null };
+
+/** `# @inputs:` / `# @cost:` / `# @reset:`, keyed by the recipe they precede. */
+function annotations(justfile: string): Map<string, Note> {
+  const out = new Map<string, Note>();
+  let pending: Note = { ...EMPTY };
   for (const raw of justfile.split("\n")) {
     const line = raw.trim();
     const inputs = /^#\s*@inputs:\s*(.+)$/.exec(line);
@@ -68,9 +82,14 @@ function annotations(justfile: string): Map<string, { inputs: string[]; cost: nu
       pending.inputs = inputs[1].trim().split(/\s+/);
       continue;
     }
-    const cost = /^#\s*@cost:\s*(\d+)$/.exec(line);
+    const cost = /^#\s*@cost:\s*([\d.]+)$/.exec(line);
     if (cost) {
       pending.cost = Number(cost[1]);
+      continue;
+    }
+    const reset = /^#\s*@reset:\s*(.+)$/.exec(line);
+    if (reset) {
+      pending.reset = reset[1].trim();
       continue;
     }
     if (line === "" || line.startsWith("#") || line.startsWith("[")) continue;
@@ -78,9 +97,11 @@ function annotations(justfile: string): Map<string, { inputs: string[]; cost: nu
     // assignment, a body line) resets the pending annotations.
     const header = /^([A-Za-z_][A-Za-z0-9_-]*)\s*:(?!=)/.exec(raw);
     if (header && !raw.startsWith(" ") && !raw.startsWith("\t")) {
-      if (pending.inputs.length > 0 || pending.cost > 0) out.set(header[1], pending);
+      if (pending.inputs.length > 0 || pending.cost > 0 || pending.reset) {
+        out.set(header[1], pending);
+      }
     }
-    pending = { inputs: [], cost: 0 };
+    pending = { ...EMPTY };
   }
   return out;
 }
@@ -104,7 +125,7 @@ export function buildGraph(dir: string): Graph {
   ) as JustDump;
   const notes = annotations(readFileSync(join(dir, "justfile"), "utf8"));
   const tasks: Task[] = Object.values(dump.recipes).map((r) => {
-    const note = notes.get(r.name) ?? { inputs: [], cost: 0 };
+    const note = notes.get(r.name) ?? EMPTY;
     return {
       name: r.name,
       deps: r.dependencies.map((d) => d.recipe),
@@ -112,6 +133,7 @@ export function buildGraph(dir: string): Graph {
       body: r.body.map((line) => line.join("")),
       inputs: note.inputs,
       cost: note.cost,
+      reset: note.reset,
       groups: groupsOf(r.attributes),
     };
   });
@@ -119,16 +141,19 @@ export function buildGraph(dir: string): Graph {
   return { tasks, source: `just --dump (${dir})` };
 }
 
-/** The cached dump, so a run needs no `just` on PATH. */
-export function loadGraph(dir: string): Graph {
-  const cache = join(dir, "graph.json");
+/**
+ * The cached dump, so a run needs no `just` on PATH. `cache` defaults to a
+ * graph.json beside the justfile, but can point elsewhere -- the graph of the
+ * repository root is cached under this experiment rather than at the root.
+ */
+export function loadGraph(dir: string, cache = join(dir, "graph.json")): Graph {
   if (existsSync(cache)) return JSON.parse(readFileSync(cache, "utf8")) as Graph;
   return buildGraph(dir);
 }
 
-export function writeGraph(dir: string): Graph {
+export function writeGraph(dir: string, cache = join(dir, "graph.json")): Graph {
   const g = buildGraph(dir);
-  writeFileSync(join(dir, "graph.json"), JSON.stringify(g, null, 2) + "\n");
+  writeFileSync(cache, JSON.stringify(g, null, 2) + "\n");
   return g;
 }
 

@@ -1,0 +1,146 @@
+{
+  "label": "cold",
+  "head": "ae8365a",
+  "observations": [
+    {
+      "task": "moon-deps",
+      "status": "pass",
+      "code": 0,
+      "ms": 3768,
+      "tail": "Registry index updated successfully / Symbols updated successfully"
+    },
+    {
+      "task": "moon-build",
+      "status": "pass",
+      "code": 0,
+      "ms": 12752,
+      "tail": "  468 |     write(pool.notify_send, &data, sizeof(data)); /       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ / Finished. moon: ran 112 tasks, now up to date"
+    },
+    {
+      "task": "conformance",
+      "status": "pass",
+      "code": 0,
+      "ms": 3884,
+      "tail": "  ok   policy  (9 judgments, identical in both) /  /   3 identical, 0 differing"
+    },
+    {
+      "task": "install-eslint-plugin",
+      "status": "pass",
+      "code": 0,
+      "ms": 510,
+      "tail": "  run `npm fund` for details /  / found 0 vulnerabilities"
+    },
+    {
+      "task": "install-task-filter",
+      "status": "pass",
+      "code": 0,
+      "ms": 443,
+      "tail": "up to date, audited 5 packages in 371ms /  / found 0 vulnerabilities"
+    },
+    {
+      "task": "moon-check",
+      "status": "pass",
+      "code": 0,
+      "ms": 920,
+      "tail": "Finished. moon: ran 65 tasks, now up to date"
+    },
+    {
+      "task": "replay-criteria",
+      "status": "pass",
+      "code": 0,
+      "ms": 492,
+      "tail": "  atoms      14        72147     $0.00303  8             eight named criteria as eight nouls, and nothing else /   full       14        89621     $0.00376  10            score + generic noul + the eight named criteria, all in one request /   replaying experiment/out-criteria.json: jev-latest recorded 2026-09-18T06:09:08.449Z, vague, checklist, atoms, full x 3"
+    },
+    {
+      "task": "replay-eslint-plugin",
+      "status": "pass",
+      "code": 0,
+      "ms": 476,
+      "tail": "  solo       file state, same question as `located`, but ONE function per request /   isolated   one function per request, and the state is that function alone -- no file /   replaying experiment/out-run.json: jev-latest recorded 2026-09-18T05:37:41.924Z, located, inlined, solo, isolated x 3"
+    },
+    {
+      "task": "replay-loo",
+      "status": "pass",
+      "code": 0,
+      "ms": 465,
+      "tail": "COST /   9 cell(s), 405 request(s), 2549859 input tokens, $0.10709 /   replaying experiment/out-loo.json: jev-latest recorded 2026-09-18T06:42:58.152Z, 9 cell(s) x 3"
+    },
+    {
+      "task": "replay-rules",
+      "status": "pass",
+      "code": 0,
+      "ms": 313,
+      "tail": "explicit-sort-comparator              2.00        4         1        1.90  yes / no-stringly-arithmetic                2.00       14         1        2.16  yes / no-swallowed-catch                    1.50        4         2        0.77  yes"
+    },
+    {
+      "task": "replay-task-filter",
+      "status": "pass",
+      "code": 0,
+      "ms": 684,
+      "tail": "  broad      3/3 /   cosmetic   no defect scenarios of this shape /   raw rows: /home/user/jev-playground/experiments/task-filter/out/raw.jsonl"
+    },
+    {
+      "task": "replay-tiers",
+      "status": "pass",
+      "code": 0,
+      "ms": 484,
+      "tail": "  atoms      15        82309     $0.00346  8             eight named criteria as eight nouls, and nothing else /   full       15        102365    $0.00430  10            score + generic noul + the eight named criteria, all in one request /   replaying experiment/out-criteria-tiers.json: jev-latest recorded 2026-09-18T06:42:23.722Z, vague, atoms, full x 3"
+    },
+    {
+      "task": "test-eslint-plugin",
+      "status": "pass",
+      "code": 0,
+      "ms": 2259,
+      "tail": "  ok   two rules sharing one selector both get asked /  / 109 passed"
+    },
+    {
+      "task": "test-hooks-failsafe",
+      "status": "pass",
+      "code": 0,
+      "ms": 961,
+      "tail": "  ok   timeout of 1ms         exit 0 decision none  164ms /  /   -> 7/7 fail-safe paths defer as required"
+    },
+    {
+      "task": "test-hooks-policy",
+      "status": "pass",
+      "code": 0,
+      "ms": 62,
+      "tail": "       permission 1.60/2 (confidence 0.90, ask at 0.50, deny at 1.50), blast radius 0.00/3. No predicate flagged /  /   -> 16/16 branches of the rule behave as specified"
+    },
+    {
+      "task": "test-jevdsl",
+      "status": "pass",
+      "code": 0,
+      "ms": 4320,
+      "tail": "/home/user/jev-playground/.mooncakes/moonbitlang/async/src/internal/event_loop/thread_pool.c:468:5: warning: ignoring return value of 'write' declared with attribute 'warn_unused_result' [-Wunused-result] /   468 |     write(pool.notify_send, &data, sizeof(data)); /       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    },
+    {
+      "task": "test-jevlang",
+      "status": "pass",
+      "code": 0,
+      "ms": 5253,
+      "tail": "/home/user/jev-playground/.mooncakes/moonbitlang/async/src/internal/event_loop/thread_pool.c:468:5: warning: ignoring return value of 'write' declared with attribute 'warn_unused_result' [-Wunused-result] /   468 |     write(pool.notify_send, &data, sizeof(data)); /       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    },
+    {
+      "task": "test-jevlang-js",
+      "status": "pass",
+      "code": 0,
+      "ms": 52,
+      "tail": "  ok   a let-bound number serves as both a cutoff and a message value /  /   24 passed, 0 failed"
+    },
+    {
+      "task": "test-lib",
+      "status": "pass",
+      "code": 0,
+      "ms": 1928,
+      "tail": "/home/user/jev-playground/.mooncakes/moonbitlang/async/src/internal/event_loop/thread_pool.c:468:5: warning: ignoring return value of 'write' declared with attribute 'warn_unused_result' [-Wunused-result] /   468 |     write(pool.notify_send, &data, sizeof(data)); /       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    },
+    {
+      "task": "test-task-filter",
+      "status": "pass",
+      "code": 0,
+      "ms": 463,
+      "tail": "  ok   the oracle never reaches Jev /  /   28 passed, 0 failed"
+    }
+  ]
+}
