@@ -71,6 +71,14 @@ const opt = (name, fallback) => {
   return i === -1 ? fallback : (args[i + 1] ?? fallback);
 };
 
+/**
+ * The latency budget, and a budget rather than a measurement: docs/18 measured
+ * the gate at a median of 329 ms and a p90 of 394 ms, so 2500 leaves about six
+ * times the p90 before the hook gives up and defers. One attempt, no retries
+ * (see `ask` below). docs/26's `measured-number-has-a-source` rule reported
+ * this line, and the report was right: the number had no provenance anywhere
+ * near it.
+ */
 const TIMEOUT_MS = Number.parseInt(opt("timeout", "2500"), 10);
 const ALLOW_SAFE = flag("allow-safe");
 const DRY_RUN = flag("dry-run");

@@ -96,6 +96,12 @@ export const DEFAULT_RULE_THRESHOLDS = {
  * line range alone is a weak subject for the small end of that: the file in
  * the state is the context, but the question should still say what it is
  * about without the model having to count lines.
+ *
+ * 600 is a chosen bound, not a measured one: it is about the size of a short
+ * function, and nothing in docs/21-26 measured where the right cut is. Said
+ * out loud because docs/26's own `measured-number-has-a-source` rule pointed
+ * at this line and was right to -- the comment above explains what the
+ * constant is FOR and never said where the number came from.
  */
 export const INLINE_LIMIT = 600;
 

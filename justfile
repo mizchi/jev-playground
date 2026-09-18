@@ -161,6 +161,21 @@ test-task-filter: install-task-filter
 replay-task-filter: install-task-filter
     npm --prefix experiments/task-filter exec -- tsx experiments/task-filter/src/run.ts --replay
 
+# @inputs: eslint.config.mjs eslint.rules.mjs hooks/** jevlang-js/** experiments/eslint-plugin-jev/**
+# @cost: 0.7
+# Lint this repository against its own prose conventions (docs/26), from the
+# committed verdicts -- no API key: a cold entry is silent, not a failure
+lint-repo-rules: install-eslint-plugin
+    experiments/eslint-plugin-jev/node_modules/.bin/eslint .
+
+# @inputs: experiments/eslint-plugin-jev/** eslint.rules.mjs
+# @cost: 0.6
+# Re-derive docs/26's three tables from the recorded verdicts
+replay-repo-rules: install-eslint-plugin
+    node experiments/eslint-plugin-jev/experiment/rules-report.mjs --cache experiments/eslint-plugin-jev/experiment/out-repo-rules.json --rules eslint.rules.mjs
+    node experiments/eslint-plugin-jev/experiment/rules-report.mjs --cache experiments/eslint-plugin-jev/experiment/out-repo-drafts.json --rules experiments/eslint-plugin-jev/experiment/repo-drafts.mjs
+    node experiments/eslint-plugin-jev/experiment/rules-report.mjs --cache experiments/eslint-plugin-jev/experiment/out-repo-corpus.json --rules experiments/eslint-plugin-jev/experiment/repo-drafts.mjs
+
 # @inputs: experiments/threshold-fit/** experiments/shared/**
 # @cost: 0.6
 # Check the cutoff-fitting component: placements, folds, calibration
@@ -177,5 +192,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit
     @echo "all green"

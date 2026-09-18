@@ -1,11 +1,11 @@
-# まとめ — Jev で 23 本作って測って分かったこと
+# まとめ — Jev で 24 本作って測って分かったこと
 
 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)(TypeSafe AI の System One モデル)は
 **文字列ではなく型付きの確率判断を返す**意思決定専用モデルです。
 noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3 種だけ。
 入力 $0.042/MTok・出力無料・レイテンシ 125〜730 ms。
 
-**この速度と価格が何を可能にするのか**を、23 本のレポート(1 本は提案)で測りました。
+**この速度と価格が何を可能にするのか**を、24 本のレポート(1 本は提案)で測りました。
 各レポートは生の数値と再現コマンド付き([索引](README.md))。
 
 ---
@@ -21,7 +21,8 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | **`jevdsl`** | MoonBit から `match` できる薄いラッパー。3 種を `(result, confidence)` に揃えて guard に閾値を書く | [20](20-jevdsl.md) |
 | **`hooks/jev-permission-gate.mjs`** | **Claude Code の `PreToolUse` hook。** Bash の実行許可を Jev が判定。依存ゼロの Node 1 枚、判定ロジックは `.jev` に外出し | [18](18-permission-hook.md) |
 | **`eslint-plugin-jev`** | **本物の ESLint プラグイン。** 関数ごとのレビュー score + 8 つの名前付き指標。ファイル 1 個 = 1 リクエスト | [21](21-eslint-plugin-jev.md) [22](22-code-criteria.md) |
-| **`jev/rule`** | **まだ存在しないルールを自然言語で書く。** ノードセレクタだけコードで書き、違反かどうかは 1 文で聞く | [24](24-adhoc-rules.md) |
+| **`jev/rule`** | **まだ存在しないルールを自然言語で書く。** ノードセレクタだけコードで書き、違反かどうかは 1 文で聞く | [24](24-adhoc-rules.md) [26](26-repo-rules.md) |
+| **`eslint.rules.mjs`** | **このリポジトリの散文の規約 8 文**。`docs/` にしか書いていない規約を lint ルールにして、自分の JS 9,315 行に当てた(6 文出荷・2 文 retire) | [26](26-repo-rules.md) |
 | **`shared/thresholds.ts`** | **閾値を当てはめる部品。** 最初に返すのは閾値ではなく「当てはめるべきか」(gap の verdict)。置き方は名前で選び、fold を切って採点する | [25](25-thresholds.md) |
 | **`task-filter --penalty`** | **閾値の代わりに損失を最小化する。** 「閉包の秒数 + penalty × P(見逃し)」で、タスクごとの柵がそのタスクの実測コストから出る | [25](25-thresholds.md) |
 
@@ -92,6 +93,13 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 **平均絶対差 0.082・Spearman ρ 0.931・判定差 3.6%**。隣の悪いコードへの汚染はほぼ無い。
 
 ### 閾値と confidence
+
+**4.4 コーパスで校正した文を実コードに当てると、出てくるのは「わざとやっている版」。**
+植え込みバグ 641 行で 5/5 だった文を実リポジトリ 9,315 行に当てると、
+**19 指摘のうち要修正は 2 件**で、残りは意図的にそうしてあるコードだった。
+そして **confidence の向きが逆**になる ——
+自信のある 5 件は 0/5、当たった 2 件は conf 0.29 / 0.19。
+形が自明なほど自信は高く、**形が自明な違反は意図的であることが多い**。
 
 **4.5 閾値を触る前に gap を見る —— 校正で直らない失敗がある。**
 判定を score 順に並べて、当たりと外れの差を見る。

@@ -1,0 +1,163 @@
+{
+  "schema": "jev-quality-3",
+  "model": "jev-latest",
+  "arm": "located",
+  "rubric": "vague",
+  "written": "2026-09-18T12:01:09.628Z",
+  "entries": {
+    "434affd4e1e85c73505e": {
+      "score": 2.43,
+      "confidence": 0.43,
+      "kind": "rule",
+      "rule": "swallowed-draft1",
+      "ruleHash": "ee62fce6",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 7,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "58a6d2e2569770135d9e": {
+      "score": 2.35,
+      "confidence": 0.35,
+      "kind": "rule",
+      "rule": "swallowed-draft2",
+      "ruleHash": "89237652",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 7,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "1228be1433256c8ca398": {
+      "score": 1.57,
+      "confidence": 0.39,
+      "kind": "rule",
+      "rule": "swallowed-draft1",
+      "ruleHash": "ee62fce6",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 32,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "1501e78661be2384c5a0": {
+      "score": 1.76,
+      "confidence": 0.21,
+      "kind": "rule",
+      "rule": "swallowed-draft2",
+      "ruleHash": "89237652",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 32,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "87c2a761a1c69f7c745d": {
+      "score": 1.09,
+      "confidence": 0.85,
+      "kind": "rule",
+      "rule": "swallowed-draft1",
+      "ruleHash": "ee62fce6",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 12,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "30021b0f76675483e5e7": {
+      "score": 1.05,
+      "confidence": 0.9,
+      "kind": "rule",
+      "rule": "swallowed-draft2",
+      "ruleHash": "89237652",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 12,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "41a349c18935e97d7e11": {
+      "score": 1.07,
+      "confidence": 0.89,
+      "kind": "rule",
+      "rule": "swallowed-draft1",
+      "ruleHash": "ee62fce6",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 37,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "766a7cdef8a9cbea6c71": {
+      "score": 1,
+      "confidence": 0.97,
+      "kind": "rule",
+      "rule": "swallowed-draft2",
+      "ruleHash": "89237652",
+      "node": "CatchClause",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 37,
+      "at": "2026-09-18T11:55:34.904Z"
+    },
+    "34b87739159500807a3e": {
+      "score": 2.31,
+      "confidence": 0.31,
+      "kind": "rule",
+      "rule": "swallowed-fn",
+      "ruleHash": "89237652",
+      "node": "FunctionDeclaration",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 4,
+      "at": "2026-09-18T11:56:14.828Z"
+    },
+    "3b385ee7261b4315f44a": {
+      "score": 1.69,
+      "confidence": 0.24,
+      "kind": "rule",
+      "rule": "swallowed-fn",
+      "ruleHash": "89237652",
+      "node": "FunctionDeclaration",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/fsutil.js",
+      "line": 28,
+      "at": "2026-09-18T11:56:14.828Z"
+    },
+    "6921cfa2f5eb46db8d2e": {
+      "score": 0.95,
+      "confidence": 0.89,
+      "kind": "rule",
+      "rule": "swallowed-fn",
+      "ruleHash": "89237652",
+      "node": "FunctionDeclaration",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 7,
+      "at": "2026-09-18T11:56:14.828Z"
+    },
+    "202d228a50f0eb49107c": {
+      "score": 0.97,
+      "confidence": 0.9,
+      "kind": "rule",
+      "rule": "swallowed-fn",
+      "ruleHash": "89237652",
+      "node": "FunctionDeclaration",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/retry.js",
+      "line": 32,
+      "at": "2026-09-18T11:56:14.828Z"
+    },
+    "0dfb922bd3dbd9cbcfde": {
+      "score": 2.31,
+      "confidence": 0.31,
+      "kind": "rule",
+      "rule": "constants-draft1",
+      "ruleHash": "3536582c",
+      "node": "VariableDeclarator",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/access.js",
+      "line": 1,
+      "at": "2026-09-18T12:01:09.628Z"
+    },
+    "98e652206fd27434ba95": {
+      "score": 2.8,
+      "confidence": 0.8,
+      "kind": "rule",
+      "rule": "constants-draft2",
+      "ruleHash": "d1752c67",
+      "node": "VariableDeclarator",
+      "file": "experiments/eslint-plugin-jev/experiment/corpus/access.js",
+      "line": 1,
+      "at": "2026-09-18T12:01:09.628Z"
+    }
+  }
+}
