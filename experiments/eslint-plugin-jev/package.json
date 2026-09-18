@@ -10,6 +10,8 @@
     "test": "node experiment/test.mjs",
     "truth": "node experiment/truth.mjs",
     "warm": "node src/warm.mjs \"experiment/corpus/*.js\"",
+    "warm:rules": "node src/warm.mjs \"experiment/corpus/*.js\" --rules experiment/rules.mjs --only rules --prune",
+    "rules": "node experiment/rules-report.mjs --cache experiment/out-rules.json --rules experiment/rules.mjs",
     "lint": "eslint --config experiment/eslint.config.mjs experiment/corpus",
     "run": "node experiment/run.mjs",
     "replay": "node experiment/run.mjs --from experiment/out-run.json",

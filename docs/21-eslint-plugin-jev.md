@@ -13,7 +13,7 @@
 
 ```bash
 cd experiments/eslint-plugin-jev && npm install
-npm test                                        # 62 件、API 不要
+npm test                                        # 105 件、API 不要
 npm run truth                                   # ラベルをコード実行で検証、API 不要
 TYPESAFEAI_API_KEY=... npm run warm             # 78 関数を 15 リクエスト、$0.001
 TYPESAFEAI_API_KEY=... npm run lint             # eslint が Jev の判定を読む

@@ -39,6 +39,20 @@ import {
   withThresholds,
 } from "../src/judge.mjs";
 import { planBatches } from "../src/warm.mjs";
+import {
+  DEFAULT_RULE_THRESHOLDS,
+  INLINE_LIMIT,
+  RULE_LEVELS,
+  decideRule,
+  normalizeRules,
+  planRuleBatches,
+  questionsForRules,
+  ruleKey,
+  ruleMatchKey,
+  ruleTextHash,
+  stateForRules,
+  verdictForRule,
+} from "../src/rules.mjs";
 
 const only = process.argv.includes("--failsafe")
   ? "failsafe"
@@ -603,6 +617,351 @@ const tiny = (a) => a;
     "the token estimate over-counts real code (the safe direction)",
     estimateTokens("export function step(a, b) { return a + b; }\n".repeat(2300)) > 32_530,
   );
+}
+
+// ------------------------------------------------------- ad-hoc rules (jev/rule)
+
+/** Lint one snippet with `jev/rule`, and never let it throw. */
+async function lintRule(code, options, { filename = "sample.js" } = {}) {
+  resetCacheMemo();
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    overrideConfig: {
+      files: ["**/*.js"],
+      languageOptions: { ecmaVersion: "latest", sourceType: "module" },
+      plugins: { jev: plugin },
+      rules: { "jev/rule": ["warn", options] },
+    },
+  });
+  try {
+    const results = await eslint.lintText(code, { filePath: filename });
+    return { threw: null, messages: results[0]?.messages ?? [] };
+  } catch (err) {
+    return { threw: err, messages: [] };
+  }
+}
+
+const SORTED = `export function median(xs) {
+  const s = xs.slice().sort();
+  return s[Math.floor(s.length / 2)];
+}
+`;
+
+const SORT_RULE = {
+  id: "sort-comparator",
+  selector: "CallExpression[callee.property.name='sort']",
+  rule: "数値の配列を sort するときは比較関数を渡すこと。",
+};
+
+/** A cache file holding one ad-hoc verdict for the `.sort()` call above. */
+function ruleCacheWith(verdict, rule = SORT_RULE, nodeText = "xs.slice().sort()") {
+  const p = join(tmp, `rule-${Math.random().toString(36).slice(2)}.json`);
+  const { rules: normal } = normalizeRules([rule]);
+  writeFileSync(
+    p,
+    JSON.stringify({
+      schema: SCHEMA,
+      entries: { [ruleMatchKey(normal[0], nodeText)]: { kind: "rule", ...verdict } },
+    }),
+  );
+  return p;
+}
+
+if (only !== "unit") {
+  console.log("");
+  console.log("AD-HOC FAIL-SAFE  (a sentence-shaped rule must fail into silence too)");
+
+  const adHocCases = [
+    ["no `rules` option at all", {}],
+    ["an empty rules array", { rules: [] }],
+    ["a selector that matches nothing", { rules: [{ selector: "WithStatement", rule: "x" }] }],
+    ["a cold cache", { rules: [SORT_RULE], cache: join(tmp, "absent-rules.json") }],
+    [
+      "an entry with no score (must not default)",
+      { rules: [SORT_RULE], cache: ruleCacheWith({ confidence: 0.99 }) },
+    ],
+    [
+      "an entry for a DIFFERENT draft of the sentence",
+      {
+        rules: [SORT_RULE],
+        cache: ruleCacheWith({ score: 3, confidence: 1 }, { ...SORT_RULE, rule: "別の文" }),
+      },
+    ],
+    ["cache path is a directory", { rules: [SORT_RULE], cache: tmp }],
+  ];
+  for (const [name, options] of adHocCases) {
+    const { threw, messages } = await lintRule(SORTED, { ...options, onMiss: "silent" });
+    check(
+      name,
+      threw === null && messages.length === 0,
+      threw ? `threw ${threw.message}` : `${messages.length} finding(s)`,
+    );
+  }
+
+  // A malformed entry is the one case that SHOULD say something: a rule that
+  // never fires because its config was dropped looks exactly like a rule that
+  // found nothing.
+  {
+    const { threw, messages } = await lintRule(SORTED, {
+      rules: [{ selector: "CallExpression", rule: "" }],
+      onMiss: "silent",
+    });
+    check(
+      "a rule with no sentence is reported as a config problem, not silence",
+      threw === null && messages.length === 1 && messages[0].messageId === "ruleConfig",
+      threw ? `threw ${threw.message}` : JSON.stringify(messages.map((m) => m.messageId)),
+    );
+  }
+  {
+    // A user selector of `Program:exit` is legal -- it means "on leaving the
+    // file" -- and must not displace the rule's own exit hook, nor be
+    // displaced by it.
+    const { threw, messages } = await lintRule(SORTED, {
+      rules: [{ selector: "Program:exit", rule: "なにか" }],
+      cache: join(tmp, "absent-program.json"),
+      onMiss: "report",
+    });
+    check(
+      "a `Program:exit` selector coexists with the rule's own exit hook",
+      threw === null && messages.length === 1 && messages[0].messageId === "ruleMissing",
+      threw ? `threw ${threw.message}` : JSON.stringify(messages.map((m) => m.messageId)),
+    );
+  }
+  {
+    // An unparseable selector throws mid-traversal, which would take the whole
+    // lint run down -- the one thing this plugin promises not to do.
+    const { threw, messages } = await lintRule(SORTED, {
+      rules: [
+        { id: "broken", selector: "CallExpression[[[", rule: "なにか" },
+        { id: "fine", selector: "CallExpression[callee.property.name='sort']", rule: "ほか" },
+      ],
+      cache: join(tmp, "absent-badsel.json"),
+      onMiss: "report",
+    });
+    check(
+      "an unparseable selector is a config message, not a crashed lint run",
+      threw === null &&
+        messages.some((m) => m.messageId === "ruleConfig" && m.message.includes("broken")),
+      threw ? `threw ${threw.message}` : JSON.stringify(messages.map((m) => m.messageId)),
+    );
+    check(
+      "and the rules around it still run",
+      messages.some((m) => m.messageId === "ruleMissing" && m.message.includes("fine")),
+      JSON.stringify(messages.map((m) => m.message.slice(0, 50))),
+    );
+  }
+}
+
+if (only !== "failsafe") {
+  console.log("");
+  console.log("AD-HOC RULES  (the selector is code, the sentence is the predicate)");
+
+  {
+    const { rules: ok, errors } = normalizeRules([
+      { selector: "CallExpression", rule: "a" },
+      { selector: "Identifier", rule: "b", id: "named" },
+      { selector: "", rule: "c" },
+      { selector: "Literal", rule: "" },
+      { selector: "CallExpression", rule: "d" },
+      "not an object",
+    ]);
+    check(
+      "normalizeRules keeps the good entries and explains each bad one",
+      ok.length === 2 && errors.length === 4,
+      `${ok.length} kept, ${errors.length} errors: ${errors.join(" | ")}`,
+    );
+    check(
+      "an id defaults to the selector, so two fields is a complete rule",
+      ok[0].id === "CallExpression" && ok[1].id === "named",
+      JSON.stringify(ok.map((r) => r.id)),
+    );
+  }
+
+  {
+    const { rules: one } = normalizeRules([SORT_RULE]);
+    const { rules: reworded } = normalizeRules([{ ...SORT_RULE, rule: "別の文" }]);
+    const { rules: noted } = normalizeRules([{ ...SORT_RULE, note: "例外あり" }]);
+    const { rules: retuned } = normalizeRules([{ ...SORT_RULE, at: 1 }]);
+    const k = (rs, text = "a.sort()") => ruleMatchKey(rs[0], text);
+    check(
+      "rewriting the sentence changes the key -- an old verdict cannot answer a new question",
+      k(one) !== k(reworded),
+    );
+    check("adding a note changes the key too", k(one) !== k(noted));
+    check(
+      "changing only the threshold does NOT change the key -- retuning is free",
+      k(one) === k(retuned),
+    );
+    check("a different node under the same rule is a different key", k(one) !== k(one, "b.sort()"));
+    check(
+      "the same node text under two rules is two keys",
+      ruleMatchKey(normalizeRules([{ selector: "X", rule: "one" }]).rules[0], "a.sort()") !==
+        ruleMatchKey(normalizeRules([{ selector: "X", rule: "two" }]).rules[0], "a.sort()"),
+    );
+    check(
+      "the draft hash follows the sentence, not the id or the threshold",
+      ruleTextHash(one[0]) !== ruleTextHash(reworded[0]) &&
+        ruleTextHash(one[0]) === ruleTextHash(retuned[0]),
+    );
+  }
+
+  {
+    const plain = { id: "r", selector: "X", rule: "text", at: null, note: null };
+    const t = DEFAULT_RULE_THRESHOLDS;
+    const table = [
+      // [score, confidence, rule, expected messageId, why]
+      [3, 0.9, plain, "rule", "a clear violation"],
+      [2, 0.9, plain, "rule", "exactly at the default cutoff"],
+      [1.99, 0.9, plain, null, "just under it"],
+      [1, 0.9, plain, null, "level 1 means the code SATISFIES the rule"],
+      [0, 0.9, plain, null, "level 0 means the selector over-matched"],
+      [2.5, 0.3, plain, "ruleUnsure", "over the bar but under-confident"],
+      [2.5, 0.9, { ...plain, at: 2.8 }, null, "a per-rule cutoff can raise the bar"],
+      [1.6, 0.9, { ...plain, at: 1.5 }, "rule", "and can lower it"],
+    ];
+    for (const [score, confidence, rule, expected, why] of table) {
+      const got = decideRule({ score, confidence }, rule, t)?.messageId ?? null;
+      check(`${why} -> ${expected ?? "silent"}`, got === expected, `got ${got ?? "silent"}`);
+    }
+    check("a null verdict is silent", decideRule(null, plain, t) === null);
+    check(
+      "a verdict with no score is silent, not defaulted",
+      decideRule({ confidence: 0.9 }, plain, t) === null,
+    );
+    check(
+      "confidence picks the message, it does not gate the report",
+      decideRule({ score: 3, confidence: 0.01 }, plain, t)?.messageId === "ruleUnsure",
+    );
+  }
+
+  {
+    const mk = (n, file = "a.js") =>
+      Array.from({ length: n }, (_, i) => ({
+        rule: { id: "r", selector: "X", rule: "text", note: null },
+        nodeType: "CallExpression",
+        text: `call${i}()`,
+        line: i + 1,
+        endLine: i + 1,
+        file,
+        fileSource: "// tiny\n",
+      }));
+    const all = mk(600);
+    const batches = planRuleBatches(all, 256);
+    const flat = batches.flatMap((b) => b.matches);
+    check(
+      "no batch is over the size cap",
+      batches.every((b) => b.matches.length <= 256),
+      JSON.stringify(batches.map((b) => b.matches.length)),
+    );
+    check(
+      "every match lands in exactly one batch, and no batch is empty",
+      flat.length === all.length &&
+        new Set(flat).size === all.length &&
+        batches.every((b) => b.matches.length > 0),
+    );
+    check(
+      "every batch fits under the request ceiling",
+      batches.every(
+        (b) =>
+          estimateTokens(stateForRules(b.file, b.source, b.matches)) +
+            estimateTokens(questionsForRules(b.matches)) <=
+          MAX_REQUEST_TOKENS,
+      ),
+    );
+    check(
+      "the cap can be lowered to one match per request",
+      planRuleBatches(mk(5), 1).length === 5,
+    );
+    check(
+      "two files are never mixed into one request",
+      planRuleBatches([...mk(2, "a.js"), ...mk(2, "b.js")], 256).length === 2,
+    );
+    const oversize = mk(2).map((m) => ({ ...m, fileSource: "x".repeat(200_000) }));
+    check(
+      "a file too big for the state ceiling falls back to one request per match",
+      planRuleBatches(oversize, 256).every((b) => b.oversize && b.matches.length === 1),
+    );
+  }
+
+  {
+    // The long text goes by line reference, the short one is inlined -- and
+    // either way the question must name the selector that caught it.
+    const long = {
+      rule: { id: "r", selector: "X", rule: "text", note: null },
+      nodeType: "FunctionDeclaration",
+      text: "x".repeat(INLINE_LIMIT + 1),
+      line: 1,
+      endLine: 40,
+      file: "a.js",
+    };
+    const short = { ...long, text: "a.sort()", endLine: 1 };
+    const qLong = questionsForRules([long])[ruleKey(0)];
+    const qShort = questionsForRules([short])[ruleKey(0)];
+    check(
+      "a long match is named by line range; a short one is inlined",
+      qLong.instructions.code === undefined && qShort.instructions.code === "a.sort()",
+    );
+    check(
+      "the question carries the sentence and the selector that matched",
+      qShort.instructions.rule === "text" &&
+        qShort.instructions.matched_because.includes("X") &&
+        qShort.criteria === RULE_LEVELS,
+    );
+    check(
+      "a note reaches the model but never the lint message",
+      questionsForRules([{ ...short, rule: { ...short.rule, note: "例外あり" } }])[ruleKey(0)]
+        .instructions.also === "例外あり" &&
+        !JSON.stringify(decideRule({ score: 3, confidence: 0.9 }, { ...short.rule, note: "例外あり" })).includes("例外あり"),
+    );
+    check(
+      "an unusable answer is null, not a defaulted score",
+      verdictForRule({ [ruleKey(0)]: { type: "noul", noul: 0.9 } }, 0) === null &&
+        verdictForRule({}, 0) === null &&
+        verdictForRule({ [ruleKey(0)]: { type: "score", score: 2, confidence: 0.8 } }, 0).score === 2,
+    );
+  }
+
+  {
+    // End to end: a warmed verdict, through the real ESLint, to a message.
+    const { threw, messages } = await lintRule(SORTED, {
+      rules: [SORT_RULE],
+      cache: ruleCacheWith({ score: 2.9, confidence: 0.9 }),
+      onMiss: "silent",
+    });
+    check(
+      "a warmed verdict reaches the real ESLint as one message on the matched node",
+      threw === null &&
+        messages.length === 1 &&
+        messages[0].messageId === "rule" &&
+        messages[0].ruleId === "jev/rule" &&
+        messages[0].line === 2 &&
+        messages[0].message.includes("sort-comparator"),
+      threw ? `threw ${threw.message}` : JSON.stringify(messages.map((m) => [m.messageId, m.line])),
+    );
+    const miss = await lintRule(SORTED, {
+      rules: [SORT_RULE],
+      cache: join(tmp, "absent-report.json"),
+      onMiss: "report",
+    });
+    check(
+      "`onMiss: report` names the rule that has no verdict",
+      miss.threw === null &&
+        miss.messages.length === 1 &&
+        miss.messages[0].messageId === "ruleMissing" &&
+        miss.messages[0].message.includes("sort-comparator"),
+      JSON.stringify(miss.messages.map((m) => m.messageId)),
+    );
+    const two = await lintRule(SORTED, {
+      rules: [SORT_RULE, { ...SORT_RULE, id: "second" }],
+      cache: join(tmp, "absent-two.json"),
+      onMiss: "report",
+    });
+    check(
+      "two rules sharing one selector both get asked",
+      two.messages.length === 2,
+      JSON.stringify(two.messages.map((m) => m.message.slice(0, 40))),
+    );
+  }
 }
 
 console.log("");

@@ -1,15 +1,23 @@
 /**
  * A real flat config using the plugin, so `npx eslint` is the demo.
  *
- *   node src/warm.mjs "experiment/corpus/*.js"
+ *   node src/warm.mjs "experiment/corpus/*.js" --rubric full
+ *   node src/warm.mjs "experiment/corpus/*.js" --rules experiment/rules.mjs --only rules
  *   npx eslint --config experiment/eslint.config.mjs experiment/corpus
  *
- * The rule is `warn`, not `error`: a probabilistic reviewer that can fail your
- * build is a probabilistic reviewer you will turn off. docs/21 measured 3
+ * Both rules are on, and they are different kinds of thing:
+ *
+ *   jev/quality  a fixed question set, asked about every function
+ *   jev/rule     rules that do not exist yet, one sentence each, matched by a
+ *                selector -- the only part written as code
+ *
+ * The rules are `warn`, not `error`: a probabilistic reviewer that can fail
+ * your build is a probabilistic reviewer you will turn off. docs/21 measured 3
  * false positives in 117 judgments of clean code in this arm, which is good
  * enough to read and not good enough to gate a merge on.
  */
 import jev from "../src/index.mjs";
+import { rules } from "./rules.mjs";
 
 export default [
   {
@@ -34,6 +42,21 @@ export default [
           cache: ".jev-quality.json",
           // A cold cache says nothing. Set "report" in CI if you would rather
           // fail than silently skip the judgment.
+          onMiss: "silent",
+        },
+      ],
+      "jev/rule": [
+        "warn",
+        {
+          // The rules come from one module, imported here and passed to the
+          // warm pass with `--rules`, because the sentence is part of the
+          // cache key and two copies would drift.
+          rules,
+          // 2.0 is a level boundary: level 1 means the code SATISFIES the
+          // rule, so reporting it would be the rule firing backwards.
+          reportAt: 2,
+          unsureBelow: 0.5,
+          cache: ".jev-quality.json",
           onMiss: "silent",
         },
       ],
