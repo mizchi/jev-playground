@@ -12,9 +12,9 @@
  * division of labour the experiment measures -- the graph is never something
  * the model has to get right.
  */
-import { execFileSync } from "node:child_process";
 import { Jev, noul, score } from "../../shared/jev.js";
 import { ALL_WASTE, BEHAVIOUR, questionsFor, stateFor, type ArmName } from "./arms.js";
+import { changedFiles, DEFAULT_LIMITS, git } from "./gitdiff.js";
 import { loadGraph, ROOT, TaskGraph } from "./graph.js";
 import { plan, planAll } from "./select.js";
 import { SCENARIOS, type ChangedFile, type Scenario } from "./scenarios.js";
@@ -27,65 +27,10 @@ const opt = (n: string, d: string) => {
 };
 
 /** A lockfile diff can be tens of thousands of lines; the budget is not. */
-const MAX_HUNK = Number(opt("max-hunk", "4000"));
-const MAX_TOTAL = Number(opt("max-diff", "60000"));
-
-// ---------------------------------------------------------------- git
-
-function git(args: string[], cwd: string): string {
-  return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 256 << 20 });
-}
-
-/** Split a `git diff` into per-file patches, keyed by the new path. */
-function splitDiff(diff: string): Map<string, string> {
-  const out = new Map<string, string>();
-  let path = "";
-  let lines: string[] = [];
-  const flush = () => {
-    if (path) out.set(path, lines.join("\n"));
-    lines = [];
-  };
-  for (const line of diff.split("\n")) {
-    const header = /^diff --git a\/(.+) b\/(.+)$/.exec(line);
-    if (header) {
-      flush();
-      path = header[2];
-      continue;
-    }
-    if (path) lines.push(line);
-  }
-  flush();
-  return out;
-}
-
-function changedFiles(dir: string, base: string | null): ChangedFile[] {
-  const range = base ? [`${base}...HEAD`] : ["HEAD"];
-  const numstat = git(["diff", "--numstat", ...range], dir).trim();
-  if (numstat === "") return [];
-  const patches = splitDiff(git(["diff", "-U3", ...range], dir));
-  const statuses = new Map<string, string>();
-  for (const line of git(["diff", "--name-status", ...range], dir).trim().split("\n")) {
-    const [code, ...rest] = line.split("\t");
-    statuses.set(rest[rest.length - 1], code);
-  }
-  let budget = MAX_TOTAL;
-  return numstat.split("\n").map((line) => {
-    const [added, removed, path] = line.split("\t");
-    const code = statuses.get(path) ?? "M";
-    let hunk = patches.get(path) ?? "";
-    if (hunk.length > MAX_HUNK) hunk = `${hunk.slice(0, MAX_HUNK)}\n... (truncated)`;
-    if (hunk.length > budget) hunk = budget > 0 ? `${hunk.slice(0, budget)}\n... (truncated)` : "(omitted)";
-    budget -= hunk.length;
-    return {
-      path,
-      status: code.startsWith("A") ? "added" : code.startsWith("D") ? "deleted" : "modified",
-      // A binary file reports "-" for both counts.
-      added: Number(added) || 0,
-      removed: Number(removed) || 0,
-      hunk,
-    } satisfies ChangedFile;
-  });
-}
+const LIMITS = {
+  maxHunk: Number(opt("max-hunk", String(DEFAULT_LIMITS.maxHunk))),
+  maxTotal: Number(opt("max-diff", String(DEFAULT_LIMITS.maxTotal))),
+};
 
 function headSubject(dir: string): string {
   try {
@@ -118,8 +63,8 @@ async function main(): Promise<void> {
     if (!found) throw new Error(`unknown scenario '${fixture}'; see src/scenarios.ts`);
     scenario = found;
   } else {
-    const base = flag("base") ? opt("base", "main") : null;
-    const files = changedFiles(process.cwd(), base);
+    const base = flag("base") ? [`${opt("base", "main")}...HEAD`] : [];
+    const files = changedFiles(process.cwd(), base, LIMITS);
     if (files.length === 0) {
       console.log("  nothing changed; no tasks to filter");
       return;
@@ -155,7 +100,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const mins = (s: number) => `${(s / 60).toFixed(1)}m`;
+  const dur = (s: number) => (s < 90 ? `${s.toFixed(1)}s` : `${(s / 60).toFixed(1)}m`);
   console.log("");
   console.log(`  graph   ${graph.tasks.length} recipes, ${graph.goals().length} goals — ${graph.source}`);
   console.log(
@@ -170,7 +115,7 @@ async function main(): Promise<void> {
     const mark = r.score >= threshold ? "RUN " : "skip";
     console.log(
       `  ${r.score.toFixed(2).padStart(6)} ${r.confidence.toFixed(2).padStart(5)} ` +
-        `${`${r.cost}s`.padStart(6)}  ${mark} ${r.task}`,
+        `${`${r.cost}s`.padStart(7)}  ${mark} ${r.task}`,
     );
   }
   console.log("");
@@ -184,8 +129,8 @@ async function main(): Promise<void> {
   } else {
     console.log(
       `  ${chosen.run.length} of ${all.run.length} tasks: ` +
-        `${mins(chosen.serial)} machine / ${mins(chosen.wall)} wall  ` +
-        `(everything: ${mins(all.serial)} / ${mins(all.wall)}, ` +
+        `${dur(chosen.serial)} machine / ${dur(chosen.wall)} wall  ` +
+        `(everything: ${dur(all.serial)} / ${dur(all.wall)}, ` +
         `${((1 - chosen.serial / all.serial) * 100).toFixed(0)}% saved)`,
     );
     console.log("");

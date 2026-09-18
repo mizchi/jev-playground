@@ -1,0 +1,345 @@
+{
+  "tasks": [
+    {
+      "name": "ci",
+      "deps": [
+        "moon-check",
+        "test-lib",
+        "test-jevlang",
+        "test-jevdsl",
+        "test-jevlang-js",
+        "conformance",
+        "test-hooks-failsafe",
+        "test-hooks-policy",
+        "test-eslint-plugin",
+        "replay-eslint-plugin",
+        "replay-criteria",
+        "replay-tiers",
+        "replay-loo",
+        "test-task-filter",
+        "replay-task-filter"
+      ],
+      "doc": "Everything that has to be green",
+      "body": [
+        "@echo \"all green\""
+      ],
+      "inputs": [],
+      "cost": 0,
+      "reset": null,
+      "groups": [
+        "meta"
+      ]
+    },
+    {
+      "name": "conformance",
+      "deps": [
+        "moon-build"
+      ],
+      "doc": "Replay every example through both jevlang implementations and diff them",
+      "body": [
+        "scripts/jevlang-conformance.sh"
+      ],
+      "inputs": [
+        "jevlang/**",
+        "jevlang-js/**",
+        "cmd/jevlang/**",
+        "examples/**"
+      ],
+      "cost": 3.8,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "install-eslint-plugin",
+      "deps": [],
+      "doc": "Install eslint-plugin-jev's dev dependencies",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev install"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/package.json",
+        "experiments/eslint-plugin-jev/package-lock.json"
+      ],
+      "cost": 0.5,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "install-task-filter",
+      "deps": [],
+      "doc": "Install the task filter's dev dependencies",
+      "body": [
+        "npm --prefix experiments/task-filter install"
+      ],
+      "inputs": [
+        "experiments/task-filter/package.json",
+        "experiments/task-filter/package-lock.json"
+      ],
+      "cost": 0.4,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "moon-build",
+      "deps": [
+        "moon-deps"
+      ],
+      "doc": "Compile every MoonBit package to a native binary",
+      "body": [
+        "moon build --target native"
+      ],
+      "inputs": [
+        "lib/**",
+        "cmd/**",
+        "moba/**",
+        "report/**",
+        "jevlang/**",
+        "jevdsl/**",
+        "moon.mod"
+      ],
+      "cost": 9.3,
+      "reset": "moon clean",
+      "groups": []
+    },
+    {
+      "name": "moon-check",
+      "deps": [
+        "moon-deps"
+      ],
+      "doc": "Type-check every MoonBit package without producing a binary",
+      "body": [
+        "moon check --target native"
+      ],
+      "inputs": [
+        "lib/**",
+        "cmd/**",
+        "moba/**",
+        "report/**",
+        "jevlang/**",
+        "jevdsl/**",
+        "moon.mod"
+      ],
+      "cost": 0.9,
+      "reset": "moon clean",
+      "groups": []
+    },
+    {
+      "name": "moon-deps",
+      "deps": [],
+      "doc": "Fetch the MoonBit dependencies named in moon.mod",
+      "body": [
+        "moon update"
+      ],
+      "inputs": [
+        "moon.mod"
+      ],
+      "cost": 1.5,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-criteria",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Re-derive docs/22's four-rubric comparison from the recorded run",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev run replay:criteria"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 0.5,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-eslint-plugin",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Re-derive docs/21's numbers from the recorded run",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev run replay"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 0.4,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-loo",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Re-derive docs/22's leave-one-criterion-out from the recorded run",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev run replay:loo"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 0.5,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-task-filter",
+      "deps": [
+        "install-task-filter"
+      ],
+      "doc": "Re-derive docs/23's numbers from the committed rows",
+      "body": [
+        "npm --prefix experiments/task-filter exec -- tsx experiments/task-filter/src/run.ts --replay"
+      ],
+      "inputs": [
+        "experiments/task-filter/**"
+      ],
+      "cost": 0.7,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "replay-tiers",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Re-derive docs/22's easy/hard 2x2 from the recorded run",
+      "body": [
+        "npm --prefix experiments/eslint-plugin-jev run replay:tiers"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 0.4,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "test-eslint-plugin",
+      "deps": [
+        "install-eslint-plugin"
+      ],
+      "doc": "Run the ESLint plugin's unit tests",
+      "body": [
+        "node experiments/eslint-plugin-jev/experiment/test.mjs"
+      ],
+      "inputs": [
+        "experiments/eslint-plugin-jev/**"
+      ],
+      "cost": 1,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "test-hooks-failsafe",
+      "deps": [],
+      "doc": "Check that all seven of the permission hook's failure paths defer",
+      "body": [
+        "node hooks/test-gate.mjs --failsafe-only"
+      ],
+      "inputs": [
+        "hooks/**"
+      ],
+      "cost": 1.1,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "test-hooks-policy",
+      "deps": [],
+      "doc": "Check the sixteen branches of the .jev permission policy",
+      "body": [
+        "node hooks/test-gate.mjs --policy-logic"
+      ],
+      "inputs": [
+        "hooks/**",
+        "examples/**"
+      ],
+      "cost": 0.1,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "test-jevdsl",
+      "deps": [
+        "moon-deps"
+      ],
+      "doc": "Run the tests for the match-able wrapper around a judgment",
+      "body": [
+        "moon test --target native -p jevdsl"
+      ],
+      "inputs": [
+        "jevdsl/**"
+      ],
+      "cost": 4.3,
+      "reset": "moon clean",
+      "groups": []
+    },
+    {
+      "name": "test-jevlang",
+      "deps": [
+        "moon-deps"
+      ],
+      "doc": "Run the MoonBit jevlang implementation's tests",
+      "body": [
+        "moon test --target native -p jevlang"
+      ],
+      "inputs": [
+        "jevlang/**"
+      ],
+      "cost": 4.8,
+      "reset": "moon clean",
+      "groups": []
+    },
+    {
+      "name": "test-jevlang-js",
+      "deps": [],
+      "doc": "Run the JS jevlang implementation's tests",
+      "body": [
+        "node jevlang-js/test.mjs"
+      ],
+      "inputs": [
+        "jevlang-js/**"
+      ],
+      "cost": 0.1,
+      "reset": null,
+      "groups": []
+    },
+    {
+      "name": "test-lib",
+      "deps": [
+        "moon-deps"
+      ],
+      "doc": "Run the API client's tests, including the wire-format ones",
+      "body": [
+        "moon test --target native -p lib"
+      ],
+      "inputs": [
+        "lib/**"
+      ],
+      "cost": 1.9,
+      "reset": "moon clean",
+      "groups": []
+    },
+    {
+      "name": "test-task-filter",
+      "deps": [
+        "install-task-filter"
+      ],
+      "doc": "Check the task filter's graph, oracle and request invariants",
+      "body": [
+        "npm --prefix experiments/task-filter test"
+      ],
+      "inputs": [
+        "experiments/task-filter/**"
+      ],
+      "cost": 0.4,
+      "reset": null,
+      "groups": []
+    }
+  ],
+  "source": "just --dump (/home/user/jev-playground)"
+}
