@@ -151,7 +151,20 @@ export interface Choice {
  * the baseline and the judgment arm would not be visible in the numbers, it
  * would BE the numbers.
  */
-export type Policy = (screen: Screen, actions: Action[], vitals: Vitals, recent: string[]) => Choice | Promise<Choice>;
+export interface Seen {
+  /** "x,y" -> how many times the hero has stood there. */
+  counts: ReadonlyMap<string, number>;
+  walked: number;
+  mapped: number;
+}
+
+export type Policy = (
+  screen: Screen,
+  actions: Action[],
+  vitals: Vitals,
+  recent: string[],
+  seen: Seen,
+) => Choice | Promise<Choice>;
 
 /**
  * One game, whoever is choosing.
@@ -189,7 +202,7 @@ export async function playGame(opts: {
     visited: 0,
     steps: [],
   };
-  const seen = new Set<string>();
+  const counts = new Map<string, number>();
   try {
     game.start();
     let { screen } = drain(game);
@@ -206,7 +219,8 @@ export async function playGame(opts: {
         screen = game.key("\x1b");
         continue;
       }
-      seen.add(`${probe.hero.x},${probe.hero.y}`);
+      const spot = `${probe.hero.x},${probe.hero.y}`;
+      counts.set(spot, (counts.get(spot) ?? 0) + 1);
       // Taken as the run goes rather than at the end: a death replaces the
       // map with a tombstone, and the last screen of a game is then the one
       // screen that cannot answer how much of the level was mapped.
@@ -218,7 +232,11 @@ export async function playGame(opts: {
       }
       const { actions } = enumerate(screen, { hungry, exclude: refusedHere });
       if (opts.onScreen) opts.onScreen(screen, vitals.turn);
-      const chosen = await opts.policy(screen, actions, vitals, recent);
+      const chosen = await opts.policy(screen, actions, vitals, recent, {
+        counts,
+        walked: counts.size,
+        mapped: row.explored,
+      });
       if (!chosen.action) {
         // Named something outside the offered set. A `choice` cannot do this;
         // it is counted rather than assumed away.
@@ -259,7 +277,7 @@ export async function playGame(opts: {
       }
       screen = game.screen();
     }
-    row.visited = seen.size;
+    row.visited = counts.size;
   } finally {
     game.stop();
   }

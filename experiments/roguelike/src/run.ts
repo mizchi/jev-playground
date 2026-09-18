@@ -23,7 +23,7 @@ import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { Jev, type Answer } from "../../shared/jev.js";
 import { confusion, place, separation, type Sample } from "../../shared/thresholds.js";
-import { ROWS, available, type Screen } from "./nethack.js";
+import { ROWS, available, heroAt, type Screen } from "./nethack.js";
 import { enumerate } from "./actions.js";
 import { type GameRow, type Policy, greedyPolicy, playGame, randomPolicy, rngFrom } from "./play.js";
 import { type Band, probesFor, stateFor as perceiveState } from "./perceive.js";
@@ -144,8 +144,13 @@ async function perceive(limit: number): Promise<void> {
  * The count is kept anyway, because an unmeasured zero is an assumption.
  */
 export function jevPolicy(jev: Jev, arm: ArmName): Policy {
-  return async (screen, actions, vitals, recent) => {
-    const res = await jev.ask(stateFor(screen, vitals, recent), questionFor(arm, actions));
+  return async (screen, actions, vitals, recent, seen) => {
+    const hero = heroAt(screen) ?? undefined;
+    const memory = arm === "jevmemo" ? seen : undefined;
+    const res = await jev.ask(
+      stateFor(screen, vitals, recent, memory),
+      questionFor(arm, actions, hero, memory),
+    );
     const answer = res.answers[MOVE];
     if (answer.type !== "choice") throw new Error(`expected a choice, got ${answer.type}`);
     return {
@@ -186,8 +191,8 @@ async function play(games: number, maxActions: number, arms: ArmName[], withBase
     lane.push({
       label: arm,
       fresh: () => jevPolicy(jev, arm),
-      prefix: arm === "jev" ? "Jev" : "Bare",
-      offset: arm === "jev" ? 300 : 400,
+      prefix: { jev: "Jev", jevbare: "Bare", jevmemo: "Memo" }[arm],
+      offset: { jev: 300, jevbare: 400, jevmemo: 500 }[arm],
     });
   }
   for (const l of lane) {

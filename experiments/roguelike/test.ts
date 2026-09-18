@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { DIRS, diagonalBlocked, distances, enumerate, frontiers, kindOf, reachable, stepToward, steppable } from "./src/actions.js";
 import { MAP_ROWS, NetHack, ROWS, available, heroAt, mapOf, vitalsOf, type Screen } from "./src/nethack.js";
 import { monsterCount, probesFor, stairsAt, stateFor as perceiveState } from "./src/perceive.js";
-import { ARMS, payloadOf, questionFor, stateFor } from "./src/arms.js";
+import { ARMS, EMPTY_MEMORY, payloadOf, questionFor, stateFor } from "./src/arms.js";
 import { drain, greedyPolicy, randomPolicy, rngFrom } from "./src/play.js";
 import { rehydrate } from "./src/run.js";
 import type { WalkRecord } from "./src/walk.js";
@@ -207,11 +207,53 @@ check("jevbare is told the direction and nothing else", () => {
   ok(!bare.includes("the square there shows"), "jevbare sees the glyph annotation");
   ok(full.includes("the square there shows"), "jev has lost the glyph annotation");
   ok(!bare.includes("stairs down"), "jevbare is told where the staircase is");
-  // Both still get the map, which is the whole point of the comparison.
+  // Every arm still gets the map, which is the whole point of the comparison.
   const v = vitalsOf(ROOM)!;
   for (const arm of ARMS) {
     ok(payloadOf(arm, ROOM, v, [], actions).includes("|..>|"), `${arm} cannot see the map`);
   }
+});
+
+check("only jevmemo is told where it has already been", () => {
+  const { actions, hero } = enumerate(ROOM);
+  const v = vitalsOf(ROOM)!;
+  const memory = {
+    counts: new Map([[`${hero!.x - 1},${hero!.y}`, 3], [`${hero!.x},${hero!.y - 1}`, 1]]),
+    walked: 9,
+    mapped: 44,
+  };
+  const memo = payloadOf("jevmemo", ROOM, v, [], actions, hero!, memory);
+  ok(memo.includes("you have stood there 3 times already"), "the west square's visit count is missing");
+  ok(memo.includes("you have stood there 1 time already"), "singular is not handled");
+  ok(memo.includes("you have never stood there"), "an unvisited square is not marked");
+  ok(memo.includes("squares_you_have_stood_on_so_far"), "the totals are missing");
+  // The other two arms must not see any of it, even when it is available.
+  for (const arm of ["jev", "jevbare"] as const) {
+    const body = payloadOf(arm, ROOM, v, [], actions, hero!, memory);
+    ok(!body.includes("stood"), `${arm} sees the visit counts`);
+    ok(!body.includes("stood_on_so_far"), `${arm} sees the totals`);
+  }
+  // And jevmemo with an empty memory must not claim a visit.
+  // `never stood there` contains `stood there`, so the count phrasing has to
+  // be matched with its number rather than by that substring.
+  const empty = payloadOf("jevmemo", ROOM, v, [], actions, hero!, EMPTY_MEMORY);
+  ok(!/stood there \d+ time/.test(empty), "an empty memory claimed a visit");
+  eq((empty.match(/you have never stood there/g) ?? []).length, 8, "all eight steps should be unvisited");
+});
+
+check("the memory arm is told to act on the memory, and the others are not", () => {
+  const { actions, hero } = enumerate(ROOM);
+  const goalOf = (arm: (typeof ARMS)[number]): string =>
+    String((questionFor(arm, actions, hero!, EMPTY_MEMORY)[Object.keys(questionFor(arm, actions))[0]] as {
+      instructions: string;
+    }).instructions);
+  ok(/prefer a direction that leads to ground you have not walked/.test(goalOf("jevmemo")), goalOf("jevmemo"));
+  for (const arm of ["jev", "jevbare"] as const) {
+    ok(!/have not walked/.test(goalOf(arm)), `${arm}'s goal mentions the memory it cannot see`);
+  }
+  // The shared part of the goal is identical, so the arms differ in one way.
+  const shared = "The aim is to survive and to descend";
+  for (const arm of ARMS) ok(goalOf(arm).includes(shared), `${arm} lost the shared goal`);
 });
 
 check("the state holds the screen and no interpretation of it", () => {
