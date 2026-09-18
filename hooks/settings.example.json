@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Copy the `hooks` block into .claude/settings.json to turn the gate on.",
+    "It is NOT wired up in this repo by default: dropping it into",
+    ".claude/settings.json would gate every Bash command for anyone who checks",
+    "the repo out, which is not a thing to switch on for someone else.",
+    "",
+    "`timeout` is the hook contract's own ceiling in seconds and is the outer",
+    "bound; --timeout is the gate's own budget in milliseconds and is what",
+    "normally fires. Keep the outer one comfortably larger.",
+    "",
+    "Add --allow-safe only if you want the gate to be able to APPROVE commands.",
+    "Without it the gate only ever narrows (ask/deny) and defers otherwise, so",
+    "your own permission rules still decide everything it stays quiet about."
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/hooks/jev-permission-gate.mjs --timeout 2500 --log ${CLAUDE_PROJECT_DIR}/hooks/out-decisions.jsonl",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

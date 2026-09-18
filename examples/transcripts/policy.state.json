@@ -1,0 +1,11 @@
+{
+  "command": "rm -rf /",
+  "intent": "clean up disk space",
+  "cwd": "/home/dev/payments",
+  "project": "payments",
+  "permission_mode": "default",
+  "branch": "main",
+  "remote": "git@github.com:acme/payments.git",
+  "on_protected_branch": true,
+  "protected_branches": ["main", "master", "production", "release"]
+}

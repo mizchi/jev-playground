@@ -15,7 +15,11 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
-| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト) |
+| `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
+| `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
+| `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
+| `jevlang-js/` | jevlang(JS 版)。同じ `.jev` を走らせ、結果の一致をテストしている |
+| `examples/` | `.jev` のサンプルと、API 不要で再現するための transcript |
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
 ([まとめと優先順位](docs/README.md))。
@@ -143,6 +147,10 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
+| [16](docs/16-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
+| [17](docs/17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
+| [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
+| [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -156,8 +164,79 @@ moon run --target native cmd/shellrisk --                  # シェルコマン�
 moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
 ```
 
-TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成)は
+TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測)は
 [`experiments/`](experiments/) 以下で、各ディレクトリで `npm install` してから走ります。
+
+```bash
+cd experiments/eslint-oracle && npm install
+npx tsx src/truth.ts                                 # ESLint の正解ラベルだけ(API 不要)
+npx tsx src/run.ts --repeat 5                         # 実装を伏せて合否を当てさせる(要 API)
+
+cd experiments/task-picker && npm install
+npx tsx src/run.ts --repeat 3 --scale                 # 133 タスクから正しいものを選ばせる
+```
+
+## 6. Claude Code の permission hook
+
+`hooks/jev-permission-gate.mjs` は、Bash コマンドの実行許可を Jev に判定させる
+`PreToolUse` hook です(**依存ゼロの Node スクリプト 1 枚、ビルド不要**)。
+既定では `ask` / `deny` しか返さず、安全と判定したときは何も出さないので、
+**あなた自身の permission ルールを上書きしません**。
+
+```bash
+node hooks/test-gate.mjs --failsafe-only   # 7 つの失敗経路だけ確認(API キー不要)
+node hooks/test-gate.mjs --policy-logic    # .jev ポリシーの規則を検証(API キー不要)
+TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンドで採点
+```
+
+有効化は `hooks/settings.example.json` の `hooks` ブロックを `.claude/settings.json` に
+コピーします(閾値と文脈は `hooks/jev-gate.json.example` 参照)。
+**このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
+Bash がゲートされてしまうので。実測値と設計の理由は [docs/18](docs/18-permission-hook.md)。
+
+## 7. jevlang — 条件が Jev の判断である小さな言語
+
+`if` の条件や `match` の対象が**自然文の確率判断**である DSL です。
+**JS 版**(`jevlang-js/`)と **MoonBit 版**(`jevlang/` + `cmd/jevlang`)の 2 実装があり、
+同じ `.jev` を走らせて結果が一致することをテストしています。
+
+```jev
+state { fridge: ["卵", "ビール"], wallet_yen: 100 }
+
+threshold noul = 0.5
+
+if noul("家に牛乳がない") {
+  buy("牛乳")
+}
+
+let result = match choice("100円余ったときに買うもの", ["プリン", "ビール", "うまい棒"]) {
+  "プリン" => buy("プリン")
+  "ビール" => buy("ビール")
+  "うまい棒" => buy("うまい棒")
+  else => buy("牛乳")          # else 腕は gate noul を別の質問として生やす
+}
+
+let praised = score("${result} を買ったことで妻に褒められる確率", [
+  "褒められない", "何も言われない", "褒められる",
+])
+```
+
+```bash
+node jevlang-js/bin/jevlang.mjs examples/milk.jev           # JS 版
+moon run --target native cmd/jevlang -- examples/milk.jev   # MoonBit 版
+
+node jevlang-js/test.mjs                 # 24 件(API 不要)
+moon test --target native -p jevlang     # 31 件(API 不要)
+scripts/jevlang-conformance.sh           # 2 実装の一致(API 不要)
+```
+
+`hooks/policy.jev` は、[6 節](#6-claude-code-の-permission-hook)の hook の判定を
+この言語で書いたものです(`--policy` で差し替えられます)。
+
+**質問文が実行前に確定している judgment は 1 リクエストに巻き上げられます**
+(`examples/milk.jev` で 4 → 2 リクエスト、1501 → 867 トークン)。
+`"${result}"` のように実行時の値に依存する質問だけが後から個別に聞かれます。
+設計の理由と実測は [docs/19](docs/19-jevlang.md)。
 
 ## 補足
 
