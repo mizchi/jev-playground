@@ -1,3 +1,9 @@
 import {
   "mizchi/jev-playground/lib",
 }
+
+// The generated test driver needs this to run `async test` blocks; the library
+// itself only propagates async from lib's client and never names the package.
+import {
+  "moonbitlang/async",
+} for "test"

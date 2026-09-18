@@ -70,6 +70,10 @@ pub(all) enum Expr {
   EVar(String)
   /// `conf(x)` — the confidence of the judgment that produced `x`.
   EConf(String)
+  /// `flagged(a, b, c)` — renders the ones at or above `threshold flag` as
+  /// "a 0.98, c 0.73". Takes bare names rather than expressions precisely so
+  /// the NAMES survive: the point is to say which predicate fired.
+  EFlagged(Array[String])
   ENot(Expr)
   /// op is "&&" or "||"
   ELogic(String, Expr, Expr)
@@ -95,6 +99,8 @@ pub(all) struct Program {
   noul_threshold : Double
   /// A `match` takes its `else` arm below this.
   gate_threshold : Double
+  /// `flagged()` renders a judgment at or above this.
+  flag_threshold : Double
   body : Array[Stmt]
   judgment_count : Int
 } derive(Debug)

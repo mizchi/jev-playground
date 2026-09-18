@@ -368,6 +368,28 @@ export class Interpreter {
         // noul answers carry no confidence -- the API does not return one.
         return num(found.conf ?? 0);
       }
+      case "flagged": {
+        // Renders "name value" for the judgments at or above `threshold flag`.
+        // This is what lets a reason string say WHICH predicate fired, which
+        // the built-in hook does by iterating a key list and a language with
+        // no string concatenation otherwise cannot express.
+        const parts = [];
+        for (const name of node.names) {
+          const found = this.scope.get(name);
+          if (found === undefined) {
+            throw new JevRuntimeError(`'${name}' is not defined`);
+          }
+          if (found.t !== "prob" && found.t !== "num") {
+            throw new JevRuntimeError(
+              `flagged() needs judgments, but '${name}' is a ${found.t}`,
+            );
+          }
+          if (found.v >= this.program.thresholds.flag) {
+            parts.push(`${name} ${formatNumber(found.v)}`);
+          }
+        }
+        return str(parts.join(", "));
+      }
       case "not":
         return bool(!this.truthy(await this.eval(node.expr)));
       case "logic": {
@@ -425,11 +447,10 @@ export class Interpreter {
     }
     // The gate decides before the arms do: if nothing applies, `else` wins
     // even when `choice` returned a perfectly good-looking option.
+    // A gate only exists over a `choice` subject (see the parser), so the
+    // options are always the choice's own.
     if (node.gateId !== null) {
-      const options =
-        node.subject.k === "judge" && node.subject.kind === "choice"
-          ? node.subject.options.map((o) => this.interpolate(o))
-          : node.arms.map((a) => this.interpolate(a.lit));
+      const options = node.subject.options.map((o) => this.interpolate(o));
       const answer = await this.resolve(
         node.gateId,
         "gate",

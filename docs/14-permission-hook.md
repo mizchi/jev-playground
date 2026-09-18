@@ -322,7 +322,7 @@ hook 側は `--policy` が指定されたとき、組み込みの質問と合成
 ポリシーは 9 judgment 全部が巻き上げ可能なので **1 リクエスト**。
 組み込みと同じです([15 §2](15-jevlang.md#2-巻き上げspeculative-batching-実測-4--2-リクエスト))。
 
-**書けたことで分かったのは、言語に足りない機能が 1 つあったこと**です。
+**書けたことで、言語に足りない機能が 3 つ出てきました**(どれも追加済み)。
 [15](15-jevlang.md) 時点の `noul(...)` には **true/false の criteria を書く構文が無かった**。
 §3 の話の全体が「`false` 側の文言が判定を決めた」なので、
 criteria を書けないポリシーは**正しく書けません**。そこで
@@ -330,17 +330,37 @@ criteria を書けないポリシーは**正しく書けません**。そこで
 (2 つの説明文は `options` に入るので、transcript の同一性判定がそのまま使えます ——
 同じ質問文で criteria が違えば、実際に別の質問です)。
 
+2 つめは **`flagged(...)`**。組み込み経路は理由文に
+`Flagged: destructive 0.98, irreversible 0.88, ...` を出しますが、
+言語に文字列結合も代入も無いのでポリシーからは書けませんでした。
+`flagged(destructive, irreversible, ...)` が `threshold flag` 以上のものだけを
+「名前 値」で並べます(**束縛名を受ける**のが肝で、式を受けると名前が消える)。
+今は組み込みと同じ理由文が出ます:
+
+```
+組み込み: ... blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.88, outside_project 0.98, affects_others 0.71
+ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
+```
+
+3 つめは `match` の gate 条件の修正で、これは**言語側のバグ**でした
+([15 §3](15-jevlang.md#3-choice-に対する-else-腕は-gate-noul-を生やす))。
+「1 つも撃たなかったとき」の言い換えに文字列の `match` を使いたかったのですが、
+当初は subject を見ずに `else` 腕へ gate を付けていたので、
+**何についてでもない質問**が 1 件増えていました。
+
 ### 同じ判定になるか
 
 2 通りで確認しています。
 
 **(1) ロジックの検証(API 不要)。** 合成した答えを replay で流して、
-規則の各分岐が仕様どおりかを見る:
+規則の各分岐と**理由文の中身**が仕様どおりかを見る:
 
 ```bash
 node hooks/test-gate.mjs --policy-logic
   ...
-  -> 14/14 branches of the rule behave as specified
+  ok   the reason names the predicates that fired -> deny     want deny
+       permission 1.60/2 (confidence 0.90), blast radius 0/3. Flagged: destructive 0.90, irreversible 0.80, privileged 0.55
+  -> 16/16 branches of the rule behave as specified
 ```
 
 **(2) 実際のモデル相手の比較。**
@@ -382,9 +402,9 @@ node hooks/test-gate.mjs --compare-policy
 - **`--policy` 経路は組み込み経路の監査ログの一部を持ちません**
   (`from_score` / `from_atoms` は `.jev` の中の中間変数なので、
   ログには `null` が入る)。理由文には permission と blast が入っています。
-- **述語 1 つ 1 つの発火状況が理由文に出ません。** 組み込みは
-  `Flagged: destructive 0.98, ...` を出しますが、`.jev` から同じものを組むには
-  文字列連結が要り、言語に `+` がありません([15 §6](15-jevlang.md#6-正直な限界))。
+- **数値の桁が組み込み経路と違います。** `.jev` の数値表示は整数を裸で出すので
+  `blast radius 2/3`、組み込みは `toFixed(2)` で `2.00/3`。
+  意味は同じですが見た目が揃いません([15 §6](15-jevlang.md#6-正直な限界))。
 - **ポリシーファイルは信頼された入力です。** `.jev` は副作用を
   ホストに渡すだけなので任意コード実行はしませんが、
   **判定を全部 `defer` にするポリシーを置けばゲートは無効化できます**。
@@ -406,8 +426,6 @@ node hooks/test-gate.mjs --compare-policy
 - **1 週間実際に使う。** 誤ブロック率と体感、そして
   「ゲートに慣れて確認を読まなくなる」人間側の劣化を見る。
   数字より先にこれが効用を決める。
-- **理由文に述語の発火を戻す。** §6b の限界。言語に文字列結合か
-  「発火した述語を並べる」組み込みが要る。
 - **[13](13-task-picker.md) との合流。** `npm run <task>` を打とうとしたとき、
   hook はロスターと `tool_input.description` の両方を持っている。
   「宣言した意図と選んだタスクが食い違っていないか」を

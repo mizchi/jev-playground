@@ -246,7 +246,7 @@ fn collect_expr(node : Expr, found : Array[Site]) -> Unit {
       for a in args {
         collect_expr(a, found)
       }
-    ENum(_) | EBool(_) | EStr(_) | EVar(_) | EConf(_) => ()
+    ENum(_) | EBool(_) | EStr(_) | EVar(_) | EConf(_) | EFlagged(_) => ()
   }
 }
 
@@ -560,6 +560,29 @@ async fn Interp::eval(self : Interp, node : Expr) -> Value raise {
         Some(v) => VNum(v.confidence().unwrap_or(0.0), None)
         None => raise Runtime("'\{name}' is not defined")
       }
+    EFlagged(names) => {
+      // Renders "name value" for the judgments at or above `threshold flag`.
+      // This is what lets a reason string say WHICH predicate fired, which
+      // the built-in hook does by iterating a key list and a language with no
+      // string concatenation otherwise cannot express.
+      let parts : Array[String] = []
+      for name in names {
+        match self.scope.get(name) {
+          Some(VProb(v)) =>
+            if v >= self.program.flag_threshold {
+              parts.push("\{name} \{format_number(v)}")
+            }
+          Some(VNum(v, _)) =>
+            if v >= self.program.flag_threshold {
+              parts.push("\{name} \{format_number(v)}")
+            }
+          Some(_) =>
+            raise Runtime("flagged() needs judgments, but '\{name}' is not one")
+          None => raise Runtime("'\{name}' is not defined")
+        }
+      }
+      VStr(parts.join(", "), None)
+    }
     ENot(e) => {
       let v = self.eval(e)
       VBool(!self.truthy(v))
@@ -643,18 +666,17 @@ async fn Interp::eval_match(self : Interp, m : MatchNode) -> Value raise {
   }
   // The gate decides before the arms do: if nothing applies, `else` wins even
   // when `choice` returned a perfectly good-looking option.
+  // A gate only exists over a `choice` subject (see the parser), so the
+  // options are always the choice's own.
   match m.gate_id {
     Some(id) => {
       let options : Array[String] = []
       match m.subject {
-        EJudge(j) if j.kind == "choice" =>
+        EJudge(j) =>
           for o in j.options {
             options.push(self.interpolate(o))
           }
-        _ =>
-          for arm in m.arms {
-            options.push(self.interpolate(arm.0))
-          }
+        _ => ()
       }
       let answer = self.resolve(id, "gate", gate_question(options), options)
       let p = match answer {

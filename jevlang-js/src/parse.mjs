@@ -21,6 +21,7 @@
  *               | 'choice' '(' expr ',' array ')'
  *               | 'score' '(' expr ',' array ')'
  *               | 'conf' '(' ident ')'
+ *               | 'flagged' '(' ident (',' ident)* ')'
  *               | matchExpr
  *               | ident '(' args ')'          -- an effect
  *               | '(' expr ')'
@@ -200,6 +201,22 @@ export function parse(source) {
         expect(")", "')'");
         return { k: "conf", name: target };
       }
+      // `flagged(a, b, c)` renders the ones at or above `threshold flag` as
+      // "a 0.98, c 0.73". It takes bare identifiers rather than expressions
+      // precisely so the NAMES are recoverable -- the whole point is to say
+      // which predicate fired, and an expression has no name.
+      if (name === "flagged") {
+        next();
+        expect("(", "'('");
+        const names = [];
+        while (!at(")")) {
+          names.push(expect("ident", "a variable name").text);
+          if (!eat(",")) break;
+        }
+        expect(")", "')'");
+        if (names.length === 0) fail("flagged() needs at least one variable");
+        return { k: "flagged", names };
+      }
       next();
       if (at("(")) {
         next();
@@ -291,11 +308,18 @@ export function parse(source) {
       eat(",");
     }
     expect("}", "'}'");
-    // An `else` arm needs a way to mean "none of these options applies". The
-    // measured answer (docs/13) is a SEPARATE noul, not an extra choice
-    // option: mixing "(none of these)" into the options costs accuracy on the
-    // hard-but-answerable cases. So the gate gets its own judgment id here.
-    const gateId = fallback === null ? null : nextJudgmentId();
+    // An `else` arm over a `choice` needs a way to mean "none of these options
+    // applies". The measured answer (docs/13) is a SEPARATE noul, not an extra
+    // choice option: mixing "(none of these)" into the options costs accuracy
+    // on the hard-but-answerable cases. So the gate gets its own judgment id.
+    //
+    // Only over a `choice`, though. The gate exists because `choice` always
+    // returns one of its options; matching on a plain string has no closed
+    // world to escape, so a gate there would ask a question about nothing.
+    // That also makes `match` usable as an ordinary string switch, which is
+    // the closest this language has to a conditional expression.
+    const gatedSubject = subject.k === "judge" && subject.kind === "choice";
+    const gateId = fallback === null || !gatedSubject ? null : nextJudgmentId();
     return { k: "match", subject, arms, fallback, gateId };
   }
 
@@ -331,7 +355,7 @@ export function parse(source) {
   // ---- program -------------------------------------------------------
   let state = { k: "obj", entries: [] };
   let sawState = false;
-  const thresholds = { noul: 0.5, gate: 0.5 };
+  const thresholds = { noul: 0.5, gate: 0.5, flag: 0.5 };
   const body = [];
 
   while (!at("eof")) {
@@ -346,7 +370,7 @@ export function parse(source) {
       next();
       const name = expect("ident", "a threshold name").text;
       if (!(name in thresholds)) {
-        fail(`unknown threshold '${name}'; expected 'noul' or 'gate'`);
+        fail(`unknown threshold '${name}'; expected 'noul', 'gate' or 'flag'`);
       }
       expect("=", "'='");
       thresholds[name] = expect("num", "a number").value;

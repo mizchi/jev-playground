@@ -66,8 +66,8 @@ moon run --target native cmd/jevlang -- examples/milk.jev
 moon run --target native cmd/jevlang -- examples/milk.jev --replay examples/transcripts/milk.json
 
 # テスト(どれも API キー不要)
-node jevlang-js/test.mjs                    # 15 件
-moon test --target native -p jevlang        # 22 件
+node jevlang-js/test.mjs                    # 20 件
+moon test --target native -p jevlang        # 27 件
 scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラム)
 ```
 
@@ -99,11 +99,15 @@ scripts/jevlang-conformance.sh              # 2 実装の一致(3 プログラ�
 
 - `state { ... }` — **すべての judgment が見る文脈**。JSON になって 1 リクエストに 1 回乗る。
   変数も judgment も書けない、ただのデータ。
-- `threshold noul = 0.5` / `threshold gate = 0.5`
+- `threshold noul = 0.5` / `threshold gate = 0.5` / `threshold flag = 0.5`
 - `let x = <expr>`、`if <cond> { } else { }`、`match <expr> { "a" => <expr>, else => <expr> }`
 - judgment 3 種: `noul("...")` → 確率、`choice("...", [...])` → 選ばれた文字列、
   `score("...", [...])` → 数値
 - `conf(x)` — `x` を作った judgment の confidence
+- `flagged(a, b, c)` — **`threshold flag` 以上のものだけを「名前 値」で並べる**
+  (`"destructive 0.98, privileged 0.55"`)。**束縛名をそのまま受ける**のが要点で、
+  式を受けると名前が消えてしまう。理由文に「どの述語が撃ったか」を出すための
+  最小の道具で、文字列結合が無いこの言語では他に書く手段がありません(§9)
 - `noul("q", { true: "...", false: "..." })` — 真偽の境界を説明文で締める。
   [14 §3](14-permission-hook.md#3-コーパスでは見つからないバグが出た) の
   「`false` 側の文言が判定を決めた」がこの構文の存在理由です。
@@ -165,11 +169,20 @@ requests = 1 + (実行時の値に依存する judgment の数)
 `Program::request_plan()`(MoonBit)/ `requestPlan(program)`(JS)で、
 走らせる前に「何問バッチに乗るか」を聞けます。
 
-## 3. `else` 腕は gate noul を生やす
+## 3. `choice` に対する `else` 腕は gate noul を生やす
 
 `choice` は必ず選択肢の 1 つを返します([00](00-api-notes.md#closed-world))。
-なので `match` に `else` 腕を書くと、**「どれも当てはまらない」を聞く noul が
-別の質問として増える**。閾値を下回ったら、`choice` が何を返していても `else` に行きます。
+なので `match` の subject が `choice` で `else` 腕があると、
+**「どれも当てはまらない」を聞く noul が別の質問として増える**。
+閾値を下回ったら、`choice` が何を返していても `else` に行きます。
+
+**subject が `choice` でないときは gate を生やしません。** gate が要るのは
+「`choice` が必ず何かを返してしまう」からで、**普通の文字列に閉じた世界の
+問題はありません**。当初は subject を見ずに gate を付けていて、
+`match s { "x" => ... else => ... }` が**何についてでもない質問**を
+1 件投げていました(§9 で気づいて直した)。
+直した副作用として、**`match` が文字列の switch として使えます** ——
+この言語で条件式に一番近いものです。
 
 ここが [13](13-task-picker.md#3-逃げ道は選択肢ではなく別の問いにする) の実測を
 そのまま構文にしたところで、**選択肢に「該当なし」を混ぜる書き方は
@@ -259,6 +272,8 @@ building the MoonBit implementation...
 - **言語として小さい。** 関数定義もループも代入も無い。`let` は再束縛できない。
   上から下に流れる決定木しか書けません。
   judgment を試すにはこれで足りますが、汎用言語ではない。
+- **文字列結合が無い。** `${}` 補間と `flagged()` で足りてはいますが、
+  「撃った述語を並べる」以外の集約(合計、最大、上位 3 件)は書けません。
 - **副作用の設計が緩い。** 未知の識別子呼び出しは全部「ホストの副作用」になるので、
   **タイプミスが静かに副作用として記録されます**(`buyMilik()` は
   エラーにならず `buyMilik` という副作用になる)。
@@ -323,6 +338,55 @@ node hooks/test-gate.mjs --compare-policy    # 実モデルで組み込みと比
 docs/14 §3 で「実運用の形に載せることが最後のテスト」と書いたことが、
 言語自身にも当てはまりました。
 
+### 追記: 理由文に述語の発火を出す
+
+最初のポリシーは**理由文に「どの述語が撃ったか」を出せませんでした**
+(組み込み経路は `Flagged: destructive 0.98, ...` を出す)。
+言語に文字列結合も代入も無いので、素直には書けません。
+
+そこで **`flagged(a, b, c)`** を足しました。`threshold flag` 以上のものだけを
+「名前 値」で並べます。**束縛名を受ける**のが肝で、式を受けると名前が消えます:
+
+```jev
+let fired = flagged(destructive, irreversible, outside_project,
+                    exfiltrates, obfuscated, privileged, affects_others)
+
+let flags = match fired {
+  "" => "No predicate flagged"
+  else => "Flagged: ${fired}"
+}
+
+let why = "permission ${permission}/2 (confidence ${pconf}), blast radius ${blast}/3. ${flags}"
+```
+
+結果は組み込み経路と同じ形になりました:
+
+```
+組み込み: ... blast radius 2.01/3. Flagged: destructive 0.98, irreversible 0.88, outside_project 0.98, affects_others 0.71
+ポリシー: ... blast radius 2.02/3. Flagged: destructive 0.98, irreversible 0.89, outside_project 0.98, affects_others 0.75
+```
+
+そして**ここで §3 の設計バグが出ました。** 1 つも撃たなかったときの言い換えに
+`match fired { "" => ... else => ... }` を使いたかったのですが、
+当初の実装は **subject を見ずに `else` 腕へ gate を付けていた**ので、
+文字列に対する match が「どれも当てはまらないか」という
+**何についてでもない質問**を投げていました。
+gate は subject が `choice` のときだけ生やすよう直し、
+結果として `match` が文字列の switch として使えるようになりました
+(この言語で条件式に一番近いもの)。**追加のリクエストは 0 件**で、
+ポリシーは今も 9 judgment・1 リクエストです。
+
+規則の検証は 16 分岐に増えていて、**理由文の中身も見ています**:
+
+```
+node hooks/test-gate.mjs --policy-logic
+  ok   the reason names the predicates that fired -> deny     want deny
+       permission 1.60/2 (confidence 0.90), blast radius 0/3. Flagged: destructive 0.90, irreversible 0.80, privileged 0.55
+  ok   the reason says so when nothing fired      -> deny     want deny
+       permission 1.60/2 (confidence 0.90), blast radius 0/3. No predicate flagged
+  -> 16/16 branches of the rule behave as specified
+```
+
 そして hook 側の規律は守られています:インタプリタには
 **hook 自身のクライアント**(1 回だけ・ハードタイムアウト・リトライ無し)を
 渡しているので、ポリシーが勝手に寛容なクライアントを使うことはできません。
@@ -350,7 +414,10 @@ docs/14 §3 で「実運用の形に載せることが最後のテスト」と�
 - ~~**[14](14-permission-hook.md) の hook を `.jev` で書く。**~~
   **やった → §9。** 書けたが、`noul` の criteria と state 注入という
   2 つの穴が出た(どちらも追加済み)。
-- **文字列結合か「発火した述語を並べる」組み込み。**
-  §9 のポリシーは理由文に述語の発火状況を出せません
-  (組み込み経路は `Flagged: destructive 0.98, ...` を出す)。
-  言語に `+` が無いのが理由で、ポリシーを実用品にするには要ります。
+- ~~**文字列結合か「発火した述語を並べる」組み込み。**~~
+  **やった → §9。** `flagged()` を足して、理由文が
+  `Flagged: destructive 0.98, irreversible 0.89, ...` を出せるようになりました。
+  `+` は足していません(補間で足りた)。
+- **数値の桁が組み込み経路と違う。** `format_number` は整数を裸で出すので
+  `blast radius 2/3`、組み込みは `toFixed(2)` で `2.00/3`。
+  意味は同じですが、揃えるには `fixed(x, 2)` 相当が要ります。

@@ -20,6 +20,8 @@ state {
 # `permission` は 0..2 の score で、1.5 以上が deny、0.5 以上が ask。
 # 下の 0.5 / 0.7 / 1.5 / 2.5 も同じ理由でここに書いてある(質問を触らずに動かせる)。
 threshold noul = 0.5
+# flagged() が述語を理由文に載せる下限。組み込み経路の `Flagged:` と同じ 0.5。
+threshold flag = 0.5
 
 # --- 原子述語 ---------------------------------------------------------------
 # 「レビュアーが 1 つずつ確かめること」を 1 問ずつ。すべて 1 リクエストに乗る
@@ -93,10 +95,32 @@ let ask_by_atoms = (destructive > 0.5 && (irreversible > 0.5 || outside_project 
 
 let pconf = conf(permission)
 
+# どの述語が撃ったかを理由文に出す。flagged() は閾値以上のものだけを
+# 「名前 値」で並べる(組み込み経路の `Flagged: destructive 0.98, ...` と同じ形)。
+let fired = flagged(
+  destructive,
+  irreversible,
+  outside_project,
+  exfiltrates,
+  obfuscated,
+  privileged,
+  affects_others,
+)
+
+# 1 つも撃たなかったときに「Flagged: 」で終わらないように言い換える。
+# match の腕は式なので、補間した文字列をそのまま返せる。そして subject が
+# choice でない match は gate 質問を生やさないので、追加のリクエストは 0 件。
+let flags = match fired {
+  "" => "No predicate flagged"
+  else => "Flagged: ${fired}"
+}
+
+let why = "permission ${permission}/2 (confidence ${pconf}), blast radius ${blast}/3. ${flags}"
+
 if deny_by_score || deny_by_atoms {
-  deny("permission ${permission}/2 (confidence ${pconf}), blast radius ${blast}/3")
+  deny(why)
 } else if ask_by_score || ask_by_atoms {
-  ask("permission ${permission}/2 (confidence ${pconf}), blast radius ${blast}/3")
+  ask(why)
 } else {
-  defer("permission ${permission}/2 (confidence ${pconf}), blast radius ${blast}/3")
+  defer(why)
 }

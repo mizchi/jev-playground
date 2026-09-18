@@ -18,15 +18,41 @@ import { lex } from "./src/lex.mjs";
 let pass = 0;
 let fail = 0;
 
+const pending = [];
+
+/** Accepts sync or async bodies; async ones are awaited before the summary. */
 function check(name, fn) {
+  const record = (err) => {
+    if (err) {
+      fail += 1;
+      console.log(`  FAIL ${name}: ${err.message}`);
+    } else {
+      pass += 1;
+      console.log(`  ok   ${name}`);
+    }
+  };
   try {
-    fn();
-    pass += 1;
-    console.log(`  ok   ${name}`);
+    const out = fn();
+    if (out && typeof out.then === "function") {
+      pending.push(out.then(() => record(null), record));
+    } else {
+      record(null);
+    }
   } catch (err) {
-    fail += 1;
-    console.log(`  FAIL ${name}: ${err.message}`);
+    record(err);
   }
+}
+
+async function throwsAsync(fn, match) {
+  try {
+    await fn();
+  } catch (err) {
+    if (match && !err.message.includes(match)) {
+      throw new Error(`wrong error: ${err.message}`);
+    }
+    return;
+  }
+  throw new Error("expected a throw");
 }
 
 function eq(actual, expected, what = "") {
@@ -169,6 +195,49 @@ check("empty noul criteria are rejected", () => {
   throws(() => parse('let x = noul("q", { })'), "at least a true or a false");
 });
 
+// `flagged()` is what lets a reason string say WHICH predicate fired. It
+// takes bare names so the names survive into the output, and renders only the
+// ones at or above `threshold flag`.
+check("flagged renders the judgments above the flag threshold", async () => {
+  const p = parse(
+    `threshold flag = 0.6\nlet a = 0.9\nlet b = 0.5\nlet c = 0.7\nsay(flagged(a, b, c))`,
+  );
+  eq(p.thresholds.flag, 0.6, "flag threshold");
+  const result = await new Interpreter(p).run();
+  eq(result.output, ["a 0.90, c 0.70"]);
+});
+
+check("flagged renders nothing when no predicate fires", async () => {
+  const result = await new Interpreter(parse(`let a = 0.1\nsay(flagged(a))`)).run();
+  eq(result.output, [""]);
+});
+
+check("flagged rejects a value that is not a judgment", async () => {
+  await throwsAsync(
+    () => new Interpreter(parse(`let a = "text"\nsay(flagged(a))`)).run(),
+    "flagged() needs judgments",
+  );
+});
+
+// The gate exists because `choice` always returns one of its options. A plain
+// string subject has no closed world to escape, so matching on one must not
+// ask a question about nothing — and that makes `match` usable as an ordinary
+// string switch.
+check("a match over a plain string grows no gate judgment", async () => {
+  const p = parse(`let s = "x"\nlet y = match s { "x" => say("hit") else => say("miss") }`);
+  eq(p.judgmentCount, 0, "judgment count");
+  const result = await new Interpreter(p).run();
+  eq(result.output, ["hit"]);
+  eq(result.requests, 0, "requests");
+});
+
+check("a match over a choice still grows a gate judgment", () => {
+  const p = parse(
+    `let y = match choice("どれ", ["a", "b"]) { "a" => say("a") else => say("none") }`,
+  );
+  eq(p.judgmentCount, 2, "judgment count");
+});
+
 check("a host-supplied state overrides the program's own block", () => {
   const p = parse("state { a: 1, b: 2 }");
   const interp = new Interpreter(p, { state: { b: 99, c: 3 } });
@@ -187,6 +256,7 @@ check("a choice with no options is rejected before it reaches the API", () => {
   throws(() => parse('let x = choice("どれ", [])'), "at least one option");
 });
 
+await Promise.all(pending);
 console.log("");
 console.log(`  ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

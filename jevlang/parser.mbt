@@ -331,6 +331,22 @@ fn Parser::primary(self : Parser) -> Expr raise {
         self.expect_punct(")")
         return EConf(target)
       }
+      if name == "flagged" {
+        self.pos = self.pos + 1
+        self.expect_punct("(")
+        let names : Array[String] = []
+        while !self.at_punct(")") {
+          names.push(self.expect_ident("a variable name"))
+          if !self.eat_punct(",") {
+            break
+          }
+        }
+        self.expect_punct(")")
+        if names.length() == 0 {
+          self.fail("flagged() needs at least one variable")
+        }
+        return EFlagged(names)
+      }
       self.pos = self.pos + 1
       if self.at_punct("(") {
         self.pos = self.pos + 1
@@ -450,12 +466,22 @@ fn Parser::match_expr(self : Parser) -> Expr raise {
     let _ = self.eat_punct(",")
   }
   self.expect_punct("}")
-  // An `else` arm needs a way to say "none of these applies", and docs/13
-  // measured that it belongs in its own noul rather than as an extra choice
-  // option. The id is taken after the arms so the JS implementation numbers
-  // judgments the same way.
+  // An `else` arm over a `choice` needs a way to say "none of these applies",
+  // and docs/13 measured that it belongs in its own noul rather than as an
+  // extra choice option. The id is taken after the arms so the JS
+  // implementation numbers judgments the same way.
+  //
+  // Only over a `choice`, though. The gate exists because `choice` always
+  // returns one of its options; matching on a plain string has no closed
+  // world to escape, so a gate there would ask a question about nothing.
+  // That also makes `match` usable as an ordinary string switch, which is the
+  // closest this language has to a conditional expression.
+  let gated_subject = match subject {
+    EJudge(j) => j.kind == "choice"
+    _ => false
+  }
   let gate_id = match fallback {
-    Some(_) => Some(self.next_judgment_id())
+    Some(_) => if gated_subject { Some(self.next_judgment_id()) } else { None }
     None => None
   }
   EMatch({ subject, arms, fallback, gate_id })
@@ -511,6 +537,7 @@ pub fn parse(source : String) -> Program raise {
   let mut saw_state = false
   let mut noul_threshold = 0.5
   let mut gate_threshold = 0.5
+  let mut flag_threshold = 0.5
   let body : Array[Stmt] = []
   while true {
     match p.peek().tok {
@@ -536,16 +563,25 @@ pub fn parse(source : String) -> Program raise {
         noul_threshold = value
       } else if name == "gate" {
         gate_threshold = value
+      } else if name == "flag" {
+        flag_threshold = value
       } else {
         raise Syntax(
           p.peek().line,
           p.peek().col,
-          "unknown threshold '\{name}'; expected 'noul' or 'gate'",
+          "unknown threshold '\{name}'; expected 'noul', 'gate' or 'flag'",
         )
       }
       continue
     }
     body.push(p.stmt())
   }
-  { state, noul_threshold, gate_threshold, body, judgment_count: p.judgments }
+  {
+    state,
+    noul_threshold,
+    gate_threshold,
+    flag_threshold,
+    body,
+    judgment_count: p.judgments,
+  }
 }

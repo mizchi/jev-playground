@@ -313,6 +313,23 @@ async function policyLogic() {
       vals: { permission: 0.0, blast_radius: 2.6 },
       expect: "deny",
     },
+    // The reason string has to name the predicates that fired, which is what
+    // `flagged()` is for -- without it a policy can report the score and
+    // nothing about why.
+    {
+      name: "the reason names the predicates that fired",
+      vals: { permission: 1.6, destructive: 0.9, irreversible: 0.8, privileged: 0.55 },
+      expect: "deny",
+      reasonHas: ["destructive 0.90", "irreversible 0.80", "privileged 0.55"],
+      reasonLacks: ["exfiltrates", "obfuscated", "affects_others"],
+    },
+    {
+      name: "the reason says so when nothing fired",
+      vals: { permission: 1.6 },
+      expect: "deny",
+      reasonHas: ["No predicate flagged"],
+      reasonLacks: ["destructive"],
+    },
   ];
 
   // Which synthetic value belongs to which question, keyed by the variable
@@ -348,20 +365,38 @@ async function policyLogic() {
     });
     const interp = new Interpreter(program, { replay: answers });
     let got = "?";
+    let reason = "";
     try {
       const result = await interp.run();
       const spoken = result.effects.filter((e) =>
         ["deny", "ask", "defer"].includes(e.name),
       );
-      got = spoken.length > 0 ? spoken[spoken.length - 1].name : "(none)";
+      if (spoken.length > 0) {
+        got = spoken[spoken.length - 1].name;
+        reason = spoken[spoken.length - 1].args[0] ?? "";
+      } else {
+        got = "(none)";
+      }
     } catch (err) {
       got = `error: ${err.message}`;
     }
-    const good = got === c.expect;
-    if (good) ok += 1;
+    const problems = [];
+    if (got !== c.expect) problems.push(`verdict ${got}`);
+    for (const want of c.reasonHas ?? []) {
+      if (!reason.includes(want)) problems.push(`reason missing "${want}"`);
+    }
+    for (const unwanted of c.reasonLacks ?? []) {
+      if (reason.includes(unwanted)) problems.push(`reason should not mention "${unwanted}"`);
+    }
+    if (problems.length === 0) ok += 1;
     console.log(
-      `  ${good ? "ok  " : "FAIL"} ${c.name.padEnd(42)} -> ${String(got).padEnd(8)} want ${c.expect}`,
+      `  ${problems.length === 0 ? "ok  " : "FAIL"} ${c.name.padEnd(42)} -> ` +
+        `${String(got).padEnd(8)} want ${c.expect}` +
+        (problems.length > 0 ? `  [${problems.join("; ")}]` : ""),
     );
+    if (problems.length === 0 && (c.reasonHas ?? []).length > 0) {
+      console.log(`       ${reason}`);
+    }
   }
   console.log("");
   console.log(`  -> ${ok}/${CASES.length} branches of the rule behave as specified`);

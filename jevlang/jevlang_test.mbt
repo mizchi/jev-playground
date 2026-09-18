@@ -222,6 +222,81 @@ test "empty noul criteria are rejected" {
 }
 
 ///|
+/// `flagged()` is what lets a reason string say WHICH predicate fired. It
+/// takes bare names so the names survive into the output, and renders only
+/// the ones at or above `threshold flag`.
+async test "flagged renders the judgments above the flag threshold" {
+  let src =
+    #|threshold flag = 0.6
+    #|let a = 0.9
+    #|let b = 0.5
+    #|let c = 0.7
+    #|say(flagged(a, b, c))
+  let program = @jevlang.parse(src)
+  assert_eq(program.flag_threshold, 0.6)
+  let interp = @jevlang.Interp::new(program)
+  let result = interp.run()
+  assert_eq(result.output.length(), 1)
+  assert_eq(result.output[0], "a 0.90, c 0.70")
+}
+
+///|
+async test "flagged renders nothing when no predicate fires" {
+  let src =
+    #|let a = 0.1
+    #|say(flagged(a))
+  let interp = @jevlang.Interp::new(@jevlang.parse(src))
+  let result = interp.run()
+  assert_eq(result.output[0], "")
+}
+
+///|
+async test "flagged rejects a value that is not a judgment" {
+  let src =
+    #|let a = "text"
+    #|say(flagged(a))
+  let interp = @jevlang.Interp::new(@jevlang.parse(src))
+  let failed = try {
+    let _ = interp.run()
+    false
+  } catch {
+    @jevlang.Runtime(msg) => msg.contains("flagged() needs judgments")
+    _ => false
+  }
+  assert_true(failed)
+}
+
+///|
+/// The gate exists because `choice` always returns one of its options. A
+/// plain string subject has no closed world to escape, so matching on one
+/// must not ask a question about nothing — and that makes `match` usable as
+/// an ordinary string switch.
+async test "a match over a plain string grows no gate judgment" {
+  let src =
+    #|let s = "x"
+    #|let y = match s {
+    #|  "x" => say("hit")
+    #|  else => say("miss")
+    #|}
+  let program = @jevlang.parse(src)
+  assert_eq(program.judgment_count, 0)
+  let interp = @jevlang.Interp::new(program)
+  let result = interp.run()
+  assert_eq(result.output[0], "hit")
+  assert_eq(result.requests, 0)
+}
+
+///|
+test "a match over a choice still grows a gate judgment" {
+  let src =
+    #|let y = match choice("どれ", ["a", "b"]) {
+    #|  "a" => say("a")
+    #|  else => say("none")
+    #|}
+  assert_eq(@jevlang.parse(src).judgment_count, 2)
+}
+
+///|
 test "a host-supplied state overrides the program's own block" {
   let program = @jevlang.parse("state { a: 1, b: 2 }")
   let over : Map[String, Json] = Map([])
