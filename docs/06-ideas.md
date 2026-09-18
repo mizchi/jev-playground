@@ -364,6 +364,9 @@ A は検証して外れ([07](07-escalation.md))、G の判定部分・J・C は�
 | a | **記憶だけの arm と、ゴール文 1 文だけの arm を分けて測る** | [34 §2.4](34-roguelike.md#24-記憶を渡すと探索する却下率と引き換えに) の `jevmemo` は**訪問回数**と**「歩いていないマスを選べ」の 1 文**を同時に足したので、地図化 48 → 152 がどちらの効果か分かっていない。**1 文だけで上がるなら、足したのは記憶ではなく意図**だったことになる。既存の arm 機構に 2 行足すだけで測れる | [34 §2.4](34-roguelike.md#24-記憶を渡すと探索する却下率と引き換えに) |
 | b | **`jevmemo` の却下率 19% の内訳** | 地図の縁で却下されているのか、[34 §1.1](34-roguelike.md#11-一番はっきりした構造-行は読めて列は読めない) の列方向の読み違いで却下されているのか。却下された手の**画面上の位置**は記録に入っているので、リクエスト 0 件で分かる | [34 §2.4](34-roguelike.md#24-記憶を渡すと探索する却下率と引き換えに) |
 | c | **`tension` の `swing` の解像度依存** | [35](35-tension.md) の `standing` は 5 段階。9 段階にして §1 の順位が動くなら、`swing` はゲームではなく**尺度**を測っている | [35](35-tension.md#正直な限界) |
+| d | **逃げ道の閾値を [29](29-skill-select.md) の 1,036 ペアに当てはめる** | [37 §7](37-hermes.md#7-副産物--逃げ道の閾値が答えの塊の真ん中にあった) で `escalateAt` を 0.7 → 0.85 に動かしたが、根拠は**ラベルなしの 8 turn** なので「ノイズ帯から離した」までしか言えない。[29](29-skill-select.md) 側には**正例 135 件(13%)**あるので、そこでは当てはめて held-out で採点できる | [37 §7](37-hermes.md#7-副産物--逃げ道の閾値が答えの塊の真ん中にあった) |
+| e | **orchestration gate の cutoff を framing ごとに当てはめる** | [37 §9](37-hermes.md#9-正直な限界): 厳しい framing だと `needs_more_than_one` は 8 turn 全部で 0.055〜0.446 で、既定の 0.5 を一度も超えない。[31](31-orchestration.md) の 38 シナリオはラベル付きなので、**framing ごとに別の cutoff**を当てはめるのが正しい形 —— [31 §2b](31-orchestration.md) が「厳しい/緩い」と測ったのだから、閾値も共有できないはず | [37 §9](37-hermes.md#9-正直な限界) |
+| f | **union state の形を測る** | [37 §6](37-hermes.md#6-1-リクエストturn--これだけ測る価値があった) が測ったのは「union にした結果」で、**どういう union が良いか**は測っていない。`what` を 1 文にまとめたのも、`cwd` の重複を落としたのも、測って決めたわけではない | [37 §9](37-hermes.md#9-正直な限界) |
 
 ---
 
@@ -371,8 +374,9 @@ A は検証して外れ([07](07-escalation.md))、G の判定部分・J・C は�
 
 | # | 課題 | 何を測ることになるか | 状態 |
 | --- | --- | --- | --- |
-| 10 | **問題に応じてモデルを切り替える model router と、コンテキストに応じてスキルを選ぶ skill router。スタンドアロンで動きつつ pi plugin として使える** | 設計は [36](36-routers.md)、実装は [`packages/`](../packages/)。**ルーティング精度の実測が §5** —— ラベルは「安い段で実際に `node --test` が通ったか」で機械的に取れる | 実測中 |
-| 11 | **jev による memory compaction。実装しながら評価する**([fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction)) | 下記 | 未 |
+| 10 | **問題に応じてモデルを切り替える model router と、コンテキストに応じてスキルを選ぶ skill router。スタンドアロンで動きつつ pi plugin として使える** | 設計は [36](36-routers.md)、実装は [`packages/`](../packages/)。**ルーティング精度の実測が §5** —— ラベルは「安い段で実際に `node --test` が通ったか」で機械的に取れる | ✅ [36](36-routers.md) |
+| 11 | **jev による memory compaction。実装しながら評価する**([fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction)) | 下記。実装は [`jev-compact`](../packages/jev-compact/) で**構造的制約だけ検証済み**、ランキングは未測定 | 実装済・未測定 |
+| 12 | **pi agent 上で 5 つ(model selector / skill selector / guard rail / memory compaction / multi agent orchestrator)を jev で作る。難易度で sonnet/opus と reasoning の深さを切り替える。常駐型の安く動く hermes agent を想定** | [37](37-hermes.md)。**測ったのは「3 つを 1 リクエストに束ねてよいか」** —— 無料ではなかった | ✅ [37](37-hermes.md) |
 
 ### 11 の入口
 

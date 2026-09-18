@@ -1,11 +1,11 @@
-# まとめ — Jev で 33 本作って測って分かったこと
+# まとめ — Jev で 35 本作って測って分かったこと
 
 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)(TypeSafe AI の System One モデル)は
 **文字列ではなく型付きの確率判断を返す**意思決定専用モデルです。
 noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3 種だけ。
 入力 $0.042/MTok・出力無料・レイテンシ 125〜730 ms。
 
-**この速度と価格が何を可能にするのか**を、26 本のレポート(1 本は提案)で測りました。
+**この速度と価格が何を可能にするのか**を、35 本のレポート(1 本は提案)で測りました。
 各レポートは生の数値と再現コマンド付き([索引](README.md))。
 
 ---
@@ -24,6 +24,8 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | **`jev/rule`** | **まだ存在しないルールを自然言語で書く。** ノードセレクタだけコードで書き、違反かどうかは 1 文で聞く | [24](24-adhoc-rules.md) [26](26-repo-rules.md) |
 | **`eslint.rules.mjs`** | **このリポジトリの散文の規約 8 文**。`docs/` にしか書いていない規約を lint ルールにして、自分の JS 9,315 行に当てた(6 文出荷・2 文 retire) | [26](26-repo-rules.md) |
 | **`shared/thresholds.ts`** | **閾値を当てはめる部品。** 最初に返すのは閾値ではなく「当てはめるべきか」(gap の verdict)。置き方は名前で選び、fold を切って採点する | [25](25-thresholds.md) |
+| **`packages/` の 5 つ** | **pi の拡張として動く jev コンポーネント**: model router / skill router / guard rail / 削除だけする compaction / orchestration gate。スタンドアロンの CLI とライブラリも兼ねる(pi を import するファイルは各 1 つ) | [36](36-routers.md) [37](37-hermes.md) |
+| **`jev-hermes`** | **常駐 agent。** 5 つを 1 拡張に束ね、同じ turn を読む 3 つは **1 リクエスト**で聞く。予算台帳を共有し、上限に当たったら全部が host 自身の挙動に落ちる。1,000 turns/day で **$1.32/月** | [37](37-hermes.md) |
 | **`task-filter --penalty`** | **閾値の代わりに損失を最小化する。** 「閉包の秒数 + penalty × P(見逃し)」で、タスクごとの柵がそのタスクの実測コストから出る | [25](25-thresholds.md) |
 
 ### ゲームとエージェントに載せた
