@@ -135,7 +135,15 @@ function reportSeparation(asks: { rows: AskRow[] }, cheapest: Map<string, number
   const rungs = new Set(usable.map(([, v]) => v));
   if (rungs.size < 2) return;
 
+  const positives = usable.filter(([, v]) => (v as number) > 0).length;
   console.log(`\n§3 does the answer separate the tiers?\n`);
+  if (positives < 5) {
+    console.log(
+      `  >> ${positives} of ${usable.length} tasks need more than the cheapest tier.\n` +
+        "     An AUC over one or two positives is that task's draws, not a property of the arm,\n" +
+        "     and the ordering below is not evidence about which arm reads the task better.\n",
+    );
+  }
   console.log("  arm        n   AUC(needs more than the cheapest)   mean score by cheapest tier");
   for (const arm of ARMS) {
     const rows = asks.rows.filter((r) => r.arm === arm && Number.isFinite(r.tier) && cheapest.get(r.task) != null);
@@ -166,7 +174,7 @@ function reportLadder(asks: { rows: AskRow[] }, cheapest: Map<string, number | n
   for (const penalty of [5, 20, 100]) {
     const cost = { failurePenalty: penalty };
     console.log(`  failurePenalty ${penalty}`);
-    console.log("    arm        fitted   held out   always-haiku   always-opus   cuts");
+    console.log("    arm        fitted   held out   always-haiku   always-opus   perfect   cuts");
     for (const arm of ARMS) {
       const samples: LadderSample[] = asks.rows
         .filter((r) => r.arm === arm && Number.isFinite(r.tier) && cheapest.get(r.task) !== undefined)
@@ -174,10 +182,17 @@ function reportLadder(asks: { rows: AskRow[] }, cheapest: Map<string, number | n
       if (samples.length === 0) continue;
       const fit = fitLadder(samples, rungs, cost);
       const cv = crossValidateLadder(samples, rungs, cost, 5, 1);
+      // What an oracle would pay: send every task to the tier that actually
+      // worked. It is the ceiling on what ANY router can buy, and without it
+      // a "fitted beats always-cheap" line says nothing about how much of the
+      // available saving was captured.
+      const perfect =
+        samples.reduce((sum, x) => sum + rungs[x.cheapest ?? rungs.length - 1].price, 0) / samples.length;
       console.log(
         `    ${arm.padEnd(8)} ${fit.cost.toFixed(2).padStart(7)}   ${cv.heldOutCost.toFixed(2).padStart(8)}   ` +
           `${fixedRungCost(0, samples, rungs, cost).toFixed(2).padStart(12)}   ` +
           `${fixedRungCost(TIERS.length - 1, samples, rungs, cost).toFixed(2).padStart(11)}   ` +
+          `${perfect.toFixed(2).padStart(7)}   ` +
           `${fit.cuts.map((c) => c.toFixed(2)).join(", ")}`,
       );
     }
