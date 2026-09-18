@@ -26,6 +26,7 @@ node jevlang-js/bin/jevlang.mjs examples/milk.jev               # 19: jevlang(JS
 moon run --target native cmd/jevlang -- examples/milk.jev       # 19: jevlang(MoonBit 版)
 scripts/jevlang-conformance.sh                                 # 19: 2 実装の一致(API 不要)
 node hooks/test-gate.mjs --policy-logic                        # 18/19: .jev ポリシーの規則(API 不要)
+moon run --target native cmd/jevdsl -- --bundled               # 20: match できるラッパー
 ```
 
 MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)に
@@ -63,6 +64,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **設計判断を構文で強制する** | 閾値を質問文に書く場所を作らない・逃げ道を選択肢に混ぜられなくする | 本リポジトリ | [19](19-jevlang.md#1-言語の形) |
 | **確率的な判断には record/replay** | 無いとテストが書けず、実装差とモデルのばらつきも区別できない | 本リポジトリ | [19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具) |
 | **判定ロジックをコードではなくデータにする** | hook の判定を `.jev` に出して差し替え可能に。規則と理由文の 16 分岐を API 無しで検証 | 本リポジトリ | [18](18-permission-hook.md#6b-判定ロジックを-jev-で書く) |
+| **3 種を `(result, confidence)` に揃える** | `match` の形が同じになり、guard に閾値が書ける。noul は confidence を導出する必要あり | 本リポジトリ | [20](20-jevdsl.md#1-result-confidence-に揃えるとき-noul-だけ困る) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -94,6 +96,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 保守側採用を「安全だから無害」だと思う | 誤った述語の害も増幅する。スコアが allow 0.43 と言っているのを原子述語が deny に引き上げた([18](18-permission-hook.md#3-コーパスでは見つからないバグが出た)) |
 | ゲートに `allow` を返させる | ユーザーが設定した permission ルールを上書き承認してしまう。狭める方向にだけ使う([18](18-permission-hook.md#1-精度より先に決めるべき-3-つの性質)) |
 | 確率的な実行を replay 無しでテストしようとする | 分岐が毎回変わるので期待値が書けず、実装差とモデルのばらつきが区別できない([19](19-jevlang.md#4-record--replay--確率的な言語に必須の道具)) |
+| ラッパーを「1 判断 1 リクエスト」で作る | 同じ 3 判断が 3 リクエスト/1069 トークン 対 束ねて 1/435。束ねる道を最初から用意する([20](20-jevdsl.md#3-1-判断-1-リクエストは既定として間違っている)) |
+| noul の確率をそのまま confidence として使う | `confidence > 0.5` が `result == true` と同義になって guard が無意味になる。コイン投げからの距離にする([20](20-jevdsl.md#1-result-confidence-に揃えるとき-noul-だけ困る)) |
 | 手書きの数値パーサで閾値を読む | `0.6` が 0.6000000000000001 になり、境界で分岐が変わる。小数部は整数で溜めて最後に 1 回割る([19](19-jevlang.md#5-2-実装であることが実際に効いた)) |
 | 逃げ道の gate を subject を見ずに付ける | 文字列の `match` にも「どれも当てはまらないか」を聞いてしまう。gate が要るのは `choice` が必ず何かを返すからで、普通の値に閉じた世界は無い([19](19-jevlang.md#3-choice-に対する-else-腕は-gate-noul-を生やす)) |
 | シナジーの機構を実装せず編成だけ変える | ピールや耐性が効かないと前衛はただの的で raw DPS が勝つ。効果は機構を入れて初めて測れる([11](11-synergy.md#2-チャンピオンに多様性を持たせる)) |
@@ -122,6 +126,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [17](17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか(提案 J の検証) | ✅ |
 | [18](18-permission-hook.md) | Claude Code の `PreToolUse` hook として実装する(提案 C の検証) | ✅ |
 | [19](19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語(JS 版 / MoonBit 版) | ✅ |
+| [20](20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) | 📝 |
 
 ## この探索から見えている一般則
 

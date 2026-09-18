@@ -17,6 +17,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
+| `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
 | `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
 | `jevlang-js/` | jevlang(JS 版)。同じ `.jev` を走らせ、結果の一致をテストしている |
 | `examples/` | `.jev` のサンプルと、API 不要で再現するための transcript |
@@ -151,6 +152,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [17](docs/17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
 | [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
 | [19](docs/19-jevlang.md) | jevlang — 条件が Jev の判断である小さな言語を 2 実装で作る |
+| [20](docs/20-jevdsl.md) | jevdsl — MoonBit から `match` できる薄いラッパー(設計ノート) |
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -194,7 +196,46 @@ TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンド�
 **このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
 Bash がゲートされてしまうので。実測値と設計の理由は [docs/18](docs/18-permission-hook.md)。
 
-## 7. jevlang — 条件が Jev の判断である小さな言語
+## 7. jevdsl — 判断を `match` できる値にする
+
+`lib` は API をそのまま写した生クライアントです。`jevdsl` は判断を
+**`(result, confidence)` のタプル**にして、MoonBit の `match` に直接載せます。
+
+```moonbit
+let jev = @jevdsl.session(client, state)
+
+match jev.noul("家に牛乳がない") {
+  (true, c) if c > 0.5 => buy("牛乳")
+  (true, _) => ask_the_user()
+  (false, _) => ()
+}
+
+match jev.choice("100円余ったときに買うもの", ["プリン", "ビール"]) {
+  (pick, c) if c > 0.5 => buy(pick)
+  (_, _) => ()
+}
+
+match jev.score("急ぎ度", ["待てる", "今日", "今すぐ"]) {
+  (s, c) if s >= 1.5 && c > 0.5 => go_now()
+  (s, _) if s >= 0.5 => go_today()
+  (_, _) => ()
+}
+```
+
+3 種すべて同じ形なので、guard に閾値を書けます。
+`noul` は API が confidence を返さないので**コイン投げからの距離**
+(`|p - 0.5| * 2`)を confidence にしています(生の確率は `probability()`)。
+
+```bash
+moon run --target native cmd/jevdsl --              # 1 判断 1 リクエスト(3 req / 1069 tok)
+moon run --target native cmd/jevdsl -- --bundled    # 3 判断を 1 リクエスト(1 req / 435 tok)
+moon test --target native -p jevdsl                 # 10 件(API 不要)
+```
+
+**複数の判断があるなら `Session::ask` で束ねてください**(アクセサは同じ)。
+設計の理由と限界は [docs/20](docs/20-jevdsl.md)。
+
+## 8. jevlang — 条件が Jev の判断である小さな言語
 
 `if` の条件や `match` の対象が**自然文の確率判断**である DSL です。
 **JS 版**(`jevlang-js/`)と **MoonBit 版**(`jevlang/` + `cmd/jevlang`)の 2 実装があり、
