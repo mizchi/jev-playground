@@ -97,6 +97,62 @@ const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
             generated test waits or races.
 */
 const BUG = new URLSearchParams(location.search).get("bug") || "";
+
+/*
+  `?perf=1` attaches one performance problem to each of four steps, each
+  with a different signature, for docs/28. Which subsystem is at fault is
+  known by construction, so a diagnosis can be graded — and `feedback` is
+  there to be the one that should NOT be prioritised.
+
+    add       200ms of synchronous work on the main thread. Blocks the
+              interaction: a long task the user waits through.
+    checkout  600 forced reflows (write, then read offsetHeight). Cheap
+              per iteration, enormous in layout count.
+    next1     a 300KB fetch awaited before proceeding. Network-bound;
+              the CPU is idle the whole time.
+    feedback  200ms of synchronous work, but deferred past the
+              interaction, on a dead-end page. Shows up in a CPU total
+              and is not what anyone should fix first.
+*/
+const PERF = new URLSearchParams(location.search).get("perf") === "1";
+// `?fixed=add,checkout` turns individual problems back off, which is how
+// docs/28 verifies a diagnosis: apply the fix it named, measure again,
+// and a wrong diagnosis shows up as a number that did not move.
+const FIXED = new Set((new URLSearchParams(location.search).get("fixed") || "").split(",").filter(Boolean));
+const slow = (name) => PERF && !FIXED.has(name);
+
+function burnMainThread(ms) {
+  const until = performance.now() + ms;
+  // A real loop, not a sleep: the point is to occupy the main thread so
+  // it lands in a `longtask` entry.
+  let sink = 0;
+  while (performance.now() < until) sink += Math.sqrt(sink + 1);
+  return sink;
+}
+
+function thrashLayout(times) {
+  const probe = document.getElementById("status");
+  let sink = 0;
+  for (let i = 0; i < times; i += 1) {
+    // Write, then read: each read forces the style and layout the write
+    // just invalidated.
+    probe.style.paddingLeft = (i % 3) + "px";
+    sink += probe.offsetHeight;
+  }
+  probe.style.paddingLeft = "";
+  return sink;
+}
+
+async function fetchBallast() {
+  try {
+    // The body has to be consumed. `await fetch(url)` resolves on the
+    // response HEADERS; leave the body unread and Chrome never finishes
+    // the transfer, so no `Network.loadingFinished` ever arrives and
+    // anything counting in-flight requests waits forever.
+    const res = await fetch("ballast.txt", { cache: "no-store" });
+    await res.arrayBuffer();
+  } catch {}
+}
 const extra = { promo: false, compared: false, newsletter: false, wrapped: false };
 
 function applyPromoCode() { extra.promo = true; render(); }
@@ -216,13 +272,22 @@ function wire() {
     const el = document.getElementById(id);
     if (el) el.addEventListener("click", fn);
   };
-  on("add", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
+  on("add", () => {
+    if (slow("add")) burnMainThread(200);
+    update({ cart: BUG === "cart" ? state.cart : state.cart + 1 });
+  });
   on("add2", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
-  on("checkout", () => go("#/checkout-1"));
+  on("checkout", () => {
+    if (slow("checkout")) thrashLayout(600);
+    go("#/checkout-1");
+  });
   on("empty", () => update({ cart: 0, step: 0 }));
-  on("next1", () => {
+  on("next1", async () => {
     const v = (document.getElementById("email") || {}).value || "";
-    if (v.trim()) { update({ email: v.trim() }); go("#/checkout-2"); }
+    if (!v.trim()) return;
+    if (slow("next1")) await fetchBallast();
+    update({ email: v.trim() });
+    go("#/checkout-2");
   });
   on("next2", () => {
     const v = (document.getElementById("address") || {}).value || "";
@@ -237,6 +302,16 @@ function wire() {
   // The four real branches. Wired by the decoy's own label so the
   // candidate list is byte-identical with and without ?branches=1 — the
   // only difference is whether the click does anything.
+  if (slow("feedback")) {
+    // Deferred past the interaction on purpose: the work is real and the
+    // user never waits for it. docs/28's decoy.
+    for (const b of document.querySelectorAll("#view button[data-decoy]")) {
+      if (b.textContent.trim() === "Send feedback") {
+        b.addEventListener("click", () => setTimeout(() => burnMainThread(200), 0));
+      }
+    }
+  }
+
   if (!BRANCHES) return;
   const onLabel = (label, fn) => {
     for (const b of document.querySelectorAll("#view button[data-decoy]")) {

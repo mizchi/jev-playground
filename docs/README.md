@@ -27,6 +27,14 @@ moon run --target native cmd/moba -- --a jev --b scripted      # 02: 3v3 MOBA
 cd experiments/chess          && npm i && npx tsx src/run.ts   # 03: チェス vs Sonnet 5
 cd experiments/agent-questions && npm i && npx tsx src/run.ts  # 04: エージェントに質問を書かせる
 cd experiments/browser-chaos  && npm i && npx tsx src/run-spa.ts # 05: ブラウザ探索
+cd experiments/browser-chaos  && npx tsx src/check-overlay.ts    # 25: 透明 backdrop の仕掛け(API 不要)
+cd experiments/browser-chaos  && npx tsx src/run-confidence.ts --seeds 4 # 25: confidence フォールバック
+cd experiments/browser-chaos  && npx tsx src/check-coverage.ts   # 26: カバレッジ計測(API 不要)
+cd experiments/browser-chaos  && npx tsx src/check-code-map.ts   # 26: 名前の突き合わせ(API 不要)
+cd experiments/browser-chaos  && npx tsx src/run-coverage.ts --seeds 3 # 26: カバレッジ誘導
+cd experiments/browser-chaos  && npx tsx src/check-bugs.ts       # 27: 仕込んだバグ(API 不要)
+cd experiments/browser-chaos  && npx tsx src/run-testgen.ts      # 27: 自然言語 -> テスト生成
+cd experiments/browser-chaos  && npx tsx src/run-perf.ts --repeat 3 # 28: 計測 -> 診断 -> 検証
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
@@ -103,6 +111,12 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **doc には「何をするか」ではなく「何を守るか」を書く** | 1 行のコメントを書き直して削減 **53.3% → 65.9%**、過剰選択 31/45 → 18/45 | 本リポジトリ | [23 §12.4](23-task-filter.md#124-効いたのは-1-行のコメントだった) |
 | **述語だけ自然言語にして、絞り込みは既存の決定的な仕組みに任せる** | ESLint セレクタでノードを選び、違反かどうかだけ 1 文で聞く。**49 ノード → 7 指摘、自信のある 5 件は 5/5 正解** | 本リポジトリ | [24](24-adhoc-rules.md#結論先に) |
 | **読むのは閾値ではなく gap(違反と残りの点数差)** | gap が広ければ閾値はどこでも同じ答え。**狭いのは閾値ではなく質問の問題**で、校正では直らない | 本リポジトリ | [24](24-adhoc-rules.md#1-読むのは閾値ではなく-gap) |
+| **決定的に判定できることは選択肢から消す** | ジオメトリで押せない候補を外す。無駄手 **12/12 を 100% 検出**、モデル呼び出し 0、トークン −13% | 本リポジトリ | [25](25-confidence-fallback.md#5-効いたのはモデルに聞かないほうだった) |
+| **同じ事実でも、置き場所で効果が変わる** | 未実行の関数名を state の配列からゴール文に移すだけで分岐 **3/12 → 11/12**。名前の集合は同一 | 本リポジトリ | [26](26-coverage-guidance.md#結論先に) |
+| **実行可能性は候補に、望ましさはゴールに** | 「効かない」は選択肢を消せる。「やる価値がある」はゴールと競合するので、ゴールを書き換えないと勝てない | 本リポジトリ | [26](26-coverage-guidance.md#5-なぜ場所で決まるのか) |
+| **assertion の候補はコードで抽出し、どれが「結果」かだけ聞く** | 前後の差分だけを候補にする。初期状態 4 件は **0.00 で落ちた**。捕まえたバグ 1 → 2 | 本リポジトリ | [27](27-nl-test-generation.md#1-何を分担させたか) |
+| **注記の散文は指標として扱える** | 「転送中はメインスレッドが空いている」を「ユーザーは壁時計を待ち切る」に直すだけで、推薦の実測価値が **188ms → 1,664ms** | 本リポジトリ | [28](28-perf-automation.md#結論先に) |
+| **再計測しないと機会損失が見えない** | 8% 速くして「当たり」に見えた診断の隣に 71% があった | 本リポジトリ | [28](28-perf-automation.md#6-輪を閉じたから分かったこと) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -119,6 +133,11 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | エージェントに質問を書かせて評価しない | 同じプロンプトで 10/24〜23/24 に振れる([04](04-agent-built-prompts.md#1-結果-書かせたままでは当たらないばらつきが巨大)) |
 | score の閾値を分布を見ずに決める | rubric が実際に出す値と噛み合わず全部下位に落ちる([04](04-agent-built-prompts.md#2-原因は設計ではなく閾値だった)) |
 | driver の候補一覧をステップ毎に作り直さない | SPA では 2 手目以降が古い候補から選ぶ([05](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない)) |
+| confidence を無駄手の検出器に使う | 無駄手 13 件のうち 12 件が **0.99 以上**。低い手は「正しいが手応えのない手」だった([25](25-confidence-fallback.md#4-校正-confidence-は何を測っていたのか)) |
+| `takePreciseCoverage` を 1 発で全体像として読む | 未カバーは時間とともに消え、カウンタは毎 take リセットされる([26](26-coverage-guidance.md#2-計測側で-3-回転んだどれももっともらしい出力を出す)) |
+| 解決しないセレクタで「効果なし」を数える | 押せないボタンが「効かないボタン」に化ける。実験は失敗せず**きれいな結果**を返す([26 §2.3](26-coverage-guidance.md#23-セレクタが-1-つも当たっていなかったこれが一番痛い)) |
+| 生成したテストを「生成できた」で評価する | クリック列 + 最終 URL は、注文を記録しないアプリに対して緑のまま通る([27](27-nl-test-generation.md#結論先に)) |
+| 固定の待ち時間でステップの費用を測る | `async` なハンドラは待たれないので、300KB の fetch が 20ms の無料ステップに見える([28](28-perf-automation.md#2-計測を-3-回直した)) |
 | ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 複数の noul を平均してゲートにする | 信号を持つ 1 問が薄まる。単独のほうが強いことがある([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 閾値の境界に乗った決定をそのまま採る | 些細な入力差で pass/block が入れ替わる。境界帯は人間へ([09](09-guardrails.md#3-cookbook-の-15-ケースの再現)) |
@@ -194,6 +213,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [22](22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞く + 穴の深さ(追記:保留セットの作り直しと leave-one-criterion-out) | ✅ |
 | [23](23-task-filter.md) | タスク/テストランナーの filter(`just` の依存グラフ + タスクごとの `score`) | ✅ |
 | [24](24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 | ✅ |
+| [25](25-confidence-fallback.md) | confidence が低いときのフォールバック — と、confidence では拾えない失敗 | ✅ |
+| [26](26-coverage-guidance.md) | カバレッジ誘導 — 同じ事実を state に置くかゴールに置くか | ✅ |
+| [27](27-nl-test-generation.md) | 1 文から Playwright spec を生成し、ミューテーションで採点する | ✅ |
+| [28](28-perf-automation.md) | 計測 → 診断 → 適用 → 再計測([lightbringer](https://github.com/mizchi/lightbringer) の手法を借用) | ✅ |
 
 ## この探索から見えている一般則
 
