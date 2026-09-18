@@ -121,13 +121,30 @@ redacted and may contain secrets.
 
 ## Limits
 
-- **`loadAt: 2.5` is not fitted to your catalogue.** It is a strict default;
-  [docs/25](../../docs/25-thresholds.md) is a whole report on why a cutoff belongs to
-  a corpus. `experiments/router` fits it on docs/29's labelled pairs.
-- **`noneAt: 0.8` looks too strict already.** "What is the capital of France" against
-  68 skills returned 0.62 — the escape hatch did not fire and the cutoff caught it
-  instead. Two mechanisms independently doing the job is fine; a threshold that never
-  fires is still a threshold worth measuring.
+- **`loadAt: 2.5` is fitted, but to one catalogue.**
+  [docs/29 §10](../../docs/29-skill-select.md) ran this pipeline over a
+  (cutoff, cap) grid on 1,008 judged pairs from 14 projects, folds cut along
+  projects: at the shipped cap of 3, 2.5 gives the best precision in the grid
+  (0.844, against 0.771 for 2.0 and 0.750 for 1.5). 14 projects is small and
+  [docs/25](../../docs/25-thresholds.md) is a whole report on a cutoff
+  belonging to a corpus.
+- **Do not fit `loadAt` without `maxLoad`.** Fitting the cutoff on its own
+  moves it to 1.39 and is *strictly worse* through the pipeline — identical
+  recall (0.252), precision 0.844 → 0.750 — because the cap is already
+  binding, so a lower cutoff admits no extra wanted skill, only extra junk
+  into the same three places. The component's own held-out balanced accuracy
+  nonetheless says 1.39 beats 2.50.
+- **`noneAt: 0.8` is unfitted and probably not worth its question.**
+  docs/29 §10: of 14 projects exactly one (`bare-repo`) is a context no judged
+  skill is for, and the free substitute — "nothing cleared `loadAt`" — picks
+  out that same project at no extra question. One positive cannot place a
+  cutoff. The hatch's *shape* is measured
+  ([docs/17 §3](../../docs/17-task-picker.md): 18/18 against 16/18 as an extra
+  level), so it stays; its value is not.
+- **Recall is about a quarter, and the cutoff is not why.** 47 of 107 wanted
+  skills score below 0.5. Where the score is high it is usually right (36 vs 9
+  in the top band); most wanted skills never get a high score. No threshold
+  moves that.
 - **The prefilter's stop list is ported verbatim** from the code the 85% was measured
   with. A shorter or longer list is a different prefilter and needs its own number.
 - **Precision on a real catalogue is low in absolute terms.** docs/30's best arm

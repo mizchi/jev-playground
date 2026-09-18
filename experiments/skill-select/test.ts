@@ -10,7 +10,15 @@
  * names a project may write down are exempted by name, and the exemption is
  * checked in both directions so it cannot quietly grow.
  */
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { candidatePaths, frontmatterDescription, loadSnapshot, parseCatalog } from "./src/catalog.js";
+import {
+  DEFAULT_SKILL_CONFIG,
+  selectFrom,
+  type Pick,
+  type Skill,
+} from "../../packages/jev-skill-router/src/route.js";
 import { ARMS, WIDTH, batches, keyFor, payloadOf, questionFor, singleQuestion, stateFor } from "./src/arms.js";
 import { averagePrecision, precisionAtK, recallAtK, worstPositiveRank } from "./src/metrics.js";
 import {
@@ -354,6 +362,95 @@ check("the baseline is not already perfect", () => {
     if (averagePrecision(scored) < 0.999) anyMiss = true;
   }
   ok(anyMiss, "the lexical baseline solves every project, so there is nothing to measure");
+});
+
+// ---------------------------------------------------- the fitted configuration
+
+check("the router's shipped loadAt is the best cutoff at its shipped cap", () => {
+  // `DEFAULT_SKILL_CONFIG.loadAt` and `maxLoad` are two numbers in a package,
+  // and docs/29 §8 fitted them jointly against this record. Nothing else
+  // connects the two, so this re-derives the claim from the raw rows: at the
+  // shipped cap, no other cutoff in the grid gives better precision.
+  const record = resolve(import.meta.dirname, "records/select.json");
+  if (!existsSync(record)) return;
+  const rows = (JSON.parse(readFileSync(record, "utf8")) as {
+    project: string;
+    arm: string;
+    skill: string;
+    value: number;
+    confidence: number;
+  }[]).filter((r) => r.arm === "fanout");
+  const snapshot = loadSnapshot();
+  // The catalogue's T0 tier is routed `always` and never judged, so scoring
+  // judgment on it would credit a decision that was never asked for.
+  const always = new Set(snapshot.rows.filter((r) => r.tier === "T0" && r.description).map((r) => r.skill));
+  const label = new Map<string, string>();
+  for (const project of PROJECTS) {
+    for (const c of candidates(snapshot, project)) label.set(`${project.id}:${c.skill}`, c.label);
+  }
+  const judged = rows.filter((r) => label.has(`${r.project}:${r.skill}`) && !always.has(r.skill));
+  const projects = [...new Set(judged.map((r) => r.project))];
+
+  const through = (loadAt: number, maxLoad: number): { precision: number; recall: number } => {
+    let tp = 0;
+    let fp = 0;
+    let fn = 0;
+    for (const project of projects) {
+      const picks: Pick[] = judged
+        .filter((r) => r.project === project)
+        .map((r) => ({
+          skill: { name: r.skill, description: "", route: "judge", invocable: true } as Skill,
+          level: r.value,
+          confidence: r.confidence,
+          why: "judged" as const,
+        }));
+      const names = new Set(
+        selectFrom(picks, Number.NaN, { ...DEFAULT_SKILL_CONFIG, loadAt, maxLoad }).load.map((x) => x.skill.name),
+      );
+      for (const pick of picks) {
+        const positive = label.get(`${project}:${pick.skill.name}`) === "want";
+        if (names.has(pick.skill.name) && positive) tp += 1;
+        else if (names.has(pick.skill.name)) fp += 1;
+        else if (positive) fn += 1;
+      }
+    }
+    return { precision: tp / (tp + fp), recall: tp / (tp + fn) };
+  };
+
+  const shipped = through(DEFAULT_SKILL_CONFIG.loadAt, DEFAULT_SKILL_CONFIG.maxLoad);
+  for (const other of [1.5, 2.0, 2.8]) {
+    const got = through(other, DEFAULT_SKILL_CONFIG.maxLoad);
+    ok(
+      got.precision <= shipped.precision + 1e-9,
+      `loadAt ${other} beats the shipped ${DEFAULT_SKILL_CONFIG.loadAt} on precision ` +
+        `(${got.precision.toFixed(3)} vs ${shipped.precision.toFixed(3)})`,
+    );
+  }
+  ok(shipped.precision > 0.8, `the shipped config's precision fell to ${shipped.precision.toFixed(3)}`);
+
+  // And the trap: a lower cutoff buys NO recall at this cap, because the cap
+  // is what decides how many get in. If this ever stops holding, the joint
+  // fit needs redoing rather than the comment adjusting.
+  const lower = through(1.5, DEFAULT_SKILL_CONFIG.maxLoad);
+  eq(
+    lower.recall.toFixed(3),
+    shipped.recall.toFixed(3),
+    "a lower cutoff now changes recall, so the cap is no longer binding: ",
+  );
+});
+
+check("exactly one project is a genuine escape-hatch case", () => {
+  // docs/29 §8: `bare-repo` wants nothing among the JUDGED skills -- its two
+  // wanted skills are both T0, which the catalogue routes `always`. One
+  // positive is why `noneAt` is unfitted, and this asserts the one rather
+  // than letting it drift silently to zero or three.
+  const snapshot = loadSnapshot();
+  const always = new Set(snapshot.rows.filter((r) => r.tier === "T0" && r.description).map((r) => r.skill));
+  const hatch = PROJECTS.filter((p) =>
+    candidates(snapshot, p).every((c) => c.label !== "want" || always.has(c.skill)),
+  );
+  eq(hatch.length, 1, "the number of no-skill-applies projects changed: ");
+  eq(hatch[0].id, "bare-repo");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

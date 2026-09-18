@@ -34,19 +34,47 @@ export interface SkillRouterConfig {
    * measured P@12 dropping from 0.25 to 0.19 as k grew, over the same
    * answers. Loading everything that scores well is how a context window
    * fills with things nobody asked for.
+   *
+   * docs/29 §8's grid reproduces it on this pipeline -- at `loadAt` 2.5 the
+   * cap takes precision 0.844 -> 0.750 -> 0.778 and recall 0.252 -> 0.280 ->
+   * 0.327 as it goes 3 -> 5 -> 10. And at a cap of 1 every cutoff in the grid
+   * gives the same answer, because then the cap alone decides.
    */
   maxLoad: number;
   /**
    * A skill is loaded at or above this level. The levels are 0..3, so 2.5
    * sits between "fits, but unasked" and "needed now".
    *
-   * Not fitted here. docs/25's whole lesson is that a cutoff belongs to a
-   * corpus, and this default was chosen to be strict rather than measured on
-   * anyone's catalogue -- `experiments/router` fits it on docs/29's labelled
-   * pairs and the README says which number that produced.
+   * FITTED, and it came back where it started. docs/29 §8 ran the shipped
+   * `selectFrom` over a (cutoff, cap) grid on 1,008 judged pairs from 14
+   * projects, folds cut along projects. At the shipped cap of 3, 2.5 gives
+   * the best precision of the grid (0.844); 2.0 gives 0.771 and 1.5 gives
+   * 0.750.
+   *
+   * The reason to keep reading: fitting this cutoff ON ITS OWN moves it to
+   * 1.39 and is STRICTLY WORSE through the pipeline -- identical recall
+   * (0.252) and precision 0.844 -> 0.750. The cap is already binding, so a
+   * lower cutoff cannot admit more wanted skills, only more unwanted ones
+   * into the same three places. Its held-out balanced accuracy nonetheless
+   * says 1.39 beats 2.50, cross-validated and everything. `maxLoad` and this
+   * number have to be fitted together or not at all.
    */
   loadAt: number;
-  /** Above this, the escape noul suppresses every load. */
+  /**
+   * Above this, the escape noul suppresses every load.
+   *
+   * NOT fitted, and docs/29 §8 says why in a way worth keeping: of its 14
+   * projects exactly ONE (`bare-repo`, a repository where nothing is decided
+   * yet) is a context no judged skill is for. One positive cannot place a
+   * cutoff -- and the free substitute, "no skill cleared `loadAt`", picks out
+   * that same project at no extra question.
+   *
+   * So on the only corpus available the hatch buys nothing over reading the
+   * scores. It stays because docs/17 §3 measured the SHAPE (a hatch belongs
+   * in its own question: 18/18 against 16/18 as an extra level), and because
+   * a catalogue with more contexts nothing is for would need it. The default
+   * is deliberately timid.
+   */
   noneAt: number;
   prefilter: Prefilter;
   timeoutMs: number;

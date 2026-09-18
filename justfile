@@ -257,6 +257,12 @@ test-skill-select: install-skill-select
 replay-skill-select: install-skill-select
     npm --prefix experiments/skill-select run demo
 
+# @inputs: experiments/skill-select/** experiments/shared/** packages/**
+# @cost: 1.2
+# Fit the skill router's loadAt through the shipped pipeline (docs/29 §8). No API key.
+fit-skill-select: install-skill-select
+    npm --prefix experiments/skill-select run fit
+
 # @inputs: experiments/skill-pick/** experiments/skill-select/** experiments/shared/**
 # @cost: 0.5
 # Check the roster join, the prefilter tie-break, and that no label reaches a payload
@@ -465,5 +471,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes check-links
     @echo "all green"
