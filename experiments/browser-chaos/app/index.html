@@ -68,6 +68,22 @@
 const KEY = "chaos-target-progress";
 const blank = { cart: 0, email: "", address: "", step: 0, ordered: false };
 
+/*
+  `?branches=1` makes four of the decoys real. Each is a NAMED function
+  that changes internal state and the status line but never the hash, so
+  it is invisible to novelty measured over URLs — which is what both
+  chaosbringer's crawler and the pickers in docs/05 use. V8 coverage can
+  see them, which is the whole question docs/26 asks. Off by default so
+  the numbers in docs/05 keep reproducing.
+*/
+const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
+const extra = { promo: false, compared: false, newsletter: false, wrapped: false };
+
+function applyPromoCode() { extra.promo = true; render(); }
+function compareSelected() { extra.compared = true; render(); }
+function subscribeToNewsletter() { extra.newsletter = !extra.newsletter; render(); }
+function addGiftWrap() { extra.wrapped = true; render(); }
+
 function load() {
   try { return { ...blank, ...JSON.parse(sessionStorage.getItem(KEY) || "{}") }; }
   catch { return { ...blank }; }
@@ -160,7 +176,11 @@ function render() {
   if (window.__visited[window.__visited.length - 1] !== hash) window.__visited.push(hash);
   document.getElementById("status").textContent =
     `cart=${state.cart} email=${state.email ? "set" : "empty"} ` +
-    `address=${state.address ? "set" : "empty"} ordered=${state.ordered}`;
+    `address=${state.address ? "set" : "empty"} ordered=${state.ordered}` +
+    (BRANCHES
+      ? ` promo=${extra.promo} compared=${extra.compared}` +
+        ` newsletter=${extra.newsletter} giftwrap=${extra.wrapped}`
+      : "");
   wire();
 }
 
@@ -188,6 +208,20 @@ function wire() {
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));
   on("wipe", () => { state = { ...blank }; save(state); go("#/home"); });
+
+  // The four real branches. Wired by the decoy's own label so the
+  // candidate list is byte-identical with and without ?branches=1 — the
+  // only difference is whether the click does anything.
+  if (!BRANCHES) return;
+  const onLabel = (label, fn) => {
+    for (const b of document.querySelectorAll("#view button[data-decoy]")) {
+      if (b.textContent.trim() === label) b.addEventListener("click", fn);
+    }
+  };
+  onLabel("Apply promo code", applyPromoCode);
+  onLabel("Compare selected", compareSelected);
+  onLabel("Subscribe to newsletter", subscribeToNewsletter);
+  onLabel("Add gift wrap", addGiftWrap);
 }
 
 // `?overlay=1` arms the invisible-backdrop bug. Default off, so the

@@ -87,6 +87,36 @@ async function main() {
         check(add.facts.coveredBy === undefined, "geometry reports nothing covering it");
         check(notableFacts(add) === null, "no notable facts to send", String(notableFacts(add)));
         check(screen.overlays.length === 0, "no overlays", JSON.stringify(screen.overlays));
+
+        // Every candidate's selector has to resolve to the element it
+        // described. The decoys carry no id, and the selector they used
+        // to get (`button:nth-of-type(n)` off a document-wide counter)
+        // matched nothing at all — so every decoy click timed out and was
+        // recorded as "this control does nothing". Same class of mistake
+        // as docs/05 §3: a broken effect signal reads as a real result.
+        let unresolved: string[] = [];
+        for (const c of candidates) {
+          const n = await page.locator(c.selector).count();
+          if (n !== 1) unresolved.push(`${c.description} -> ${c.selector} (${n} matches)`);
+        }
+        check(
+          unresolved.length === 0,
+          `all ${candidates.length} candidate selectors resolve to exactly one element`,
+          unresolved.slice(0, 3).join(" | "),
+        );
+
+        // And a decoy click has to actually reach the button.
+        const decoy = candidates.find((c) => c.description.includes("Compare selected"));
+        check(decoy !== undefined, "a decoy button is a candidate");
+        if (decoy) {
+          let clickErr = "";
+          try {
+            await page.locator(decoy.selector).first().click({ timeout: 1200 });
+          } catch (err) {
+            clickErr = (err instanceof Error ? err.message : String(err)).split("\n")[0] ?? "";
+          }
+          check(clickErr === "", "and clicking it does not time out", clickErr.slice(0, 80));
+        }
       }
       await ctx.close();
     }

@@ -73,6 +73,12 @@ export interface Probe {
  * exist in the page. Same reason as `spa-bench.ts`.
  */
 const PROBE = `(() => {
+  // Clear last step's stamps first. An element that persists but is
+  // skipped this step (zero-sized, hidden) would otherwise keep an index
+  // that this step hands to a different element.
+  for (const old of Array.from(document.querySelectorAll("[data-probe-idx]"))) {
+    old.removeAttribute("data-probe-idx");
+  }
   const nodes = document.querySelectorAll("a[href], button, input, textarea, select");
   const out = [];
   const empty = [];
@@ -84,7 +90,19 @@ const PROBE = `(() => {
     const tag = el.tagName.toLowerCase();
     const isField = tag === "input" || tag === "textarea" || tag === "select";
     const id = el.id;
-    const selector = id ? "#" + id : tag + ":nth-of-type(" + n + ")";
+    // Stamped, not derived. The obvious construction --
+    // \`tag + ":nth-of-type(" + n + ")"\` with n counting visible nodes
+    // across the whole document -- is wrong, because :nth-of-type counts
+    // among siblings of that type under one parent. It happens to address
+    // the nav links correctly (ten <a> siblings, scanned first) and to
+    // address nothing at all for a <button> inside #view, which is every
+    // decoy on the page. A locator that matches nothing is invisible:
+    // \`.first()\` on it just times out and the step is recorded as
+    // "changed nothing", indistinguishable from a control that genuinely
+    // does nothing. Stamping an attribute is unambiguous, and the probe
+    // re-stamps every step so the index cannot go stale.
+    el.setAttribute("data-probe-idx", String(n - 1));
+    const selector = '[data-probe-idx="' + (n - 1) + '"]';
     const labelEl = id ? document.querySelector('label[for="' + id + '"]') : null;
     const name = (el.getAttribute("aria-label") || el.innerText || (labelEl ? labelEl.textContent : "")
       || el.placeholder || id || "").trim().slice(0, 60);

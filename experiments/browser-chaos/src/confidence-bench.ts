@@ -163,6 +163,16 @@ function blocked(c: ProbedCandidate): boolean {
   return !c.facts.enabled || c.facts.inert || c.facts.coveredBy !== undefined;
 }
 
+/**
+ * A note to attach to one candidate, or `null` for "nothing worth the
+ * tokens". docs/25 attaches the geometry this way and docs/26 the
+ * never-executed code; both are the same move — put the fact next to the
+ * choice it bears on, rather than in a list somewhere else in the state.
+ */
+export type Annotate = (c: ProbedCandidate) => string | null;
+
+const NO_NOTES: Annotate = () => null;
+
 interface AskContext {
   goal: string;
   hash: string;
@@ -175,6 +185,12 @@ interface AskContext {
   lastError?: string;
   noEffectStreak: number;
   inert: string[];
+  /**
+   * Anything the caller wants in the state on top of the above, merged in
+   * as-is. docs/26 uses it for the never-executed function names; it is
+   * deliberately opaque here so a new hint does not need a new field.
+   */
+  extra?: Record<string, unknown>;
 }
 
 /**
@@ -186,11 +202,11 @@ async function ask(
   jev: Jev,
   offered: ProbedCandidate[],
   ctx: AskContext,
-  withFacts: boolean,
+  annotate: Annotate,
 ): Promise<{ index: number; confidence: number; undo: number }> {
   const criteria: Record<string, string> = {};
   for (const c of offered) {
-    const note = withFacts ? notableFacts(c) : null;
+    const note = annotate(c);
     criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
   }
   const questions: Record<string, Question> = {
@@ -215,6 +231,7 @@ async function ask(
     },
   };
   const state = {
+    ...ctx.extra,
     goal: ctx.goal,
     current_url: ctx.hash,
     screen: ctx.screenText,
@@ -228,7 +245,7 @@ async function ask(
     actions_with_no_effect_in_a_row: ctx.noEffectStreak,
     controls_already_tried_here_with_no_effect: ctx.inert,
     candidates: offered.map((c) => {
-      const note = withFacts ? notableFacts(c) : null;
+      const note = annotate(c);
       return note
         ? { index: c.index, description: c.description, state: note }
         : { index: c.index, description: c.description };
@@ -249,18 +266,47 @@ export interface RunOptions {
   steps: number;
   policy: Policy;
   jev: Jev;
-  goal: string;
+  /**
+   * What the run is for. A supplier when the goal itself depends on what
+   * has happened — docs/26's `in-goal` arm rewrites it each step from the
+   * coverage so far. Resolved after `extraState`, so a supplier can read
+   * whatever that just refreshed.
+   */
+  goal: string | (() => string);
   goalState: string;
   /** Checkout states in order, for the depth metric. */
   flow: string[];
   seed: number;
   trace?: (line: string) => void;
+  /**
+   * Called before each step; whatever it returns is merged into the
+   * state. Return `{}` for the arm that should not see the hint — the two
+   * arms then differ by one key and nothing else.
+   */
+  extraState?: () => Promise<Record<string, unknown>>;
+  /** Called after each action, for callers that keep their own tallies. */
+  afterStep?: (log: StepLog) => Promise<void> | void;
+  /** Stop early when this returns true (default: on reaching goalState). */
+  done?: (seen: ReadonlySet<string>) => boolean;
+  /**
+   * Skip the initial `goto`, because the caller has already loaded the
+   * page and needs the document kept. docs/26 needs this: a
+   * cross-document navigation restarts V8 coverage, and the function
+   * inventory has to be taken before anything else runs scripts.
+   */
+  alreadyLoaded?: boolean;
+  /**
+   * Overrides what gets attached to each candidate. Defaults to the
+   * geometry for the probe policies and to nothing otherwise.
+   */
+  annotate?: Annotate;
 }
 
 export async function runPolicy(opts: RunOptions): Promise<RunResult> {
   const { page, baseUrl, steps, policy, jev, goal, goalState, flow, seed, trace } = opts;
+  const { extraState, afterStep, done } = opts;
   const rnd = mulberry32(seed);
-  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  if (!opts.alreadyLoaded) await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
 
   const hashOf = (u: string) => (u.includes("#") ? u.slice(u.indexOf("#")) : "#/home");
   const seen = new Set<string>([hashOf(page.url())]);
@@ -294,8 +340,11 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
     const hash = hashOf(page.url());
     const depthBefore = depthOf();
 
+    // Order matters: the goal supplier may read state that `extraState`
+    // has just refreshed.
+    const extra = extraState ? await extraState() : undefined;
     const ctx: AskContext = {
-      goal,
+      goal: typeof goal === "function" ? goal() : goal,
       hash,
       step,
       seen: [...seen],
@@ -306,6 +355,7 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       lastError,
       noEffectStreak,
       inert: [...inert],
+      extra,
     };
 
     // What the policy is willing to offer. Only `probe-prune` narrows it,
@@ -318,7 +368,13 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       if (live.length >= 1) offered = live;
     }
 
-    let answer = await ask(jev, offered, ctx, policy.mode === "probe-prune");
+    // What this arm attaches to each candidate on the first ask. The
+    // pruning arm sends the geometry it used to prune, so its advantage
+    // is not "a shorter list" plus "a secret"; the retry arm sends
+    // nothing until it escalates.
+    const annotate: Annotate =
+      opts.annotate ?? (policy.mode === "probe-prune" ? notableFacts : NO_NOTES);
+    let answer = await ask(jev, offered, ctx, annotate);
     let fellBack = false;
     let retryConfidence: number | undefined;
 
@@ -329,7 +385,7 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       answer = { index: alt.index, confidence: answer.confidence, undo: 0 };
     } else if (lowConfidence && policy.mode === "probe-retry") {
       fellBack = true;
-      const second = await ask(jev, offered, ctx, true);
+      const second = await ask(jev, offered, ctx, notableFacts);
       retryConfidence = second.confidence;
       answer = second;
     }
@@ -353,7 +409,7 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
     }
     seen.add(hashOf(page.url()));
 
-    log.push({
+    const row: StepLog = {
       step,
       hash,
       offered: offered.length,
@@ -365,7 +421,9 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       advanced: depthOf() > depthBefore,
       error: outcome.error,
       wasBlocked,
-    });
+    };
+    log.push(row);
+    await afterStep?.(row);
     trace?.(
       `${hash} step=${step} n=${offered.length} pick=@${answer.confidence.toFixed(2)}` +
         `${fellBack ? `->${policy.mode}${retryConfidence !== undefined ? `@${retryConfidence.toFixed(2)}` : ""}` : ""} ` +
@@ -377,7 +435,7 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
     lastHadEffect = hadEffect;
     lastError = outcome.error;
     noEffectStreak = hadEffect ? 0 : noEffectStreak + 1;
-    if (seen.has(goalState)) break;
+    if (done ? done(seen) : seen.has(goalState)) break;
   }
 
   return { states: [...seen], picks, reachedGoal: seen.has(goalState), wastedSteps: wasted, log };
