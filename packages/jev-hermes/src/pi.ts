@@ -30,7 +30,12 @@
  * when the turn request has long since returned. Folding it in would trade
  * the one property that makes it usable for a round trip it cannot save.
  */
-import type { ExtensionAPI, ExtensionContext, ToolCallEventResult } from "@earendil-works/pi-coding-agent";
+import type {
+  BuildSystemPromptOptions,
+  ExtensionAPI,
+  ExtensionContext,
+  ToolCallEventResult,
+} from "@earendil-works/pi-coding-agent";
 import { readFileSync } from "node:fs";
 import { Jev, scoreOf } from "@jev-playground/jev-core";
 import {
@@ -155,26 +160,29 @@ export default function hermes(pi: ExtensionAPI): void {
   /**
    * The skills Pi discovered, with this session's routing applied.
    *
-   * Read through a narrow shape rather than Pi's own type, for the same
-   * reason `jev-skill-router` does: a change in the resource model should be
-   * one compile error here rather than a silently dropped permission flag.
+   * Read off `before_agent_start`'s `systemPromptOptions`, which is the only
+   * place pi 0.85.1 offers them. This originally read `ctx.resources.skills`,
+   * which does not exist on `ExtensionContext` at all -- so the catalogue was
+   * empty on every turn and the skill router never ran. docs/38 §3 found it
+   * by running the extension inside a real pi session and noticing that
+   * `skills: []` came back even for a request written to match a catalogued
+   * skill exactly.
+   *
+   * Note `filePath`: pi's `Skill` has no `path`, and the old reader asked for
+   * one, so even a populated catalogue would have loaded nothing.
    */
-  function catalogue(ctx: ExtensionContext): Skill[] {
-    const resources = (ctx as unknown as { resources?: { skills?: unknown[] } }).resources;
-    const raw = Array.isArray(resources?.skills) ? resources.skills : [];
+  function catalogue(options: BuildSystemPromptOptions | undefined): Skill[] {
     const always = new Set(settings.skills?.always ?? []);
     const never = new Set(settings.skills?.never ?? []);
     const out: Skill[] = [];
-    for (const item of raw) {
-      const s = item as Record<string, unknown>;
-      const name = typeof s.name === "string" ? s.name : undefined;
-      if (!name || loadedSkills.has(name)) continue;
+    for (const skill of options?.skills ?? []) {
+      if (loadedSkills.has(skill.name)) continue;
       out.push({
-        name,
-        description: typeof s.description === "string" ? s.description : "",
-        path: typeof s.path === "string" ? s.path : undefined,
-        invocable: s.disableModelInvocation === false || s.modelInvocable === true,
-        route: always.has(name) ? "always" : never.has(name) ? "never" : "judge",
+        name: skill.name,
+        description: skill.description,
+        path: skill.filePath,
+        invocable: !skill.disableModelInvocation,
+        route: always.has(skill.name) ? "always" : never.has(skill.name) ? "never" : "judge",
       });
     }
     return out;
@@ -220,7 +228,7 @@ export default function hermes(pi: ExtensionAPI): void {
 
     // The free half of the skill router, before any request: the catalogue's
     // own routing, then IDF-weighted lexical overlap (docs/29 §5, docs/30 §3).
-    const all = enabled("skills") ? catalogue(ctx) : [];
+    const all = enabled("skills") ? catalogue(event.systemPromptOptions) : [];
     const grouped = split(all);
     const shortlist = enabled("skills")
       ? keepTop(

@@ -19,7 +19,11 @@
  * know.
  */
 import { readFileSync } from "node:fs";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type {
+  BuildSystemPromptOptions,
+  ExtensionAPI,
+  ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
 import { route, type Skill, type SkillDecision, type SkillRouterConfig } from "./route.js";
 
 const STATUS = "jev-skill-router";
@@ -53,38 +57,46 @@ export default function jevSkillRouter(pi: ExtensionAPI): void {
   const on = (): boolean => settings.enabled !== false;
 
   /**
-   * Pi's discovered skills, with the host's own trust settings carried over.
+   * Pi's discovered skills, off the `before_agent_start` event.
    *
-   * Read through a narrow shape rather than Pi's own type so a change in the
-   * resource model shows up here as one compile error instead of silently
-   * dropping the `invocable` flag.
+   * THE FIRST VERSION OF THIS READ `ctx.resources.skills`, WHICH DOES NOT
+   * EXIST. `ExtensionContext` in pi 0.85.1 carries abort, compact, cwd,
+   * getContextUsage, getSystemPrompt, hasPendingMessages, hasUI, isIdle,
+   * isProjectTrusted, mode, model, modelRegistry, scopedModels,
+   * sessionManager, shutdown, signal, thinkingLevel and ui -- and no
+   * resources. The catalogue came back empty on every turn, so this router
+   * had never once seen a skill (docs/38 §3).
+   *
+   * It was a cast that hid it, and the comment above the cast claimed the
+   * opposite: that reading through a narrow shape would turn a change in the
+   * resource model into one compile error. A cast to a type with an OPTIONAL
+   * field cannot do that -- it turns a wrong guess into `undefined`, which
+   * `Array.isArray` then quietly treats as "no skills configured".
+   *
+   * The real source is `BuildSystemPromptOptions.skills`, whose own docstring
+   * says extensions may inspect it "to understand what Pi loaded without
+   * re-discovering resources". It is a proper type, imported, no cast.
    */
-  function discover(ctx: ExtensionContext): Discovered[] {
-    const resources = (ctx as unknown as { resources?: { skills?: unknown[] } }).resources;
-    const raw = Array.isArray(resources?.skills) ? resources.skills : [];
+  function discover(options: BuildSystemPromptOptions | undefined): Discovered[] {
     const out: Discovered[] = [];
-    for (const item of raw) {
-      const s = item as Record<string, unknown>;
-      const name = typeof s.name === "string" ? s.name : undefined;
-      if (!name) continue;
+    for (const skill of options?.skills ?? []) {
       out.push({
-        name,
-        description: typeof s.description === "string" ? s.description : "",
-        path: typeof s.path === "string" ? s.path : undefined,
-        // Default to NOT invocable when the flag is missing. The safe default
-        // for a permission flag is the restrictive one: a host that stops
-        // reporting it should cost the router its automation, not cost the
-        // user their setting.
-        invocable: s.disableModelInvocation === false || s.modelInvocable === true,
+        name: skill.name,
+        description: skill.description,
+        // `filePath`, not `path`. The old reader looked for `path`, so even
+        // with a populated catalogue `instructionsFor` would have returned
+        // null for every skill and loaded nothing.
+        path: skill.filePath,
+        invocable: !skill.disableModelInvocation,
       });
     }
     return out;
   }
 
-  function catalogue(ctx: ExtensionContext): Skill[] {
+  function catalogue(options: BuildSystemPromptOptions | undefined): Skill[] {
     const always = new Set(settings.always ?? []);
     const never = new Set(settings.never ?? []);
-    return discover(ctx).map((d) => ({
+    return discover(options).map((d) => ({
       name: d.name,
       description: d.description,
       path: d.path,
@@ -111,7 +123,7 @@ export default function jevSkillRouter(pi: ExtensionAPI): void {
 
   pi.on("before_agent_start", async (event, ctx) => {
     if (!on()) return;
-    const skills = catalogue(ctx).filter((s) => !loaded.has(s.name));
+    const skills = catalogue(event.systemPromptOptions).filter((s) => !loaded.has(s.name));
     if (skills.length === 0) return;
 
     let decision: SkillDecision;
