@@ -1,0 +1,107 @@
+{
+  "rows": [
+    {
+      "transcript": "most-tests",
+      "arm": "jev",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 2451,
+      "budget": 2619,
+      "ms": 0
+    },
+    {
+      "transcript": "most-tests",
+      "arm": "haiku-select",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 2417,
+      "budget": 2619,
+      "ms": 13859,
+      "sample": "<<a7>>\n<<r7>>\n<<a8>>\n<<r8>>\n<<a9>>\n<<r9>>\n<<a10>>\n<<r10>>\n<<a11>>\n<<r11>>\n<<a12>>\n<<r12>>\n<<a13>>\n<<r13>>\n<<a14>>\n<<r14>>\n<<a15>>\n<<r15>>\n<<a16>>\n<<r16>>\n<<a17>>\n<<r17>>\n<<a18>>\n<<r18>>\n<<a19>>\n<<r19>>\n<<a20>>\n<<r20>>\n<<a21>>\n<<r21>>\n<<a22>>\n<<r22>>\n<<a23>>\n<<r23>>\n<<a24>>\n<<r24>>\n<<a25>>\n<<r25>>\n<<a26>>\n<<r26>>\n<<a27>>\n<<r27>>\n"
+    },
+    {
+      "transcript": "most-tests",
+      "arm": "haiku-summarise",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 167,
+      "budget": 2619,
+      "ms": 11171,
+      "sample": "<<goal>>\nrun every package's test suite and tell me which package has the most tests, with the count.\n\n<<repo>>\nPrimary directory: /home/user/jev-playground/experiments/versus\nPackages at /packages: jev-compact, jev-core, jev-guard, jev-hermes, jev-model-router, jev-orchestrator, jev-skill-router\n\n<<a1-6>>\nTested each package with `npm test`.\n\n<<r1>>\njev-compact: 19 passed, 0 failed\n\n<<r2>>\njev-guard: 12 passed, 0 failed\n\n<<r3>>\njev-hermes: 19 passed, 0 failed\n\n<<r4>>\njev-model-router: 19 passed, 0 failed\n\n<<r5>>\njev-orchestrator: 20 passed, 0 failed\n\n<<r6>>\njev-skill-router: 14 passed, 0 failed\n\n<<result>>\njev-orchestrator has the most tests with 20 tests.\n"
+    },
+    {
+      "transcript": "most-tests",
+      "arm": "sonnet-select",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 2543,
+      "budget": 2619,
+      "ms": 13713,
+      "sample": "<<a0>>\n<<r0>>\n<<a7>>\n<<r7>>\n<<a9>>\n<<r9>>\n<<a10>>\n<<r10>>\n<<a11>>\n<<r11>>\n<<a12>>\n<<r12>>\n<<a13>>\n<<r13>>\n<<a14>>\n<<r14>>\n<<a15>>\n<<r15>>\n<<a16>>\n<<r16>>\n<<a17>>\n<<r17>>\n<<a18>>\n<<r18>>\n<<a19>>\n<<r19>>\n<<a20>>\n<<r20>>\n<<a21>>\n<<r21>>\n<<a22>>\n<<r22>>\n<<a23>>\n<<r23>>\n<<a24>>\n<<r24>>\n<<a25>>\n<<r25>>\n<<a26>>\n<<r26>>\n<<a27>>\n<<r27>>\n"
+    },
+    {
+      "transcript": "most-tests",
+      "arm": "sonnet-summarise",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 579,
+      "budget": 2619,
+      "ms": 18473,
+      "sample": "# Compacted Transcript\n\n**Task**: Run every package's test suite (under `packages/`) and report which has the most tests, with the count.\n\n**Repo root**: `/home/user/jev-playground` (working dir now `/home/user/jev-playground/experiments/versus`, but package tests run from `packages/*`)\n\n**`packages/` contents** (from `ls packages`): jev-compact, jev-core, jev-guard, jev-hermes, jev-model-router, jev-orchestrator, jev-skill-router (7 packages total; also node_modules, package.json, package-lock.json — not packages themselves).\n\nEach package under `packages/<name>` runs tests via `npm test` → `tsx test.ts`.\n\n## Test results so far\n\n| Package | Passed | Failed |\n|---|---|---|\n| jev-compact | 19 | 0 |\n| jev-guard | 12 | 0 |\n| jev-hermes | 19 | 0 |\n| jev-model-router | 19 | 0 |\n| jev-orchestrator | **20** | 0 |\n| jev-skill-router | 14 | 0 |\n| jev-core | **not yet run** | — |\n\nCurrent leader: **jev-orchestrator with 20 passed, 0 failed** (highest so far, ahead of jev-hermes and jev-model-router which tied at 19).\n\n## Remaining work\n- Still need to run tests for `packages/jev-core` (`cd packages/jev-core && npm test`, or however its test command is defined — need to check its package.json since it wasn't confirmed to use the same `tsx test.ts` pattern; `packages/jev-core/src/` contains `client.ts` and `index.ts` per earlier reads, no test.ts confirmed yet).\n- After running jev-core, compare its count against the current max (jev-orchestrator, 20) and report the final answer: package name + exact passing test count.\n\n## Notes from exploration (context, not required for remaining steps)\n- `packages/jev-core` is the shared library both routers depend on (exports `Jev`, `JevError`, ladder utilities, `noulOf`, `scoreOf`) — no host/Pi dependency.\n- `experiments/` directory contains separate experiment projects (task-filter, threshold-fit, bilingual, etc.) with their own `npm test`, but these are experiments, not `packages/`, so out of scope for \"every package's test suite\" unless user clarifies otherwise.\n- Git status showed only `?? experiments/compact/` as untracked; nothing else pending.\n\n**Next action**: run `cd /home/user/jev-playground/packages/jev-core && npm test` (or inspect its package.json test script first if `test.ts` doesn't exist), then finalize the comparison and answer.\n"
+    },
+    {
+      "transcript": "dropat-default",
+      "arm": "jev",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 3679,
+      "budget": 6673,
+      "ms": 0
+    },
+    {
+      "transcript": "dropat-default",
+      "arm": "haiku-select",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 5706,
+      "budget": 6673,
+      "ms": 29698,
+      "sample": "<<a0>>\n<<r0>>\n<<a1>>\n<<r1>>\n<<a2>>\n<<r2>>\n<<a3>>\n<<r3>>\n<<a5>>\n<<r5>>\n<<a6>>\n<<r6>>\n<<a7>>\n<<r7>>\n<<a8>>\n<<r8>>\n<<a9>>\n<<r9>>\n<<a10>>\n<<r10>>\n<<a11>>\n<<r11>>\n<<a12>>\n<<r12>>\n<<a13>>\n<<r13>>\n<<a14>>\n<<r14>>\n<<a15>>\n<<r15>>\n<<a16>>\n<<r16>>\n<<a17>>\n<<r17>>\n<<a18>>\n<<r18>>\n<<a19>>\n<<r19>>\n<<a20>>\n<<r20>>\n<<a21>>\n<<r21>>\n<<a22>>\n<<r22>>\n<<a23>>\n<<r23>>\n<<a24>>\n<<r24>>\n<<a25>>\n<<r25>>\n<<a26>>\n<<r26>>\n<<a27>>\n<<r27>>\n"
+    },
+    {
+      "transcript": "dropat-default",
+      "arm": "haiku-summarise",
+      "kept": 1,
+      "invented": 0,
+      "absent": 0,
+      "facts": 1,
+      "checkable": 1,
+      "tokensAfter": 311,
+      "budget": 6673,
+      "ms": 13642,
+      "sample": "<<goal>>\nread the source of every package and tell me what jev-compact's `dropAt` default is.\n\n<<a0>> [assistant ls packages]\nI'll check the packages directory.\n\n<<r0>> [tool ls packages]\njev-compact\njev-core\njev-guard\njev-hermes\njev-model-router\njev-orchestrator\njev-skill-router\nnode_modules\npackage-lock.json\npackage.json\n\n<<a1>> [assistant read jev-compact]\nI'll read jev-compact to find the dropAt default.\n\n<<r1>> [tool read jev-compact]\nFound in packages/jev-compact/src/compact.ts:\n\n```typescript\nexport interface CompactConfig extends Floors {\n  budgetTokens: number;\n  /**\n   * An entry is a deletion candidate only at or below this level. 0..3.\n   *\n   * 1.5 sits between \"superseded\" and \"background\", so an entry that records\n   * a fact nothing else records is not a candidate however big it is.\n   */\n  dropAt: number;\n  nothingSpareAt: number;\n  digestCap: number;\n  maxCandidates: number;\n  onError: \"defer\" | \"baseline\";\n  timeoutMs: number;\n}\n\nexport const DEFAULT_COMPACT_CONFIG: CompactConfig = {\n  ...DEFAULT_FLOORS,\n  budgetTokens: 60_000,\n  dropAt: 1.5,\n  nothingSpareAt: 0.8,\n  digestCap: 400,\n  maxCandidates: 200,\n  onError: \"defer\",\n  timeoutMs: 20_000,\n};\n```\n\n**Answer: jev-compact's `dropAt` default is `1.5`**\n"
+    }
+  ],
+  "note": "The compactor against a real model. `select` is the same action as jev; `summarise` is the action jev cannot take, and the only one that can invent."
+}
