@@ -335,6 +335,25 @@ check("the skill arms differ in who chose, not in what was available", () => {
   eq(ARMS.allskills.model, ARMS.skillrouter.model, "both skill arms need one model: ");
 });
 
+check("the skill arm is not measuring a directory nobody read", () => {
+  // docs/38 §2's bug, one host over: pi's skill router shipped for two reports
+  // having never looked at a skill, and the arm produced numbers anyway. So
+  // the claim "the catalogue reaches the model" has to be recorded, not
+  // assumed -- and the evidence has to be a VERBATIM NAME, because the
+  // agent's own count of its skills comes back off by one.
+  const path = resolve(import.meta.dirname, "records/wire.json");
+  if (!existsSync(path)) return; // the record needs the CLI; this suite does not
+  const w = JSON.parse(readFileSync(path, "utf8")) as {
+    bare?: { placed: number; fromCatalogue: string[] };
+    all?: { placed: number; fromCatalogue: string[] };
+  };
+  ok(w.bare !== undefined && w.all !== undefined, "both the control and the catalogue must be recorded");
+  eq(w.bare!.placed, 0, "the control must place no skills: ");
+  ok(w.all!.placed > 100, "the catalogue arm must place the real 300");
+  ok(w.all!.fromCatalogue.length > 0, "the agent must have named a skill that only the catalogue could supply");
+  eq(w.bare!.fromCatalogue.length, 0, "the control cannot name a catalogue skill: ");
+});
+
 check("the catalogue is harvested, and says so per skill", () => {
   // The one corpus in this experiment I did not write. If the bodies ever
   // become mine the arm stops measuring someone else's catalogue, so the stub

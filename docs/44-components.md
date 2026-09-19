@@ -19,10 +19,10 @@
 再現:
 
 ```bash
-cd experiments/finish
+cd experiments/finish && npm install
 npx tsx src/components.ts              # 3 コンポーネントの表、記録から。API 不要・CLI 不要
 npx tsx src/probe.ts --show            # 58 タスク × 3 判断、エージェント抜き
-npm test                               # 27 件
+npm test                               # 28 件
 
 TYPESAFEAI_API_KEY=... npx tsx src/probe.ts --corpus all
 TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks hard  --arms haiku,sonnet,routerfail   --out model.json
@@ -125,6 +125,56 @@ tier score は 0.17..1.09(中央値 0.59)、confidence は 0.21..0.76(**中央�
 そしてこれは**安い方向**です。テストを先に走らせるホストは
 `node --test` 1 回で安い答えを手に入れ、
 **外したときに戻れるのは安い段のほう**です。
+
+---
+
+## 2. Skill router —— 実在 300 件のカタログ、私が書いていない最初のコーパス
+
+`experiments/skill-pick/corpus/roster.json` から `kind: "skill"` の **300 件**。
+9 リポジトリ、それぞれ固定リビジョン、**name と description は書いた人のまま**:
+
+| 出典 | 件数 |
+| --- | --- |
+| `wshobson/agents` | 183 |
+| `mizchi/skills` | 69 |
+| `anthropics/skills` | 20 |
+| `obra/superpowers` | 14 |
+| `mizchi/{flaker,similarity,actrun,pkfire}` | 14 |
+
+[TODO §2.1](../TODO.md) がまさにこの問題についてです ——
+**自分が書いたコーパスは、自分のコーパス作文を測ります。**
+境界コーパスの 5 件は私が書きました。**これは違います。**
+
+正直に言っておくべき残りの部分:
+
+| | |
+| --- | --- |
+| カタログ | **採取した。** 実在の名前と説明 |
+| 「修理タスクにどれが要るか」のラベル | **無い。** 誰も 300 件をこの仕事に対して判定していないので、**precision は報告しません**。端から端までの判定は終了コードなのでラベルは要りません |
+| body | **ロスターに無い。** スタブで、スタブだと自称します(`src/catalogue.ts`) |
+
+### 2.0 カタログがモデルに届いているか、wire で確認した
+
+300 個のディレクトリを書くことと、**ホストがそれを読むこと**は別の事実で、
+後者が偽ならこのアームは無価値です。
+そして**先例が在ります** —— [38 §2](38-agent.md) の pi の skill router は
+**2 報告ぶん、一度も skill を見ていませんでした**。
+誰も気付かなかったのは、**アームがそれでも数字を出していたから**です。
+
+だから同じ形で聞きました(`src/wire.ts` → `records/wire.json`、
+プロンプトでツール使用を禁じ、許可も `Read` だけ ——
+**答えに出た skill 名はファイルシステムから来ていない**):
+
+| サンドボックス | 置いた skill | エージェントの答え | カタログに在る名前 |
+| --- | --- | --- | --- |
+| `.claude/skills` 無し | 0 | 16 skills are available to me. | —— |
+| 採取した 300 件 | 300 | **315 skills** are available to me. | `academy-guide`, `python-testing-patterns`, `workflow-orchestration-patterns` |
+
+**自己申告の数は単位まで信用できません**(300 + 16 = 316、申告は 315)。
+**効いているのは逐語の名前のほう**です ——
+この 3 つは採取したロスターに在り、**ホストの組み込み 16 件には在りません**。
+渡されていないエージェントがこの名前を出すことはできません。
+**カタログはモデルのコンテキストに届いています。**
 
 ---
 
