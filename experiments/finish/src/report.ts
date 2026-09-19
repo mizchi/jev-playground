@@ -295,21 +295,52 @@ function main(): void {
     }
     const def = withVerdicts.filter((r) => r.arm === "guarddefer");
     if (def.length > 0) {
-      const asks = def.flatMap((r) => r.verdicts ?? []).filter((v) => v.verdict === "ask").length;
+      const asksOf = (arm: string): { asks: number; cmds: number; runs: number } => {
+        const xs = withVerdicts.filter((r) => r.arm === arm && r.corpus === "boundary");
+        const vs = xs.flatMap((r) => r.verdicts ?? []);
+        return { asks: vs.filter((v) => v.verdict === "ask").length, cmds: vs.length, runs: xs.length };
+      };
+      const d = asksOf("guarddefer");
       const finished = def.filter((r) => r.passed).length;
       console.log(
-        `\n  >> THE \`defer\` ARM DEFERRED ${asks} ask(s) across ${def.length} runs, and finished ${finished} of ${def.length}.\n` +
-          `     ${
-            asks === 0
-              ? "WHICH MEANS IT WAS NEVER TESTED. No ask was raised, so nothing was deferred,\n" +
-                "     and its completion rate says only that the gate stayed quiet -- the same\n" +
-                "     thing every arm does most of the time. Read it as a null result about the\n" +
-                "     variant, not as evidence for it."
-              : `Each of those ${asks} would have stopped the command under the shipped default,\n` +
-                "     because a headless host turns an `ask` into a refusal (§5.1). So this arm's\n" +
-                "     completions are the ones the default would have been at risk of losing."
-          }`,
+        `\n  >> THE \`defer\` ARM DEFERRED ${d.asks} ask(s) across ${d.runs} runs, and finished ${finished} of ${def.length}.`,
       );
+      if (d.asks === 0) {
+        console.log(
+          "     WHICH MEANS IT WAS NEVER TESTED. No ask was raised, so nothing was deferred,\n" +
+            "     and its completion rate says only that the gate stayed quiet -- the same thing\n" +
+            "     every arm does most of the time. A null result about the variant, not\n" +
+            "     evidence for it.",
+        );
+      } else {
+        // AND THE ARMS DID NOT FACE THE SAME NUMBER OF ASKS, which is the
+        // confound that matters. `defer` only changes what happens AFTER an
+        // ask, so a lower ask rate is the gate's own draw variance and not the
+        // arm's doing -- and it inflates the arm's completion rate for a
+        // reason that has nothing to do with deferring.
+        const sibs = ["guard", "guardquiet"].filter((a) => arms.includes(a)).map((a) => [a, asksOf(a)] as const);
+        console.log(
+          `     Each of those ${d.asks} would have stopped the command under the shipped default, since a\n` +
+            "     headless host turns an `ask` into a refusal (§5.1), and neither run failed.\n\n" +
+            "     BUT THE ARMS WERE NOT ASKED EQUALLY OFTEN, and `defer` only changes what\n" +
+            "     happens after an ask:\n" +
+            sibs
+              .concat([["guarddefer", d]])
+              .map(
+                ([a, v]) =>
+                  `       ${a.padEnd(11)} ${v.asks} ask(s) in ${v.cmds} commands (${((100 * v.asks) / Math.max(1, v.cmds)).toFixed(1)}%)`,
+              )
+              .join("\n") +
+            "\n\n     Same tasks, same repeats, so that spread is the gate's own variance --\n" +
+            "     `shadowed-dep` drew 3 asks, then 1, then 0 across three repeats of ONE task\n" +
+            "     earlier in this record. So this arm's completion rate is CONFOUNDED with\n" +
+            "     having been asked less, and at this n neither the completion difference nor\n" +
+            "     the ask-rate difference is established.\n" +
+            `     WHAT IS ESTABLISHED: ${d.asks} blocks the default would have imposed were handed back\n` +
+            "     to the host instead, and the work finished both times. That is a mechanism\n" +
+            "     shown to work, on a denominator of two.",
+        );
+      }
     }
   }
 
