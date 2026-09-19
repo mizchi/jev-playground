@@ -148,7 +148,7 @@ export function jevPolicy(jev: Jev, arm: ArmName): Policy {
     const hero = heroAt(screen) ?? undefined;
     // The three arms that carry visit counts get the memory; `jevintent`
     // deliberately does not, because it is the sentence WITHOUT the memory.
-    const memory = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemofix" ? seen : undefined;
+    const memory = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemoraw" ? seen : undefined;
     const res = await jev.ask(
       stateFor(screen, vitals, recent, memory),
       questionFor(arm, actions, hero, memory, screen),
@@ -193,12 +193,12 @@ async function play(games: number, maxActions: number, arms: ArmName[], withBase
     lane.push({
       label: arm,
       fresh: () => jevPolicy(jev, arm),
-      prefix: { jev: "Jev", jevbare: "Bare", jevmemo: "Memo", jevcount: "Cnt", jevintent: "Int", jevmemofix: "Fix" }[
+      prefix: { jev: "Jev", jevbare: "Bare", jevmemo: "Memo", jevcount: "Cnt", jevintent: "Int", jevmemoraw: "Raw" }[
         arm
       ],
       // A distinct offset per arm so each gets its own seeds and no two arms
       // are compared on the same dungeon by accident.
-      offset: { jev: 300, jevbare: 400, jevmemo: 500, jevcount: 600, jevintent: 700, jevmemofix: 800 }[arm],
+      offset: { jev: 300, jevbare: 400, jevmemo: 500, jevcount: 600, jevintent: 700, jevmemoraw: 800 }[arm],
     });
   }
   for (const l of lane) {

@@ -15,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { DIRS, diagonalBlocked, distances, enumerate, frontiers, kindOf, reachable, stepToward, steppable } from "./src/actions.js";
-import { MAP_ROWS, NetHack, ROWS, available, heroAt, mapOf, vitalsOf, type Screen } from "./src/nethack.js";
+import { MAP_ROWS, NetHack, ROWS, available, glyphAt, heroAt, mapOf, vitalsOf, type Screen } from "./src/nethack.js";
 import { monsterCount, probesFor, stairsAt, stateFor as perceiveState } from "./src/perceive.js";
 import { ARMS, EMPTY_MEMORY, payloadOf, questionFor, stateFor } from "./src/arms.js";
 import { drain, greedyPolicy, randomPolicy, rngFrom } from "./src/play.js";
@@ -239,6 +239,61 @@ check("only jevmemo is told where it has already been", () => {
   const empty = payloadOf("jevmemo", ROOM, v, [], actions, hero!, EMPTY_MEMORY);
   ok(!/stood there \d+ time/.test(empty), "an empty memory claimed a visit");
   eq((empty.match(/you have never stood there/g) ?? []).length, 8, "all eight steps should be unvisited");
+});
+
+check("the shipped memory arm does not label a wall as unvisited", () => {
+  /**
+   * The bug docs/40 §a shipped a fix for, pinned.
+   *
+   * A wall has never been stood on, so its visit count is 0, so the sentence
+   * attached to it read "you have never stood there" -- under a goal that
+   * says to prefer exactly that. The memory recommended walls, and the arm
+   * spent whole games refusing from one square.
+   *
+   * `jevmemo` now withholds the count where `steppable` is false. This checks
+   * the payload rather than the outcome, because the outcome took six games
+   * per arm and $0.30 and the payload takes no requests at all -- which is
+   * the same lesson in test form.
+   */
+  // `ROOM` has the hero in open floor with every neighbour walkable, which
+  // would make this check vacuous. A corner is the shape that has walls.
+  const CORNER = fake(["", "  -----", "  |@..|", "  |...|", "  |..>|", "  -----"]);
+  const { actions, hero } = enumerate(CORNER);
+  const walls = actions.filter(
+    (a) => a.dir && !steppable(kindOf(glyphAt(CORNER, hero!.x + a.dir.dx, hero!.y + a.dir.dy))),
+  );
+  ok(walls.length > 0, "the corner room has no wall beside the hero, so this proves nothing");
+
+  const guarded = questionFor("jevmemo", actions, hero!, EMPTY_MEMORY, CORNER).move as { criteria: Record<string, string> };
+  for (const a of walls) {
+    ok(
+      !/stood there/.test(guarded.criteria[a.name]),
+      `jevmemo told the model it had never stood on a wall: ${guarded.criteria[a.name]}`,
+    );
+    // And the wall itself is still named, so nothing was hidden -- only the
+    // sentence that read as a reason to walk into it.
+    ok(/wall|unexplored/.test(guarded.criteria[a.name]), `jevmemo stopped saying ${a.name} is a wall`);
+  }
+  // A square it CAN step on still carries the count, or the guard would have
+  // removed the memory rather than the contradiction.
+  const open = actions.filter((a) => a.dir && steppable(kindOf(glyphAt(CORNER, hero!.x + a.dir.dx, hero!.y + a.dir.dy))));
+  ok(open.length > 0, "no steppable neighbour in the test room");
+  for (const a of open) {
+    ok(/stood there/.test(guarded.criteria[a.name]), `jevmemo dropped the count for ${a.name}, which is steppable`);
+  }
+
+  // `jevmemoraw` reproduces the pre-fix payload, so docs/34 §2.4's arm still
+  // exists and its numbers remain checkable.
+  const raw = questionFor("jevmemoraw", actions, hero!, EMPTY_MEMORY, CORNER).move as { criteria: Record<string, string> };
+  for (const a of walls) {
+    ok(/never stood there/.test(raw.criteria[a.name]), `jevmemoraw should still carry the contradiction for ${a.name}`);
+  }
+  // The guard must be the ONLY difference between them.
+  eq(
+    JSON.stringify(questionFor("jevmemo", actions, hero!, EMPTY_MEMORY, CORNER).move.instructions),
+    JSON.stringify(raw.instructions),
+    "the two memo arms differ in their goal as well as the guard: ",
+  );
 });
 
 check("the memory arm is told to act on the memory, and the others are not", () => {

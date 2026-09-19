@@ -13,8 +13,8 @@
  *   jev          the glyph text, base goal. The arm the 48 came from.
  *   jevcount     + visit counts, base goal unchanged.      memory, no intent
  *   jevintent    + the sentence, no counts.                intent, no memory
- *   jevmemo      + both. The arm the 152 came from.
- *   jevmemofix   + both, counts withheld where a step cannot land.
+ *   jevmemoraw   + both, count on every square. The arm the 152 came from.
+ *   jevmemo      + both, count withheld where a step cannot land. SHIPPED.
  *
  * THE DUNGEON CANNOT BE HELD FIXED, AND I TRIED TO CLAIM OTHERWISE. This file
  * was first written to give every arm "the same seeds", on the assumption that
@@ -33,12 +33,16 @@
  * file overwrote `play.json` once; it was committed, so `git checkout`
  * restored it. Diagnostics do not belong in a shared record.)
  *
- * `jevmemofix` is here because homework (b) found the reason for `jevmemo`'s
- * refusals in its own payload rather than in its results (`src/refusals.ts`):
- * a wall has never been stood on, so the sentence attached to it reads "you
- * have never stood there", while the goal says to prefer that. The memory
- * recommends walls. This arm withholds the count where the square is not
- * steppable, and the gap to `jevmemo` is what that contradiction costs.
+ * The two `jevmemo` arms exist because homework (b) found the reason for the
+ * refusals in the payload rather than in the results (`src/refusals.ts`): a
+ * wall has never been stood on, so the sentence attached to it reads "you have
+ * never stood there", while the goal says to prefer that. The memory
+ * recommended walls.
+ *
+ * THAT COMPARISON DECIDED WHAT SHIPS. The guarded arm is better on every axis
+ * and it is now what `arms.ts` calls `jevmemo`; the unguarded one is
+ * `jevmemoraw`. The records were relabelled to match, so the rows below read
+ * against the code rather than against an older meaning of the same word.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -52,7 +56,16 @@ const RECORDS = resolve(import.meta.dirname, "../records");
 const PATH = resolve(RECORDS, "memo.json");
 
 /** The five arms, in the order the table should read. */
-const LANES: ArmName[] = ["jev", "jevcount", "jevintent", "jevmemo", "jevmemofix"];
+const LANES: ArmName[] = ["jev", "jevcount", "jevintent", "jevmemoraw", "jevmemo"];
+
+/** What each arm is for, so the table's last column is not positional. */
+const READING: Record<string, string> = {
+  jev: "the baseline",
+  jevcount: "memory alone",
+  jevintent: "the sentence alone",
+  jevmemoraw: "both, with the contradiction (what docs/34 measured)",
+  jevmemo: "both, contradiction removed -- SHIPPED",
+};
 
 /** Short, distinct save names -- NetHack keys its save file on this. */
 const PREFIX: Record<string, string> = {
@@ -60,7 +73,7 @@ const PREFIX: Record<string, string> = {
   jevcount: "MC",
   jevintent: "MI",
   jevmemo: "MM",
-  jevmemofix: "MF",
+  jevmemoraw: "MR",
 };
 
 interface Record_ {
@@ -76,7 +89,7 @@ function load(): Record_ | null {
 function policyFor(jev: Jev, arm: ArmName): Policy {
   return async (screen, actions, vitals, recent, seen) => {
     const hero = heroAt(screen) ?? undefined;
-    const memory = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemofix" ? seen : undefined;
+    const memory = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemoraw" ? seen : undefined;
     const res = await jev.ask(stateFor(screen, vitals, recent, memory), questionFor(arm, actions, hero, memory, screen));
     const answer = res.answers[MOVE];
     if (answer.type !== "choice") throw new Error(`expected a choice, got ${answer.type}`);
@@ -105,8 +118,8 @@ function report(): void {
     const games = record.games.filter((g) => g.policy === arm);
     if (games.length === 0) continue;
     const has = {
-      counts: arm === "jevcount" || arm === "jevmemo" || arm === "jevmemofix",
-      sentence: arm === "jevintent" || arm === "jevmemo" || arm === "jevmemofix",
+      counts: arm === "jevcount" || arm === "jevmemo" || arm === "jevmemoraw",
+      sentence: arm === "jevintent" || arm === "jevmemo" || arm === "jevmemoraw",
     };
     console.log(
       `  ${arm.padEnd(12)} ${(has.counts ? "yes" : "no").padStart(6)}  ${(has.sentence ? "yes" : "no").padStart(8)}   ` +
@@ -132,7 +145,7 @@ function report(): void {
     const gap = m - base;
     console.log(
       `  ${arm.padEnd(12)} ${m.toFixed(0).padStart(6)}   ${spread(arm).padEnd(9)}  ${`${gap > 0 ? "+" : ""}${gap.toFixed(0)}`.padStart(6)}   ` +
-        (arm === "jev" ? "the baseline" : arm === "jevcount" ? "memory alone" : arm === "jevintent" ? "the sentence alone" : arm === "jevmemo" ? "both, as shipped" : "both, minus the contradiction"),
+        READING[arm],
     );
   }
   console.log(
@@ -198,10 +211,14 @@ function report(): void {
 
   const c = mapped("jevcount") - base;
   const i = mapped("jevintent") - base;
-  const both = mapped("jevmemo") - base;
+  // `jevmemoraw` is the arm the homework was about: both additions, with the
+  // contradiction still in. `jevmemo` is what ships, so both are printed.
+  const both = mapped("jevmemoraw") - base;
+  const shipped = mapped("jevmemo") - base;
   console.log(
     `\n  >> memory alone ${c > 0 ? "+" : ""}${c.toFixed(0)}, sentence alone ${i > 0 ? "+" : ""}${i.toFixed(0)}, ` +
-      `both ${both > 0 ? "+" : ""}${both.toFixed(0)}.`,
+      `both ${both > 0 ? "+" : ""}${both.toFixed(0)}` +
+      ` (and ${shipped > 0 ? "+" : ""}${shipped.toFixed(0)} once the contradiction is removed, which is what ships).`,
   );
   if (c <= 0 && i <= 0 && both > 0) {
     console.log(
@@ -225,7 +242,7 @@ function report(): void {
 
   console.log("\n§3 the contradiction homework (b) found, priced");
   console.log("\n  arm          refusals on vertical   on horizontal   mapped");
-  for (const arm of ["jevmemo", "jevmemofix"] as ArmName[]) {
+  for (const arm of ["jevmemoraw", "jevmemo"] as ArmName[]) {
     const steps = record.games.filter((g) => g.policy === arm).flatMap((g) => g.steps);
     if (steps.length === 0) continue;
     const rate = (set: Set<string>): string => {
@@ -237,10 +254,11 @@ function report(): void {
     );
   }
   console.log(
-    "\n  >> `jevmemofix` withholds the visit count where a step cannot land, so a wall no\n" +
-      "     longer arrives labelled `you have never stood there` under a goal that says to\n" +
-      "     prefer exactly that. If its refusals fall and its mapping holds, the\n" +
-      "     contradiction was costing refusals and buying nothing.\n",
+    "\n  >> `jevmemo` (shipped) withholds the visit count where a step cannot land, so a\n" +
+      "     wall no longer arrives labelled `you have never stood there` under a goal that\n" +
+      "     says to prefer exactly that. `jevmemoraw` is what shipped before. The refusals\n" +
+      "     fall and the mapping rises, so the contradiction was costing refusals and\n" +
+      "     buying nothing -- which is why the guarded arm is the one that ships now.\n",
   );
 
   /**

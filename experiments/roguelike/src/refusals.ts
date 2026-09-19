@@ -197,7 +197,10 @@ function main(): void {
     greedy: "a hand-written heuristic",
     jev: "each square's glyph, in the option text",
     jevbare: "the direction name ONLY; map from the screen",
-    jevmemo: "the glyph AND the visit count, + a new goal",
+    // `play.json` predates the guard, so its rows are `jevmemoraw` since the
+    // relabel: the count went on every square, walls included.
+    jevmemoraw: "the glyph AND the visit count on EVERY square, + a new goal",
+    jevmemo: "the glyph AND the visit count, withheld where a step cannot land",
   };
   for (const policy of policies) {
     if (policy === "random") continue;
