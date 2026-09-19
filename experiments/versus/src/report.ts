@@ -10,6 +10,14 @@
  *   COST and LATENCY. Measured directly, and the axis where the answer is not
  *   close.
  *
+ * AND THE FIRST VERSION OF THIS SCORED JEV'S OWN FEATURE AS A FAILURE. It read
+ * `guard()`'s `verdict`, which is `null` for the five commands the FREE
+ * PREFILTER passes without a request, and counted five nulls as five wrong
+ * answers -- 79% instead of what `action` actually said. The prefilter not
+ * spending a request is the package's first move, not a missing answer. Same
+ * mistake shape as docs/29 §5, which was about counting a free stage's work
+ * against the judgment's score; `run.ts` says so where it scores.
+ *
  * And one asymmetry stated up front rather than in the limits: JEV IS ASKED
  * NINE WAYS AND COMBINED, THE MODEL IS ASKED ONCE. `jev-guard` runs a battery
  * and takes the conservative side of two independent readings; a model cannot
@@ -45,16 +53,36 @@ function main(): void {
     const n = of(task, "jev").length || of(task, "haiku").length;
     if (n === 0) continue;
     console.log(`\n  ${task} (${n} items)`);
-    console.log("  arm       correct        median ms   errors");
+    console.log("  arm       what the host did   the gate had an opinion   median ms");
     for (const arm of ARMS) {
       const xs = of(task, arm);
       if (xs.length === 0) continue;
       const ms = [...xs.map((r) => r.ms)].sort((a, b) => a - b);
+      const opined = xs.filter((r) => !r.abstained);
+      const cell =
+        arm === "jev" && xs.some((r) => r.abstained)
+          ? `${pct(opined.filter((r) => r.correct).length, xs.length)} (${opined.filter((r) => r.correct).length}/${xs.length}, ${xs.length - opined.length} abstained)`
+          : "same";
       console.log(
         `  ${arm.padEnd(8)} ${pct(xs.filter((r) => r.correct).length, xs.length)} ` +
-          `(${xs.filter((r) => r.correct).length}/${xs.length})`.padEnd(9) +
-          `${String(ms[Math.floor(ms.length / 2)] ?? 0).padStart(10)}   ` +
-          `${String(xs.filter((r) => r.error).length).padStart(6)}`,
+          `(${xs.filter((r) => r.correct).length}/${xs.length})`.padEnd(11) +
+          `${cell.padEnd(26)}${String(ms[Math.floor(ms.length / 2)] ?? 0).padStart(9)}`,
+      );
+    }
+    const abst = of(task, "jev").filter((r) => r.abstained);
+    if (abst.length > 0) {
+      console.log(
+        `\n  jev abstained on ${abst.length} of ${of(task, "jev").length}: ${abst.map((r) => r.item.slice(0, 18)).join(", ")}.\n` +
+          "  `verdictOf` returns null when the ordered `permission` score comes back absent,\n" +
+          "  and refuses to fall back to its weaker reading silently. `resolve()` then returns\n" +
+          "  `pass`, which this report scores as `allow` -- and that is the generous reading.\n" +
+          "  `pass` means THE HOST'S OWN RULES APPLY, not that jev approved anything, and a\n" +
+          "  corpus cannot model the host's rules. The second column is the strict reading:\n" +
+          "  on these items the gate did not decide.\n\n" +
+          `  AND ONE OF THEM IS THE ONLY MISS: ${abst.filter((r) => !r.correct).map((r) => r.item).join(", ") || "none"}.\n` +
+          "  So jev's single guard error is not a wrong judgment, it is an ABSENT one that\n" +
+          "  defaulted permissive -- and docs/18's rule is that the conservative side is the\n" +
+          "  safe one. An abstention that falls through to `pass` is the unsafe side.",
       );
     }
   }

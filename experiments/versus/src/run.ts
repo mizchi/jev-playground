@@ -37,7 +37,7 @@ import { promisify } from "node:util";
 import { Jev } from "../../../packages/jev-core/src/index.js";
 import { CORPUS as SHELL } from "../../escalation/src/shell.js";
 import { SCENARIOS } from "../../orchestration/src/scenarios.js";
-import { VERDICT_NAME, guard } from "../../../packages/jev-guard/src/guard.js";
+import { guard } from "../../../packages/jev-guard/src/guard.js";
 import { plan } from "../../../packages/jev-orchestrator/src/plan.js";
 
 const run = promisify(execFile);
@@ -60,6 +60,19 @@ export interface Row {
   ms: number;
   /** Input tokens for jev; the CLI does not report them. */
   inputTokens?: number;
+  /** jev's guard only: answered by the free prefilter, with no request. */
+  free?: boolean;
+  /**
+   * jev's guard only: did the gate form an OPINION at all?
+   *
+   * `verdictOf` returns null when the ordered `permission` score is absent,
+   * and says why: with it gone there is only the 61.1% reading left, and "a
+   * gate that fell back to the weak reading without saying so would look
+   * like the measured gate and not be it". `resolve(null, ...)` then passes
+   * the call, so the host allows it. Both facts are worth recording --
+   * `action` is what happened, `abstained` is whether judgment chose it.
+   */
+  abstained?: boolean;
   error?: string;
 }
 
@@ -130,8 +143,15 @@ async function askModel(
 
 const GUARD_OPTIONS = ["allow", "confirm", "block"];
 
-/** The battery says allow/ask/deny; the corpus says allow/confirm/block. */
-const NAME_TO_LABEL: Record<string, string> = { allow: "allow", ask: "confirm", deny: "block" };
+/**
+ * `guard()`'s `action` in the corpus's words.
+ *
+ * `pass` means the call proceeds, which is what `allow` means. The battery's
+ * own verdicts are allow/ask/deny and `resolve()` turns them into these three
+ * after `attended` and `allowSafe`; a free prefilter pass also arrives here as
+ * `pass`, which is why this is the comparable field.
+ */
+const ACTION_TO_LABEL: Record<string, string> = { pass: "allow", confirm: "confirm", block: "block" };
 
 async function guardRows(jev: Jev, arms: Arm[], record: Record_): Promise<void> {
   for (const { command, expect } of SHELL) {
@@ -147,10 +167,21 @@ async function guardRows(jev: Jev, arms: Arm[], record: Record_): Promise<void> 
           { toolName: "bash", input: { command }, cwd: process.cwd() },
           { jev, config: { attended: true } },
         );
-        // The corpus labels are allow/confirm/block; the battery's verdicts
-        // are allow/ask/deny. `ask` IS `confirm` and `deny` IS `block` --
-        // same three rungs, different words for the middle and top.
-        const named = res.verdict === null ? "(no opinion)" : NAME_TO_LABEL[VERDICT_NAME[res.verdict]];
+        /**
+         * SCORE `action`, NOT `verdict`. The first version of this scored
+         * `verdict` and gave jev 79% -- because the five `allow` commands
+         * came back `verdict: null` and were counted as five wrong answers.
+         * They are not wrong answers: the FREE PREFILTER passed them without
+         * spending a request, which is the package's whole first move
+         * (docs/33 §1's lesson: handle what is free before paying). `action`
+         * is what the host acts on -- `pass` / `confirm` / `block` -- so it
+         * is the field that can be compared with a corpus label at all.
+         *
+         * This was my measurement scoring a feature as a failure, and it is
+         * the same mistake shape as docs/29 §5: counting the free stage's
+         * work against the judgment's score.
+         */
+        const named = ACTION_TO_LABEL[res.action];
         row = {
           task: "guard",
           item: command,
@@ -160,6 +191,8 @@ async function guardRows(jev: Jev, arms: Arm[], record: Record_): Promise<void> 
           correct: named === expect,
           ms: res.ms,
           inputTokens: res.usage?.input,
+          free: res.free,
+          abstained: res.verdict === null,
         };
       } else {
         const { state, instructions } = guardPrompt(command);
