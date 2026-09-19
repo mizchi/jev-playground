@@ -283,13 +283,36 @@ function modelRouter(): void {
       `\nTier score ${sc[0].toFixed(2)}..${sc[sc.length - 1].toFixed(2)} (median ${med(sc).toFixed(2)}); ` +
         `confidence ${cf[0].toFixed(2)}..${cf[cf.length - 1].toFixed(2)} (median ${med(cf).toFixed(2)}).`,
     );
+    const FLOOR = 0.5;
     console.log(
-      "\n**THE WHOLE CONFIDENCE DISTRIBUTION SITS UNDER THE FLOOR.** `minConfidence: 0.5` exists to stop a " +
-        "low-confidence judgment moving DOWN the ladder (docs/21 §7), and on this corpus the median " +
-        `confidence is ${med(cf).toFixed(2)} and the maximum ${cf[cf.length - 1].toFixed(2)}. So the rule is not a ` +
-        `guard against the occasional unsure answer -- it is binding on ${pct(belowFloor, g.length).trim()} of ` +
-        "them, and it only ever fires in the expensive direction. This is docs/25's subject exactly, and " +
-        "docs/hermes found the same shape one field over in `escalateAt: 0.7`.",
+      "\n**TWO THIRDS OF THE CONFIDENCE DISTRIBUTION SITS UNDER THE FLOOR.** `minConfidence: 0.5` exists to stop a " +
+        `low-confidence judgment moving DOWN the ladder, and here the median confidence is ${med(cf).toFixed(2)} ` +
+        `and the maximum ${cf[cf.length - 1].toFixed(2)} -- so the maximum is ` +
+        `${cf[cf.length - 1] > FLOOR ? "above" : "BELOW"} the floor and the median is ` +
+        `${(FLOOR - med(cf)).toFixed(2)} under it. The rule is not a guard against the occasional unsure ` +
+        `answer: it is binding on ${pct(belowFloor, g.length).trim()} of them, and it only ever fires in the ` +
+        "expensive direction.",
+    );
+    // THE SHAPE, THREE TIMES, AND THE THIRD ONE IS THE FIELD'S OWN CITATION.
+    // `tiers.ts` says of this field: "docs/21 §7's lesson". docs/21 §7 is the
+    // report where gating on `confidence >= 0.5` cost 7-11 points BECAUSE the
+    // confidence distribution sat on top of the cutoff (0.54..0.57 for both
+    // classes), and whose stated conclusion is "use confidence for routing,
+    // not as a gate". In fairness `minConfidence` IS routing -- it changes the
+    // rung rather than suppressing a report -- so this is not an inversion of
+    // its source. What repeats is the MECHANISM, and it now has three
+    // instances in shipped defaults.
+    console.log("\n| | cutoff | where the answers actually land |");
+    console.log("| --- | --- | --- |");
+    console.log("| docs/21 §7, reporting gate | confidence 0.50 | 0.54..0.57, **the same for both classes** |");
+    console.log("| docs/37 §7, `escalateAt` | 0.70 | 6 of 8 in 0.606..0.729 |");
+    console.log(
+      `| **here, \`minConfidence\`** | ${FLOOR.toFixed(2)} | **${cf[0].toFixed(2)}..${cf[cf.length - 1].toFixed(2)}, ` +
+        `median ${med(cf).toFixed(2)}** |`,
+    );
+    console.log(
+      "\ndocs/25 is the tool for FITTING a cutoff; all three of these are the step before it -- **look at " +
+        "where the answers land before placing the number**. Three shipped defaults, three placed without it.",
     );
     const both = probe.rows.filter((r) => r.onPrompt && r.onFailure);
     const disagree = both.filter((r) => r.onPrompt!.tier !== r.onFailure!.tier).length;

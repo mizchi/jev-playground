@@ -3237,6 +3237,538 @@
       },
       "verdicts": [],
       "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19850,
+      "calls": [
+        {
+          "at": 1789838108405,
+          "tool": "Bash",
+          "command": "find . -type f -name \"*.json\" -o -name \"*.js\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838110433,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838111443,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838112375,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838113607,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838118634,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838119960,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838121058,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19834,
+      "calls": [
+        {
+          "at": 1789838129105,
+          "tool": "Bash",
+          "command": "find . -not -path '*/node_modules/*' -not -path '*/.git/*' -type f | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838131070,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838131601,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838132063,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838132427,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838139453,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838141218,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18617,
+      "calls": [
+        {
+          "at": 1789838149386,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-guard-k3-of8Mu2 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838151607,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838151814,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838152270,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838152639,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838158345,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838159868,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 361,
+        "inputTokens": 1553,
+        "tierScore": 0.69,
+        "tierConfidence": 0.5,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22999,
+      "calls": [
+        {
+          "at": 1789838166945,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-lastindex-k2-ByeBjC",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838168536,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k2-ByeBjC -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838169950,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838171462,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838174386,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838175789,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838178999,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838180595,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838181892,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17489,
+      "calls": [
+        {
+          "at": 1789838190056,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' -not -path './.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838191949,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838192364,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838195251,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838196147,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838197831,
+          "tool": "Bash",
+          "command": "node --test test/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838199645,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16484,
+      "calls": [
+        {
+          "at": 1789838208581,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k2-tMRbcz -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838210559,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838210932,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838214909,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838216804,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 296,
+        "inputTokens": 1602,
+        "tierScore": 0.67,
+        "tierConfidence": 0.46,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18779,
+      "calls": [
+        {
+          "at": 1789838223958,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k3-25tWkk -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838225270,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838226252,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838227243,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838228503,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838232441,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838233809,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838234964,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
     }
   ],
   "note": "Does the agent FINISH the work. `claude -p` generates, jev gates through Claude Code's PreToolUse seam, `node --test` decides. Every tool call the agent made is in `calls` -- that ledger is the corpus, and it is whatever the agent did, not a scenario anyone wrote."
