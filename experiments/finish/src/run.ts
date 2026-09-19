@@ -57,6 +57,21 @@ export const ARMS: Record<string, ArmSpec> = {
    * question becomes whether knowing why changes whether the work gets done.
    */
   guardquiet: { name: "guardquiet", guard: true, model: HAIKU, gateFlags: ["quiet-ask"] },
+  /**
+   * The gate with `ask` resolved as "hand the decision back to the host".
+   *
+   * `jev-guard` has had `attended` / `unattendedAsk` since docs/18 and the
+   * shipped HOOK never exposed either, so it always emitted `ask` -- which a
+   * headless host turns into a refusal (docs/43 §5.1). That made the default a
+   * BLOCK BY ACCIDENT, and docs/43 §4b priced it: the gate spoke on 8 of 869
+   * commands a real agent needed and 2 of those 6 runs failed.
+   *
+   * `defer` is the variant worth measuring because it does NOT widen. The
+   * gate's first principle is that it never returns `allow`, since `allow`
+   * overrides the user's own permission rules; deferring hands the decision
+   * back to those rules instead, which is what an ALLOW verdict already does.
+   */
+  guarddefer: { name: "guarddefer", guard: true, model: HAIKU, gateFlags: ["unattended-ask", "defer"] },
 };
 
 export interface Record_ {

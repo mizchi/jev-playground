@@ -55,6 +55,8 @@
  *        --timeout MS  latency budget, default 2500
  *        --log PATH    append one JSON line per decision, for auditing
  *        --dry-run     print the decision to stderr, emit no decision
+ *        --unattended-ask block|defer
+ *                      what an `ask` becomes when no human can answer it
  */
 import { appendFileSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -93,6 +95,34 @@ const DRY_RUN = flag("dry-run");
  * in production.
  */
 const QUIET_ASK = flag("quiet-ask");
+/**
+ * What an `ask` becomes when there is nobody to ask.
+ *
+ * `jev-guard` has modelled this since docs/18 -- `GuardConfig.attended` and
+ * `unattendedAsk: "block" | "allow"` -- and THIS HOOK NEVER EXPOSED IT. So it
+ * always emitted `ask`, and docs/43 §5.1 measured what the host then does with
+ * one: a headless `claude -p` refuses the command outright ("A hook requires
+ * confirmation to run the Bash command"), which the CLI's own PreModelSwitch
+ * contract states as well ("a headless session refuses instead").
+ *
+ * That makes the shipped default a BLOCK BY ACCIDENT rather than by policy --
+ * the one outcome nobody chose. docs/43 §4b measured its price: the gate spoke
+ * on 8 of 869 commands a real agent needed, and 2 of the 6 runs it spoke in
+ * failed as a result.
+ *
+ *   ask (default)  unchanged. Correct when a human is attached.
+ *   block          say `deny` and say why. Same outcome as today on a headless
+ *                  agent, but chosen, and carrying a reason the agent can read.
+ *   defer          emit nothing, which the contract defines as "no decision,
+ *                  apply the normal permission flow".
+ *
+ * NOTE THAT `defer` DOES NOT WIDEN, which is why it is the interesting one.
+ * Principle 1 above is that this gate never returns `allow`, because `allow`
+ * overrides the permission rules the user configured. Deferring is the
+ * opposite of overriding them: it hands the decision back. The host's own
+ * rules then apply, which is exactly what `verdict === ALLOW` already does.
+ */
+const UNATTENDED_ASK = opt("unattended-ask", "ask");
 const LOG_PATH = opt("log", "");
 const DENY_MAX = { allow: ALLOW, ask: ASK, deny: DENY }[opt("deny-max", "deny")] ?? DENY;
 const MODEL = opt("model", "jev-latest");
@@ -478,13 +508,23 @@ async function main() {
   //
   // `systemMessage` stays as well on an `ask`, because that is where a HUMAN
   // reads it; the two fields have two audiences and the rationale is for both.
+  // An `ask` nobody can answer is resolved here rather than left to the host to
+  // turn into a refusal it never chose.
+  if (verdict === ASK && UNATTENDED_ASK === "defer") {
+    defer(`rated ask in ${elapsed}ms; no human to ask, so the host's own rules apply`);
+  }
+
+  const decision = verdict === ASK && UNATTENDED_ASK === "block" ? VERDICT_NAME[DENY] : VERDICT_NAME[verdict];
   const out = {
     hookEventName: "PreToolUse",
-    permissionDecision: VERDICT_NAME[verdict],
-    permissionDecisionReason: explanation,
+    permissionDecision: decision,
+    permissionDecisionReason:
+      verdict === ASK && UNATTENDED_ASK === "block"
+        ? `${explanation}. No human is attached to confirm, so this is a refusal rather than a prompt.`
+        : explanation,
   };
-  if (verdict === ASK) out.systemMessage = explanation;
-  if (QUIET_ASK && verdict === ASK) delete out.permissionDecisionReason;
+  if (decision === VERDICT_NAME[ASK]) out.systemMessage = explanation;
+  if (QUIET_ASK && decision === VERDICT_NAME[ASK]) delete out.permissionDecisionReason;
   process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
   process.exit(0);
 }

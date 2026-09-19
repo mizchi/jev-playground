@@ -69,13 +69,13 @@ function main(): void {
     console.log(
       `  ${corpus} (${n} tasks)${corpus === "boundary" ? "  -- AUTHORED BY ME, see §4" : "  -- harvested from docs/32 and docs/36"}`,
     );
-    console.log("    arm      finished        untouched   median calls   median wall   median gate on path");
+    console.log("    arm         finished        untouched   median calls   median wall   median gate on path");
     for (const arm of arms) {
       const xs = mine.filter((r) => r.arm === arm);
       if (xs.length === 0) continue;
       const gated = xs.filter((r) => r.calls.some((c) => c.gateMs !== undefined));
       console.log(
-        `    ${arm.padEnd(8)} ${pct(xs.filter((r) => r.passed).length, xs.length)} ` +
+        `    ${arm.padEnd(11)} ${pct(xs.filter((r) => r.passed).length, xs.length)} ` +
           `(${xs.filter((r) => r.passed).length}/${xs.length})`.padEnd(10) +
           `${String(xs.filter((r) => r.untouched).length).padStart(10)}   ` +
           `${String(med(xs.map((r) => r.calls.length))).padStart(12)}   ` +
@@ -237,20 +237,31 @@ function main(): void {
   // ----------------------------------------------------------------- §3 turns
 
   console.log("\n§3 does a hook change how the agent works?\n");
-  console.log("  arm      median calls   Bash   Read   Edit   Write   other");
-  for (const arm of arms) {
-    const xs = of(arm);
-    if (xs.length === 0) continue;
-    const per = (t: string): number =>
-      xs.reduce((n, r) => n + r.calls.filter((c) => c.tool === t).length, 0) / xs.length;
-    const other =
-      xs.reduce((n, r) => n + r.calls.filter((c) => !["Bash", "Read", "Edit", "Write"].includes(c.tool)).length, 0) /
-      xs.length;
-    console.log(
-      `  ${arm.padEnd(8)} ${String(med(xs.map((r) => r.calls.length))).padStart(12)}   ` +
-        `${per("Bash").toFixed(1).padStart(4)}   ${per("Read").toFixed(1).padStart(4)}   ` +
-        `${per("Edit").toFixed(1).padStart(4)}   ${per("Write").toFixed(1).padStart(5)}   ${other.toFixed(1).padStart(5)}`,
-    );
+  // SPLIT BY CORPUS, and the first version of this did not -- which made it
+  // wrong in a way worth keeping the note for. `guardquiet` ran only on the
+  // boundary corpus (15 runs) while `bare` and `guard` ran on both (78 each),
+  // and boundary tasks take more calls than repair tasks. Pooled, guardquiet
+  // showed 12 median calls against 8 and looked like a different agent; it was
+  // a different corpus mix. THIRD TIME THIS SHAPE HAS APPEARED IN THIS
+  // SESSION: §1's arm table, the fitted-ladder rows in docs/42 §1, and here.
+  console.log("  corpus     arm         median calls   Bash   Read   Edit   Write   other");
+  for (const corpus of corpora) {
+    for (const arm of arms) {
+      const xs = rows.filter((r) => r.corpus === corpus && r.arm === arm);
+      if (xs.length === 0) continue;
+      const per = (t: string): number =>
+        xs.reduce((n, r) => n + r.calls.filter((c) => c.tool === t).length, 0) / xs.length;
+      const other =
+        xs.reduce(
+          (n, r) => n + r.calls.filter((c) => !["Bash", "Read", "Edit", "Write"].includes(c.tool)).length,
+          0,
+        ) / xs.length;
+      console.log(
+        `  ${corpus.padEnd(10)} ${arm.padEnd(11)} ${String(med(xs.map((r) => r.calls.length))).padStart(12)}   ` +
+          `${per("Bash").toFixed(1).padStart(4)}   ${per("Read").toFixed(1).padStart(4)}   ` +
+          `${per("Edit").toFixed(1).padStart(4)}   ${per("Write").toFixed(1).padStart(5)}   ${other.toFixed(1).padStart(5)}`,
+      );
+    }
   }
 
   // ---------------------------------------------- §4 the corpus the gate saw

@@ -143,7 +143,16 @@ const started = Date.now();
 const extra = (process.env.JEV_GATE_FLAGS ?? "")
   .split(",")
   .filter(Boolean)
-  .map((f) => (f.startsWith("--") ? f : `--${f}`));
+  // A flag's VALUE must not get a `--`: `["unattended-ask","defer"]` has to
+  // reach the hook as `--unattended-ask defer`, not `--unattended-ask --defer`.
+  // The rule is positional: the first token of each flag/value pair is the
+  // flag, and a token following a known value-taking flag is its value.
+  .map((f, i, all) => {
+    const VALUE_TAKING = new Set(["unattended-ask", "policy", "deny-max", "timeout", "log"]);
+    const prev = i > 0 ? all[i - 1].replace(/^--/, "") : "";
+    if (VALUE_TAKING.has(prev)) return f;
+    return f.startsWith("--") ? f : `--${f}`;
+  });
 const out = spawnSync(process.execPath, [bin, ...extra], {
   input: JSON.stringify(event),
   encoding: "utf8",
