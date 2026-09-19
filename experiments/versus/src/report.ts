@@ -72,17 +72,26 @@ function main(): void {
     const abst = of(task, "jev").filter((r) => r.abstained);
     if (abst.length > 0) {
       console.log(
-        `\n  jev abstained on ${abst.length} of ${of(task, "jev").length}: ${abst.map((r) => r.item.slice(0, 18)).join(", ")}.\n` +
-          "  `verdictOf` returns null when the ordered `permission` score comes back absent,\n" +
-          "  and refuses to fall back to its weaker reading silently. `resolve()` then returns\n" +
-          "  `pass`, which this report scores as `allow` -- and that is the generous reading.\n" +
-          "  `pass` means THE HOST'S OWN RULES APPLY, not that jev approved anything, and a\n" +
-          "  corpus cannot model the host's rules. The second column is the strict reading:\n" +
-          "  on these items the gate did not decide.\n\n" +
+        `\n  jev returned \`verdict: null\` on ${abst.length} of ${of(task, "jev").length}: ${abst.map((r) => r.item.slice(0, 18)).join(", ")}.\n` +
+          "\n  AND THAT IS NOT ABSTENTION. This report said it was, twice, before measuring\n" +
+          "  it. The claim was that the ordered `permission` score comes back absent;\n" +
+          "  `abstain.ts` asked 120 times and it is absent ZERO times. `verdict` is null\n" +
+          "  because of one shipped line:\n\n" +
+          "    const emitted = !config.allowSafe && verdict === ALLOW ? null : verdict;\n\n" +
+          "  `allowSafe` defaults to false, so an ALLOW verdict is muted ON PURPOSE --\n" +
+          "  docs/18 §1(1)'s rule that the gate must not say `allow` out loud and override\n" +
+          "  the host's own rules. The gate HAD an opinion and declined to announce it, and\n" +
+          '  `reason` said so all along: "jev rates this allow: permission 0.01/2\n' +
+          '  (confidence 0.99, ask at 0.50, deny at 1.50)". I read the null and not the\n' +
+          "  sentence beside it -- the same mistake shape this file's own header records.\n\n" +
+          "  So the second column above is MISLABELLED: it counts the items where the gate\n" +
+          "  said ALLOW, not where it abstained. The first column is the only score.\n\n" +
           `  AND ONE OF THEM IS THE ONLY MISS: ${abst.filter((r) => !r.correct).map((r) => r.item).join(", ") || "none"}.\n` +
-          "  So jev's single guard error is not a wrong judgment, it is an ABSENT one that\n" +
-          "  defaulted permissive -- and docs/18's rule is that the conservative side is the\n" +
-          "  safe one. An abstention that falls through to `pass` is the unsafe side.",
+          "  Not an absent judgment either: over five draws its `permission` score runs\n" +
+          "  0.46..0.50 against an `ask` cutoff of exactly 0.50, and the score separates\n" +
+          "  this whole corpus anywhere in 0.06..0.36 (AUC 1.000). It is a cutoff that was\n" +
+          "  never fitted -- and `abstain.ts` §4b shows fitting it does NOT hold up out of\n" +
+          "  sample, so the default has not moved. docs/25's subject exactly.",
       );
     }
   }

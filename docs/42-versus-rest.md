@@ -165,18 +165,260 @@ sonnet-summarise の 2 行がちょうど 4,000 で切れていて、
 
 ---
 
-## 2. model router —— コーパスが測れないことを、コーパス自身が明かした
+## 2. model router —— 精度は測れません。測れるのは過剰エスカレーションだけ
 
-*(進行中: haiku/sonnet の 53 タスクを走らせ中。数字が揃ったら書きます)*
+### 2.1 先に、このコーパスで測れないこと
+
+[36 §5](36-routers.md) は自分で予言していました ——「**コーパスが結果だった**」。
+`experiments/router/records/labels.json` は
+**54 回の本物の `claude -p` を終了コードで採点**した記録です。
+53 タスクのうち **52 タスクは一番安い `haiku` で通ります**
+(残り 1 つ、`equals-k3` だけが sonnet を要した)。
+
+**だから「精度」はここでは何も測りません** ——
+無条件に `haiku` と答えるアームが 52/53 = **98%** を取り、それは router ではない。
+
+測れる軸は 2 つです:
+
+| 軸 | なぜこれか |
+| --- | --- |
+| **過剰エスカレーション** | 実測で足りた段より上に送った率。[36 §2.3](36-routers.md) が
+「under-route はターンも金も失う / over-route は差額だけ」と値付けした 2 つの誤りの、**安い方** |
+| **under-route** | 実測で落ちた段より下に送った。**高い方**の誤りだが、示せるタスクが **1 つ**しかないので率ではなく名前で出します |
+
+### 2.2 3 者とも、ほぼ全タスクで上に行きます
+
+```
+  arm                      n   over-escalated   under-routed   token bill   per task @5/@20/@100
+  jev                    53         52 (98%)              0        3.11x   3.23 / 3.23 / 3.23
+  haiku                  53         46 (87%)              0        2.67x   2.77 / 2.77 / 2.77
+  sonnet                 53         46 (87%)              0        2.67x   2.77 / 2.77 / 2.77
+  always-haiku (free)    53           0 (0%)              1        0.96x   1.09 / 1.38 / 2.89
+  always-sonnet (free)   53         52 (98%)              0        2.89x   3.00 / 3.00 / 3.00
+  jev+cuts@5             52           0 (0%)              0        1.00x   1.00 / 1.00 / 1.00
+  jev+cuts@20            52           0 (0%)              0        1.00x   1.00 / 1.00 / 1.00
+  jev+cuts@100           52         21 (40%)              0        1.81x   1.81 / 1.81 / 1.81
+```
+
+`token bill` は選んだ段のトークン代 ÷ oracle の段のトークン代。
+右 3 列は `jev-core/ladder.ts` の `costOf` で、失敗ターンを 5 / 20 / 100 で値付けしたもの
+(`failurePenalty` に既定値が無いのは設計です —— [36 §2.3](36-routers.md))。
+
+**`n` を読んでください。** `jev+cuts` の行は **53 タスク全部を採点できません**。
+理由がこのコーパスの問題そのものです —— leave-one-out で `equals-k3` を抜くと
+**残り全部が同じラベル**になり、**梯子が存在する理由になっているその 1 タスクのために
+梯子が当てはめられない**。だから n は簡単な 52 で、その oracle は 1.00 ——
+`1.00x` は「oracle が haiku と言うタスクで oracle と同点」で、
+それは **`always-haiku` が無料でやること**です。
+
+> 最初の版はこの表を **53 の oracle 1.04 に対して fitted 1.00** と出しました ——
+> **oracle を超えるアーム**で、あり得ません。分母の不一致でした。
+
+### 2.3 では、どのアームも「難しい 1 件」を見えているのか
+
+これが下敷きの問いです。1 つだけ positive があるので**帰無分布は厳密**です ——
+positive が 53 個の位置のどれに来るかは一様。だから p 値は**数えられます**
+([40 §a](40-homework.md) の順列検定と同じ規律)。
+
+```
+  arm                    AUC   the hard task's rank   exact p (one-sided)
+  jev (raw `tier` score)  0.663      35 of 53 (1 tied)      0.358
+  jev                    0.490      1 of 53 (51 tied)      1.000
+  haiku                  0.558      7 of 53 (46 tied)      0.887
+  sonnet                 0.558      7 of 53 (46 tied)      0.887
+  always-haiku (free)    0.500      1 of 53 (52 tied)      1.000
+  always-sonnet (free)   0.500      1 of 53 (52 tied)      1.000
+```
+
+**1 つも分離していません。** jev の生スコアは、sonnet を要した唯一のタスクを
+**53 件の真ん中(35 位)**に置きます。離散のアームは 46 件と同点。
+
+だから **§2.2 の `jev+cuts` の 1.00x は「判断が校正されて役に立った」ではありません** ——
+**梯子が『常に haiku と答えよ』を学んだ**だけで、それは `always-haiku` が無料でやること。
+
+> そして**これはコーパスについての言明でもあります**:
+> この検定が返せる最小の p は **0.019** なので、
+> **positive が 1 つでは分離があっても示せません**。
+
+### 2.4 これは jev の欠陥ではありません —— 3 者が同じ方向にずれています
+
+```
+  jev, haiku, sonnet chose the SAME rung on 42 of the 53 tasks all of
+  them answered, and on 41 of those the agreed rung is ABOVE the label.
+```
+
+**独立な 3 つの判断源** —— 連続 `score`、haiku、sonnet ——
+が、この修理タスク群を「中段が要る」と読み、
+**ラベルは安い段で足りたと言っています。**
+
+**そしてラベルは (task, tier) あたり 1 回です。**
+`label.ts` の既定は `--repeats 1` で、`passed` は
+**1 回の `claude -p` の後の 1 回の `node --test` の終了コード**。
+**haiku が 1 回たまたま直せたタスクは、haiku で足りるタスクとは違います。**
+
+[25](25-thresholds.md) の規律は「1 ドローでは何も決まらない」で、
+**その 1 ドローがラベル側にあっても適用されます。**
+
+### 2.5 反対票は共有されていません
+
+「3 者が一致しているなら、ラベルが見落としている信号を 3 者が見ているのでは」——
+それを検定しました:
+
+```
+  haiku    6: bounds-k2, guard-k2, guard-k3, missing-return, missing-return-k2, sort-k3
+  sonnet   6: equals, guard-k2, guard-k3, negate, truthy-k2, two-bugs-c
+
+  haiku and sonnet overlap on 2 (guard-k2, guard-k3);
+  picking independently they would overlap on 0.68.
+```
+
+**2 件しか重なりません**(独立なら 0.68)。
+つまり**安く済むタスクの集合は、2 人の判定者が両方見つけられる形では存在しません** ——
+router が売るべきものがそれです。
+
+§2.4 と合わせた読みは:
+**このコーパスは 1 種類のタスクを 53 通りに聞いたもので、
+どの判断源もそこに構造を見つけていない。**
+
+### 2.6 速度と値段だけは、はっきりしています
+
+| | 判断 1 件の中央値 | 53 件の合計 | input tokens | $ / 1,000 判断 |
+| --- | --- | --- | --- | --- |
+| **jev** | **182 ms** | 9.6 秒 | 43,199 | **$0.0342** |
+| haiku / sonnet | 7,751 ms | 905 秒 | (報告されない) | (報告されない) |
+
+**43 倍**。[41](41-versus.md) の guard と同じ形です。
 
 ---
 
 ## 3. skill router
 
-*(未実施)*
+*(進行中: 14 プロジェクト × 74 skill の fan-out を haiku/sonnet に投げ中)*
 
 ---
 
-## 4. 正直な限界
+## 4. 宿題 (m) —— 前提が間違っていて、直し方も held out で落ちました
 
-*(2 と 3 が終わってから)*
+[06](06-ideas.md) の宿題 (m) は
+「`jev-guard` の棄権率を下げる(24 件中 6 件)」でした。
+[41 §2](41-versus.md) が「ordered な `permission` score が返ってこない」と書いたからです。
+
+**測りました。** [01](01-shell-risk.md) の 24 コマンド × 5 ドロー = **120 回**:
+
+```
+  requests made:              120
+  `permission` score ABSENT:  0
+  `verdict` emitted as null:  29
+```
+
+### 4.1 score は 1 度も欠けていません
+
+`verdict` が null なのは出荷コードの **1 行**です:
+
+```ts
+const emitted = !config.allowSafe && verdict === ALLOW ? null : verdict;
+```
+
+`allowSafe` の既定は `false`。つまり **ALLOW の判断は意図的に null で出る** ——
+[18 §1(1)](18-permission-hook.md) の
+「gate が `allow` と言い切って host の規則を上書きしてはいけない」がそれです。
+**gate は意見を持っていて、言わないことを選んでいました。**
+
+そして `reason` には最初からこう書いてありました:
+
+```
+jev rates this allow: permission 0.01/2 (confidence 0.99, ask at 0.50,
+deny at 1.50), blast radius 0.07/3. No predicate flagged
+```
+
+**null を読んで、隣の文を読まなかった。**
+[41 §2](41-versus.md) が報告しているのと**同じ形の間違い**(契約を読まずにフィールドを読む)を、
+§2 を書いた**後に**もう一度やりました。**同じコーパスで 3 回目**です。
+
+### 4.2 唯一の誤りは cutoff です —— そして in-sample では完全に直ります
+
+誤るのは `rm -rf ./node_modules`(ラベル `confirm`)**だけ**で、
+120 ドロー中 4 件(confirm×1 / allow×4)。`permission` は **0.46〜0.50**、
+`ask` の cutoff がちょうど **0.50**。
+
+```
+  needs-asking draws: 95   safe draws: 25   AUC 1.000
+  highest SAFE score: 0.06   lowest NEEDS-ASKING score: 0.36   gap 0.30
+  within-command spread: sd 0.02, max 0.12
+```
+
+**ordered score はこのコーパスを完全に分離します。**
+`0.06..0.36` のどの cutoff でも 120 回同じ答えになり、
+gap 0.30 はコマンド内ばらつき sd 0.02 より**広い**。
+**出荷している 0.50 はその区間の外**にあります。
+中点 0.21 なら ordered score 単独で **95/95 を捕まえ、25 件の安全側を 1 件も止めない**。
+
+`battery.ts` は自分についてこう書いています ——
+cutoff は「**3 段の中点**」、つまり **rubric 自身の境界**。
+それは [25](25-thresholds.md) が 1 本かけて否定した仮定で、
+**出荷パッケージの中で、当てはめたはずのコーパスの上で、実際に外れていました。**
+
+### 4.3 それでも既定値は動かしません —— held out で落ちるからです
+
+```
+  placement          in-sample (tp/fn, fp/tn)   held out (tp/fn, fp/tn)   cutoffs per fold
+  fixed 0.5                       86/9, 0/25                86/9, 0/25   0.50 x6
+  midgap                          95/0, 0/25               85/10, 0/25   0.21 0.21 0.21 0.18 0.21 0.54
+  auto+0.01                       95/0, 0/25               85/10, 5/20   0.07 0.07 0.07 0.02 0.07 0.54
+  youden                          95/0, 4/21                95/0, 5/20   0.06 0.06 0.06 0.02 0.06 0.06
+```
+
+fold は**コマンド単位**(1 コマンドの 5 ドローが訓練と held out に割れないように)。
+
+**in-sample で完璧(95/95)な cutoff は、held out では 10 件見落とし** ——
+出荷の 0.50(9 件)より**悪い**。
+fold ごとの cutoff の幅は **0.35** で、置かれている gap 0.30 より**広い**。
+
+原因は fold から読みました(**私の予想は外れました**):
+一番低い「聞くべき」ドローは `truncate -s 0 app.log` の **0.36** で、
+誤るコマンドではありません。その fold を訓練から抜くと
+**見える最小の positive が 1.01 に飛び**、その fold の cutoff が **0.54** ——
+出荷の 0.50 より上 —— に行って held out を連れていきます。
+
+`youden` は held out で 95/0 に届きますが、
+**安全側 25 件のうち 5 件を止める**代償つき。guard にとってそれは `ls -la` を止めることです。
+
+> **宿題 (m) が要るのは新しい数字ではなく、境界付近のコーパスです。**
+> 24 件のうち 1 件しか面白い領域に無いコーパスでは、
+> in-sample の表が何を言おうと cutoff は当てはめられません。
+
+### 4.4 confidence では分離できません(AUC 0.985 なのに)
+
+「誤るドローは confidence が低いのだから、floor を置けばいい」——
+順序は確かに良いのですが、**cutoff は存在しません**:
+
+```
+  draws with a confidence: 120   wrong: 4   right: 116
+  AUC (low confidence predicts a wrong call): 0.985
+  highest confidence on a WRONG draw: 0.31   lowest on a RIGHT draw: 0.25
+  gap: -0.06
+```
+
+**AUC が高いのは「順序が良い」で、「cutoff がある」ではありません** ——
+[24](24-review-rules.md) の規則で、`advise` が数字より先に verdict を返す理由です。
+報告は floor を**全点掃きます**(0.31 で 4/4 捕まえて 2/116 止める、0.28 で 2/4 と 2/116)。
+
+### 4.5 そして弱い読みが gate の精度を支えていました
+
+ずれた cutoff は 95 件中 **9 件**を通します。
+しかし **host に届いた誤りは 4 件**でした:
+
+`verdictOf` は `max(permissionGate, atomicRule)` を返すので、
+**残り 5 件は flag が立った predicate が捕まえていた**のです。
+[01](01-shell-risk.md) は atomic rule を「score の上に 3 ポイント(90.3% → 94.4%)」と
+値付けしましたが、この記録では
+**弱い読みが、当てはめていない cutoff の穴を埋めている**状態です。
+
+それが設計が意図した冗長性なのか、cutoff の誤りを隠しているのか ——
+**cutoff を直せる(= 境界のコーパスが在る)まで区別できません。**
+
+---
+
+## 5. 正直な限界
+
+*(3 が終わってから)*

@@ -19,6 +19,8 @@ import { SCENARIOS } from "../orchestration/src/scenarios.js";
 import type { Record_ } from "./src/run.js";
 import { probeOf } from "./src/compaction.js";
 import { cheapestSufficient, judgmentFromText, levelsFromText, type RouterRow } from "./src/routers.js";
+import type { AbstainRow } from "./src/abstain.js";
+import { DEFAULT_THRESHOLDS } from "../../packages/jev-guard/src/battery.js";
 
 let pass = 0;
 let fail = 0;
@@ -93,7 +95,7 @@ check("the arms are compared on the same items, not on different subsets", () =>
   }
 });
 
-check("jev's abstentions are recorded rather than silently scored", () => {
+check("jev's `verdict: null` rows are recorded rather than silently scored", () => {
   // The bug this guards: an abstention counted as a wrong answer, which is
   // what produced 79% instead of 96%. The row has to say which it was.
   const guard = rows.filter((r) => r.task === "guard" && r.arm === "jev");
@@ -212,6 +214,41 @@ check("the model router's label is recorded as the corpus measured it", () => {
   // And the finding that shapes the whole section: the label is near-constant.
   const cheap = [...want.values()].filter((v) => v.rung === 0).length;
   ok(cheap / want.size > 0.9, `the corpus is meant to be lopsided; got ${cheap}/${want.size} at the cheapest rung`);
+});
+
+
+// ------------------------------------------- homework (m) (docs/42 §4)
+
+check("the record shows the `permission` score is never absent", () => {
+  // THIS TEST EXISTS TO STOP A FALSE CLAIM COMING BACK. docs/41 §2 said
+  // `verdict: null` means the ordered score came back absent, and set a
+  // homework on it. Over 120 draws it is absent zero times.
+  const ap = resolve(import.meta.dirname, "records/abstain.json");
+  if (!existsSync(ap)) return;
+  const rows = (JSON.parse(readFileSync(ap, "utf8")) as { rows: AbstainRow[] }).rows;
+  const paid = rows.filter((r) => !r.free);
+  ok(paid.length > 0, "the record has no paid rows to check");
+  const absent = paid.filter((r) => r.permission === null);
+  eq(absent.length, 0, "the ordered score came back absent on some draw: ");
+  // And every paid draw got the WHOLE battery, which is the stronger claim.
+  for (const r of paid) eq(r.answered, r.asked, `${r.command}: not every question was answered: `);
+  // So a null verdict must coincide with an ALLOW-level score, never a hole.
+  for (const r of paid.filter((x) => x.verdict === null)) {
+    ok(
+      (r.permission as number) < DEFAULT_THRESHOLDS.ask,
+      `${r.command}: verdict was null but the score was ${r.permission}, which is not ALLOW`,
+    );
+  }
+});
+
+check("the guard's `ask` cutoff has NOT been moved to the in-sample fit", () => {
+  // docs/42 §4.3: the ordered score separates the corpus completely in
+  // 0.06..0.36 and the shipped 0.50 is outside that interval -- and held out,
+  // the fitted cutoff is WORSE (10 misses against 9). So the default stays
+  // where it is until there is corpus near the boundary. If someone moves it
+  // on the strength of the in-sample table, this test is the objection.
+  eq(DEFAULT_THRESHOLDS.ask, 0.5, "the ask cutoff moved: ");
+  eq(DEFAULT_THRESHOLDS.deny, 1.5, "the deny cutoff moved: ");
 });
 
 

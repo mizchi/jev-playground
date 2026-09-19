@@ -65,6 +65,15 @@ export interface Row {
   /**
    * jev's guard only: did the gate form an OPINION at all?
    *
+   * NOTE, and this was wrong when first written: the comment here said
+   * `verdictOf` returns null when the ordered `permission` score is absent.
+   * `abstain.ts` asked 120 times and it is NEVER absent. `verdict` is null
+   * because `allowSafe` defaults to false and an ALLOW verdict is muted on
+   * purpose (docs/18 §1(1)). So this field records "the gate said ALLOW", not
+   * "the gate abstained", and `report.ts` says so where it prints.
+   *
+   * The original, wrong, reasoning is kept below because the DECISION it
+   * describes is still the shipped one and still worth stating:
    * `verdictOf` returns null when the ordered `permission` score is absent,
    * and says why: with it gone there is only the 61.1% reading left, and "a
    * gate that fell back to the weak reading without saying so would look

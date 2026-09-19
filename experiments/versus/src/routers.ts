@@ -771,6 +771,41 @@ function report(): void {
       }
     }
 
+    // ------------------------------- and when they DO go cheap, do they agree?
+    //
+    // The unanimity table above could be read as "the judges see something the
+    // label does not". This one tests that reading: if the dissents pick out
+    // the same tasks, there is shared signal the label is missing; if they
+    // pick different tasks, the dissents are noise.
+    const cheap = (arm: string): Set<string> =>
+      new Set(model.filter((r) => r.arm === arm && r.rung === 0).map((r) => r.item));
+    const armsWithDissent = ARMS.filter((a) => cheap(a).size > 0);
+    if (armsWithDissent.length >= 2) {
+      console.log("\n  when an arm DOES pick the cheap rung, do the arms pick the same tasks?\n");
+      for (const a of armsWithDissent) {
+        console.log(`  ${a.padEnd(8)} ${cheap(a).size}: ${[...cheap(a)].join(", ")}`);
+      }
+      const [a, b] = armsWithDissent;
+      const shared = [...cheap(a)].filter((t) => cheap(b).has(t));
+      // If each arm picked its cheap tasks at random from the same pool, the
+      // expected overlap is |A||B|/n. Comparing against that is the whole
+      // point: two sets of six out of 53 overlap a little by accident.
+      const expected = (cheap(a).size * cheap(b).size) / tasks.length;
+      console.log(
+        `\n  ${a} and ${b} overlap on ${shared.length}${shared.length > 0 ? ` (${shared.join(", ")})` : ""};\n` +
+          `  picking independently they would overlap on ${expected.toFixed(2)}.\n` +
+          (shared.length <= 2 * Math.max(1, expected)
+            ? "  >> SO THE DISSENTS ARE NOT SHARED SIGNAL. The two models agree that almost\n" +
+              "     every task needs the middle rung, and when either one disagrees it\n" +
+              "     disagrees about a DIFFERENT task. There is no cheap-task set here that\n" +
+              "     two judges can both find, which is what a router would need to sell.\n" +
+              "     Combined with the unanimity table, the reading is: the corpus is one\n" +
+              "     kind of task asked 53 ways, and no judgment source finds structure in it."
+            : "  >> The dissents overlap more than chance, so there is shared signal the\n" +
+              "     label is not rewarding. That is a reason to doubt the label, not the arms."),
+      );
+    }
+
     console.log("\n  why each arm went up, by the shipped policy's own `reason`:\n");
     for (const arm of ARMS) {
       const xs = model.filter((r) => r.arm === arm);
