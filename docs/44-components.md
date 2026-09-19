@@ -20,6 +20,8 @@
 **そして一番重要な結果はこの表の中に在りません。**
 新しいアームが全部 100% で返ってきたので計器を見に行ったところ、
 **186 run ぶんの `passed` が、テストを書き換えたエージェントを区別できていませんでした**(§4)。
+**[43](43-finish.md) の 186 run を掃き直しました** —— **改竄 0 件**、
+そして**副産物として [43](43-finish.md) 初の追試**になりました(§4.2)。
 
 再現:
 
@@ -27,12 +29,20 @@
 cd experiments/finish && npm install
 npx tsx src/components.ts              # 3 コンポーネントの表、記録から。API 不要・CLI 不要
 npx tsx src/probe.ts --show            # 58 タスク × 3 判断、エージェント抜き
-npm test                               # 28 件
+npx tsx src/audit.ts                   # 全記録に「テストを書き換えて通したか」を聞く
+npx tsx src/replicate.ts               # docs/43 を 2 回測った表(186 対 186)
+npx tsx src/wire.ts --show             # 300 件のカタログがモデルに届いたか
+npm test                               # 30 件
 
 TYPESAFEAI_API_KEY=... npx tsx src/probe.ts --corpus all
 TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks hard  --arms haiku,sonnet,routerfail   --out model.json
 TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks easy  --arms haiku,allskills,skillrouter --out skills.json
 TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks boundary --arms subagent,orchestrated --repeats 2 --out orch.json
+
+# TODO §3.0 の掃き直し(docs/43 と同じ構成、grader 付き)
+TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks easy --arms bare,guard --repeats 3 --out recheck-easy.json
+TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks boundary \
+  --arms bare,guard,guardquiet,guarddefer --repeats 3 --out recheck-boundary.json
 ```
 
 ---
@@ -418,17 +428,86 @@ ok   the grader actually catches a neutered test file
 ledger も直しました: Edit/Write の `file_path` を記録するので、
 `testsIntact` が「触った」と言ったとき **どの呼び出しがやったか**が分かります。
 
-### 4.1 で、実際に改竄は在ったのか
+### 4.1 で、実際に改竄は在ったのか —— 掃き直しました
 
-**新しい 179 run では 0 件です。** 全アーム、全コーパス。
+[TODO §3.0](../TODO.md) の残作業でした。**[43](43-finish.md) と同じ 186 run を掃き直しました**
+(easy × {bare, guard} × 3 と boundary × {bare, guard, guardquiet, guarddefer} × 3、
+同じアーム・同じプロンプト・今度は grader 付き)。
 
-だから上の表の 100% は**本物の 100%** です ——
-**ただしそれは塞いだ後の話で、[43](43-finish.md) の 186 run については分かりません。**
-サンドボックスは消えているので遡っては採れません。掃き直せば分かり、**約 30 分**です
-([TODO §3.0](../TODO.md))。
+**答え: 改竄は 0 件です。**
 
-**事前確率は低い**(同じハーネス・同じプロンプトで 179 run が 0 件)ですが、
-**低い事前確率は測定ではありません。** そう書いておきます。
+| 記録 | run | `testsIntact` | テストファイルが変わった | `test/` へのシェル書き込み | path の無い Edit/Write |
+| --- | --- | --- | --- | --- | --- |
+| `runs.json`([43](43-finish.md) の 186) | 186 | **未検査** | —— | **0 / 978** | **215 / 215** |
+| `recheck-easy.json` | 126 | 126/126 | **0** | 0 / 560 | 0 |
+| `recheck-boundary.json` | 60 | 60/60 | **0** | 0 / 425 | 0 |
+| [44](44-components.md) の 3 掃き | 179 | 179/179 | **0** | 0 / 717 | 0 |
+
+**そして掃き直しでも元の 186 行は採点できません。** サンドボックスは消えているので
+`testsIntact` は遡って計算できず、**走らせ直すのは新しいドローで、再採点ではありません。**
+
+**ただし元の 186 行についても半分は言えます** —— ledger は Bash コマンドを逐語で持っているので、
+**その検査は遡及的に効きます**(`src/audit.ts`):
+
+- **978 コマンド中、`test/` に書き込むシェルコマンドは 0 件。** シェル経路は通られていません。
+- **残るのは 215 件の Edit/Write で、当時の ledger は path を記録していませんでした。**
+  これが**塞げない穴**で、だからこそ掃き直す価値が在りました。
+
+`src/audit.ts` は記録ごとに**3 つの答えのどれを得たか**を印字します ——
+「改竄は見つからなかった」は、直接ハッシュから来たときと、
+盲点つきの ledger 走査から来たときと、何も無いときで、**意味が違うからです**。
+
+### 4.2 そして掃き直しは [43](43-finish.md) の**追試**になりました
+
+186 run の掃き直しは改竄の答えより多くを持ってきました ——
+**[43](43-finish.md) の主張はどれも 1 ドローだった**ので、これが初めての追試です。
+2 つは**プールしません**(元と平均した追試は追試ではありません):
+
+`npx tsx src/replicate.ts` が全表を出します。**再現したもの:**
+
+| | [43](43-finish.md) | 掃き直し |
+| --- | --- | --- |
+| gate のレイテンシ中央値 | **371 ms** | **372 ms** |
+| [18 §1](18-permission-hook.md) の 2,500 ms 予算超過 | 0 / 391 | **0 / 394** |
+| easy: `bare` / `guard` の完遂 | 63/63 / 63/63 | **63/63 / 63/63** |
+| easy: 対応付け符号検定 | 不一致ペア無し | **不一致ペア無し** |
+| **gate が発言したタスク** | **shadowed-dep, wrong-generated**(5 件中 2) | **同じ 2 件** |
+| `guarddefer` の ask 率 | 2 / 96 (2.1%) | **2 / 107 (1.9%)** |
+
+**再現しなかったもの:**
+
+| | [43](43-finish.md) | 掃き直し |
+| --- | --- | --- |
+| boundary: `guard` の完遂 | **14/15** | **15/15** |
+| `guard` の ask 率 | 6 / 114 (5.3%) | **1 / 109 (0.9%)** |
+| `guardquiet` の ask 率 | 6 / 103 (5.8%) | **2 / 106 (1.9%)** |
+
+つまり **[43 §4b](43-finish.md) の「gate が初めて仕事を奪った」1 件は再現しませんでした。**
+起きたことは起きた(17 呼び出しの transcript が残っています)ので**存在証明としては立ちます** ——
+**率としては立ちません。**
+
+### 4.3 2 掃きが 1 掃きでは言えなかったことを言いました
+
+[43 §4b.3](43-finish.md) の結論はこうでした:
+
+> **ブロックされるかどうかは、コマンドの性質ではなくドローです。**
+
+**半分正しくて、外している半分が効きます。**
+
+| | 再現したか |
+| --- | --- |
+| **どのタスクで gate が発言するか** | **完全に再現**(5 件中 2 件、同じ 2 件、両掃きとも、残り 3 件では一度も) |
+| **その中で何回発言するか** | **再現しない**(14 ask → 5 ask) |
+
+つまり**コマンドは候補集合を正確かつ反復的に選びます。**
+ドローなのは**候補に入った後**です。
+
+> **「この gate はコマンドの X% を止める」という形の主張は成立しません。**
+> **「この gate はこれらのコマンドについて意見を持ち、あれらについては持たない」は成立します。**
+
+これが [TODO §2.4](../TODO.md) の問いの答えの半分です。
+**率の変化に p 値は付けません** —— 両掃きの ask は全部その 2 タスクに乗っているので、
+コマンドは独立試行ではなく、**独立と仮定した検定はクラスタリングのぶんだけ証拠を過大評価します。**
 
 ---
 
