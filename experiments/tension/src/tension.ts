@@ -37,6 +37,11 @@ export interface MoveRow {
   confidence: number;
   /** The `score` level, 0..4. */
   standing: number;
+  /**
+   * The same judgment on nine levels (0..8), asked in the same request.
+   * Absent in records written before docs/06 homework (c).
+   */
+  standingFine?: number;
   /** From the solver, never from an answer. */
   criticality: number;
   legal: number;
@@ -97,13 +102,29 @@ export function alternation(xs: readonly number[]): number {
  * number means "the position changed" rather than "it is the other side's
  * turn now".
  */
-export function swingOf(rows: readonly MoveRow[]): number {
+export function swingOf(rows: readonly MoveRow[], which: "standing" | "standingFine" = "standing"): number {
   const deltas: number[] = [];
   for (const player of [0, 1]) {
-    const mine = rows.filter((r) => r.player === player);
-    for (let i = 1; i < mine.length; i += 1) deltas.push(Math.abs(mine[i].standing - mine[i - 1].standing));
+    const mine = rows.filter((r) => r.player === player && r[which] !== undefined);
+    for (let i = 1; i < mine.length; i += 1) {
+      deltas.push(Math.abs((mine[i][which] as number) - (mine[i - 1][which] as number)));
+    }
   }
   return deltas.length === 0 ? 0 : mean(deltas);
+}
+
+/**
+ * `swing` on the nine-level scale, rescaled onto the five-level one.
+ *
+ * A nine-level scale spans 0..8 and a five-level scale 0..4, so the same
+ * position change reads twice as large on the finer one BEFORE any judgment
+ * is involved. Comparing the raw numbers would answer "is 8 bigger than 4",
+ * which needs no requests. Dividing by 2 puts them on the same footing, and
+ * what is left to compare is the RANKING -- which is what docs/35 §1 reports
+ * and what homework (c) asks about.
+ */
+export function swingFineRescaled(rows: readonly MoveRow[]): number {
+  return swingOf(rows, "standingFine") / 2;
 }
 
 export function trajectoryOf(rows: readonly MoveRow[]): Trajectory {

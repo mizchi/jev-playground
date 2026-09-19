@@ -48,6 +48,41 @@ export const LEVELS = [
   "the player to move is winning: careful play from here cannot lose it",
 ];
 
+export const STANDING_FINE = "standing_fine";
+
+/**
+ * The same judgment on nine levels, asked in the SAME REQUEST as the five.
+ *
+ * docs/06's homework (c): `swing` is the mean absolute change in `standing`
+ * between a player's consecutive moves, and it is measured on a five-level
+ * scale. If the ranking in docs/35 §1 moves when the scale gets finer, then
+ * `swing` is measuring the SCALE and not the game.
+ *
+ * Asked in the same request rather than in a second run, which matters more
+ * than it sounds: a separate run would re-play the games, the chooser would
+ * make different moves, and the trajectories being compared would be
+ * different trajectories. Here both scales judge THE SAME POSITION, so the
+ * only thing that differs is the number of levels. docs/29 §4 measured extra
+ * questions on one state at 99.8% of answers within 0.25 for a third of the
+ * tokens, so this is close to free.
+ *
+ * The wording is stretched, not re-invented: every fifth level keeps its own
+ * sentence and the four new ones sit between them. A re-worded scale would
+ * confound resolution with phrasing, and docs/31 already measured phrasing at
+ * 21 points.
+ */
+export const LEVELS_FINE = [
+  "the player to move is losing: with careful play by the opponent there is no way out",
+  "the player to move is close to lost, with only a narrow practical chance",
+  "the player to move is worse off, though not yet beyond saving",
+  "the player to move is slightly worse off",
+  "the position is balanced, or too unclear to call",
+  "the player to move is slightly better off",
+  "the player to move is better off, with a real advantage to convert",
+  "the player to move is close to won, needing only accuracy",
+  "the player to move is winning: careful play from here cannot lose it",
+];
+
 export function stateFor(p: Position, history: string[]): Record<string, unknown> {
   const rules = RULES[p.game];
   return {
@@ -73,6 +108,12 @@ export function questionsFor(arm: ArmName, moves: Move[]): Record<string, Questi
       type: "score",
       instructions: "Judge the position as it stands now, before the move is made, from the point of view of the player to move.",
       criteria: LEVELS,
+    },
+    // Same question, nine levels. docs/06 homework (c).
+    [STANDING_FINE]: {
+      type: "score",
+      instructions: "Judge the position as it stands now, before the move is made, from the point of view of the player to move.",
+      criteria: LEVELS_FINE,
     },
   };
 }

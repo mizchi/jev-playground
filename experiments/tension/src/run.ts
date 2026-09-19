@@ -21,7 +21,7 @@ import { resolve } from "node:path";
 import { Jev } from "../../shared/jev.js";
 import { GAMES, type GameName, RULES, seeded } from "./games.js";
 import { analyse } from "./solve.js";
-import { ARMS, ARM_BLURB, type ArmName, MOVE, STANDING, questionsFor, stateFor } from "./arms.js";
+import { ARMS, ARM_BLURB, type ArmName, MOVE, STANDING, STANDING_FINE, questionsFor, stateFor } from "./arms.js";
 import { type MoveRow, type Trajectory, mean, spearman, trajectoryOf } from "./tension.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
@@ -34,8 +34,19 @@ export interface PlayRecord {
   usage: { input: number; output: number; calls: number; ms: number };
 }
 
+/**
+ * Which record to read and write.
+ *
+ * Settable because docs/06's homework (c) needed a run that does NOT replace
+ * docs/35's numbers. Re-running in place would have been a fresh set of draws
+ * for `standing` as well as the new nine-level question, so the published
+ * figures would have moved for a reason unrelated to the homework. A separate
+ * file keeps them side by side.
+ */
+let RECORD = "play.json";
+
 function readRecord(): PlayRecord | null {
-  const path = resolve(RECORDS, "play.json");
+  const path = resolve(RECORDS, RECORD);
   return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as PlayRecord) : null;
 }
 
@@ -60,7 +71,9 @@ async function selfPlay(jev: Jev, arm: ArmName, game: GameName, seed: number): P
     const res = await jev.ask(stateFor(p, history), questionsFor(arm, moves));
     const move = res.answers[MOVE];
     const standing = res.answers[STANDING];
+    const fine = res.answers[STANDING_FINE];
     if (move.type !== "choice" || standing.type !== "score") throw new Error("unexpected answer shapes");
+    if (fine && fine.type !== "score") throw new Error("unexpected answer shape for the nine-level scale");
     const chosen = moves.find((m) => m.name === move.choice);
     if (!chosen) throw new Error(`${game}: chose ${move.choice}, which is not legal here`);
     rows.push({
@@ -70,6 +83,7 @@ async function selfPlay(jev: Jev, arm: ArmName, game: GameName, seed: number): P
       player: p.player,
       confidence: move.confidence,
       standing: standing.score,
+      ...(fine && fine.type === "score" ? { standingFine: fine.score } : {}),
       criticality: truth.criticality,
       legal: truth.legal,
       optimal: truth.optimal,
@@ -117,7 +131,7 @@ async function play(games: GameName[], repeat: number, arms: ArmName[]): Promise
     out.usage = { input: jev.inputTokens, output: jev.outputTokens, calls: jev.calls, ms: jev.totalMs };
     mkdirSync(RECORDS, { recursive: true });
     writeFileSync(
-      resolve(RECORDS, "play.json"),
+      resolve(RECORDS, RECORD),
       `{\n"model": ${JSON.stringify(out.model)},\n"usage": ${JSON.stringify(out.usage)},\n` +
         `"control": [\n${out.control.map((c) => JSON.stringify(c)).join(",\n")}\n],\n` +
         `"rows": [\n${out.rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n}\n`,
@@ -140,7 +154,7 @@ async function play(games: GameName[], repeat: number, arms: ArmName[]): Promise
       }
     }
   }
-  console.log(`  ${jev.calls} requests, ${jev.inputTokens} input tokens -> records/play.json`);
+  console.log(`  ${jev.calls} requests, ${jev.inputTokens} input tokens -> records/${RECORD}`);
 }
 
 // ------------------------------------------------------------------ reporting
@@ -315,6 +329,7 @@ async function main(): Promise<void> {
     else report(rec);
     return;
   }
+  RECORD = arg("record", "play.json");
   if (argv.includes("--play")) {
     await play(
       arg("games", GAMES.join(",")).split(",") as GameName[],

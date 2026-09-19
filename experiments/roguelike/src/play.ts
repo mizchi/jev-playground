@@ -103,6 +103,17 @@ export interface StepRow {
   xp: number;
   /** Set by the judgment arm; absent for the baselines. */
   confidence?: number;
+  /**
+   * Where the `@` was when this action was chosen.
+   *
+   * Recorded because it was NOT, and docs/06's homework (b) asked whether the
+   * refusals cluster at the map's edge -- a question this loop had the answer
+   * to all along (`probe.hero` is computed every step, for the visit counts)
+   * and threw away. `src/refusals.ts` answers what the old records can still
+   * answer; the positional half needed this field and a re-run.
+   */
+  x?: number;
+  y?: number;
 }
 
 export interface GameRow {
@@ -259,6 +270,8 @@ export async function playGame(opts: {
         hp: step.vitals?.hp ?? 0,
         dlvl: step.vitals?.dlvl ?? 0,
         xp: step.vitals?.xp ?? 0,
+        x: probe.hero.x,
+        y: probe.hero.y,
         ...(chosen.confidence === undefined ? {} : { confidence: chosen.confidence }),
       };
       row.steps.push(stepRow);

@@ -15,7 +15,7 @@
  */
 import { GAMES, type GameName, type Position, RULES } from "./src/games.js";
 import { analyse, clearMemo, kept, perfectMove, value } from "./src/solve.js";
-import { ARMS, LEVELS, MOVE, STANDING, payloadOf, questionsFor, stateFor } from "./src/arms.js";
+import { ARMS, LEVELS, MOVE, STANDING, STANDING_FINE, payloadOf, questionsFor, stateFor } from "./src/arms.js";
 import { alternation, mean, median, spearman, swingOf, trajectoryOf, type MoveRow } from "./src/tension.js";
 
 let pass = 0;
@@ -167,13 +167,33 @@ check("the choice criteria are exactly the legal moves", () => {
   const moves = RULES.connect3.moves(p);
   for (const arm of ARMS) {
     const qs = questionsFor(arm, moves);
-    eq(Object.keys(qs).length, 2, `${arm} does not ask exactly two questions`);
+    // Three since docs/06 homework (c): the move, and the same standing
+    // judgment on five levels and on nine. Both scales ride in one request so
+    // they judge the SAME position -- a second run would re-play the games.
+    eq(Object.keys(qs).length, 3, `${arm} does not ask exactly three questions`);
     const move = qs[MOVE];
     ok(move.type === "choice", `${arm}: the move question is not a choice`);
     const names = Object.keys((move as { criteria: Record<string, unknown> }).criteria);
     eq(names.join("|"), moves.map((m) => m.name).join("|"), arm);
     const standing = qs[STANDING];
     ok(standing.type === "score", `${arm}: the standing question is not a score`);
+    const fine = qs[STANDING_FINE];
+    ok(fine.type === "score", `${arm}: the nine-level question is not a score`);
+    // The two scales must differ in resolution and NOT in wording, or the
+    // comparison confounds resolution with phrasing (docs/31 measured
+    // phrasing at 21 points, so that confound would swamp this).
+    const coarse = (standing as { criteria: string[] }).criteria;
+    const finer = (fine as { criteria: string[] }).criteria;
+    eq(coarse.length, 5, "the coarse scale is not five levels: ");
+    eq(finer.length, 9, "the fine scale is not nine levels: ");
+    for (const [i, level] of coarse.entries()) {
+      eq(finer[i * 2], level, `fine level ${i * 2} is not the coarse level ${i} verbatim: `);
+    }
+    eq(
+      (standing as { instructions: string }).instructions,
+      (fine as { instructions: string }).instructions,
+      "the two scales were given different instructions: ",
+    );
     eq((standing as { criteria: unknown[] }).criteria.length, LEVELS.length, arm);
   }
 });

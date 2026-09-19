@@ -20,17 +20,44 @@
  */
 import type { Question } from "../../shared/jev.js";
 import type { Vitals, Screen } from "./nethack.js";
-import { mapOf } from "./nethack.js";
-import type { Action } from "./actions.js";
+import { glyphAt, mapOf } from "./nethack.js";
+import { kindOf, steppable, type Action } from "./actions.js";
 
-export const ARMS = ["jev", "jevbare", "jevmemo"] as const;
+export const ARMS = ["jev", "jevbare", "jevmemo", "jevcount", "jevintent", "jevmemofix"] as const;
 export type ArmName = (typeof ARMS)[number];
 
 export const ARM_BLURB: Record<ArmName, string> = {
   jev: "each action labelled with the glyph it leads to",
   jevbare: "the direction names alone; the map must be read from the state",
-  jevmemo: "like jev, plus where it has already been",
+  jevmemo: "like jev, plus where it has already been, plus a goal that says to prefer it",
+  jevcount: "the memory ALONE: visit counts, and the base goal unchanged",
+  jevintent: "the sentence ALONE: the base goal plus 'prefer ground you have not walked'",
+  jevmemofix: "like jevmemo, but the visit count is withheld where the square is not steppable",
 };
+
+/**
+ * THE LAST THREE ARMS EXIST BECAUSE `jevmemo` CHANGED TWO THINGS AT ONCE.
+ *
+ * docs/34 §2.4 added the visit counts AND a new goal sentence in the same arm
+ * and reported mapping 48 -> 152. That number cannot say which addition did
+ * it, which is docs/06's homework (a): if the sentence alone moves it, what
+ * was added was intent and not memory.
+ *
+ *   jevcount    the counts, with the ORIGINAL goal. Memory, no intent.
+ *   jevintent   the new sentence, with NO counts. Intent, no memory.
+ *   jevmemo     both. The arm as shipped.
+ *
+ * `jevmemofix` is a fourth arm, and it is here because homework (b) found a
+ * contradiction in `jevmemo`'s own payload rather than in its results
+ * (`src/refusals.ts`). A wall has never been stood on, so its visit count is
+ * 0, so the sentence attached to it reads "you have never stood there" --
+ * while the goal says to prefer exactly that, and the BASE goal says walking
+ * into a wall achieves nothing. The memory recommends walls. Measured: `jev`
+ * walks into no walls at all, and `jevmemo`, handed the same glyph text plus
+ * the counts, walks into vertical ones at the blind-pick rate. So this arm
+ * withholds the count where `steppable` is false, and the gap between it and
+ * `jevmemo` is the price of that contradiction.
+ */
 
 export const MOVE = "move";
 
@@ -124,8 +151,12 @@ export function questionFor(
   actions: Action[],
   hero?: { x: number; y: number },
   memory?: Memory,
+  /** Needed only by `jevmemofix`, to ask whether a square can be stepped on. */
+  screen?: Screen,
 ): Record<string, Question> {
   const criteria: Record<string, string> = {};
+  const carriesCounts = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemofix";
+  const carriesSentence = arm === "jevmemo" || arm === "jevintent" || arm === "jevmemofix";
   for (const a of actions) {
     if (arm === "jevbare") {
       criteria[a.name] = a.name;
@@ -135,13 +166,19 @@ export function questionFor(
     // because "have I been there" is a fact about THIS option and docs/29 §4
     // measured that a question's subject belongs in the question.
     let says = a.says;
-    if (arm === "jevmemo" && hero && memory && a.dir) {
-      const been = memory.counts.get(`${hero.x + a.dir.dx},${hero.y + a.dir.dy}`) ?? 0;
-      says += been === 0 ? "; you have never stood there" : `; you have stood there ${been} time${been === 1 ? "" : "s"} already`;
+    if (carriesCounts && hero && memory && a.dir) {
+      // `jevmemofix` withholds it where a step cannot land, because "you have
+      // never stood there" is true of every wall and reads as a reason to go.
+      const to = { x: hero.x + a.dir.dx, y: hero.y + a.dir.dy };
+      const reachable = arm !== "jevmemofix" || (screen ? steppable(kindOf(glyphAt(screen, to.x, to.y))) : true);
+      if (reachable) {
+        const been = memory.counts.get(`${to.x},${to.y}`) ?? 0;
+        says += been === 0 ? "; you have never stood there" : `; you have stood there ${been} time${been === 1 ? "" : "s"} already`;
+      }
     }
     criteria[a.name] = says;
   }
-  return { [MOVE]: { type: "choice", instructions: arm === "jevmemo" ? MEMO_GOAL : GOAL, criteria } };
+  return { [MOVE]: { type: "choice", instructions: carriesSentence ? MEMO_GOAL : GOAL, criteria } };
 }
 
 /**
