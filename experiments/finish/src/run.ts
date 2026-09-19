@@ -37,8 +37,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PROMPT } from "../../router/src/label.js";
-import { runOnce, tasks, type ArmSpec, type Run, type Task } from "./world.js";
+import { runOnce, tasks, type ArmSpec, type Corpus, type Run, type Task } from "./world.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
 const PATH = resolve(RECORDS, "runs.json");
@@ -92,7 +91,7 @@ async function main(): Promise<void> {
     const i = argv.indexOf(`--${name}`);
     return i >= 0 ? argv[i + 1] : dflt;
   };
-  const which = arg("tasks", "easy") as "easy" | "hard" | "both";
+  const which = arg("tasks", "easy") as Corpus | "both" | "all";
   const armNames = arg("arms", "bare,guard").split(",");
   const repeats = Number(arg("repeats", "3"));
   const limit = Number(arg("limit", "999"));
@@ -112,7 +111,10 @@ async function main(): Promise<void> {
         const arm = ARMS[name];
         if (!arm) continue;
         if (record.rows.some((x) => x.arm === name && x.task === task.id && x.repeat === r)) continue;
-        const row = await runOnce(task, arm, PROMPT, r, { timeoutMs: 420_000 });
+        // The prompt comes from the TASK, not from here: the two corpora are told
+        // different things and conflating them would hand the agent a diagnosis
+        // on the corpus where the obstacle is not in `src/`.
+        const row = await runOnce(task, arm, task.prompt, r, { timeoutMs: 420_000 });
         record.rows.push(row);
         save(record);
         const gated = row.calls.filter((c) => c.gateMs !== undefined).length;
