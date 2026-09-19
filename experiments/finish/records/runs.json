@@ -2700,6 +2700,85 @@
       "deniedByJev": 0,
       "deniedByFence": 0,
       "askedByJev": 0
+    },
+    {
+      "task": "two-bugs-c",
+      "corpus": "easy",
+      "arm": "bare",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23265,
+      "calls": [
+        {
+          "at": 1789816414205,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-two-bugs-c-6ZPs0L -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816415802,
+          "tool": "Read",
+          "command": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816416011,
+          "tool": "Read",
+          "command": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816421164,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816422680,
+          "tool": "Bash",
+          "command": "node --test test/two-bugs-c.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816426759,
+          "tool": "Edit",
+          "command": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816427300,
+          "tool": "Edit",
+          "command": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816427811,
+          "tool": "Edit",
+          "command": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789816429342,
+          "tool": "Bash",
+          "command": "node --test test/two-bugs-c.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0
     }
   ],
   "note": "Does the agent FINISH the work. `claude -p` generates, jev gates through Claude Code's PreToolUse seam, `node --test` decides. Every tool call the agent made is in `calls` -- that ledger is the corpus, and it is whatever the agent did, not a scenario anyone wrote."
