@@ -183,6 +183,15 @@ export interface Run {
   calls: ToolCall[];
   /** Summed latency the gate added to the critical path. */
   gateMs: number;
+  /**
+   * The shipped gate's own verdict per command, from its `--log`.
+   *
+   * Separate from `calls` because they answer different questions: `calls` is
+   * what the HOST did, `verdicts` is what the GATE decided. They come apart
+   * exactly where it matters -- an `allow` and an `ask` the hook deferred are
+   * the same thing to the host and opposite things to the gate.
+   */
+  verdicts?: { command: string; verdict: string; ms: number }[];
   /** Calls the gate stopped, and calls the harness fence stopped. */
   deniedByJev: number;
   deniedByFence: number;
@@ -221,6 +230,7 @@ export async function runOnce(
 ): Promise<Run> {
   const sandbox = mkdtempSync(resolve(tmpdir(), `jev-finish-${task.id}-`));
   const logPath = resolve(sandbox, ".finish-log.jsonl");
+  const gateLogPath = resolve(sandbox, ".gate-log.jsonl");
   const started = Date.now();
   const row: Run = {
     task: task.id,
@@ -274,12 +284,16 @@ export async function runOnce(
       JEV_GATE: arm.guard ? "1" : "0",
       JEV_GATE_BIN: SHIPPED_GATE,
       JEV_GATE_FLAGS: (arm.gateFlags ?? []).join(","),
+      JEV_GATE_LOG: gateLogPath,
     };
 
     const res = await claude(prompt, arm.model, sandbox, env, opts.timeoutMs ?? 600_000);
     if (res.error) row.error = res.error;
 
     row.calls = readLedger(logPath);
+    // The gate's OWN verdicts, which say what it decided regardless of what it
+    // emitted. A deferred `ask` looks exactly like an `allow` in `calls`.
+    row.verdicts = readVerdicts(gateLogPath);
     row.gateMs = row.calls.reduce((n, c) => n + (c.gateMs ?? 0), 0);
     row.deniedByJev = row.calls.filter((c) => c.by === "jev" && c.decision === "deny").length;
     row.askedByJev = row.calls.filter((c) => c.by === "jev" && c.decision === "ask").length;
@@ -291,6 +305,21 @@ export async function runOnce(
     rmSync(sandbox, { recursive: true, force: true });
   }
   return row;
+}
+
+function readVerdicts(path: string): { command: string; verdict: string; ms: number }[] {
+  if (!existsSync(path)) return [];
+  return readFileSync(path, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .flatMap((line) => {
+      try {
+        const j = JSON.parse(line) as { command?: string; verdict?: string; ms?: number };
+        return [{ command: j.command ?? "", verdict: j.verdict ?? "?", ms: j.ms ?? 0 }];
+      } catch {
+        return [];
+      }
+    });
 }
 
 function readLedger(path: string): ToolCall[] {

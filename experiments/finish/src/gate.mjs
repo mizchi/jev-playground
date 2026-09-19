@@ -34,6 +34,7 @@
  *   JEV_GATE        "1" to consult jev-guard as well
  *   JEV_GATE_BIN    path to the shipped hook (required when JEV_GATE=1)
  *   JEV_GATE_FLAGS  comma-separated flags for the shipped hook, e.g. quiet-ask
+ *   JEV_GATE_LOG    where the shipped hook should append its own audit log
  *
  * Fails open, always. A hook that throws in front of an agent stops work that
  * judgment was only advising on -- the shipped gate's own rule, kept here.
@@ -153,7 +154,19 @@ const extra = (process.env.JEV_GATE_FLAGS ?? "")
     if (VALUE_TAKING.has(prev)) return f;
     return f.startsWith("--") ? f : `--${f}`;
   });
-const out = spawnSync(process.execPath, [bin, ...extra], {
+/**
+ * `--log` as well, always, and this was missing from the first sweep.
+ *
+ * The shipped hook writes one JSON line per decision BEFORE it decides what to
+ * emit, so the log carries the VERDICT even when the hook then defers. Without
+ * it, a deferred `ask` and an `allow` are indistinguishable in this ledger --
+ * and the `--unattended-ask defer` arm is entirely about how many asks it
+ * deferred. It finished 15 of 15 boundary runs, and with no verdicts recorded
+ * that number could not be read: 15/15 having deferred nothing means the arm
+ * was never tested.
+ */
+const gateLog = process.env.JEV_GATE_LOG;
+const out = spawnSync(process.execPath, [bin, ...extra, ...(gateLog ? ["--log", gateLog] : [])], {
   input: JSON.stringify(event),
   encoding: "utf8",
   timeout: 20_000,

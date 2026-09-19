@@ -264,6 +264,55 @@ function main(): void {
     }
   }
 
+  // ------------------- §3b what the gate DECIDED, not what the host did
+  //
+  // These come apart exactly where the measurement lives. `calls` records what
+  // the HOST did; the gate's own `--log` records what IT decided. An `allow`
+  // and an `ask` the hook deferred are the same thing to the host and opposite
+  // things to the gate -- and the `--unattended-ask defer` arm is entirely
+  // about how many asks it deferred. Its first sweep recorded none of this,
+  // and 15 of 15 finished runs having deferred nothing would have meant the
+  // arm was never tested at all.
+  const withVerdicts = rows.filter((r) => (r.verdicts?.length ?? 0) > 0);
+  if (withVerdicts.length > 0) {
+    console.log("\n§3b what the gate DECIDED, from its own audit log\n");
+    console.log("  corpus     arm         commands   allow    ask   deny   asks the host never saw");
+    for (const corpus of corpora) {
+      for (const arm of arms) {
+        const xs = withVerdicts.filter((r) => r.corpus === corpus && r.arm === arm);
+        if (xs.length === 0) continue;
+        const vs = xs.flatMap((r) => r.verdicts ?? []);
+        const asks = vs.filter((v) => v.verdict === "ask").length;
+        // An ask the gate made and the host never acted on: the arm deferred or
+        // muted it. Counted against what the ledger shows the host doing.
+        const emitted = xs.reduce((n, r) => n + r.askedByJev + r.deniedByJev, 0);
+        console.log(
+          `  ${corpus.padEnd(10)} ${arm.padEnd(11)} ${String(vs.length).padStart(8)}   ` +
+            `${String(vs.filter((v) => v.verdict === "allow").length).padStart(5)}  ${String(asks).padStart(5)}  ` +
+            `${String(vs.filter((v) => v.verdict === "deny").length).padStart(5)}   ${String(Math.max(0, asks - emitted)).padStart(23)}`,
+        );
+      }
+    }
+    const def = withVerdicts.filter((r) => r.arm === "guarddefer");
+    if (def.length > 0) {
+      const asks = def.flatMap((r) => r.verdicts ?? []).filter((v) => v.verdict === "ask").length;
+      const finished = def.filter((r) => r.passed).length;
+      console.log(
+        `\n  >> THE \`defer\` ARM DEFERRED ${asks} ask(s) across ${def.length} runs, and finished ${finished} of ${def.length}.\n` +
+          `     ${
+            asks === 0
+              ? "WHICH MEANS IT WAS NEVER TESTED. No ask was raised, so nothing was deferred,\n" +
+                "     and its completion rate says only that the gate stayed quiet -- the same\n" +
+                "     thing every arm does most of the time. Read it as a null result about the\n" +
+                "     variant, not as evidence for it."
+              : `Each of those ${asks} would have stopped the command under the shipped default,\n` +
+                "     because a headless host turns an `ask` into a refusal (§5.1). So this arm's\n" +
+                "     completions are the ones the default would have been at risk of losing."
+          }`,
+      );
+    }
+  }
+
   // ---------------------------------------------- §4 the corpus the gate saw
 
   console.log("\n§4 THE CORPUS: what the agent actually asked to run\n");
