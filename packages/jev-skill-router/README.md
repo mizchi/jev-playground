@@ -106,14 +106,17 @@ Set `TYPESAFE_API_KEY`. `--dir` reads `<name>/SKILL.md` with YAML front matter;
 pi install npm:jev-skill-router
 ```
 
-```json
-{
-  "jevSkillRouter": { "shortlist": 60, "maxLoad": 3, "loadAt": 2.5, "always": ["house-style"] }
-}
-```
-
 `/jev-skills` shows what was loaded, what was considered, and how much the prefilter
 dropped. `src/pi.ts` is the only file importing from Pi.
+
+**This extension ships its defaults and nothing else.** An earlier version of
+this section showed a `{ "jevSkillRouter": { ... } }` settings block, and that
+block was fiction: pi passes configuration to an extension through
+`registerFlag`/`getFlag` and through nothing else — `ExtensionFactory` takes one
+argument and `ExtensionAPI` has no settings reader
+([docs/38 §6](../../docs/38-agent.md)). So `shortlist`, `maxLoad`, `loadAt` and
+`always` are reachable from the library and the CLI, and in pi only through
+`/jev-skills`. No flags are registered here yet.
 
 **What leaves the machine:** the request text and the names and descriptions of
 eligible skills. Not the instructions — those are read locally. Request text is not

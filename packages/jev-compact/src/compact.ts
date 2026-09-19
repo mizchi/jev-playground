@@ -247,7 +247,58 @@ export async function compact(
   // Only entries at or below the cutoff are offered for deletion, weakest
   // first. An entry above it is not a candidate however much room it would
   // free -- which is why this can come back still over budget, and says so.
-  const droppable = ranked.filter((r) => r.level <= config.dropAt).map((r) => r.entry);
+  /**
+   * The unit of judgment has to be the unit of deletion, and the unit of
+   * deletion is the PAIR.
+   *
+   * `closePairs` will not drop a tool result without its call, so an entry
+   * clearing the cutoff alone buys nothing -- its partner has to clear it
+   * too. Scoring per entry and dropping per pair meant that in a tool-heavy
+   * transcript nothing was ever droppable: the assistant turn that made a
+   * call reads as live (it is "what happened next"), so its result could
+   * never go, however spent the result was.
+   *
+   * docs/38 §5 found this by running the compactor inside pi against twenty
+   * file reads -- the transcript that most needs compacting -- and watching
+   * it decline four times in a row with `19 candidates, weakest 1.03`
+   * against a cutoff of 1.5. Candidates had cleared the cutoff. None of them
+   * could move.
+   *
+   * So a pair is judged by its WEAKEST half. That is the right direction:
+   * the result carries the tokens, and if the result is spent then the call
+   * that produced it is spent with it.
+   */
+  const levelOf = new Map(ranked.map((r) => [r.entry.id, r.level]));
+  const resultOf = new Map<string, Entry>();
+  for (const e of entries) if (e.answers) resultOf.set(e.answers, e);
+  const callerOf = new Map<string, Entry>();
+  for (const e of entries) for (const c of e.calls ?? []) callerOf.set(c, e);
+  const pairLevel = (entry: Entry): number => {
+    const own = levelOf.get(entry.id);
+    if (own === undefined) return Number.POSITIVE_INFINITY;
+    const partners: Entry[] = [];
+    for (const call of entry.calls ?? []) {
+      const result = resultOf.get(call);
+      if (result) partners.push(result);
+    }
+    if (entry.answers) {
+      const caller = callerOf.get(entry.answers);
+      if (caller) partners.push(caller);
+    }
+    // A partner that was never asked about (pinned, so not a candidate)
+    // keeps the pair unavailable -- `closePairs` would retract it anyway.
+    const levels = [own];
+    for (const partner of partners) {
+      const level = levelOf.get(partner.id);
+      if (level === undefined) return Number.POSITIVE_INFINITY;
+      levels.push(level);
+    }
+    return Math.min(...levels);
+  };
+
+  const droppable = ranked
+    .filter((r) => pairLevel(r.entry) <= config.dropAt)
+    .map((r) => r.entry);
   const { keep, dropped } = dropUntilFits(entries, droppable, config.budgetTokens, config);
   const after = totalTokens(keep);
   const soundness = valid(keep);
@@ -266,7 +317,13 @@ export async function compact(
     nothingSpare,
     reason:
       dropped.length === 0
-        ? `nothing scored at or below ${config.dropAt}; ${ranked.length} candidates, weakest ${ranked[0]?.level.toFixed(2) ?? "-"}`
+        ? // Two different failures used to share this sentence, and the wrong
+          // one was printed for four runs: "nothing cleared the cutoff" reads
+          // very differently from "things cleared it and none could move".
+          droppable.length === 0
+          ? `no pair scored at or below ${config.dropAt}; ${ranked.length} candidates, weakest ${ranked[0]?.level.toFixed(2) ?? "-"}`
+          : `${droppable.length} of ${ranked.length} candidates cleared ${config.dropAt} but none could be dropped: ` +
+            `the floors or tool-call pairing retracted every one`
         : `dropped ${dropped.length} of ${entries.length} entries, ${before} -> ${after} tokens` +
           (after > config.budgetTokens ? ` (still over the ${config.budgetTokens} budget: the rest scored above ${config.dropAt})` : ""),
     ms: Date.now() - started,

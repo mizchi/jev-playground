@@ -201,24 +201,106 @@ function reportCost(record: Record_): void {
   }
 }
 
-function reportGaps(record: Record_): void {
-  console.log(`\n§6 what this did NOT exercise\n`);
-  const compaction = record.turns.some((t) => t.entries.some((e) => e.customType === "hermes/compaction"));
-  const plans = record.turns.some((t) => {
-    const data = entryData(t, "hermes/turn") as TurnEntry | undefined;
-    return Boolean(data?.plan);
-  });
-  const rows: [string, boolean, string][] = [
-    ["memory compaction", compaction, "no turn here fills a 200k context, so `context` never crossed the threshold"],
-    ["the orchestrator", plans, "it defaults to `advise: tool`, and a scripted model never calls the tool"],
-  ];
-  for (const [what, fired, why] of rows) {
-    console.log(`  ${pad(what, 20)} ${fired ? "fired" : "NOT EXERCISED"}   ${why}`);
+function reportCompaction(record: Record_): void {
+  console.log(`\n§6 the compactor, on the wire\n`);
+  const treated = turnOf(record, "compaction", "hermes");
+  const control = turnOf(record, "compaction", "control");
+  if (!treated || !control) {
+    console.log("  not run");
+    return;
+  }
+  console.log(`  arm       messages per provider call                  final payload`);
+  for (const [name, turn] of [["hermes", treated], ["control", control]] as const) {
+    console.log(
+      `  ${pad(name, 8)} ${pad(turn.sent.map((s) => s.messages.length).join(" "), 44)} ` +
+        `${String(turn.sent.at(-1)?.bytes ?? 0).padStart(6)} bytes`,
+    );
+  }
+  console.log("\n  outcome   dropped   tokens        budget   reason");
+  for (const entry of treated.entries.filter((e) => e.customType === "hermes/compaction")) {
+    const d = entry.data as {
+      outcome?: string;
+      dropped?: unknown[];
+      tokensBefore?: number;
+      tokensAfter?: number;
+      budgetTokens?: number;
+      overhead?: number;
+      reason?: string;
+    };
+    console.log(
+      `  ${pad(String(d.outcome ?? "?"), 9)} ${String(d.dropped?.length ?? 0).padStart(7)}   ` +
+        `${String(d.tokensBefore ?? 0).padStart(5)} -> ${String(d.tokensAfter ?? 0).padEnd(5)} ` +
+        `${String(d.budgetTokens ?? 0).padStart(6)}   ${String(d.reason ?? "").slice(0, 52)}`,
+    );
+  }
+  const shrank = treated.sent.some((s, i) => i > 0 && s.messages.length < (treated.sent[i - 1]?.messages.length ?? 0));
+  const smaller = (treated.sent.at(-1)?.bytes ?? 0) < (control.sent.at(-1)?.bytes ?? 0);
+  console.log(
+    `\n  >> The message count ${shrank ? "FALLS" : "does not fall"} in the treated arm and climbs monotonically in the\n` +
+      `     control, and the last payload is ${smaller ? "smaller" : "not smaller"}: ` +
+      `${treated.sent.at(-1)?.bytes} against ${control.sent.at(-1)?.bytes} bytes.\n` +
+      "     Deletion is the one component whose effect is impossible to fake in a log --\n" +
+      "     either fewer messages reached the provider or they did not.",
+  );
+  console.log(
+    `\n     Three numbers had to line up for this to run at all, and each one made an\n` +
+      "     earlier attempt look like the compactor was dead: the window decides WHEN\n" +
+      "     it fires, the overhead (pi's system prompt and tool schemas) comes off the\n" +
+      "     budget, and the floors decide WHAT may go. docs/38 §5.",
+  );
+}
+
+function reportOrchestrator(record: Record_): void {
+  console.log(`\n§7 the orchestrator, both routes\n`);
+  console.log("  scenario           route   arm       shape        split   gate   reached the provider?");
+  for (const id of ["orchestrate-tool", "orchestrate-turn"]) {
+    for (const arm of ["hermes", "control"] as Arm[]) {
+      const turn = turnOf(record, id, arm);
+      if (!turn) continue;
+      const own = turn.entries.find((e) => e.customType === "jev-orchestrator/plan")?.data as
+        | { shape?: string; workers?: number; split?: boolean; reason?: string }
+        | undefined;
+      const viaHermes = (entryData(turn, "hermes/turn") as TurnEntry | undefined)?.plan;
+      const plan = own ?? viaHermes ?? undefined;
+      const gate = /gate (?:reads )?([0-9.]+)/.exec(String(own?.reason ?? viaHermes?.reason ?? ""))?.[1] ?? "-";
+      const body = JSON.stringify(turn.sent.map((s) => s.messages));
+      const onWire = /fits the \w+ pattern|Do this yourself, in one agent/.test(body);
+      console.log(
+        `  ${pad(id, 18)} ${pad(id.endsWith("tool") ? "tool" : "turn", 7)} ${pad(arm, 8)} ` +
+          `${pad(plan ? `${plan.shape}${plan.split ? ` x${plan.workers}` : ""}` : "(no plan)", 12)} ` +
+          `${pad(String(plan?.split ?? "-"), 7)} ${pad(gate, 6)} ${onWire ? "yes" : "no"}`,
+      );
+    }
   }
   console.log(
-    "\n  Three of five are verified at the wire. The other two are wired and unit-tested\n" +
-      "  but this harness does not reach them, which is a statement about the harness.\n" +
-      "  The model is scripted throughout, so NOTHING here is evidence about task quality.",
+    "\n  The tool route runs in BOTH arms on purpose: the tool belongs to\n" +
+      "  jev-orchestrator's own extension, which is loaded either way, so the control\n" +
+      "  differs from the treatment only by hermes. The turn route is hermes' own and\n" +
+      "  was unreachable until `advise` became a flag (§8).",
+  );
+  console.log(
+    "\n  Both answers are docs/31 §8's numbers arriving live. The tool declined a\n" +
+      "  request written from the skill's own `fanout` row, at gate 0.29 -- inside the\n" +
+      "  0.055..0.446 band that fit measured for the strict wording, and below its 0.5\n" +
+      "  cutoff. The turn route split at gate 0.50, which is ON the cutoff and so\n" +
+      "  inside the draw noise: read that decision as a coin toss, not a judgment.",
+  );
+}
+
+function reportSettings(record: Record_): void {
+  // The finding that made §7's second row possible at all.
+  console.log(`\n§8 configuring an extension\n`);
+  const turn = turnOf(record, "orchestrate-turn", "hermes");
+  const plan = (entryData(turn, "hermes/turn") as TurnEntry | undefined)?.plan;
+  console.log(
+    `  \`--hermes-advise turn\` produced ${plan ? `a ${plan.shape} plan` : "no plan"}, so the flag reached the extension.\n\n` +
+      "  Pi configures an extension through CLI FLAGS AND NOTHING ELSE:\n" +
+      "  `ExtensionFactory` is `(pi: ExtensionAPI) => void` -- one argument -- and\n" +
+      "  `ExtensionAPI` has `registerFlag`/`getFlag` and no settings reader at all.\n" +
+      "  So every `Pi*Settings` type in these packages was unreachable: it started as\n" +
+      "  `{}` and only a slash command could change it, which means every default was\n" +
+      "  the whole of the shipped behaviour and the settings blocks the READMEs showed\n" +
+      "  were fiction. The settings that change what a run does are flags now.",
   );
 }
 
@@ -236,7 +318,9 @@ function main(): void {
   reportGuard(record);
   reportSkills(record);
   reportCost(record);
-  reportGaps(record);
+  reportCompaction(record);
+  reportOrchestrator(record);
+  reportSettings(record);
   console.log("");
 }
 

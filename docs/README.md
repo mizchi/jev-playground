@@ -318,7 +318,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [35](35-tension.md) | ゲームの面白さは confidence の変動に出るのか(完全に解けるゲーム 5 種で照合) | ✅ |
 | [36](36-routers.md) | model router と skill router — スタンドアロン + pi plugin([`packages/`](../packages/))。**この corpus では model router は元が取れない**(正例 1/53) | ✅ |
 | [37](37-hermes.md) | 常駐 hermes agent — 5 つの jev コンポーネントを 1 つの pi 拡張に。**束ねるのは無料ではなかった**(7/7 が draw ノイズ超え)、逃げ道の閾値が答えの塊の真ん中にあった | ✅ |
-| [38](38-agent.md) | 実物の pi 0.85.1 の中で動かす — **動く**(12 turn、3/5 が配線で確認)。**バグ 2 件**(skill router は一度も skill を見ていなかった / 選んだ skill が 1 ターン遅れ)と、control arm がリポジトリを消した話 | ✅ |
+| [38](38-agent.md) | 実物の pi 0.85.1 の中で動かす — **動く**(18 turn、**5/5 が配線で確認**)。**バグ 4 件**(skill router は一度も skill を見ていなかった / 選んだ skill が 1 ターン遅れ / compaction の閾値と目標が別スケール / pi の拡張設定は flag だけで README は fiction)と、control arm がリポジトリを消した話 | ✅ |
 
 ## この探索から見えている一般則
 

@@ -105,6 +105,74 @@ interface TurnOutcome {
 
 export default function hermes(pi: ExtensionAPI): void {
   let settings: HermesSettings = {};
+
+  /**
+   * Pi's only way to configure an extension: CLI flags.
+   *
+   * `ExtensionFactory` is `(pi: ExtensionAPI) => void` -- one argument -- and
+   * `ExtensionAPI` has no settings reader of any kind. So `HermesSettings`
+   * WAS UNREACHABLE: it started as `{}` and only the `/hermes` command could
+   * change it, which means every default above was the whole of the shipped
+   * behaviour and the settings block this package's README used to show was
+   * fiction. docs/38 §6 found that while trying to turn the orchestrator on.
+   *
+   * `registerFlag` is the real mechanism, so the settings that change what a
+   * run does are flags now. The rest stay per-session, via `/hermes`.
+   */
+  pi.registerFlag("hermes-off", { type: "boolean", default: false, description: "disable every jev component" });
+  pi.registerFlag("hermes-advise", {
+    type: "string",
+    default: "tool",
+    description: "when the orchestrator advises: tool (default) or turn",
+  });
+  pi.registerFlag("hermes-compact-keep-recent", {
+    type: "string",
+    default: "",
+    description: "entries at the end the compactor may never drop (default 6)",
+  });
+  pi.registerFlag("hermes-compact-budget", {
+    type: "string",
+    default: "",
+    description: "context tokens to compact down to, overriding the window fraction",
+  });
+  pi.registerFlag("hermes-unattended-ask", {
+    type: "string",
+    default: "block",
+    description: "what the guard does with an `ask` when nobody is watching: block (default) or allow",
+  });
+
+  /** Read the flags into `settings` once, at session start. */
+  function applyFlags(): void {
+    const advise = String(pi.getFlag("hermes-advise") ?? "tool");
+    const budget = String(pi.getFlag("hermes-compact-budget") ?? "");
+    const keepRecent = String(pi.getFlag("hermes-compact-keep-recent") ?? "");
+    const unattended = String(pi.getFlag("hermes-unattended-ask") ?? "block");
+    settings = {
+      ...settings,
+      ...(pi.getFlag("hermes-off") === true ? { enabled: false } : {}),
+      orchestrator: {
+        ...settings.orchestrator,
+        ...(advise === "turn" || advise === "tool" ? { advise } : {}),
+      },
+      ...(budget || keepRecent
+        ? {
+            compact: {
+              ...settings.compact,
+              ...(budget && Number.isFinite(Number.parseInt(budget, 10))
+                ? { budgetTokens: Number.parseInt(budget, 10) }
+                : {}),
+              ...(keepRecent && Number.isFinite(Number.parseInt(keepRecent, 10))
+                ? { keepRecent: Number.parseInt(keepRecent, 10) }
+                : {}),
+            },
+          }
+        : {}),
+      guard: {
+        ...settings.guard,
+        ...(unattended === "allow" || unattended === "block" ? { unattendedAsk: unattended } : {}),
+      },
+    };
+  }
   let budget = new Budget();
   let jev: Jev | null = null;
   let jevFailed = false;
@@ -202,6 +270,7 @@ export default function hermes(pi: ExtensionAPI): void {
   }
 
   pi.on("session_start", async (_event, ctx) => {
+    applyFlags();
     budget = new Budget(settings.budget ?? {});
     jev = null;
     jevFailed = false;
@@ -518,6 +587,37 @@ export default function hermes(pi: ExtensionAPI): void {
     // A null token count means Pi declined to say; unknown pressure is no
     // pressure, because deleting on a guess is the one thing this must not do.
     if (usage?.tokens == null || usage.tokens <= budgetTokens) return {};
+
+    const entries = entriesOf(messages);
+    /**
+     * The budget handed to `compact()` has to be a MESSAGE budget.
+     *
+     * Pi's `getContextUsage().tokens` counts the whole context -- system
+     * prompt, tool schemas, context files, messages. `jev-compact` can only
+     * delete messages, and its `totalTokens` counts only those. Comparing
+     * pi's number against the threshold and then handing the same threshold
+     * to the compactor asks it to fit a message list into a budget that was
+     * sized for something bigger, so it answers "already within budget" and
+     * does nothing -- on a context pi has just called 144% full.
+     *
+     * docs/38 §5 caught this: the trigger said 3,588 tokens and the target
+     * said 1,035, and both were right about different things. The difference
+     * is the overhead deletion cannot touch, so it comes off the budget.
+     *
+     * AND THE SUBTRACTION IS NOT INNOCENT. `overhead` is the system prompt
+     * plus the tool schemas plus THE DISAGREEMENT BETWEEN TWO ESTIMATORS --
+     * pi's tokeniser and `jev-compact`'s four-bytes-per-token. The second
+     * term grows with the transcript, so the measured overhead trends
+     * upward and not monotonically (2,225 / 1,984 / 2,401 / 2,490 over four
+     * calls in docs/38 §5 -- deletion itself moves it, since it changes
+     * which of the two counts shrinks faster), and the message budget
+     * drifts DOWN exactly when deletion is most needed. Nothing here
+     * can fix that: the two counts are not commensurable, and the honest
+     * response is that the budget is approximate and the floors, which are
+     * exact, are what actually protect the transcript.
+     */
+    const overhead = Math.max(0, usage.tokens - totalTokens(entries));
+    const messageBudget = Math.max(0, budgetTokens - overhead);
     const allowed = budget.allows();
     if (!allowed.ok) {
       budget.stopped();
@@ -525,15 +625,33 @@ export default function hermes(pi: ExtensionAPI): void {
       // is exactly what would happen without hermes installed.
       return {};
     }
-    const entries = entriesOf(messages);
     const result = await compact(
       entries,
       { goal: entries.find((e) => e.role === "user")?.text.slice(0, 2_000) ?? "(no stated goal)", cwd: ctx.cwd },
-      { config: { ...settings.compact, budgetTokens }, jev: client() ?? undefined },
+      { config: { ...settings.compact, budgetTokens: messageBudget }, jev: client() ?? undefined },
     );
     if (result.usage) budget.spent("compact", result.usage.input, result.ms, Boolean(result.error));
     if (result.dropped.length === 0) {
+      // A decision NOT to delete is still a decision, and it used to leave no
+      // trace but a UI notification -- so a headless run looked identical to
+      // one where the compactor never fired at all. docs/38 §5 spent a while
+      // on that: the compactor was running every turn and reporting
+      // `cannot-fit`, invisibly, because `keepRecent` pinned the whole short
+      // transcript.
+      pi.appendEntry("hermes/compaction", {
+        outcome: result.outcome,
+        dropped: [],
+        tokensBefore: result.tokensBefore,
+        tokensAfter: result.tokensAfter,
+        budgetTokens: messageBudget,
+        contextBudget: budgetTokens,
+        overhead,
+        reason: result.reason,
+        ms: result.ms,
+        at: Date.now(),
+      });
       if (result.outcome === "cannot-fit") complain(ctx, result.reason);
+      show(ctx);
       return {};
     }
     compaction = {
@@ -544,9 +662,13 @@ export default function hermes(pi: ExtensionAPI): void {
       after: result.tokensAfter,
     };
     pi.appendEntry("hermes/compaction", {
+      outcome: result.outcome,
       dropped: result.dropped.map((e) => ({ id: e.id, label: e.label })),
       tokensBefore: result.tokensBefore,
       tokensAfter: result.tokensAfter,
+      budgetTokens: messageBudget,
+      contextBudget: budgetTokens,
+      overhead,
       ranked: result.ranked.map((r) => ({ id: r.entry.id, level: r.level, confidence: r.confidence })),
       reason: result.reason,
       at: Date.now(),

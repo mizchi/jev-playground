@@ -1,4 +1,4 @@
-# 38. 実物の pi の中で動かす —— バグ 2 件と、リポジトリを 1 回消した話
+# 38. 実物の pi の中で動かす —— バグ 4 件と、リポジトリを 1 回消した話
 
 依頼は「実際にエージェントが動くか、動いた場合の性能評価までやりたい」。
 
@@ -11,23 +11,31 @@
 cd experiments/agent && npm install
 npm test                                   # API 不要・pi 不要
 npm run demo                               # 記録から全部の表、API 不要
-TYPESAFEAI_API_KEY=... npm run run         # 実物の pi で 12 turn
+TYPESAFEAI_API_KEY=... npm run run         # 実物の pi で 18 turn
 ```
 
 ---
 
 ## 結論(先に)
 
-**1. 動きます。12 turn すべて exit 0、両 arm とも。**
-そして 5 つのうち **3 つは配線で確認できました** ——
-model router は payload の `model` を、guard rail はディスク上の効果を、
-skill router は provider に届いた本文を。
+**1. 動きます。18 turn すべて exit 0、両 arm とも。**
+そして **5 つすべて配線で確認できました** ——
+model router は payload の `model`、guard rail はディスク上の効果、
+skill router は provider に届いた本文、
+compaction は provider に**届かなかった**メッセージ、
+orchestrator は注入された brief。
 
-**2. バグ 2 件。どちらも実際に走らせないと見つかりません。**
+**2. バグ 4 件。どれも実際に走らせないと見つかりません。**
 `ctx.resources.skills` は**存在しないフィールド**で、
-**skill router は一度も skill を見ていなかった**。
-そして `deliverAs: "nextTurn"` は選んだ skill を**1 ターン遅れで**届けるので、
-それを必要としたターンには**絶対に間に合わない**。
+**skill router は一度も skill を見ていなかった**(§3)。
+`deliverAs: "nextTurn"` は選んだ skill を**1 ターン遅れで**届けるので、
+それを必要としたターンには**絶対に間に合わない**(§4)。
+compaction の**閾値と目標が別のスケールで測られていて**、
+pi が「144% 埋まっている」と言う context に対して
+compactor は「もう予算内です」と答えていた(§5)。
+そして pi の拡張設定は **flag しか無い** ——
+各 package の README に載せていた settings ブロックは**全部 fiction**で、
+その結果 orchestrator は**既定値以外に到達できなかった**(§6)。
 
 **3. 自分でリポジトリの working tree を消しました。**
 guard のシナリオが `rm -rf /home` を台本にしていて、
@@ -37,7 +45,7 @@ push 済みだったので失ったのはこの実験の未 commit 分だけ。
 **4. 性能について言えること/言えないこと。**
 このコンテナにモデルの資格情報が無いので、モデルは台本です。
 だから測れたのは **配線とコストで、タスクの出来ではありません**。
-hermes は 1 ターンあたり **+919 ms / 約 1,100 input tokens / $0.046 per 1k turns**。
+hermes は 1 ターンあたり **+953 ms / 約 1,160 input tokens / $0.049 per 1k turns**。
 
 ---
 
@@ -194,9 +202,123 @@ vague-request      distinctive skill text present: false
 > [34](34-roguelike.md) の「サマリ行はもっともらしい」と同じ形が、
 > 自分の検査コードに出ています。
 
-## 5. 動いたもの —— 配線で確認できた 3 つ
+## 5. バグ 3 —— 閾値と目標が、別のスケールで測られていた
 
-### 5.1 model router
+[37](37-hermes.md) の時点では compaction は「未実行」でした ——
+200k の context を短いセッションで埋められないからです。
+stub の `contextWindow` を 5,000 にすれば跨げる、と思って
+20 ファイル読むシナリオを書いたら、compactor は動いて、こう言いました ——
+
+```
+context usage 144%   →   compactor: "already within budget"
+```
+
+**両方とも正しかった。別のものについて。**
+
+pi の `getContextUsage().tokens` は context 全体を数えます ——
+system prompt、tool schema、context files、messages。
+`jev-compact` が消せるのは messages だけで、
+`totalTokens` もそれだけを数えます。
+pi の数字を閾値と比べて、**同じ閾値を compactor に渡す**と、
+message list を「もっと大きいもの用に決めた予算」に収めろと言うことになり、
+compactor は正直に「もう入っています」と答える。
+
+```
+the trigger said   3,588 tokens   (pi: 全体)
+the target said    1,035 tokens   (jev-compact: messages だけ)
+```
+
+差分が**削除では触れない overhead** なので、予算から引きます:
+
+```ts
+const overhead = Math.max(0, usage.tokens - totalTokens(entries));
+const messageBudget = Math.max(0, budgetTokens - overhead);
+```
+
+**この引き算は無害ではありません。** `overhead` は system prompt と
+tool schema と、**2 つの推定器の食い違い**(pi の tokeniser と
+`jev-compact` の 4 bytes/token)の和です。
+3 番目の項は transcript と共に育つので、実測の overhead は上に振れます ——
+**2,225 / 1,984 / 2,401 / 2,490**(4 回、単調ではない: 削除自体が
+どちらの数え方をより縮めるかを変えるため)。
+つまり **message 予算は、削除が最も必要なときに下がる**。
+ここで直せるものではありません。2 つの数は可換ではなく、
+正直な答えは「予算は近似で、transcript を実際に守っているのは
+**厳密な** floors のほうだ」です。
+
+### 5.1 同じシナリオが、さらに 2 つ見つけた
+
+**カットオフを entry 単位で当てていた。削除が合法なのは pair 単位なのに。**
+tool call とその結果は**一緒にしか消せません**(片方だけ消すと
+provider が transcript を拒否する)。
+なのにランク付けは entry ごとに見ていたので、
+call を出した assistant ターンは「次に起きたこと」として**生きて読める**
+—— 結果がどれだけ使い切られていても、その結果は動けない。
+20 ファイル読んだ transcript(**最も compaction が必要な形**)で
+4 回連続こう言われました:
+
+```
+19 candidates, weakest 1.03     cutoff 1.5     dropped 0
+```
+
+**カットオフを跨いだ候補はあった。1 つも動けなかった。**
+pair は**弱い側で判断される**べきです ——
+トークンを持っているのは結果のほうで、
+結果が使い切られているなら、それを作った call も一緒に使い切られている。
+
+```ts
+const pairLevel = (entry) => Math.min(...[own, ...partners.map(levelOf)]);
+const droppable = ranked.filter((r) => pairLevel(r.entry) <= config.dropAt);
+```
+
+**削除しないという決定も決定なのに、記録を残していなかった。**
+`dropped.length === 0` の経路は UI 通知だけ出して `appendEntry` を呼ばず、
+だから **headless の run は「compactor が一度も動かなかった run」と
+区別がつかなかった**。実際は毎ターン動いて毎回 `cannot-fit` と
+言っていた —— `keepRecent` が短い transcript を全部 pin していたからです。
+
+**そして reason 文が嘘をついていた。** 2 つの別の失敗が同じ文を共有していて、
+「カットオフを跨いだものが無い」と 4 回表示されたときの実際の状況は
+「跨いだものは 4 件あって、全部 floors か pairing に取り消された」でした。
+[29 §6](29-skill-select.md) と同じ形です ——
+**自分のログを読まない限り、自分のバグは自分のログの中で見えない。**
+
+## 6. バグ 4 —— pi の拡張設定は flag だけで、README は fiction だった
+
+orchestrator を on にしようとして見つけました。
+既定の `advise` は `tool`(モデルが `jev_orchestration` を呼んだときだけ動く)で、
+turn 経路を試すには設定を変える必要がある。それで気付きました ——
+
+```ts
+export type ExtensionFactory = (pi: ExtensionAPI) => void;   // 引数は 1 つ
+// そして ExtensionAPI に settings の読み出しは存在しない
+```
+
+**pi が拡張に設定を渡す経路は `registerFlag` / `getFlag` だけです。**
+だからこれらの package の `Pi*Settings` 型は**到達不能**でした ——
+`{}` から始まり、slash command でしか変えられない。
+つまり**既定値が出荷された挙動の全部**で、
+README に載せていた settings ブロックは全部 fiction。
+
+いまは flag です:
+
+```
+--hermes-advise turn          --hermes-compact-keep-recent 2
+--hermes-off                  --hermes-compact-budget 40000
+--hermes-unattended-ask block --jev-framing cost
+```
+
+`--hermes-advise turn` で fanout の plan が出た ——
+**flag が拡張に届いている**、というのがこの節の実測部分です。
+
+これは 5 つのうち 1 つを「未実行」にしていた原因でもあります。
+[37 §9](37-hermes.md) が orchestrator を「未実行」と書いた理由は
+「台本のモデルが tool を呼ばない」でしたが、本当の理由は
+**既定以外の経路に到達する手段が無かった**ことです。
+
+## 7. 動いたもの —— 配線で確認できた 5 つ
+
+### 7.1 model router
 
 ```
   scenario           decided        reason            model pi actually sent   thinking
@@ -215,7 +337,7 @@ vague-request      distinctive skill text present: false
 **`setThinkingLevel` が効いている**(trivial は low、vague は high)。
 深さが主ダイヤルだという設計([37 §5](37-hermes.md))の、動いている証拠です。
 
-### 5.2 guard rail —— ディスク上で
+### 7.2 guard rail —— ディスク上で
 
 ```
   scenario           arm       tool calls   asked   blocked   sandbox tree
@@ -238,53 +360,139 @@ headless なので `unattendedAsk` が解決しました。
 そして `read-only-free` は **3 件の tool call で guard リクエスト 0 件**。
 [33 §1](33-review.md) の「無料の前段を先に」が、常駐 agent の請求を決めます。
 
-### 5.3 skill router
+### 7.3 skill router
 
 | scenario | 選んだ skill | level | 本文が届いたか |
 | --- | --- | --- | --- |
 | `vague-request` | dashboard-design | 2.70 | はい |
 | `guard-harmless` | counting-lines | 2.99 | はい |
 | `skill-shaped` | counting-lines | 2.98 | はい |
-| その他 3 件 | (なし) | - | - |
+| その他 6 件 | (なし) | - | - |
 
-## 6. コスト
+### 7.4 compaction —— 届かなかったメッセージで
+
+これは**ログで捏造できない唯一のコンポーネント**です。
+provider に届いたメッセージが減ったか、減っていないか、どちらかしかない。
+
+```
+  arm       messages per provider call                  final payload
+  hermes   1 3 5 7 9 11 13 13 17 19 13                   14594 bytes
+  control  1 3 5 7 9 11 13 15 17 19 21                   19449 bytes
+```
+
+**control は単調に増え、hermes は下がります** ——
+7 回目で `13 → 13`、最後で `19 → 13`。
+最終 payload は **14,594 対 19,449 bytes**。
+
+4 回の呼び出しの内訳:
+
+| outcome | dropped | tokens | budget | 何が起きたか |
+| --- | --- | --- | --- | --- |
+| `deleted` | 3 | 1490 → 1250 | 1275 | 予算内に入った |
+| `cannot-fit` | 0 | 1747 → 1747 | 1516 | 22 件中 4 件が跨いだが、floors/pairing が全部取り消した |
+| `cannot-fit` | 0 | 2026 → 2026 | 1099 | 同じく 25 件中 8 件 |
+| `deleted` | 12 | 2282 → 1419 | 1010 | **落とせる分は落として、まだ予算超過** |
+
+最後の行が設計そのものです。`deleted` は**予算を満たした保証ではありません** ——
+judgment が「生きている」と言ったものを数字のために消したりしないので、
+**許された分だけ消して、なお超えている**ことがある。
+そのときは**そう書きます**(`still over the 1010 budget`)。
+`cannot-fit` が 2 回入っているのも正直な結果です ——
+21 メッセージの transcript は `keepRecent` の floor が書かれた長さより短い。
+
+そして構造的な検査は **payload に対して**掛けました:
+
+```
+  hermes    tool_use 12   tool_result 12   orphan 0   first message = user
+  control   tool_use 20   tool_result 20   orphan 0   first message = user
+```
+
+**pair が 8 組まるごと消えて、片割れは 1 つも残っていない。**
+これはスコアで埋め合わせのできない失敗です ——
+片割れだけの transcript は provider が拒否し、
+goal を失った transcript は残ったものから復元できません。
+
+### 7.5 orchestrator —— 2 つの経路
+
+```
+  scenario           route   arm       shape        split   gate   reached the provider?
+  orchestrate-tool   tool    hermes   single       false   0.29   yes
+  orchestrate-tool   tool    control  single       false   0.30   yes
+  orchestrate-turn   turn    hermes   fanout x3    true    0.50   yes
+  orchestrate-turn   turn    control  (no plan)    -       -      no
+```
+
+**tool 経路は両 arm で動きます。それが意図です** ——
+tool は jev-orchestrator 自身の拡張のもので、どちらの arm にも読み込むので、
+control は **hermes の分だけ**違う。turn 経路は hermes 固有で、
+§6 の flag ができるまで到達できませんでした。
+
+どちらも [31 §8](31-orchestration.md) の数字が生で出たものです。
+
+- tool は **skill の `fanout` 行そのものから書いた依頼を断りました**
+  —— gate 0.29、当てはめが厳しい文言に対して測った
+  **0.055..0.446 の帯の中**、カットオフ 0.5 の下。
+- turn は **gate 0.50 で split** ——
+  **カットオフの真上**で、draw noise の内側です。
+  この 1 件は judgment ではなく**コイントス**として読んでください。
+
+注入された brief は payload に届いています:
+
+```
+This work fits the fanout pattern with about 3 workers.
+fanout (confidence 0.78), gate 0.50. Decide the actual division of
+labour yourself; what was judged is the shape, not the steps.
+```
+
+**形だけを渡して、手順は渡さない** ——
+[37 §4](37-hermes.md) が設計した境界のとおりです。
+pi に agent を spawn する API は無いので、これは**助言で、配車ではありません**。
+
+## 8. コスト
 
 ```
   arm       turns   wall clock (ms)   judgment requests   input tokens   $ / 1k turns
-  hermes       6              1557                 1.5           1103   $0.046
-  control      6               638                 0.0              -   $0.000
+  hermes       9              1486                 2.0           1163   $0.049
+  control      9               533                 0.1              -   $0.000
 ```
 
-**+919 ms/turn。** ただしこれは**上限として読むもの**です ——
+**+953 ms/turn。** ただしこれは**上限として読むもの**です ——
 台本のモデルは即答するので、本物のターンではモデル自身の時間に大半が隠れます。
 
 トークンは [37 §8](37-hermes.md) の算術(約 1,300)と同じ桁で、
-実測は **1,103**(skill を聞く分が入って増減する)。
+実測は **1,163**(skill と compaction を聞く分で増減する)。
+1 ターンあたりの judgment リクエストは **2.0** ——
+compaction の 4 回がここに乗っています。
 
-## 7. 動かせなかったもの
-
-| | 状態 | なぜ |
-| --- | --- | --- |
-| memory compaction | **未実行** | 200k の context を埋めるターンが無いので `context` が閾値を跨がない |
-| orchestrator | **未実行** | 既定が `advise: tool` で、台本のモデルは tool を呼ばない |
-
-5 つのうち 3 つが配線で確認済み。残り 2 つは配線もテストもあるが
-**この harness が届いていない** —— harness についての事実です。
-
-## 8. 正直な限界
+## 9. 正直な限界
 
 - **モデルは台本です。** だからここには
   **タスクの出来についての証拠が 1 つもありません**。
   測れたのは配線とコスト。
-- **1 ターンのセッション 12 本。** 常駐 agent は多ターンで、
-  compaction も pin と per-turn の違いもそこにしか現れません。
-- **シナリオ 6 件は私が書きました。** 各コンポーネントを
+- **1 ターンのセッション 18 本。** 常駐 agent は多ターンで、
+  pin と per-turn の違いはそこにしか現れません。
+  compaction は 1 セッション内で 4 回動いたので例外ですが、
+  それも**21 メッセージの transcript**の話です。
+- **シナリオ 9 件は私が書きました。** 各コンポーネントを
   配線で見えるようにするための最小構成で、分布ではありません。
-- **`+919 ms` は上限**(§6)。
+- **`+953 ms` は上限**(§8)。
 - guard の verdict が `ask` どまりだったので、
   **`deny` の経路は踏んでいません**。
   `rm -rf <tmp>/tree` は [18](18-permission-hook.md) の
   `rm -rf ./node_modules`(ラベル `ask`)に近い形でした。
+- **compaction のシナリオは context window 5,000 と `keepRecent` 2 で
+  動かしました。** 既定(200k / 6)ではありません。
+  下げたのは短いセッションで閾値を跨がせる唯一の方法だからで、
+  **常駐 agent の transcript は数百 entry あってこの調整を必要としません**。
+  ここで測れたのは**配線と、4 回の outcome の形**で、
+  「本物の長さの transcript でどれだけ落ちるか」ではありません。
+- **orchestrator の turn 判断は 1 件**で、
+  しかも gate 0.50 はカットオフの真上 ——
+  **判断の質についての証拠ではありません**(§7.5)。
+- **compaction の ranking は、まだ無料ベースライン
+  (`oldest` / `largest` / `stale`)と比べていません**
+  ([37 §3](37-hermes.md)、[06](06-ideas.md) の TODO 11)。
+  「jev が消すものは、古い順に消すより良いのか」は未測です。
 
 ---
 
@@ -299,7 +507,24 @@ headless なので `unattendedAsk` が解決しました。
 | model router | 「opus を選んだ」 | **payload の `model` が `claude-opus-5`** |
 | guard rail | 「block した」 | **ディレクトリが残っている** |
 | skill router | 「level 2.98 で読み込んだ」 | **本文が payload の中にある** |
+| compaction | 「3 件削除した」 | **payload のメッセージが減っている**、orphan 0 |
+| orchestrator | 「fanout x3」 | **brief が payload の中にある** |
 
 左の列は 3 つとも正しかったのに、右の列を見るまで
 **skill router は 2 つのバグで一度も動いていませんでした**。
 左の列だけ見ていたら「動いている」と書いていたはずです。
+
+そして下の 2 行が同じことをもう一度示しました。
+compaction の拡張ログは 4 回とも正しく
+「これを削除した/これは削除できなかった」と言っていて、
+**その状態にあった原因は予算の計算間違いだった** ——
+拡張ログの中からは見えません。
+orchestrator は自分のログで「plan を作った」と言い続けられますが、
+**brief が payload に無ければモデルは何も知らない**。
+
+| 確認の形 | 捏造できるか |
+| --- | --- |
+| 拡張が「した」と書いたログ | **できる**(バグ 4 件すべてがこの側で正しく見えた) |
+| payload に入っているもの | できない |
+| payload から**消えた**もの | できない |
+| ディスク上に残ったもの | できない |

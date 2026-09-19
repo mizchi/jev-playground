@@ -135,16 +135,26 @@ usable for a round trip it cannot save.
 
 ## Pi
 
-```jsonc
-{
-  "jev-hermes": {
-    "combine": true,
-    "guard": { "unattendedAsk": "block" },
-    "orchestrator": { "advise": "tool" },
-    "budget": { "dailyInputTokens": 24000000 }
-  }
-}
+Configuration is **flags**, because pi has no other mechanism:
+`ExtensionFactory` is `(pi: ExtensionAPI) => void` — one argument — and
+`ExtensionAPI` exposes `registerFlag`/`getFlag` and no settings reader at all.
+An earlier version of this section showed a `{ "jev-hermes": { ... } }` block
+and it was fiction ([docs/38 §6](../../docs/38-agent.md), which found it while
+trying to turn the orchestrator on).
+
+```sh
+pi -e .../jev-hermes/src/pi.ts \
+   --hermes-advise turn \              # orchestrator: judge the opening prompt
+   --hermes-compact-keep-recent 2 \    # deletion floor, entries
+   --hermes-compact-budget 40000 \     # message budget, tokens
+   --hermes-unattended-ask block \     # what ASK means with no human present
+   --hermes-off                        # disable every jev component
 ```
+
+`--hermes-advise turn` is the flag that made the orchestrator's other route
+reachable at all; `--hermes-compact-keep-recent` is what let a short test
+transcript have anything droppable in it. Both are measured in
+[docs/38 §7](../../docs/38-agent.md).
 
 `/hermes` prints what every component decided this turn and what the day has
 cost, per component. `/hermes guard off` disables one.
@@ -157,8 +167,21 @@ cost, per component. `/hermes guard off` disables one.
 - Under the strict `cost` framing the orchestration gate answered 0.055–0.446
   across all eight turns, entirely below its 0.5 default, so **it almost never
   fires**. Consistent with docs/31 §2b's 6/22 on plainly-multi cases. The
-  cutoff wants fitting against docs/31's labelled scenarios.
+  cutoff is now fitted against docs/31's 38 labelled scenarios
+  ([docs/31 §8](../../docs/31-orchestration.md)) and is per-framing.
 - `jev-compact`'s ranking is untested; only its structural constraints are.
+  [docs/38 §7.4](../../docs/38-agent.md) verified deletion at the wire — the
+  payload got smaller and tool-call pairing survived — which says the mechanism
+  works, not that it deletes the right things. The comparison against the free
+  `oldest`/`largest`/`stale` rankings has not been run.
+- The message budget handed to the compactor is **approximate by
+  construction**: pi's token count and `jev-compact`'s differ, and the
+  difference is absorbed into `overhead`, which moves as the transcript grows
+  (2,225 / 1,984 / 2,401 / 2,490 over four calls). The floors are exact and are
+  what actually protects the transcript.
 - No resident agent has actually been left running on this. Every number above
-  is either from a labelled corpus in `docs/` or from 64 draws over invented
-  turns, and the per-day figures are arithmetic over an assumed turn count.
+  is either from a labelled corpus in `docs/`, from 64 draws over invented
+  turns, or from 18 one-turn pi sessions against a scripted model
+  ([docs/38](../../docs/38-agent.md)); the per-day figures are arithmetic over
+  an assumed turn count. **Nothing here is evidence about task quality** —
+  there was no model in the loop.

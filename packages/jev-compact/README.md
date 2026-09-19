@@ -119,10 +119,27 @@ Nothing is deleted from the stored session — `context` shapes only what is
 *sent*, so `/jev-compact restore` puts it all back. That is what makes a wrong
 deletion recoverable, and it is the difference between this and a summary.
 
+**Configuration is flags.** Pi passes nothing else to an extension:
+`ExtensionFactory` takes one argument and `ExtensionAPI` has no settings reader
+([docs/38 §6](../../docs/38-agent.md)). Through `jev-hermes` the reachable ones
+are `--hermes-compact-keep-recent` and `--hermes-compact-budget`; this package's
+own `pi.ts` registers none, so it ships its defaults.
+
+**The budget it is handed is approximate, and the floors are not.** Pi counts
+the whole context — system prompt, tool schemas, context files, messages —
+and this package can only delete messages, so a caller has to subtract the
+overhead before passing a budget in. That overhead includes the disagreement
+between two token estimators, and it moves as the transcript grows
+([docs/38 §5](../../docs/38-agent.md) measured 2,225 / 1,984 / 2,401 / 2,490
+over four calls in one session). `keepRecent` and the goal pin are exact.
+
 ## Limits
 
-- **Nothing here is measured yet.** The structural constraints are tested; the
-  ranking is not. The experiment recorded as TODO item 11 in
+- **The ranking is still not measured.** The structural constraints are tested,
+  and [docs/38 §7.4](../../docs/38-agent.md) verified at the wire that deletion
+  reaches the provider — 8 tool-call pairs gone, 0 orphans, the payload
+  smaller — but that is the mechanism, not the choice. The experiment recorded
+  as TODO item 11 in
   [docs/06](../../docs/06-ideas.md) is the one to run: task completion by exit
   code, plus a string-match check that facts extracted before compaction
   survived it, against the three free baselines.
@@ -131,3 +148,8 @@ deletion recoverable, and it is the difference between this and a summary.
 - Tokens are estimated at four characters each, because the count is the
   server's to compute. It decides how much to delete, never whether a request
   fits.
+- `outcome: "deleted"` does **not** promise the budget was met. It will not
+  delete an entry judgment called live to hit a number, so a run can delete
+  everything it is allowed to and stay over — it says so in `reason`
+  ([docs/38 §7.4](../../docs/38-agent.md) has such a run: 12 dropped,
+  2282 → 1419 tokens, budget 1010).

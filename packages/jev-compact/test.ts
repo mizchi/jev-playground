@@ -9,6 +9,7 @@
  * its goal cannot be recovered from what is left. Judgment is allowed to be
  * wrong about what to delete; it is not allowed to produce either of those.
  */
+import { readFileSync } from "node:fs";
 import { Jev, type Answer } from "@jev-playground/jev-core";
 import {
   DEFAULT_COMPACT_CONFIG,
@@ -353,6 +354,63 @@ tests.push(
     // would look free and not be.
     const thinking = entriesOf([{ role: "assistant", content: [{ type: "thinking", thinking: "hmm" }] }]);
     ok(tokensOf(thinking[0]) > 0, "a thinking-only turn measured as zero tokens");
+  }),
+);
+
+tests.push(
+  check("a pair is judged by its weakest half, not per entry", async () => {
+    // The bug docs/38 §5 found by running the compactor inside pi: the cutoff
+    // was applied per ENTRY while deletion is only legal per PAIR, so an
+    // assistant turn that made a call (which reads as live -- it is what
+    // happened next) kept its own result undroppable however spent the result
+    // was. In a tool-heavy transcript, which is the transcript that needs
+    // compacting, nothing could ever be deleted.
+    const big = "x".repeat(20_000);
+    const t: Entry[] = [
+      { id: "0", role: "user", text: "find the bug", label: "user" },
+      { id: "1", role: "assistant", text: "read(a.ts)", calls: ["c1"], label: "assistant" },
+      { id: "2", role: "tool", text: big, answers: "c1", label: "read" },
+      { id: "3", role: "assistant", text: "still looking", label: "assistant" },
+      { id: "4", role: "user", text: "carry on", label: "user" },
+      { id: "5", role: "assistant", text: "nearly", label: "assistant" },
+      { id: "6", role: "assistant", text: "done", label: "assistant" },
+      { id: "7", role: "user", text: "thanks", label: "user" },
+    ];
+    // The result is spent (level 0). The CALLER reads live (level 3), which is
+    // the realistic case and the one that used to deadlock.
+    const answers: Record<string, Answer> = { nothing_spare: { type: "noul", noul: 0.1 } };
+    const level = (id: string, value: number): void => {
+      answers[`e_${id}`] = { type: "score", score: value, confidence: 0.9, legend: {}, probabilities: {} };
+    };
+    level("1", 3);
+    level("2", 0);
+    level("3", 3);
+    const jev = new Jev({
+      apiKey: "x",
+      retries: 0,
+      fetchImpl: (async () =>
+        new Response(JSON.stringify({ model: "jev-latest", answers, usage: { input_tokens: 10, output_tokens: 0 } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })) as unknown as typeof fetch,
+    });
+    const result = await compact(t, { goal: "find the bug" }, { config: { budgetTokens: 100, keepRecent: 3 }, jev });
+    eq(result.outcome, "deleted", `the pair could not be dropped: ${result.reason}`);
+    const gone = new Set(result.dropped.map((e) => e.id));
+    ok(gone.has("2"), "the spent tool result survived");
+    ok(gone.has("1"), "its caller survived, which would make the transcript unsound");
+    ok(valid(result.keep).ok, "the survivors are unsound");
+  }),
+);
+
+tests.push(
+  check("the two no-deletion reasons are told apart", () => {
+    // They shared a sentence, and the wrong one printed for four runs in
+    // docs/38 §5: "nothing cleared the cutoff" reads very differently from
+    // "things cleared it and none could move".
+    const text = readFileSync(new URL("./src/compact.ts", import.meta.url), "utf8");
+    ok(text.includes("no pair scored at or below"), "the empty-candidates reason is gone");
+    ok(text.includes("none could be dropped"), "the retracted-drops reason is gone");
   }),
 );
 

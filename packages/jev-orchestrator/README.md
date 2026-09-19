@@ -146,6 +146,21 @@ router that sees only the opening prompt is judging the least informative
 description of the task that will ever exist. There, 21 prompts were one
 identical string and the across-task spread came in *below* the draw noise.
 
+Which route runs is a **flag**, because pi passes configuration to an
+extension through `registerFlag`/`getFlag` and through nothing else
+([docs/38 §6](../../docs/38-agent.md), which found that while trying to reach
+the other route):
+
+```sh
+pi -e .../jev-orchestrator/src/pi.ts --jev-advise turn --jev-framing cost
+```
+
+Both routes are exercised inside a real pi session in
+[docs/38 §7.5](../../docs/38-agent.md): the tool declined a request written
+from the skill's own `fanout` row at gate 0.29, and the turn route split at
+gate 0.50 — which is *on* the cutoff, so read that one decision as a coin
+toss.
+
 ## Limits
 
 - 38 scenarios, written from the skill's own table. docs/31 §2b's per-class
@@ -159,3 +174,9 @@ identical string and the across-task spread came in *below* the draw noise.
 - The fit is in the **asymmetric** regime (a false positive costing ~10× a
   false negative). If errors are symmetric, `plain` at 0.5 is the better
   configuration and these defaults are wrong for you; set `gateAt`.
+- Inside pi this has produced **two** live decisions (docs/38 §7.5), one of
+  them on the cutoff. That is evidence the wiring works and no evidence about
+  judgment quality.
+- Pi has no API for spawning an agent, so this advises and never dispatches.
+  Nothing here measures whether jev can decompose work into worker
+  assignments — docs/31 measured the *decision*.

@@ -91,20 +91,22 @@ without spending anything.
 pi install npm:jev-model-router
 ```
 
-Add to `~/.pi/agent/settings.json`:
+**This extension ships its defaults and nothing else.** An earlier version of
+this section showed a `~/.pi/agent/settings.json` block with a `jevModelRouter`
+key, and there is no such mechanism: pi passes configuration to an extension
+through `registerFlag`/`getFlag` and through nothing else — `ExtensionFactory`
+is `(pi: ExtensionAPI) => void` and `ExtensionAPI` has no settings reader
+([docs/38 §6](../../docs/38-agent.md)). The ladder, the cutoffs and `mode` are
+configurable from the library, the CLI and `/jev-model`; no flags are
+registered here yet, so the defaults below are the whole of what a pi install
+gets.
 
-```json
-{
-  "jevModelRouter": {
-    "mode": "pin",
-    "tiers": [
-      { "model": "claude-haiku-4-5-20251001", "label": "haiku", "price": 1, "says": "a small fast model is enough: ..." },
-      { "model": "claude-opus-5", "label": "opus", "price": 15, "says": "the strongest model is needed: ..." }
-    ],
-    "fallback": "claude-opus-5",
-    "cuts": [0.5]
-  }
-}
+```ts
+// what the extension actually runs with -- DEFAULT_CONFIG plus mode: "pin"
+{ mode: "pin", tiers: /* haiku, sonnet, opus */, fallback: "claude-sonnet-5",
+  cuts: null,          // null = round the continuous score to a rung
+  minConfidence: 0.5,  // a low-confidence answer may route UP, never down
+  escalateAt: 0.7, downgradeMaxContextTokens: 40_000, timeoutMs: 10_000 }
 ```
 
 `/jev-model` shows the ladder, the pin and the cutoffs. `/jev-model mode turn`

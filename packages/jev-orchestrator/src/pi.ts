@@ -49,6 +49,21 @@ export interface PiOrchestratorSettings extends Partial<PlanConfig> {
 
 export default function jevOrchestrator(pi: ExtensionAPI): void {
   let settings: PiOrchestratorSettings = {};
+
+  // Pi configures an extension through CLI flags and nothing else:
+  // `ExtensionFactory` takes only `pi`, and `ExtensionAPI` has no settings
+  // reader (docs/38 §6). Without this, `advise` could only be changed by the
+  // slash command, so a headless run was stuck on the default.
+  pi.registerFlag("jev-advise", {
+    type: "string",
+    default: "tool",
+    description: "when to advise on splitting work: tool (default), turn, or both",
+  });
+  pi.registerFlag("jev-framing", {
+    type: "string",
+    default: "cost",
+    description: "the gate's wording: cost (strict, default) or plain (permissive)",
+  });
   let latest: PlanResult | null = null;
   let asked = 0;
   let inputTokens = 0;
@@ -93,6 +108,13 @@ export default function jevOrchestrator(pi: ExtensionAPI): void {
   }
 
   pi.on("session_start", async (_event, ctx) => {
+    const advise = String(pi.getFlag("jev-advise") ?? "tool");
+    const framing = String(pi.getFlag("jev-framing") ?? "cost");
+    settings = {
+      ...settings,
+      ...(advise === "turn" || advise === "tool" || advise === "both" ? { advise } : {}),
+      ...(framing === "cost" || framing === "plain" ? { framing } : {}),
+    };
     latest = null;
     asked = 0;
     inputTokens = 0;

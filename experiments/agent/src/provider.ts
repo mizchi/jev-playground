@@ -10,6 +10,17 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export default function stubProvider(pi: ExtensionAPI): void {
   const baseUrl = process.env.PI_STUB_URL;
   if (!baseUrl) return;
+  /**
+   * The context window, shrinkable per scenario.
+   *
+   * `jev-compact` fires when `getContextUsage().tokens` passes
+   * `contextWindow * startAt`, so with a real 200,000-token window a scenario
+   * would have to generate ~140,000 tokens of transcript to reach the code
+   * path. Declaring a small window is the same threshold from the other side,
+   * it exercises the identical branch, and it makes the run take seconds --
+   * a model with a small context is a real thing to configure, not a mock.
+   */
+  const contextWindow = Number.parseInt(process.env.PI_STUB_CONTEXT ?? "200000", 10);
   pi.registerProvider("stub", {
     name: "stub",
     baseUrl,
@@ -24,7 +35,7 @@ export default function stubProvider(pi: ExtensionAPI): void {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 200000,
+        contextWindow,
         maxTokens: 8192,
       },
       {
@@ -33,7 +44,7 @@ export default function stubProvider(pi: ExtensionAPI): void {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 200000,
+        contextWindow,
         maxTokens: 8192,
       },
     ],

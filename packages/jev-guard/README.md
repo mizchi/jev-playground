@@ -105,13 +105,21 @@ asking the API again answers a different one
 
 ## Pi
 
-```jsonc
-// pi settings
-{ "jev-guard": { "scope": "writes", "unattendedAsk": "block" } }
-```
-
 `/jev-guard` shows what was asked, what was free, what was blocked, and what
 the session has cost. `/jev-guard off` stops it.
+
+**This extension ships its defaults and nothing else.** An earlier version of
+this section showed a `{ "jev-guard": { ... } }` settings block, and that block
+was fiction: `ExtensionFactory` is `(pi: ExtensionAPI) => void` — one argument —
+and `ExtensionAPI` has no settings reader at all. Pi passes configuration to an
+extension through `registerFlag`/`getFlag` and through nothing else
+([docs/38 §6](../../docs/38-agent.md)). `PiGuardSettings` therefore starts as
+`{}` and only the slash command can change it, so **every default is the whole
+of the shipped behaviour**. To make a field configurable it has to become a
+flag; none are registered here yet.
+
+The library and the CLI take the full config, and that is what the experiments
+measure.
 
 ## Limits
 
@@ -119,3 +127,9 @@ the session has cost. `/jev-guard off` stops it.
 - `psql -c 'DROP TABLE users;'` sits on the deny boundary across runs. The
   cutoffs are unfitted: docs/25's rule is that a cutoff belongs to a corpus.
 - Nothing here has been measured against `write` or `edit` calls at all.
+- In pi, only the defaults are reachable (above). The one decision this costs
+  is `unattendedAsk`: a headless session resolves ASK to `block`, and a host
+  that wants `confirm` has no way to say so.
+- `deny` has never fired inside pi. [docs/38 §7.2](../../docs/38-agent.md)
+  blocked `rm -rf <sandbox>/tree` at verdict `ask`, which is the same shape as
+  docs/18's `rm -rf ./node_modules`.

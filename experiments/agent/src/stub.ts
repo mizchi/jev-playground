@@ -45,8 +45,17 @@ function sse(events: unknown[]): string {
   return events.map((e) => `event: ${(e as { type: string }).type}\ndata: ${JSON.stringify(e)}\n\n`).join("");
 }
 
-/** One scripted assistant message as an Anthropic SSE stream. */
-function streamFor(step: Step, model: string): string {
+/**
+ * One scripted assistant message as an Anthropic SSE stream.
+ *
+ * `inputTokens` is the payload's own size, not a constant, and that matters
+ * more than it looks: pi derives `getContextUsage()` from what the provider
+ * reports, so a stub that always answers "100 tokens" makes the context look
+ * empty forever and `jev-compact`'s threshold unreachable. The first version
+ * did exactly that, and the compaction scenario ran four large reads without
+ * the compactor ever firing (docs/38 §5).
+ */
+function streamFor(step: Step, model: string, inputTokens: number): string {
   const events: unknown[] = [
     {
       type: "message_start",
@@ -58,7 +67,7 @@ function streamFor(step: Step, model: string): string {
         content: [],
         stop_reason: null,
         stop_sequence: null,
-        usage: { input_tokens: 100, output_tokens: 10 },
+        usage: { input_tokens: inputTokens, output_tokens: 10 },
       },
     },
   ];
@@ -119,7 +128,10 @@ export async function start(script: Step[]): Promise<Stub> {
       const current = script[Math.min(step, script.length - 1)] ?? { text: "done" };
       step += 1;
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
-      res.end(streamFor(current, body.model ?? "stub"));
+      // Four bytes per token, the same rough conversion `jev-compact` uses.
+      // It only has to grow with the transcript for the threshold to mean
+      // something.
+      res.end(streamFor(current, body.model ?? "stub", Math.ceil(raw.length / 4)));
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

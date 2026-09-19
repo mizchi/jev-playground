@@ -45,6 +45,8 @@ export type Arm = "hermes" | "control";
 export interface Turn {
   scenario: string;
   arm: Arm;
+  /** The window the stub declared, since it decides the compaction threshold. */
+  contextWindow: number;
   /** Pi's own event types, in order. The full objects are large. */
   eventTypes: string[];
   /** Tool executions pi actually ran, with whether each was blocked. */
@@ -112,6 +114,11 @@ async function runOne(scenario: Scenario, arm: Arm): Promise<Turn> {
     "-e",
     PROVIDER,
     ...(arm === "hermes" ? ["-e", HERMES] : []),
+    // A scenario may need another extension -- `orchestrate-tool` needs
+    // jev-orchestrator's own, because that is where the tool is registered
+    // and hermes does not register it. Loaded in BOTH arms so the control
+    // differs only by hermes.
+    ...(scenario.extensions ?? []).flatMap((path) => ["-e", resolve(HERE, path)]),
     "--skill",
     SKILLS,
     "--provider",
@@ -119,13 +126,21 @@ async function runOne(scenario: Scenario, arm: Arm): Promise<Turn> {
     "--model",
     "claude-sonnet-5",
     "--approve",
+    // Flags a scenario needs. Only meaningful in the hermes arm, since they
+    // are hermes' own (docs/38 §6: pi configures an extension through flags
+    // and nothing else).
+    ...(arm === "hermes" ? (scenario.flags ?? []) : []),
     scenario.prompt,
   ];
   const started = Date.now();
   const out = await new Promise<{ code: number | null; stdout: string; stderr: string }>((done) => {
     const child = spawn(PI, args, {
       cwd,
-      env: { ...process.env, PI_STUB_URL: stub.url },
+      env: {
+        ...process.env,
+        PI_STUB_URL: stub.url,
+        ...(scenario.contextWindow ? { PI_STUB_CONTEXT: String(scenario.contextWindow) } : {}),
+      },
       // See the header: a piped stdin makes pi exit 1 with no output at all.
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -157,7 +172,9 @@ async function runOne(scenario: Scenario, arm: Arm): Promise<Turn> {
   for (const event of events) {
     if (event.type !== "entry_appended") continue;
     const entry = event.entry as { customType?: string; data?: Record<string, unknown> } | undefined;
-    if (entry?.customType?.startsWith("hermes/")) {
+    // `hermes/*` and `jev-orchestrator/*`: the second is the standalone
+    // extension's own record, which `orchestrate-tool` is about.
+    if (entry?.customType?.startsWith("hermes/") || entry?.customType?.startsWith("jev-orchestrator/")) {
       entries.push({ customType: entry.customType, data: entry.data ?? {} });
     }
   }
@@ -180,6 +197,7 @@ async function runOne(scenario: Scenario, arm: Arm): Promise<Turn> {
   return {
     scenario: scenario.id,
     arm,
+    contextWindow: scenario.contextWindow ?? 200_000,
     eventTypes: events.map((e) => String(e.type)),
     tools,
     sent: stub.requests,
