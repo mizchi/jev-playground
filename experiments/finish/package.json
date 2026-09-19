@@ -1,0 +1,8 @@
+{
+  "name": "jev-finish",
+  "private": true,
+  "type": "module",
+  "description": "Does the agent FINISH the work? The end-to-end corpus docs/41 §0 and docs/42 §5 said was unmeasured (docs/43)",
+  "scripts": { "run": "tsx src/run.ts", "demo": "tsx src/report.ts", "test": "tsx test.ts" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}
