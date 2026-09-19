@@ -1975,6 +1975,59 @@
       "loaded": 2,
       "reason": "judged/rated 74 of 74",
       "inputTokens": 20043
+    },
+    {
+      "which": "skill",
+      "arm": "haiku",
+      "item": "aws-ecs",
+      "answer": "aws-github-oidc-scoped-role,conventional-changelog",
+      "want": "apm-usage,aws-github-oidc-scoped-role,conventional-changelog,gh-fix-ci,pkfire",
+      "ms": 39092,
+      "hit": 2,
+      "miss": 3,
+      "extra": 0,
+      "loaded": 2,
+      "reason": "judged/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "sonnet",
+      "item": "aws-ecs",
+      "answer": "aws-github-oidc-scoped-role,conventional-changelog",
+      "want": "apm-usage,aws-github-oidc-scoped-role,conventional-changelog,gh-fix-ci,pkfire",
+      "ms": 42158,
+      "hit": 2,
+      "miss": 3,
+      "extra": 0,
+      "loaded": 2,
+      "reason": "judged/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "jev",
+      "item": "gleam-api",
+      "answer": "gleam-practice,nix-setup",
+      "want": "apm-usage,gleam-practice,nix-setup,pkfire",
+      "ms": 592,
+      "hit": 2,
+      "miss": 2,
+      "extra": 0,
+      "loaded": 2,
+      "reason": "judged/rated 74 of 74",
+      "inputTokens": 19997
+    },
+    {
+      "which": "skill",
+      "arm": "haiku",
+      "item": "gleam-api",
+      "answer": "gleam-practice",
+      "want": "apm-usage,gleam-practice,nix-setup,pkfire",
+      "ms": 37658,
+      "hit": 1,
+      "miss": 3,
+      "extra": 0,
+      "loaded": 1,
+      "reason": "judged/rated 74 of 74"
     }
   ],
   "note": "The model router and the skill router, asked of jev and of `claude -p`. Same questions, same policy code, labels from docs/36 and docs/29."

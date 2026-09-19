@@ -12,7 +12,7 @@
 cd experiments/versus && npm install
 npx tsx src/compaction.ts --report          # compactor、記録から。API 不要・CLI 不要
 npx tsx src/routers.ts --report             # 2 つの router、同じく記録から
-npm test                                    # 12 件
+npm test                                    # 14 件
 
 TYPESAFEAI_API_KEY=... npx tsx src/compaction.ts      # 40 行
 TYPESAFEAI_API_KEY=... npx tsx src/routers.ts --arm model
@@ -33,8 +33,16 @@ npx tsx src/compaction.ts --rejudge         # 採点だけ記録から引き直�
 
 - **同じ質問を渡します。** model router は
   `questionsFor(DEFAULT_CONFIG)` の 3 問(tier / underspecified / oversized)、
-  skill router は同じ 74 問の fan-out。
+  skill router は同じ 74 の skill と同じ 4 段の rubric。
   出荷している `instructions` と `criteria` の文字列をそのまま見せます。
+
+  > **ただし skill router では「質問の数」が同じではありません。**
+  > jev は `Question` を **74 個**送り、そのそれぞれが rubric を運びます。
+  > モデルには **1 プロンプトに rubric を 1 回**書いて 74 件を列挙します ——
+  > 74 回同じ文を読ませるプロンプトは、モデル側を不利にするために
+  > 私が作った形になってしまうからです。
+  > 情報と幅は同じ、**分割の仕方は違う**。
+  > そしてこれは **§3.3 の値段の差そのもの**で、そこで数字にしています。
 - **同じ policy コードを通します。** `decide()` と `selectFrom()` ——
   **出荷されている関数**で、ここで書き直したものではありません。
   違うのは**判断の出どころだけ**です。
@@ -48,6 +56,15 @@ npx tsx src/compaction.ts --rejudge         # 採点だけ記録から引き直�
 - **jev の行は再生**です(`experiments/router/records/asks.json` と
   `experiments/skill-select/records/select.json`)。モデルの行はいま作りました。
   コーパスは何も変わっていませんが、**同じ分のドローではありません**。
+
+そしてもう 1 つ、**測っているのは判断で、出荷パイプラインではありません**:
+
+- skill router の出荷形は `split()`(カタログ自身の tier routing)→
+  `prescore`/`keepTop(60)`(無料の語彙重なり)→ 質問 → `selectFrom` です。
+  ここでは**前 2 段を通していません** —— 74 件全部について両アームに聞いています。
+  [29 §5](29-skill-select.md) はカタログ routing を **0.70 対 0.53** と測っているので、
+  **両アームが等しく不利になる**方向の省略です。
+  比較としては公平ですが、**下の precision は出荷パイプラインの成績ではありません。**
 
 ---
 
@@ -182,8 +199,7 @@ sonnet-summarise の 2 行がちょうど 4,000 で切れていて、
 
 | 軸 | なぜこれか |
 | --- | --- |
-| **過剰エスカレーション** | 実測で足りた段より上に送った率。[36 §2.3](36-routers.md) が
-「under-route はターンも金も失う / over-route は差額だけ」と値付けした 2 つの誤りの、**安い方** |
+| **過剰エスカレーション** | 実測で足りた段より上に送った率。[36 §2.3](36-routers.md) が「under-route はターンも金も失う / over-route は差額だけ」と値付けした 2 つの誤りの、**安い方** |
 | **under-route** | 実測で落ちた段より下に送った。**高い方**の誤りだが、示せるタスクが **1 つ**しかないので率ではなく名前で出します |
 
 ### 2.2 3 者とも、ほぼ全タスクで上に行きます
@@ -400,7 +416,7 @@ fold ごとの cutoff の幅は **0.35** で、置かれている gap 0.30 よ�
 ```
 
 **AUC が高いのは「順序が良い」で、「cutoff がある」ではありません** ——
-[24](24-review-rules.md) の規則で、`advise` が数字より先に verdict を返す理由です。
+[24](24-adhoc-rules.md) の規則で、`advise` が数字より先に verdict を返す理由です。
 報告は floor を**全点掃きます**(0.31 で 4/4 捕まえて 2/116 止める、0.28 で 2/4 と 2/116)。
 
 ### 4.5 そして弱い読みが gate の精度を支えていました
