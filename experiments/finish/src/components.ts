@@ -122,6 +122,61 @@ function completionTable(rows: Run[], arms: string[]): void {
   }
 }
 
+/**
+ * Paired comparison of a per-run NUMBER, task by task, with a sign test.
+ *
+ * This exists because of the shape the completion tables came out in. With
+ * Bash allowed the agent iterates until `node --test` is green, so nearly
+ * every arm finishes nearly every task and a pass-rate column is at the
+ * ceiling. A ceiling is not a null result -- it is a statement that THIS
+ * measure cannot separate these arms -- and the honest next move is to measure
+ * what the arms cost rather than to keep quoting a 100% that says nothing.
+ *
+ * The sign test is on the DIRECTION of the per-task difference, not on the
+ * means, because turn counts are skewed (one run that thrashes for 40 calls
+ * moves a mean and not a median) and because the pairing is the whole point:
+ * the same task, the same planted bug, one thing changed.
+ */
+function pairedNumber(
+  rows: Run[],
+  a: string,
+  b: string,
+  of: (r: Run) => number,
+): { aLess: number; bLess: number; tied: number; medianDiff: number; p: number } {
+  const key = (r: Run): string => `${r.task}/${r.repeat}`;
+  const A = new Map(rows.filter((r) => r.arm === a).map((r) => [key(r), r]));
+  const B = new Map(rows.filter((r) => r.arm === b).map((r) => [key(r), r]));
+  const diffs: number[] = [];
+  for (const [k, ra] of A) {
+    const rb = B.get(k);
+    if (!rb) continue;
+    diffs.push(of(ra) - of(rb));
+  }
+  const aLess = diffs.filter((d) => d < 0).length;
+  const bLess = diffs.filter((d) => d > 0).length;
+  return {
+    aLess,
+    bLess,
+    tied: diffs.filter((d) => d === 0).length,
+    medianDiff: med(diffs),
+    p: signP(aLess, bLess),
+  };
+}
+
+function costTable(rows: Run[], pairs: [string, string][], of: (r: Run) => number, unit: string): void {
+  console.log(`| pair | median difference | first lower | second lower | tied | exact sign test |`);
+  console.log("| --- | --- | --- | --- | --- | --- |");
+  for (const [a, b] of pairs) {
+    const c = pairedNumber(rows, a, b, of);
+    if (c.aLess + c.bLess + c.tied === 0) continue;
+    console.log(
+      `| \`${a}\` vs \`${b}\` | ${c.medianDiff > 0 ? "+" : ""}${c.medianDiff.toFixed(1)} ${unit} | ` +
+        `${c.aLess} | ${c.bLess} | ${c.tied} | p = ${c.p.toFixed(3)}` +
+        `${c.p > 0.05 ? " -- NOT SIGNIFICANT" : " **significant**"} |`,
+    );
+  }
+}
+
 function signLine(rows: Run[], a: string, b: string): void {
   const p = paired(rows, a, b);
   const n = p.aOnly + p.bOnly;
@@ -162,6 +217,15 @@ function modelRouter(): void {
   signLine(rows, "routerfail", "haiku");
   signLine(rows, "routerfail", "sonnet");
 
+  const PAIRS: [string, string][] = [
+    ["sonnet", "haiku"],
+    ["routerfail", "haiku"],
+  ];
+  console.log("\nAnd what the rungs cost on the tasks they both finished:\n");
+  costTable(rows, PAIRS, (r) => r.calls.length, "calls");
+  console.log("");
+  costTable(rows, PAIRS, (r) => r.ms / 1000, "s");
+
   // WHAT THE ROUTER SPENT. Computed from the rows' own recorded decisions, not
   // from the arm's name: a routed row carries the tier jev picked.
   const routed = rows.filter((r) => r.arm === "routerfail" && r.routed);
@@ -195,11 +259,15 @@ function modelRouter(): void {
     const heldUp = g.filter((x) => x.reason.includes("low-confidence-no-downgrade")).length;
     const belowFloor = g.filter((x) => x.confidence < 0.5).length;
     console.log(`All ${probe.rows.length} tasks, judged offline (\`records/probe.json\`), no agent running:\n`);
+    // Stated as a count of DISTINCT tiers, not as "how many matched the first
+    // row": the second is the same number when the answer is constant and
+    // quietly misleading when it is not.
+    const distinct = [...new Set(onPrompt.map((x) => x.tier))];
     console.log("| | n | of | share |");
     console.log("| --- | --- | --- | --- |");
     console.log(
-      `| the request alone routed to one single tier | ${onPrompt.filter((x) => x.tier === onPrompt[0]?.tier).length} | ` +
-        `${onPrompt.length} | ${pct(onPrompt.filter((x) => x.tier === onPrompt[0]?.tier).length, onPrompt.length)} |`,
+      `| distinct tiers the REQUEST ALONE produced | ${distinct.length} (${distinct.join(", ")}) | ` +
+        `3 rungs | — |`,
     );
     console.log(`| the TIER SCORE said haiku (below 0.5) | ${scoreSaysHaiku} | ${g.length} | ${pct(scoreSaysHaiku, g.length)} |`);
     console.log(`| ...and haiku is what it got | ${gotHaiku} | ${g.length} | ${pct(gotHaiku, g.length)} |`);
@@ -227,13 +295,36 @@ function modelRouter(): void {
     const disagree = both.filter((r) => r.onPrompt!.tier !== r.onFailure!.tier).length;
     const cheaper = both.filter((r) => r.onFailure!.score < r.onPrompt!.score).length;
     const drops = both.map((r) => r.onPrompt!.score - r.onFailure!.score);
+
+    // THE FREE CONTROL, and it is the reason the paragraph below is a result
+    // rather than a hunch. The 53 repair tasks share `REPAIR_PROMPT` verbatim,
+    // so `onPrompt` across them is 53 draws on ONE request -- a direct
+    // measurement of this question's draw noise, at no extra cost. It is the
+    // control docs/25 says every threshold claim needs and that most of this
+    // programme's claims have had to do without.
+    const identical = probe.rows.filter((r) => r.corpus !== "boundary" && r.onPrompt).map((r) => r.onPrompt!.score);
+    const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const sd = (xs: number[]): number => Math.sqrt(mean(xs.map((x) => (x - mean(xs)) ** 2)));
+    const noise = sd(identical);
     console.log(
-      `\nAdding the real test output changed the tier on ${disagree} of ${both.length} tasks, and lowered the ` +
-        `tier score on ${cheaper} of ${both.length} -- by a median of ${med(drops).toFixed(2)} on a 0..2 ladder. ` +
-        "**Seeing the actual failure makes the work look SMALLER**, which is the opposite of what I expected " +
-        "to write here: an instruction to go fix unspecified failing tests reads as more open-ended than one " +
-        "failing assertion does. It is also the one direction that is free to act on -- the cheap rung is the " +
-        "one you can retry from.",
+      `\n**The same request, ${identical.length} times: score ${Math.min(...identical).toFixed(2)}..` +
+        `${Math.max(...identical).toFixed(2)}, sd ${noise.toFixed(3)}.** The repair tasks share one prompt ` +
+        "string, so this column is a free measurement of the question's own reproducibility -- and on this " +
+        "question the router is very nearly deterministic. Which means the row below is not noise.",
+    );
+    console.log(
+      `\nAdding the real test output changed the tier on ${disagree} of ${both.length} tasks, lowered the tier ` +
+        `score on ${cheaper} of ${both.length}, and the paired drop is ${mean(drops).toFixed(2)} on average ` +
+        `(sd ${sd(drops).toFixed(2)}) on a 0..2 ladder -- **${(mean(drops) / noise).toFixed(0)}x the draw noise ` +
+        `measured just above**, with ${drops.filter((d) => d > 2 * noise).length} of ${drops.length} tasks ` +
+        "beyond two of those deviations.",
+    );
+    console.log(
+      "\n**So seeing the actual failure makes the work look SMALLER**, and that is the opposite of what I " +
+        "expected to write here: an instruction to go fix unspecified failing tests reads as more open-ended " +
+        "than one concrete failing assertion does. It also points the cheap way -- a host that runs the tests " +
+        "before dispatching gets a cheaper answer for one `node --test`, and the direction of the error is the " +
+        "recoverable one, because the cheap rung is the one you can retry from.",
     );
   }
 }
@@ -262,6 +353,19 @@ function skillRouter(): void {
   signLine(rows, "skillrouter", "haiku");
   signLine(rows, "skillrouter", "allskills");
 
+  const PAIRS: [string, string][] = [
+    ["allskills", "haiku"],
+    ["skillrouter", "haiku"],
+    ["skillrouter", "allskills"],
+  ];
+  console.log(
+    "\nCompletion is at the ceiling, so the readable question is what the catalogue costs the agent " +
+      "that has it in front of it:\n",
+  );
+  costTable(rows, PAIRS, (r) => r.calls.length, "calls");
+  console.log("");
+  costTable(rows, PAIRS, (r) => r.ms / 1000, "s");
+
   const routed = rows.filter((r) => r.arm === "skillrouter" && r.skillsLoaded);
   const loads = routed.map((r) => r.skillsLoaded!.loaded.length);
   const freq = new Map<string, number>();
@@ -280,10 +384,18 @@ function skillRouter(): void {
     console.log("\n| skill it chose | runs |");
     console.log("| --- | --- |");
     for (const [n, c] of [...freq.entries()].sort((a, b) => b[1] - a[1])) console.log(`| \`${n}\` | ${c} |`);
+    // COMPUTED, not asserted. The first version of this paragraph said "every
+    // one of them is a debugging skill" while its own table listed
+    // `modern-javascript-patterns` -- the same failure mode as the seven
+    // canned conclusions docs/41-43 had to correct, and for the same reason:
+    // a sentence written once does not update when the table under it does.
+    const DEBUG = /debug|diagnos|troubleshoot|root-?cause|bisect/i;
+    const dbg = [...freq.keys()].filter((n) => DEBUG.test(n));
     console.log(
-      "\nEvery one of them is a debugging skill, chosen out of " +
-        `${cat}. Nobody labelled these against "fix a failing test", so that is not a precision figure -- ` +
-        "it is the router's behaviour, and it is the behaviour you would want.",
+      `\n${dbg.length} of the ${freq.size} distinct skills it chose name debugging (${dbg.join(", ") || "none"}), ` +
+        `out of ${cat} available. Nobody labelled these 300 against "fix a failing test", so **that is not a ` +
+        "precision figure** -- there is no ground truth here and none is claimed. It is the router's behaviour, " +
+        "and the end-to-end verdict above needs no label.",
     );
   }
 
@@ -314,6 +426,10 @@ function orchestration(): void {
       "gated arm.\n",
   );
   completionTable(rows, ["subagent", "orchestrated"]);
+  console.log("");
+  costTable(rows, [["orchestrated", "subagent"]], (r) => r.calls.length, "calls");
+  console.log("");
+  costTable(rows, [["orchestrated", "subagent"]], (r) => r.ms / 1000, "s");
 
   const spawns = rows.reduce((n, r) => n + (r.spawns?.length ?? 0), 0);
   const taskCalls = rows.reduce((n, r) => n + r.calls.filter((c) => c.tool === "Task").length, 0);
