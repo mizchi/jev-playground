@@ -2028,6 +2028,33 @@
       "extra": 0,
       "loaded": 1,
       "reason": "judged/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "sonnet",
+      "item": "gleam-api",
+      "answer": "gleam-practice,nix-setup",
+      "want": "apm-usage,gleam-practice,nix-setup,pkfire",
+      "ms": 30618,
+      "hit": 2,
+      "miss": 2,
+      "extra": 0,
+      "loaded": 2,
+      "reason": "judged/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "jev",
+      "item": "flaky-suite",
+      "answer": "flaker-management,flaker-setup,flaker-storage-cache-on-ci",
+      "want": "apm-usage,dotenvx,flaker-management,flaker-setup,flaker-storage-cache-on-ci,gh-fix-ci,node-sqlite-vec,opentelemetry,otel-node,pi-coding-agent,pkfire",
+      "ms": 429,
+      "hit": 3,
+      "miss": 8,
+      "extra": 0,
+      "loaded": 3,
+      "reason": "capped/rated 74 of 74",
+      "inputTokens": 20042
     }
   ],
   "note": "The model router and the skill router, asked of jev and of `claude -p`. Same questions, same policy code, labels from docs/36 and docs/29."
