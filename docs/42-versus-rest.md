@@ -307,9 +307,128 @@ router が売るべきものがそれです。
 
 ---
 
-## 3. skill router
+## 3. skill router —— ここで初めてモデルが列を 1 つ取りました。そして統計は「取っていない」と言います
 
-*(進行中: 14 プロジェクト × 74 skill の fan-out を haiku/sonnet に投げ中)*
+14 プロジェクト × 74 skill。1 プロジェクト 1 リクエストで 74 件を採点し、
+そのあと**出荷している `selectFrom`**(`loadAt 2.5`、`maxLoad 3`)が何をロードするか決めます。
+ラベルは [29](29-skill-select.md) のもので、**カタログ自身の tier legend から導かれる**もの
+(私が付けたものではありません)。
+
+### 3.1 recall は cap に縛られます —— 全アーム同じように
+
+14 プロジェクトは **135 件の `want`** を持ち、`maxLoad` は **3**。
+だから**どのアームも合計 42 件しかロードできず、recall は 31% を超えられません**。
+**discriminate するのは precision** です ——
+ロードを許された数少ない枠のうち、何件が欲しかったものか。
+cap がある理由は [30 §5](30-skill-pick.md)(cap を上げると precision が落ちる)。
+
+```
+  arm       loaded/project   wanted-found   precision   recall   rated all 74   median ms
+  jev                2.29         27/135         84%      20%          14/14         436
+  haiku              1.93         23/135         85%      17%          11/14       42037
+  sonnet             2.07         27/135         93%      20%          14/14       34537
+```
+
+**`rated all 74` を最初に読んでください。** haiku は **14 プロジェクト中 11 件**でしか
+74 件全部に答えていません。**採点しなかった skill はロードされ得ない**ので、
+haiku の `loaded/project` が低いのは**判断ではない理由**で低い部分を含みます。
+
+### 3.2 sonnet の precision は jev より 9 ポイント高い —— が、確立されていません
+
+**この報告で jev が列を 1 つ落とした唯一の箇所**です。
+だからここでこそ [25](25-thresholds.md) の規律を**引用ではなく適用**します:
+14 プロジェクト × cap 3 では、9 ポイントの差は**数件の skill**でできます。
+
+プロジェクト単位で**対応を取り**、**厳密な符号検定**で検定しました
+(差が出たプロジェクトは帰無仮説の下でコイン投げ):
+
+```
+  pair                which   projects differing   in A's favour   exact p (two-sided)
+  jev vs haiku       extras                   3          1 of 3                 1.000
+  jev vs haiku       hits                     6          5 of 6                 0.219
+  jev vs sonnet      extras                   2          0 of 2                 0.500
+  jev vs sonnet      hits                     2          1 of 2                 1.000
+  haiku vs sonnet    extras                   2          0 of 2                 0.500
+  haiku vs sonnet    hits                     4          0 of 4                 0.125
+```
+
+**sonnet の precision の優位は 14 件中 2 件のプロジェクトに乗っていて、p = 0.500。**
+**recall は同じ**(どちらも 135 件中 27 件)。
+**どの組も分離していません** —— 一番小さい p が haiku 対 sonnet の hits で 0.125。
+
+> **jev が負けている表にも同じ検定を当てる**、というのがここの要点です。
+> 勝っている表にだけ厳しくするのは、厳しさではありません。
+
+### 3.3 値段は逆を向きます —— jev の方が 4 倍高い
+
+```
+  jev's fan-out costs 20019 input tokens per project = $0.8408 / 1,000 projects.
+```
+
+**jev は rubric を 74 回払います** —— 質問 1 つごとに `instructions` が 1 つ。
+モデルには**同じ 74 件を、rubric 1 回**で見せるので、**約 4 分の 1**です。
+[30 §7](30-skill-pick.md) が内側から測った overhead
+(共有 criteria を per-question から state に移したら 1 リクエストに入る質問が 260 → 520)が、
+ここでは**請求書として**見えています。
+
+**このコンポーネントでは、モデルのプロンプトの方が安い形です。**
+互角でないのは**待ち時間**だけ:
+
+| | 判断 1 件の中央値 | 14 件の合計 |
+| --- | --- | --- |
+| **jev** | **436 ms** | 6.1 秒 |
+| sonnet | 34,537 ms | 484 秒 |
+| haiku | 42,037 ms | 589 秒 |
+
+**79〜96 倍**。[41](41-versus.md) の guard、[§1.3](#13-値段と待ち時間) の compactor と同じ形です。
+
+### 3.4 65% は同じ skill をロードします —— そして間違いも共有します
+
+```
+  over 14 project(s): 24 of 37 distinct skills were loaded by EVERY arm (65%).
+  moonbit-lib: not unanimous on moonbit-js-binding (haiku+sonnet)
+  d1-worker: not unanimous on sql-plan-audit (haiku+sonnet), sql-security (jev)
+  frontend-review: not unanimous on dep-lib-review (haiku), frontend-review-ci (sonnet), frontend-review-weekly (jev)
+  gleam-api: not unanimous on nix-setup (jev+sonnet)
+  flaky-suite: not unanimous on flaker-storage-cache-on-ci (jev+sonnet)
+  article-draft: not unanimous on mizchi-blog-style (jev+sonnet)
+  dep-audit: not unanimous on frontend-review-deps (jev+haiku), security-expert (jev)
+  formal-config: not unanimous on security-expert (jev)
+  act-local: not unanimous on actrun-init (jev)
+```
+
+precision が 1 ポイント差でも、**3 者が一致しているのか、別々の skill を選んで
+同じ点数になったのか**はラベルでは区別できません。だから並べました。
+
+**2 つは全員一致の決定**で、どちらも設計の主張が出ている場所です:
+
+- **`bare-repo` は 3 者とも 0 件ロード。** cap ではなく **cutoff が決めました** ——
+  [36 §3](36-routers.md) の「上位 k を取る実装はどの要求にも 3 件ロードする」の逆側。
+- **`k8s-crd` は 3 者とも 1 件ロードして 3 者とも外しました**(hit 0 / extra 1)。
+  **共有された誤り**で、これはアームの差ではなくラベルかコーパスの側の問題です
+  ([41 §3](41-versus.md) の orchestration で見たのと同じ形)。
+
+---
+
+## 4'. まとめ: 5 コンポーネントを本物のモデルと並べた結果
+
+| コンポーネント | 品質 | 速度 | 値段 |
+| --- | --- | --- | --- |
+| **guard**([41](41-versus.md)) | jev **96%** = sonnet、haiku 88%。**誤りの向きが違う**(haiku の 3 件は全部 permissive 側) | **49〜61 倍** | jev $0.034 / 1,000 |
+| **orchestration**([41](41-versus.md)) | 58 / 58 / **61%** —— 38 件中 32 件は 3 者同じ。**コーパスの難しさ** | **26〜34 倍** | 同上 |
+| **compactor**(§1) | jev **8/8 予算内・事実 100%**、`select` は事実 100% だが**予算超過 3/8・2/8**、`summarise` は事実を落とす。**捏造は 3 者とも 0** | **43〜103 倍** | jev $0.366 / 1,000 |
+| **model router**(§2) | **誰も無料の `always-haiku` を超えません。** 3 者が 53 件中 42 件で同じ段、41 件がラベルより上。**どのアームも唯一の難問を見ていない**(最良 AUC 0.663、p = 0.358) | **43 倍** | jev $0.034 / 1,000 |
+| **skill router**(§3) | **3 者とも分離せず**(最小 p = 0.125)。sonnet の precision +9pt は 14 件中 2 件に乗って p = 0.500 | **79〜96 倍** | **jev の方が 4 倍高い**($0.841 / 1,000) |
+
+**一貫しているのは速度だけです。** 5 つすべてで **26〜103 倍**。
+**品質で jev が明確に勝っている列はありません** ——
+guard で sonnet と同点、他は分離しないか、コーパスが測れないか。
+そして **skill router では値段も負けています**。
+
+[18 §1](18-permission-hook.md) が guard に与えた予算は **2,500 ms** でした。
+**8〜75 秒かかる判断は、精度がいくらであれそこに座れません。**
+それがこの 2 本の報告([41](41-versus.md)・42)が言える一番強い主張で、
+**「判断が賢い」ではなく「判断が間に合う」**という形をしています。
 
 ---
 
@@ -437,4 +556,48 @@ fold ごとの cutoff の幅は **0.35** で、置かれている gap 0.30 よ�
 
 ## 5. 正直な限界
 
-*(3 が終わってから)*
+**測っていないもの**
+
+- **組み合わせは測っていません。** [41 §0](41-versus.md) と同じで、
+  [37 §6](37-hermes.md) が「束ねるのは無料ではない」(7 問中 7 問が束ね方で動く)と
+  測っているので、**別々に聞いた成績は束ねた成績の上限**です。
+- **エンドツーエンドのタスク品質も測っていません。** pi 側にトークンを生成するモデルが
+  居ません(api.anthropic.com は 401)。[38](38-agent.md) は台本のモデルで
+  **配線に届くこと**だけを確認しています。
+- **モデル側の請求は空欄です。** `claude -p` はトークンを報告しません。
+  推測を入れると、一番検証しにくい数字が一番目立つ位置に来ます。
+- **モデルは 2 つだけ**です。`claude -p` がこのコンテナにあるものです。
+
+**標本が小さいところ**
+
+- **1 アーム 1 アイテム 1 ドロー**です。
+  §3.2 だけは対応を取って厳密検定にしましたが、
+  他の表の差は**ドローのノイズを越えるか言えません**。
+  jev 側は繰り返しが安く、CLI 側は 1 件 8〜75 秒 —— それが理由です。
+- **compactor は 8 transcript・9 事実**で、
+  **捏造を採れるのはそのうち 6**(§1.2)。
+- **model router の難問は 1 件**です。この検定が返せる最小の p は **0.019** なので、
+  **分離があっても示せません**(§2.3)。
+  そして**ラベルは (task, tier) あたり 1 ドロー**(§2.4)。
+- **skill router は 14 プロジェクト**、cap 3 で `want` が 135 件なので
+  **recall は 31% が上限**(§3.1)。
+
+**形が揃っていないところ**
+
+- **skill router の質問の数は揃っていません**(§0)。
+  jev は `Question` 74 個、モデルは 1 プロンプト。情報と幅は同じ、分割が違う。
+  **それ自体が §3.3 の値段の差**です。
+- **skill router の出荷パイプラインの前 2 段を通していません**(§0)。
+  下の precision は**判断の成績で、パイプラインの成績ではありません**。
+- **compactor の jev アームは再生**です(`experiments/compact/records/ranking.json`)。
+  モデルのアームはいま作りました。
+
+**まだ答えの無い問い**
+
+- **宿題 (m) の cutoff は当てはめられません**(§4.3)。
+  必要なのは**境界付近のコマンド**で、24 件のうち 1 件では足りません。
+- **`verdictOf` の冗長性**が設計の意図なのか cutoff の誤りを隠しているのかは、
+  **cutoff を直せるまで区別できません**(§4.5)。
+- **model router のコーパスを作り直す**なら、
+  `haiku` が落ちるタスクを意図的に集める必要があります ——
+  [36 §5](36-routers.md) が言った「コーパスが結果だった」の、まだ払っていない請求書です。

@@ -160,20 +160,37 @@ function main(): void {
         `${dollars.padStart(14)}   ${per1k.padStart(19)}`,
     );
   }
-  const jevMs = rows.filter((r) => r.arm === "jev").map((r) => r.ms);
-  const medOf = (arm: Arm): number => {
-    const xs = [...rows.filter((r) => r.arm === arm).map((r) => r.ms)].sort((a, b) => a - b);
-    return xs[Math.floor(xs.length / 2)] ?? Number.NaN;
-  };
-  if (jevMs.length > 0 && Number.isFinite(medOf("haiku"))) {
+  /**
+   * The speed ratio, PER TASK.
+   *
+   * It used to be one number over all 186 rows, and that was wrong in a way
+   * worth keeping a comment about: jev's guard decisions are ~151 ms and its
+   * orchestration decisions ~287 ms, so a pooled jev median lands at 254 while
+   * the model medians barely move between tasks. The printed "37x / 29x" was
+   * therefore a ratio between two different populations, and the headline
+   * table beside it quoted jev's GUARD median (151) -- two numbers that could
+   * not both be right. Per task they are 49-61x and 26-34x.
+   */
+  console.log("\n  the speed ratio, per task -- not pooled:\n");
+  console.log("  task            jev median   haiku   sonnet   jev is faster by");
+  for (const task of TASKS) {
+    const medOf = (arm: Arm): number => {
+      const xs = [...rows.filter((r) => r.task === task && r.arm === arm).map((r) => r.ms)].sort((a, b) => a - b);
+      return xs[Math.floor(xs.length / 2)] ?? Number.NaN;
+    };
+    const j = medOf("jev");
+    if (!Number.isFinite(j) || !Number.isFinite(medOf("haiku"))) continue;
+    const ratios = [medOf("haiku") / j, medOf("sonnet") / j].sort((a, b) => a - b);
     console.log(
-      `\n  >> Jev's median decision is ${(medOf("haiku") / medOf("jev")).toFixed(0)}x faster than haiku's and ` +
-        `${(medOf("sonnet") / medOf("jev")).toFixed(0)}x faster than sonnet's.\n` +
-        "     That is the number the whole idea rests on: a guard sits on the critical path\n" +
-        "     of every tool call, and docs/18 §1 gave it a 2,500 ms budget. A decision that\n" +
-        "     takes eight seconds is not a guard, whatever its accuracy.",
+      `  ${task.padEnd(14)} ${String(j).padStart(10)}   ${String(medOf("haiku")).padStart(5)}   ` +
+        `${String(medOf("sonnet")).padStart(6)}   ${ratios[0].toFixed(0)}-${ratios[1].toFixed(0)}x`,
     );
   }
+  console.log(
+    "\n  >> That is the number the whole idea rests on: a guard sits on the critical\n" +
+      "     path of every tool call, and docs/18 §1 gave it a 2,500 ms budget. A\n" +
+      "     decision that takes eight seconds is not a guard, whatever its accuracy.",
+  );
 
   // ----------------------------------------------------- §5 what this is not
 

@@ -872,6 +872,73 @@ function report(): void {
         "  it has made a partial one -- and a skill it never rated cannot load,\n" +
         "  which lowers `loaded/project` for a reason that is not judgment.",
     );
+    // ------------------------- is a precision gap bigger than one draw of 14?
+    //
+    // THIS TABLE IS HERE BECAUSE A MODEL WINS ONE. Precision came out 84% for
+    // jev and 93% for sonnet, and a nine-point gap in a headline is exactly
+    // where docs/25's rule has to be applied rather than cited: 14 projects
+    // with a cap of 3 means the whole difference can be a handful of skills.
+    // So the comparison is PAIRED by project and the p-value is EXACT -- under
+    // the null, each project where the two differ is a coin flip, which is the
+    // sign test and needs no distributional assumption.
+    if (armsHere.length >= 2 && common.length > 0) {
+      console.log("\n  paired per project, with an exact sign test -- because n is 14\n");
+      const extrasOf = (arm: string, item: string): number =>
+        skill.find((r) => r.arm === arm && r.item === item)?.extra ?? 0;
+      const hitsOf = (arm: string, item: string): number =>
+        skill.find((r) => r.arm === arm && r.item === item)?.hit ?? 0;
+      /** P(at least `k` of `n` flips land one way), both tails. Exact. */
+      const signP = (better: number, worse: number): number => {
+        const n = better + worse;
+        if (n === 0) return 1;
+        const k = Math.max(better, worse);
+        let tail = 0;
+        const choose = (a: number, b: number): number => {
+          let out = 1;
+          for (let i = 0; i < b; i += 1) out = (out * (a - i)) / (i + 1);
+          return out;
+        };
+        for (let i = k; i <= n; i += 1) tail += choose(n, i);
+        return Math.min(1, (2 * tail) / 2 ** n);
+      };
+      console.log("  pair                which   projects differing   in A's favour   exact p (two-sided)");
+      for (const [a, b] of [
+        ["jev", "haiku"],
+        ["jev", "sonnet"],
+        ["haiku", "sonnet"],
+      ] as [string, string][]) {
+        if (!armsHere.includes(a as never) || !armsHere.includes(b as never)) continue;
+        for (const [what, f, lowerIsBetter] of [
+          ["extras", extrasOf, true],
+          ["hits", hitsOf, false],
+        ] as [string, (arm: string, item: string) => number, boolean][]) {
+          const diffs = common.map((item) => f(a, item) - f(b, item)).filter((d) => d !== 0);
+          const aWins = diffs.filter((d) => (lowerIsBetter ? d < 0 : d > 0)).length;
+          const bWins = diffs.length - aWins;
+          console.log(
+            `  ${`${a} vs ${b}`.padEnd(18)} ${what.padEnd(7)} ${String(diffs.length).padStart(18)}   ` +
+              `${`${aWins} of ${diffs.length}`.padStart(13)}   ${signP(aWins, bWins).toFixed(3).padStart(19)}`,
+          );
+        }
+      }
+      // COMPUTED. This is the one place in this report where jev loses a
+      // column, so the sentence has to come from the test and not from me.
+      const extraDiffs = common.map((item) => extrasOf("jev", item) - extrasOf("sonnet", item)).filter((d) => d !== 0);
+      if (extraDiffs.length > 0) {
+        const p = signP(extraDiffs.filter((d) => d < 0).length, extraDiffs.filter((d) => d > 0).length);
+        console.log(
+          `\n  >> SONNET'S PRECISION EDGE RESTS ON ${extraDiffs.length} PROJECT(S) OF ${common.length}, and the exact\n` +
+            `     sign test gives p = ${p.toFixed(3)}. ${
+              p <= 0.05
+                ? "That clears 0.05, so the gap is real on this corpus."
+                : "THAT DOES NOT CLEAR 0.05, so the nine-point\n     precision gap is not established -- it is what one draw of 14 projects with\n     a three-skill cap can produce. Recall is identical (both found 27 of 135)."
+            }\n` +
+            "     docs/25's rule, applied to the one table where jev is behind rather than\n" +
+            "     only to the ones where it is ahead.",
+        );
+      }
+    }
+
     // ---------------------------------------- do they load the SAME skills?
     //
     // Precision within a point of each other could be three arms agreeing or
