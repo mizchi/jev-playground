@@ -170,12 +170,58 @@ const CLAIMS: Claim[] = [
     },
   },
   {
+    what: "boundary corpus: `guardquiet` finished",
+    where: "§4b",
+    of: (rows) => {
+      const g = finishedBy(rows, "guardquiet", "boundary");
+      return g.length === 0 ? "—" : `${g.filter((r) => r.passed).length}/${g.length}`;
+    },
+  },
+  {
     what: "asks issued, pooled over ALL arms (docs/43's headline denominator)",
     where: "§4b.3",
     of: (rows) => {
       const asked = rows.reduce((n, r) => n + r.askedByJev, 0);
       const cmds = rows.flatMap((r) => r.calls).filter((c) => c.tool === "Bash").length;
       return `${asked} of ${cmds}`;
+    },
+  },
+  // THE GATE'S OWN VERDICTS, per arm, and this is where `askedByJev` is the
+  // WRONG field: `--unattended-ask defer` makes the hook emit nothing, so the
+  // host never records an ask and the ledger shows zero. docs/43 wired the
+  // shipped hook's `--log` for exactly this reason (its first boundary sweep
+  // reported `guarddefer` 15/15 having apparently deferred nothing, which
+  // would have meant the arm was never tested). Read the judgment's log for
+  // what it DECIDED; read the ledger for what the host DID.
+  ...(["guard", "guardquiet", "guarddefer"] as const).map((arm) => ({
+    what: `${arm === "guarddefer" ? "**" : ""}\`${arm}\`: asks in the GATE's own log${arm === "guarddefer" ? " (invisible to the host)**" : ""}`,
+    where: "§4b.3",
+    of: (rows: Run[]) => {
+      const g = rows.filter((r) => r.arm === arm && r.corpus === "boundary");
+      const v = g.flatMap((r) => r.verdicts ?? []);
+      if (v.length === 0) return "—";
+      const asks = v.filter((x) => x.verdict === "ask").length;
+      return `${asks} of ${v.length} (${((100 * asks) / v.length).toFixed(1)}%)`;
+    },
+  })),
+  {
+    what: "**which tasks the gate spoke on**",
+    where: "§4b.1",
+    of: (rows) => {
+      const t = new Set<string>();
+      for (const r of rows.filter((x) => x.corpus === "boundary")) {
+        if ((r.verdicts ?? []).some((v) => v.verdict === "ask")) t.add(r.task);
+      }
+      return t.size === 0 ? "—" : `**${[...t].sort().join(", ")}** (${t.size} of 5)`;
+    },
+  },
+  {
+    what: "boundary runs that saw any ask",
+    where: "§4b.3",
+    of: (rows) => {
+      const g = rows.filter((x) => x.corpus === "boundary");
+      const n = g.filter((r) => (r.verdicts ?? []).some((v) => v.verdict === "ask")).length;
+      return g.length === 0 ? "—" : `${n} of ${g.length}`;
     },
   },
   {
@@ -212,6 +258,37 @@ function main(): void {
   for (const c of CLAIMS) {
     console.log(`| ${c.where} | ${c.what} | ${c.of(original)} | ${c.of(redone)} |`);
   }
+  // THE REFINEMENT THE SECOND SWEEP MADE POSSIBLE, computed rather than
+  // asserted: docs/43 §4b.3 concluded "whether a command is blocked is a draw,
+  // not a property of the command". Two sweeps say something sharper than that,
+  // and in two directions at once.
+  const askTasks = (rows: Run[]): string[] => {
+    const t = new Set<string>();
+    for (const r of rows.filter((x) => x.corpus === "boundary")) {
+      if ((r.verdicts ?? []).some((v) => v.verdict === "ask")) t.add(r.task);
+    }
+    return [...t].sort();
+  };
+  const askCount = (rows: Run[]): number =>
+    rows.filter((r) => r.corpus === "boundary").flatMap((r) => r.verdicts ?? []).filter((v) => v.verdict === "ask")
+      .length;
+  const a = askTasks(original);
+  const b = askTasks(redone);
+  const same = a.length === b.length && a.every((x, i) => x === b[i]);
+  console.log(
+    `\n## What two sweeps say that one could not\n\n` +
+      `**WHICH tasks the gate speaks on ${same ? "reproduces exactly" : "does NOT reproduce"}**: ` +
+      `${a.join(", ") || "—"} then ${b.join(", ") || "—"}. ` +
+      `**HOW OFTEN it speaks within them does not**: ${askCount(original)} asks then ${askCount(redone)}.\n\n` +
+      "So docs/43 §4b.3's \"it is a draw, not a property of the command\" is half right and the half it " +
+      "misses matters. The command selects the CANDIDATE set precisely and repeatably -- two of five tasks, " +
+      "the same two, both times, and never the other three. Conditional on being a candidate, whether the " +
+      "gate fires is a draw. **A rate of the form \"this gate stops X% of commands\" is therefore not a " +
+      "thing, but \"this gate has an opinion about these commands and not those\" is** (TODO §2.4).\n\n" +
+      "And a command-level significance test on these counts would be wrong, so none is given: every ask " +
+      "in both sweeps lands on those two tasks, so the commands are not independent trials and a p-value " +
+      "computed as if they were would overstate the evidence by the size of the clustering.",
+  );
   console.log(
     "\n**What the right-hand column can and cannot do.** It CAN say whether docs/43's findings reproduce " +
       "on fresh draws, which none of them had. It CANNOT retroactively grade the left-hand column's runs: " +
