@@ -416,6 +416,26 @@ function skillRouter(): void {
   console.log("");
   costTable(rows, PAIRS, (r) => r.ms / 1000, "s");
 
+  // THE STRONGEST SIGNAL IN THIS SWEEP, named as such and not claimed. The
+  // catalogue arm costs turns in a consistent direction and misses the line;
+  // saying "not significant" and moving on would hide that, and saying "the
+  // catalogue costs a turn" would be claiming it. Both numbers, then.
+  const turns = pairedNumber(rows, "allskills", "haiku", (r) => r.calls.length);
+  if (turns.aLess + turns.bLess > 0) {
+    console.log(
+      `\n**The catalogue arm's turn count is the one thing here that nearly separates.** \`allskills\` used more ` +
+        `tool calls than \`haiku\` on ${turns.bLess} tasks and fewer on ${turns.aLess}, ${turns.tied} tied, ` +
+        `median ${turns.medianDiff > 0 ? "+" : ""}${turns.medianDiff.toFixed(1)} -- exact p = ` +
+        `${turns.p.toFixed(3)}. ${
+          turns.p <= 0.05
+            ? "**Significant**, so 23k tokens of skill descriptions cost this agent a turn."
+            : "**That misses the line, so it is not a result.** The direction is what a reader should take from " +
+              "it, and the way to settle it is more repeats rather than more prose: the pairing is already " +
+              "task-by-task, so what is missing is draws."
+        }`,
+    );
+  }
+
   const routed = rows.filter((r) => r.arm === "skillrouter" && r.skillsLoaded);
   const loads = routed.map((r) => r.skillsLoaded!.loaded.length);
   const freq = new Map<string, number>();
@@ -446,6 +466,22 @@ function skillRouter(): void {
         `out of ${cat} available. Nobody labelled these 300 against "fix a failing test", so **that is not a ` +
         "precision figure** -- there is no ground truth here and none is claimed. It is the router's behaviour, " +
         "and the end-to-end verdict above needs no label.",
+    );
+  }
+
+  // WHAT THE ROUTER'S TRADE ACTUALLY IS, in the two units that are known
+  // exactly. Worth stating because both arms' costs are real and they are
+  // denominated in DIFFERENT MODELS' input tokens, which is the whole reason a
+  // cheap judgment model can be worth asking at all.
+  if (toks.length > 0) {
+    const saved = chars / 4 - (3 * chars) / 4 / catalogue().length;
+    console.log(
+      `\nSo the trade is measured on both sides: the router spends a median **${med(toks).toLocaleString()} ` +
+        "input tokens of jev** ($0.042/MTok, docs/00) per run to avoid putting **~" +
+        `${Math.round(saved / 1000)}k input tokens of the GENERATING model** in the system prompt. It pays ` +
+        `whenever the generating model's input price is more than ${(med(toks) / saved).toFixed(2)}x jev's, ` +
+        "which is every model there is. **That is an argument about prices, not a measurement of quality** -- " +
+        "the quality question is the table above, and the table above says this corpus cannot separate them.",
     );
   }
 
