@@ -39,6 +39,7 @@ cd experiments/browser-chaos  && npx tsx src/check-fanout.ts     # 29: action sp
 cd experiments/browser-chaos  && npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 # 29: 投機的 fan-out
 cd experiments/browser-chaos  && npx tsx src/run-adversarial.ts --fixture hostile --runs 2 # 29 §8: 投機を壊しにいく
 cd experiments/browser-chaos  && npx tsx src/run-adversarial.ts --fixture slots-hard --runs 2 # 29 §8.1: ゴールに無い判断材料
+cd experiments/browser-chaos  && npx tsx src/run-ablation.ts --runs 2 --steps 16 # 30: 手法を重ねたときの ablation
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
@@ -127,6 +128,10 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **曖昧さは「操作」側にあり、target 側には無い** | 全操作が必要な画面で operation は 0.55、その target は 1.00。投機が無料なのは target 質問が**簡単な半分**だから | 本リポジトリ | [29 §8](29-speculative-fanout.md#why-it-holds-and-when-it-could-not) |
 | **target head を不確実にしようとすると、不確実さは operation 側に移る** | 4 盤面で試して used head は 20/20 が ≥0.90。型付き分割が質問を狭めている以上、「何をするか」の迷いは「どの要素か」の迷いに分解されない | 本リポジトリ | [29 §8.2](29-speculative-fanout.md#82-the-uncertain-used-head-is-not-constructible-here) |
 | **空 value の `<option>` を target にしてはいけない** | プレースホルダは値ではない。満たした要件を捨てる target になり、両アームが 0.4-0.7 で食いついた | 本リポジトリ | [29 §8](29-speculative-fanout.md#what-the-run-actually-caught-a-bug-in-the-port) |
+| **手法の価値は足し算ではなく崖** | 型付き欠損も ジオメトリ欠損も**単独なら着く**(2/2)。両方欠けたときだけ **0/2**。各手法はもう一方が在ることを前提に予算内に収まっている | 本リポジトリ | [30 §3.1](30-browser-accuracy.md#31-足し算ではなく崖だった) |
+| **4 実装すべてが値を実行単位に乗せている** | 「要素だけ指して値は呼び出し側が推測」は誰も出荷していない。独立に 4 回同じ結論 | jev-ultrafast / playwright-mcp / stagehand / browser-use | [30 §1](30-browser-accuracy.md#1-実装-4-つの決定点) |
+| **hit-test を判断に入れているのは 1 実装も無い** | 4 実装すべて実行直前のガードとしてだけ使う。聞く前に観測へ入れるのは誰もやっていない | 同上 | [30 §2](30-browser-accuracy.md#2-どの実装もやっていないこと) |
+| **失敗を state に戻すと confidence が反応する** | `last_action_error` と無効果連続数が入っていると 0.91 → 0.45 と減衰する。25 では blocked が 0.99 で返っていた | 本リポジトリ | [30 §3.2](30-browser-accuracy.md#32--geometry-が払ったもの) |
 | **confidence は質問の形の性質で、アーム間で比較できない** | 正しい側が 0.46-0.71、失敗する側が 0.93-0.99。閾値は形ごとに引き直す | 本リポジトリ | [29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
@@ -232,6 +237,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [27](27-nl-test-generation.md) | 1 文から Playwright spec を生成し、ミューテーションで採点する | ✅ |
 | [28](28-perf-automation.md) | 計測 → 診断 → 適用 → 再計測([lightbringer](https://github.com/mizchi/lightbringer) の手法を借用) | ✅ |
 | [29](29-speculative-fanout.md) | 操作ごとに分けた action space を 1 リクエストで投機的に聞く([jev-ultrafast](https://github.com/browser-use/jev-ultrafast) の仕組みを移植)+ §8 で 4 盤面から投機を壊しにいった | ✅ |
+| [30](30-browser-accuracy.md) | 他実装 4 つを決定点で評価 + 溜めた手法の leave-one-out。**25 の解釈を 1 つ訂正** | ✅ |
 
 ## 上流に入ったもの
 

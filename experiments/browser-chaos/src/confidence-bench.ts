@@ -177,7 +177,7 @@ function mulberry32(seed: number): () => number {
 }
 
 /** True when the geometry says a click on this candidate goes elsewhere. */
-function blocked(c: ProbedCandidate): boolean {
+export function blocked(c: ProbedCandidate): boolean {
   return !c.facts.enabled || c.facts.inert || c.facts.coveredBy !== undefined;
 }
 
