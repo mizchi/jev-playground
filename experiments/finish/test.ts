@@ -13,7 +13,7 @@
  *   the gate under test has nothing to gate, which is how docs/36's labels were
  *   made and is not what this measures.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, renameSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -73,6 +73,50 @@ check("the prompt is positioned where the CLI will read it", () => {
   const p = source.indexOf('"-p",');
   ok(p > 0, "the run must pass -p");
   ok(source.slice(p, p + 40).includes("prompt"), "the prompt must come immediately after -p");
+});
+
+check("a passing run is checked against the instruction it was given", () => {
+  // THE HOLE THIS CLOSES. Both prompts end "Do not modify any test file", and
+  // for 186 recorded runs nothing checked it: `passed` was `node --test`
+  // exiting zero, which an agent that rewrote the assertions also achieves.
+  // It was noticed for the right reason -- every new arm was coming back 100%,
+  // and a grader that cannot tell fixing from neutering returns 100% either
+  // way, so the suspicious number was the instrument's and not the model's.
+  ok(source.includes("testsIntact"), "the row must record whether the tests are as shipped");
+  ok(source.includes("const testsBefore = testsOf(sandbox)"), "test/ must be snapshotted BEFORE the agent runs");
+  ok(source.includes("row.testsIntact = testsOf(sandbox) === testsBefore"), "and compared after");
+  // Recursive, or a subdirectory is a place to edit an assertion unseen.
+  ok(/function treeOf[\s\S]{0,400}isDirectory\(\)/.test(source), "the test/ snapshot must recurse");
+  // And `passed` must stay the exit code, so docs/43's rows remain comparable.
+  // Combining the two is the REPORT's job -- see components.ts.
+  ok(source.includes("row.passed = testsPass(sandbox)"), "`passed` must remain the exit code alone");
+});
+
+check("the grader actually catches a neutered test file", () => {
+  // Asserted behaviour, not asserted source: the check above reads the code,
+  // this one runs it. A real task, its test file replaced with a test that
+  // passes trivially, and `node --test` must say PASS while the snapshot
+  // comparison says the tests are not intact.
+  const task = tasks("easy")[0];
+  const sb = mkdtempSync(resolve(tmpdir(), "jev-tamper-"));
+  try {
+    cpSync(task.dir, sb, { recursive: true });
+    eq(testsPass(sb), false, "the task must fail as shipped: ");
+    const dir = resolve(sb, "test");
+    for (const f of readdirSync(dir)) {
+      writeFileSync(resolve(dir, f), 'import { test } from "node:test";\ntest("ok", () => {});\n');
+    }
+    eq(testsPass(sb), true, "a neutered test suite must pass, or this check proves nothing: ");
+    // The comparison the harness makes. Done here on the same inputs.
+    const treeOfTest = (d: string): string =>
+      readdirSync(resolve(d, "test"))
+        .sort()
+        .map((f) => `${f}\0${readFileSync(resolve(d, "test", f), "utf8")}`)
+        .join("\0");
+    ok(treeOfTest(sb) !== treeOfTest(task.dir), "the snapshot comparison must notice the tampering");
+  } finally {
+    rmSync(sb, { recursive: true, force: true });
+  }
 });
 
 check("the verdict is an exit code and nothing else", () => {
@@ -242,6 +286,182 @@ check("a task that ships a git repository ships it as dotgit, not .git", () => {
   ok(source.includes('renameSync(dotgit'), "the harness must restore dotgit -> .git in the sandbox");
 });
 
+// --------------------------------------------- the other three components
+//
+// Each of these three is here because the arm could be silently the control.
+// A hook that fails open, a router that was never asked, a catalogue that was
+// never written: all three produce a row that looks like a measurement.
+
+check("the model router arm has no model of its own, or it measured nothing", () => {
+  // The whole point of a routed arm: `model: null` means jev picks. An arm
+  // that names a model has measured that model, and calling it "router" would
+  // be the most direct lie this experiment could tell.
+  for (const name of ["router", "routerfail"]) {
+    eq(ARMS[name].model, null, `${name} must let the router choose: `);
+  }
+  eq(ARMS.router.routeWith, "prompt", "the `router` arm must see the request alone: ");
+  eq(ARMS.routerfail.routeWith, "failure", "the `routerfail` arm must see the real test output: ");
+  // And the rungs it can choose between must both have their own arm, or its
+  // number cannot be read against anything.
+  const rungs = new Set([ARMS.haiku.model, ARMS.sonnet.model]);
+  eq(rungs.size, 2, "haiku and sonnet must be distinct arms: ");
+});
+
+check("the router is consulted with the config that SHIPS, cuts and all", () => {
+  // `DEFAULT_CONFIG` has `cuts: null`, so the shipped router rounds a score to
+  // a rung. Fitting the cuts on this corpus and then reporting the result as
+  // the shipped router's is the error docs/42 §4 needed three corrections for.
+  ok(source.includes("DEFAULT_CONFIG"), "the arm must use the shipped default config");
+  ok(!/cuts\s*:/.test(source), "world.ts must not set its own cuts");
+  ok(source.includes("routeModelShipped"), "the decision must come from packages/jev-model-router");
+});
+
+check("the routed arm records what it chose, and what it saw", () => {
+  // A routed run whose choice is not in the row cannot be read back: the row
+  // would say `model: "claude-sonnet-5"` with no way to tell a decision from a
+  // default, and `route()` fails soft to sonnet on a dead endpoint.
+  ok(source.includes("row.routed"), "the row must record the routing decision");
+  ok(/saw[?]?:\s*RouteWith/.test(source), "the row must record WHICH INPUT the router was given");
+  ok(source.includes("res.error"), "a failed judgment must be recorded, not silently defaulted");
+});
+
+check("the skill arms differ in who chose, not in what was available", () => {
+  // `allskills` and `skillrouter` must be handed the SAME catalogue. If the
+  // routed arm got a smaller one, the comparison would be between catalogues.
+  eq(ARMS.allskills.skills?.length, ARMS.skillrouter.skills?.length, "both arms need one catalogue: ");
+  ok((ARMS.allskills.skills?.length ?? 0) > 100, "the catalogue must be the real 300, not a sample");
+  eq(ARMS.allskills.routeSkills, undefined, "allskills must place everything: ");
+  eq(ARMS.skillrouter.routeSkills, true, "skillrouter must let jev choose: ");
+  eq(ARMS.allskills.model, ARMS.skillrouter.model, "both skill arms need one model: ");
+});
+
+check("the catalogue is harvested, and says so per skill", () => {
+  // The one corpus in this experiment I did not write. If the bodies ever
+  // become mine the arm stops measuring someone else's catalogue, so the stub
+  // has to keep saying what it is.
+  const cat = readFileSync(resolve(import.meta.dirname, "src/catalogue.ts"), "utf8");
+  ok(cat.includes("skill-pick/corpus/roster.json"), "the catalogue must come from the harvested roster");
+  ok(cat.includes("THIS IS NOT THE REAL SKILL"), "a stub body must say it is a stub");
+  ok(cat.includes('kind === "skill"'), "subagent definitions must be excluded: they change delegation");
+});
+
+check("the orchestration arm can actually spawn, and its control can too", () => {
+  // Without `Task` in allowedTools the gate has nothing to gate -- the same
+  // trap as Bash and docs/36's labels, one component over.
+  ok(ARMS.orchestrated.extraTools?.includes("Task"), "the gated arm must be able to spawn");
+  ok(ARMS.subagent.extraTools?.includes("Task"), "the control must be able to spawn too");
+  eq(ARMS.subagent.orchestrate, undefined, "the control must not wire the gate: ");
+  eq(ARMS.orchestrated.orchestrate, true, "the gated arm must wire the gate: ");
+  eq(ARMS.subagent.model, ARMS.orchestrated.model, "both must share a model: ");
+  eq(ARMS.subagent.guard, ARMS.orchestrated.guard, "neither may wire the OTHER component on this seam: ");
+});
+
+check("the orchestration gate is reachable from inside a hook", () => {
+  // THE CHECK THAT MATTERS MOST HERE. There is no tsx on this container's
+  // PATH, and the hook runs as a child of the agent with the host's
+  // environment. A hook that ran a bare `tsx` would fail open on every spawn
+  // and the gated arm would silently BE the control -- a null result that
+  // looked like "the gate costs nothing".
+  ok(gateSource.includes("JEV_ORCHESTRATE_TSX"), "the hook must be given an interpreter path");
+  ok(source.includes('packages/node_modules/.bin/tsx"'), "the harness must pass an absolute tsx path");
+  ok(existsSync(resolve(import.meta.dirname, "../../packages/node_modules/.bin/tsx")), "that tsx must exist");
+  ok(existsSync(resolve(import.meta.dirname, "src/orchestrate.ts")), "the JSON driver must exist");
+  // And it must run BEFORE the guard's `!command` bail-out: a `Task` event has
+  // no command, so a gate placed after it would never be consulted.
+  const orch = gateSource.indexOf('JEV_ORCHESTRATE === "1"');
+  const bail = gateSource.indexOf('process.env.JEV_GATE !== "1" || !command');
+  ok(orch > 0 && bail > 0 && orch < bail, "the Task branch must run before the no-command bail-out");
+});
+
+check("the two components on the PreToolUse seam are never pooled", () => {
+  // The guard speaks on commands and the orchestrator on `Task`. One arm that
+  // turned both on could attribute neither, and one ledger that labelled both
+  // `by: "jev"` could not separate them after the fact.
+  ok(gateSource.includes('by: "orchestrator"'), "the orchestrator's rows must be labelled as its own");
+  ok(source.includes('"fence" | "jev" | "orchestrator" | "none"'), "the ledger must keep the four sources apart");
+  for (const name of ["guard", "guardquiet", "guarddefer"]) {
+    eq(ARMS[name].orchestrate, undefined, `${name} must not also wire the orchestrator: `);
+  }
+  for (const name of ["subagent", "orchestrated"]) eq(ARMS[name].guard, false, `${name} must not wire the guard: `);
+});
+
+check("the orchestration veto fires on a Task event, at the wire", () => {
+  // The corpus never provokes this: 58 tasks, `Task` allowed, and the agent
+  // never once tried to delegate (docs/44 §3). So the ONLY way to show the
+  // veto works is to hand the hook the event the host would hand it.
+  //
+  // Run with a stub interpreter, so this needs no API key: the point under
+  // test is that the hook reaches an interpreter, parses its JSON, and turns
+  // `split: false` into a deny with the gate's own reason. Whether jev says
+  // `split: false` is measured in records/probe.json, not here.
+  const stub = mkdtempSync(resolve(tmpdir(), "jev-orch-stub-"));
+  try {
+    const fake = resolve(stub, "fake-tsx");
+    writeFileSync(
+      fake,
+      '#!/usr/bin/env node\nconsole.log(JSON.stringify({shape:"single",workers:1,split:false,reason:"the gate reads 0.15, below 0.5",gate:0.15}));\n',
+      { mode: 0o755 },
+    );
+    const out = spawnSync(process.execPath, [resolve(import.meta.dirname, "src/gate.mjs")], {
+      input: JSON.stringify({
+        tool_name: "Task",
+        tool_input: { description: "fix the failing test", prompt: "look at src/ and fix it" },
+      }),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FINISH_LOG: resolve(stub, "ledger.jsonl"),
+        FINISH_SANDBOX: stub,
+        JEV_GATE: "0",
+        JEV_ORCHESTRATE: "1",
+        JEV_ORCHESTRATE_BIN: "ignored-by-the-stub",
+        JEV_ORCHESTRATE_TSX: fake,
+      },
+    });
+    const emitted = JSON.parse((out.stdout ?? "").trim()).hookSpecificOutput;
+    eq(emitted.permissionDecision, "deny", "a refused split must deny the spawn: ");
+    ok(
+      emitted.permissionDecisionReason.includes("0.15"),
+      "the gate's own reason must reach the model -- docs/43 §5.2's lesson, one component over",
+    );
+    // And the ledger must carry the plan, or `readSpawns` has nothing to read.
+    const ledger = readFileSync(resolve(stub, "ledger.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const row = ledger.find((x) => x.tool === "Task");
+    ok(row, "the Task call must be in the ledger");
+    eq(row.by, "orchestrator", "it must be attributed to the orchestrator: ");
+    eq(row.plan.split, false, "the plan must be recorded: ");
+  } finally {
+    rmSync(stub, { recursive: true, force: true });
+  }
+});
+
+check("a dead orchestration driver fails OPEN, and the row says so", () => {
+  // Same rule as the guard: a hook that throws in front of an agent stops work
+  // that judgment was only advising on. And a fail-open that is not recorded
+  // reads as "the gate allowed it", which is the opposite of what happened.
+  const stub = mkdtempSync(resolve(tmpdir(), "jev-orch-dead-"));
+  try {
+    const out = spawnSync(process.execPath, [resolve(import.meta.dirname, "src/gate.mjs")], {
+      input: JSON.stringify({ tool_name: "Task", tool_input: { description: "anything" } }),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FINISH_LOG: resolve(stub, "ledger.jsonl"),
+        FINISH_SANDBOX: stub,
+        JEV_GATE: "0",
+        JEV_ORCHESTRATE: "1",
+        JEV_ORCHESTRATE_BIN: "ignored",
+        JEV_ORCHESTRATE_TSX: resolve(stub, "does-not-exist"),
+      },
+    });
+    eq((out.stdout ?? "").trim(), "", "a dead driver must emit no decision at all");
+    const ledger = readFileSync(resolve(stub, "ledger.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const row = ledger.find((x) => x.tool === "Task");
+    ok(row?.gateSaidNothing === true, "the failure must be recorded, not read as an allow");
+  } finally {
+    rmSync(stub, { recursive: true, force: true });
+  }
+});
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

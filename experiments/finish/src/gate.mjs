@@ -78,7 +78,17 @@ try {
 const tool = event.tool_name ?? "?";
 const input = event.tool_input ?? {};
 const command = typeof input.command === "string" ? input.command : "";
-const base = { at: Date.now(), tool, command: command.slice(0, 400) };
+// `path` as well as `command`, because without it an Edit is anonymous in the
+// ledger: `testsIntact` can say a run touched a test file and nothing could say
+// WHICH call did it. The path is relative to the sandbox so the ledger does not
+// carry a different temp directory in every row.
+const filePath = typeof input.file_path === "string" ? input.file_path : "";
+const base = {
+  at: Date.now(),
+  tool,
+  command: command.slice(0, 400),
+  ...(filePath ? { path: filePath.replace(process.env.FINISH_SANDBOX ?? "", "").replace(/^\//, "") } : {}),
+};
 
 // ---------------------------------------------------------------- the fence
 
@@ -115,6 +125,63 @@ if (strayPath) {
       "Work only inside the current directory.",
     { ...base, by: "fence" },
   );
+}
+
+// ------------------------------------------- the orchestration gate, on Task
+//
+// A DIFFERENT COMPONENT ON THE SAME SEAM, and it has to be read carefully.
+//
+// `jev-orchestrator` was designed to be asked at the TOP of a turn, about the
+// user's request, before any work starts: "does this warrant more than one
+// agent". The only seam Claude Code gives it is `PreToolUse` with a matcher on
+// `Task`, which fires LATER and about a DIFFERENT text -- the description the
+// parent agent wrote for the subagent it is about to spawn. So what is
+// measured here is the gate as a VETO on fan-out, asked about the work being
+// delegated, and that is a weaker deployment than the one the component was
+// written for. Stated here rather than in the report's fine print, because a
+// reader of these numbers has to know which question was asked.
+//
+// `split: false` means "this does not need its own agent", and the veto denies
+// the spawn. Every decision is logged whether or not it denied, because a gate
+// that allows every spawn and a gate that is never consulted produce the same
+// completion rate and opposite readings.
+if (process.env.JEV_ORCHESTRATE === "1" && tool === "Task" && process.env.JEV_ORCHESTRATE_BIN) {
+  const request = [input.description, input.prompt].filter((s) => typeof s === "string" && s).join("\n\n");
+  const t0 = Date.now();
+  const res = spawnSync(process.env.JEV_ORCHESTRATE_TSX ?? "tsx", [process.env.JEV_ORCHESTRATE_BIN, request], {
+    encoding: "utf8",
+    timeout: 40_000,
+    env: process.env,
+  });
+  const orchMs = Date.now() - t0;
+  let plan = null;
+  try {
+    plan = JSON.parse((res.stdout ?? "").trim());
+  } catch {
+    plan = null;
+  }
+  if (!plan) {
+    // Fail open: the driver died, so the spawn proceeds unjudged. Logged with
+    // the failure so the row cannot be read as "the gate allowed it".
+    log({ ...base, by: "orchestrator", decision: "carry-on", gateMs: orchMs, gateSaidNothing: true, request });
+    carryOn();
+  }
+  const planRow = {
+    shape: plan.shape ?? "?",
+    workers: plan.workers ?? 0,
+    split: Boolean(plan.split),
+    gate: typeof plan.gate === "number" ? plan.gate : Number.NaN,
+  };
+  if (!planRow.split) {
+    decide(
+      "deny",
+      `The orchestration gate judged this work not to need its own agent (${plan.reason ?? "no reason given"}). ` +
+        "Do it yourself in this session rather than delegating it.",
+      { ...base, by: "orchestrator", gateMs: orchMs, plan: planRow, request },
+    );
+  }
+  log({ ...base, by: "orchestrator", decision: "carry-on", gateMs: orchMs, plan: planRow, request });
+  carryOn();
 }
 
 // ------------------------------------------------------ the thing under test

@@ -25,7 +25,7 @@ const pct = (x: number, n: number): string => (n === 0 ? "    -" : `${((100 * x)
 const med = (xs: number[]): number => (xs.length === 0 ? Number.NaN : [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]);
 
 /** P(at least k of n one way), both tails. Exact: n is small, so count. */
-function signP(a: number, b: number): number {
+export function signP(a: number, b: number): number {
   const n = a + b;
   if (n === 0) return 1;
   const k = Math.max(a, b);
@@ -416,4 +416,7 @@ function main(): void {
   }
 }
 
-main();
+// GUARDED. `src/components.ts` imports `signP` from here, and an unguarded
+// call means importing one function prints a whole report -- which is exactly
+// how `experiments/versus` published a comparison nobody asked for.
+if (process.argv[1]?.endsWith("report.ts")) main();
