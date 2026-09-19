@@ -111,7 +111,7 @@ tests.push(
   check("every surviving transcript is structurally sound", () => {
     const t = transcript();
     // Try every single-entry deletion and every ranking; all must survive.
-    for (const baseline of ["oldest", "largest", "stale"] as const) {
+    for (const baseline of ["oldest", "largest", "stale", "overlap"] as const) {
       for (const budget of [100, 1_000, 10_000, 39_000]) {
         const { keep } = dropUntilFits(t, rankBy(baseline, t), budget, DEFAULT_COMPACT_CONFIG);
         const sound = valid(keep);
@@ -160,12 +160,14 @@ tests.push(
 // -------------------------------------------------- the free baselines
 
 tests.push(
-  check("the three free rankings differ from each other", () => {
-    // If they did not, there would be one baseline and not three, and the
+  check("the four free rankings differ from each other", () => {
+    // If they did not, there would be one baseline and not four, and the
     // comparison docs/33 §1 asks for would be vacuous.
     const t = transcript();
-    const orders = new Set(["oldest", "largest", "stale"].map((b) => rankBy(b as never, t).map((e) => e.id).join(",")));
-    ok(orders.size > 1, "every free ranking produced the same order");
+    const orders = new Set(
+      ["oldest", "largest", "stale", "overlap"].map((b) => rankBy(b as never, t).map((e) => e.id).join(",")),
+    );
+    eq(orders.size, 4, "two free rankings produced the same order: ");
     eq(rankBy("largest", t)[0].id, "2", "largest did not put the 40,000-character read first");
     eq(rankBy("oldest", t)[0].id, "0", "oldest did not start at the front");
   }),
@@ -175,7 +177,7 @@ tests.push(
   check("a transcript already under budget is left alone by every path", async () => {
     const t = transcript();
     const big = totalTokens(t) + 1;
-    for (const b of ["oldest", "largest", "stale"] as const) {
+    for (const b of ["oldest", "largest", "stale", "overlap"] as const) {
       const r = compactBy(b, t, { budgetTokens: big });
       eq(r.outcome, "fits", `${b}: `);
       eq(r.dropped.length, 0, `${b}: `);

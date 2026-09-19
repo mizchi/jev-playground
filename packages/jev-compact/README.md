@@ -66,19 +66,39 @@ The level text lives in the state and is paid for once
 
 ## Measure the free rankings first
 
-Three orderings cost nothing, and [docs/33 §1](../../docs/33-review.md) is the
+Four orderings cost nothing, and [docs/33 §1](../../docs/33-review.md) is the
 reason they are in the same module and run on the same transcript — there, the
 free features already contained the answer and the paid judgment added nothing,
 and that was only visible because the free version was measured first.
 
-| ranking | what it does |
-| --- | --- |
-| `oldest` | drop from the front. What nearly every agent already does. |
-| `largest` | one 40,000-character file read outweighs fifty turns of talk. |
-| `stale` | LRU by mention: nothing has referred to it since. |
+| ranking | what it does | facts kept (80/60/40/25% budget) |
+| --- | --- | --- |
+| **`overlap`** | **how much of the GOAL's vocabulary the entry contains. Drop what shares least with the task.** | **100 / 89 / 89 / 67%** |
+| `oldest` | drop from the front. What nearly every agent already does. | 78 / 67 / 44 / 11% |
+| `largest` | one 40,000-character file read outweighs fifty turns of talk. | 56 / 44 / 22 / 11% |
+| `stale` | LRU by mention: nothing has referred to it since. | 78 / 67 / 56 / 11% |
+| *(judgment)* | *the paid ranking, for comparison* | *100 / 100 / 100 / 96%* |
+
+Measured in [docs/39](../../docs/39-compact-ranking.md): 8 transcripts of real
+tool output, scored by whether the substrings their own final answers were
+computed from survived the deletion.
+
+**`overlap` was added after measuring, and it is the finding.** The other
+three are the orderings that occurred to me when this package was written,
+and judgment beat them by 18 to 85 points — a gap large enough that the
+comparison was the more likely explanation. It was not the comparison: the
+baselines were simply the wrong baselines. What judgment mostly does is
+separate **the task's own work from the exploration around it** (mean AUC
+0.751 per transcript), and a word count against the goal does that for free.
+
+So the question a host faces is not "judgment or nothing", it is "judgment or
+`overlap`", and the answer depends on the budget: **a tie at four fifths of
+the window, 96% against 78% at a quarter** — and that is after giving
+`overlap` 27% more tokens than judgment kept, since different orders overshoot
+the budget differently and judgment overshoots least.
 
 `--compare` prints whether judgment's survivors differ from theirs at all. If
-`largest` keeps the same entries, the ranking is not what is doing the work.
+`overlap` keeps the same entries, the ranking is not what is doing the work.
 
 ## Two outcomes that are not deletions
 
@@ -98,9 +118,15 @@ deleted on no judgment is gone, and nothing afterwards can notice that the fact
 it carried is missing. A summary that loses the same fact is at least a known
 quantity.
 
-`onError: "baseline"` falls back to `largest`, for a caller whose reason for
+`onError: "baseline"` falls back to `overlap`, for a caller whose reason for
 being here is that summarisation costs too much to run at all. It trades a
 silent loss for a bounded bill and should be chosen deliberately.
+
+It fell back to `largest` until [docs/39](../../docs/39-compact-ranking.md)
+measured the four: the budget is in tokens, so freeing it by deleting the big
+entries is the obvious move, and it turned out to be the worst of them. The
+reasoning was about how much space a deletion frees; the question was which
+deletion costs least.
 
 ## Pi
 
@@ -135,14 +161,20 @@ over four calls in one session). `keepRecent` and the goal pin are exact.
 
 ## Limits
 
-- **The ranking is still not measured.** The structural constraints are tested,
-  and [docs/38 §7.4](../../docs/38-agent.md) verified at the wire that deletion
-  reaches the provider — 8 tool-call pairs gone, 0 orphans, the payload
-  smaller — but that is the mechanism, not the choice. The experiment recorded
-  as TODO item 11 in
-  [docs/06](../../docs/06-ideas.md) is the one to run: task completion by exit
-  code, plus a string-match check that facts extracted before compaction
-  survived it, against the three free baselines.
+- **The ranking is measured on 8 transcripts carrying 9 facts**
+  ([docs/39](../../docs/39-compact-ranking.md)), so one fact moves the score
+  11 points and the 18-point margin at the tightest budget is worth 1.6 facts.
+  The tasks, and where each one's needed fact sits in its transcript, are mine.
+- **Scored by fact survival, not by task completion.** docs/06's TODO 11 named
+  two measures and this is the second: whether substrings the answer was
+  computed from are still present. The first — continue the work after
+  compaction and read the exit code — needs model credentials this environment
+  does not have (the same wall as [docs/38](../../docs/38-agent.md)).
+- **"Needed" means needed by ONE known follow-up.** A resident agent also holds
+  memory whose use is not yet known, and nothing here measures that.
+- **Deletion has not been compared against summarisation**, only against other
+  deletion orders. The claim that a deletion is verifiable and a summary is not
+  remains a design argument.
 - `dropAt` (1.5) and `nothingSpareAt` (0.8) are unfitted and deliberately
   timid. docs/25's rule is that a cutoff belongs to a corpus.
 - Tokens are estimated at four characters each, because the count is the

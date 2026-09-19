@@ -169,11 +169,14 @@ cost, per component. `/hermes guard off` disables one.
   fires**. Consistent with docs/31 §2b's 6/22 on plainly-multi cases. The
   cutoff is now fitted against docs/31's 38 labelled scenarios
   ([docs/31 §8](../../docs/31-orchestration.md)) and is per-framing.
-- `jev-compact`'s ranking is untested; only its structural constraints are.
-  [docs/38 §7.4](../../docs/38-agent.md) verified deletion at the wire — the
-  payload got smaller and tool-call pairing survived — which says the mechanism
-  works, not that it deletes the right things. The comparison against the free
-  `oldest`/`largest`/`stale` rankings has not been run.
+- `jev-compact`'s ranking is now measured
+  ([docs/39](../../docs/39-compact-ranking.md)): 96–100% of the facts a
+  continuation needed, against 67–100% for `overlap`, the free word-count
+  ranking that experiment had to add because the three shipped baselines
+  turned out to be the wrong ones. **Judgment is ahead only where the budget
+  is tight** — a tie at four fifths of the window, +18 points at a quarter —
+  so a resident agent with room to spare can compact for free. 8 transcripts
+  carrying 9 facts, so one fact moves the score 11 points.
 - The message budget handed to the compactor is **approximate by
   construction**: pi's token count and `jev-compact`'s differ, and the
   difference is absorbed into `overhead`, which moves as the transcript grows

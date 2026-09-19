@@ -62,9 +62,17 @@ export interface CompactConfig extends Floors {
    * afterwards can notice that the fact it carried is missing. A summary that
    * loses the same fact is at least a known quantity.
    *
-   * `baseline` falls back to `largest`, for a caller whose reason for being
+   * `baseline` falls back to `overlap`, for a caller whose reason for being
    * here is that summarisation costs too much to run at all. It trades a
    * silent loss for a bounded bill, and it should be chosen deliberately.
+   *
+   * IT FELL BACK TO `largest` UNTIL docs/39 MEASURED THEM. `largest` is the
+   * obvious choice on the reasoning that the budget is in tokens, so freeing
+   * it means deleting the big things -- and it turned out to be the WORST of
+   * the four, keeping 56/44/22/11% of the facts a continuation needed across
+   * four budgets, against `overlap`'s 100/89/89/67%. The reasoning was about
+   * how much space a deletion frees and the question was which deletion
+   * costs least, which are not the same question.
    */
   onError: "defer" | "baseline";
   timeoutMs: number;
@@ -195,7 +203,7 @@ export async function compact(
 
   const fallback = (error: string): CompactResult => {
     if (config.onError === "baseline") {
-      const result = compactBy("largest", entries, config);
+      const result = compactBy("overlap", entries, config);
       return { ...result, reason: `${result.reason} (judgment unavailable)`, error, ms: Date.now() - started };
     }
     return { ...done(entries, "deferred", "judgment unavailable; left to the host", Date.now() - started), error };

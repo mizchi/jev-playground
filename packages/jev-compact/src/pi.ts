@@ -183,7 +183,7 @@ export default function jevCompact(pi: ExtensionAPI): void {
       }
       if (sub === "baseline") {
         const b = value as Baseline;
-        settings = { ...settings, baseline: ["oldest", "largest", "stale"].includes(b) ? b : null };
+        settings = { ...settings, baseline: ["overlap", "oldest", "largest", "stale"].includes(b) ? b : null };
         ctx.ui.notify(`jev-compact: ranking by ${settings.baseline ?? "judgment"}`, "info");
         return;
       }

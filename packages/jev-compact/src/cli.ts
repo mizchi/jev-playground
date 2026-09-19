@@ -8,8 +8,10 @@
  *
  * `--baselines` needs no API key and is the first thing to run. docs/33 §1:
  * measure what the free features give you before paying for judgment. If
- * `largest` keeps the same entries Jev's ranking keeps, the ranking is not
- * what is doing the work.
+ * `overlap` keeps the same entries Jev's ranking keeps, the ranking is not
+ * what is doing the work -- and on docs/39's corpus it nearly does: a tie at
+ * four fifths of the window, and judgment ahead only where the budget is
+ * tight (96% against 78% at a quarter).
  *
  * The transcript is `{ "entries": [ { id, role, text, calls?, answers?,
  * label? } ] }`, or a bare array of the same.
@@ -24,7 +26,13 @@ const opt = (name: string, fallback?: string): string | undefined => {
   return i === -1 ? fallback : (args[i + 1] ?? fallback);
 };
 
-const BASELINES: Baseline[] = ["oldest", "largest", "stale"];
+/**
+ * `overlap` first, because it is the one that matters: docs/39 measured it
+ * keeping 67-100% of the facts a continuation needs against 11-78% for the
+ * other three, so a caller reading this output should see the strong free
+ * ranking beside judgment and not be reassured by beating the weak ones.
+ */
+const BASELINES: Baseline[] = ["overlap", "oldest", "largest", "stale"];
 
 function load(path: string): Entry[] {
   const raw = JSON.parse(readFileSync(path, "utf8")) as { entries?: Entry[] } | Entry[];

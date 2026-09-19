@@ -175,8 +175,8 @@ export function valid(entries: readonly Entry[]): { ok: boolean; why?: string } 
  *
  * docs/33 §1's lesson, which was expensive to learn: measure what the free
  * features give you FIRST. There the metrics-only classifier already had the
- * answer; here a resident agent's transcript has three obvious orderings that
- * cost nothing, and if one of them keeps the same facts as Jev's ranking then
+ * answer; here a resident agent's transcript has obvious orderings that cost
+ * nothing, and if one of them keeps the same facts as Jev's ranking then
  * Jev's ranking is not what is doing the work.
  *
  * `oldest` is what nearly every agent already does (drop from the front).
@@ -184,13 +184,76 @@ export function valid(entries: readonly Entry[]): { ok: boolean; why?: string } 
  * 40,000-character file read outweighs fifty turns of conversation.
  * `stale` is LRU by mention: an entry whose file or command has not been
  * referred to since is a candidate.
+ * `overlap` scores each entry by how much of the GOAL's vocabulary it
+ * contains, and drops the entries that share least with the task.
+ *
+ * `overlap` WAS ADDED AFTER MEASURING, and it is the whole reason docs/39
+ * exists. The first three are the orderings that occurred to me when this
+ * package was written, and on docs/39's corpus they keep 11-78% of the facts
+ * a continuation needs, against judgment's 96-100% -- a gap so large it was
+ * more likely to be a broken comparison than a real result. It was neither:
+ * the three baselines are simply the wrong baselines. What judgment was
+ * mostly doing was separating THE TASK'S OWN WORK from the exploration
+ * around it (AUC 0.49-0.98 per transcript), and a word count against the
+ * goal does that for free. It keeps 67-100%, closing most of the gap the
+ * other three left, and it does so while leaving MORE tokens behind.
+ *
+ * So the honest reading of this package is: `overlap` is the baseline that
+ * matters, judgment still beats it, and the margin is worth paying for only
+ * where the budget is tight: 96% against 78% at a quarter of the window, a
+ * tie at four fifths (docs/39 §4, which matches the two for content first --
+ * different orders overshoot the budget differently and judgment overshoots
+ * least, so the raw numbers in §3 flatter it).
  */
-export type Baseline = "oldest" | "largest" | "stale";
+export type Baseline = "oldest" | "largest" | "stale" | "overlap";
+
+/**
+ * Words worth matching on: three characters or more, so `a`/`of`/`is` drop out.
+ *
+ * DELIBERATELY THE SIMPLEST THING, because two attempts to improve it both
+ * made it worse. docs/39 §5.1 measured four variants on the same corpus:
+ *
+ *   3+ chars, as here       100%  89%  89%  67%     <- shipped
+ *   3+ chars, stoplist      100%  89%  67%  56%
+ *   5+ chars                 89%  78%  67%  56%
+ *   7+ chars                 89%  78%  56%  33%
+ *
+ * A stoplist for the verbs every instruction contains ("tell me which...")
+ * looked obviously right and cost 22 points at the tightest budget: the
+ * common words are shared by every entry, so they add a near-constant term
+ * that moves no order, while the stoplist also removed words that did
+ * separate. Requiring longer words loses the short identifiers -- `pi`,
+ * `wc`, `at` -- that a coding transcript turns on.
+ *
+ * Being the first thing anyone would write also matters for what it is FOR.
+ * A free baseline tuned on the corpus it is then compared against is not a
+ * baseline any more, and a version chosen for simplicity keeps the
+ * comparison honest in the direction that matters: against judgment.
+ */
+function vocabulary(text: string): Set<string> {
+  return new Set(text.toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g) ?? []);
+}
 
 export function rankBy(baseline: Baseline, entries: readonly Entry[]): Entry[] {
   const order = [...entries];
   if (baseline === "oldest") return order;
   if (baseline === "largest") return order.sort((a, b) => tokensOf(b) - tokensOf(a));
+  if (baseline === "overlap") {
+    const goal = vocabulary(entries.find((e) => e.role === "user")?.text ?? "");
+    // No goal text means no signal, so fall back rather than return an
+    // arbitrary order that a caller would read as a decision.
+    if (goal.size === 0) return rankBy("largest", entries);
+    const share = new Map<string, number>();
+    for (const e of entries) {
+      const words = vocabulary(e.text);
+      let hits = 0;
+      for (const g of goal) if (words.has(g)) hits += 1;
+      share.set(e.id, hits / goal.size);
+    }
+    // Least shared with the task first: that is the entry least likely to be
+    // about the work still in progress.
+    return order.sort((a, b) => (share.get(a.id) ?? 0) - (share.get(b.id) ?? 0));
+  }
   // `stale`: how recently anything else referred to this entry's label.
   const lastMention = new Map<string, number>();
   for (const [i, e] of entries.entries()) {
