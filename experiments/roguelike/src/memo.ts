@@ -223,17 +223,43 @@ function report(): void {
       `both ${both > 0 ? "+" : ""}${both.toFixed(0)}` +
       ` (and ${shipped > 0 ? "+" : ""}${shipped.toFixed(0)} once the contradiction is removed, which is what ships).`,
   );
-  if (c <= 0 && i <= 0 && both > 0) {
+  /**
+   * THE GUARDED MEMORY-ALONE ARM CHANGES THIS CONCLUSION, and the sentence
+   * that used to be here got it wrong.
+   *
+   * It read `jevcount` -- the UNGUARDED counts -- and announced that neither
+   * half does anything alone. Homework (k) then ran `jevcountguard` and the
+   * guarded counts are worth +12 on their own. So the memory does carry an
+   * effect by itself; what the old reading measured was the memory WITH the
+   * wall contradiction still in it, which is not the memory.
+   *
+   * Fourth time in this session a canned conclusion in one of my own reports
+   * contradicted its own table, so this one branches on the numbers.
+   */
+  const guarded = record.games.some((g) => g.policy === "jevcountguard") ? mapped("jevcountguard") - base : Number.NaN;
+  if (Number.isFinite(guarded)) {
+    console.log(
+      `     memory alone WITH THE GUARD: ${guarded > 0 ? "+" : ""}${guarded.toFixed(0)} (homework k).`,
+    );
+  }
+  if (Number.isFinite(guarded) && guarded > 0 && c <= 0) {
+    console.log(
+      "\n     SO THE MEMORY DOES WORK ALONE -- ONCE IT STOPS RECOMMENDING WALLS. The\n" +
+        "     unguarded counts are worth nothing by themselves and the guarded ones are\n" +
+        `     worth ${guarded.toFixed(0)}, which means the earlier reading ("neither half does anything")\n` +
+        "     was measuring the memory WITH the contradiction still in it. That is not the\n" +
+        "     memory; it is a prompt that says `you have never stood there` about a wall.\n\n" +
+        "     The sentence alone still does nothing, so the homework's two options are\n" +
+        "     STILL both wrong -- but for a sharper reason than `it is all interaction`:\n" +
+        "     the memory is the half that carries an effect, the sentence is not, and the\n" +
+        "     two together are worth far more than the memory alone. docs/34 §2.4 credited\n" +
+        "     the memory and was right about WHICH half, while reporting a number that a\n" +
+        "     contradiction in its own payload had suppressed.",
+    );
+  } else if (c <= 0 && i <= 0 && both > 0) {
     console.log(
       "\n     NEITHER HALF DOES ANYTHING ALONE. Both are slightly WORSE than the baseline,\n" +
-        "     and together they are much better, so the whole effect is an INTERACTION.\n" +
-        "     That reading is available only because the halves were run: the visit counts\n" +
-        "     are inert until something tells the model to prefer unvisited ground, and the\n" +
-        "     instruction is unactionable until the counts are there to act on.\n\n" +
-        "     docs/34 §2.4 added both at once and wrote about the memory. The homework\n" +
-        "     asked whether the sentence alone would move it -- `if the sentence alone\n" +
-        "     raises it, what was added was intent and not memory`. The answer is neither:\n" +
-        "     the question had a third answer and both of its options were wrong.",
+        "     and together they are much better, so the whole effect is an INTERACTION.",
     );
   } else if (i > c && i > 0) {
     console.log("\n     The sentence carries more of it than the memory does.");
