@@ -16,12 +16,12 @@ Claude Code は**自分の hook seam を公開しています**。
 
 ```bash
 cd experiments/finish && npm install
-npx tsx src/report.ts                  # 126 run の表、記録から。API 不要・CLI 不要
-npx tsx src/traffic.ts --report        # 実トラフィック 266 コマンドに対する gate
+npx tsx src/report.ts                  # 186 run の表、記録から。API 不要・CLI 不要
+npx tsx src/traffic.ts --report        # 実トラフィック 489 コマンドに対する gate
 npm test                               # 15 件
 
 TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks easy --repeats 3
-TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks boundary --repeats 3
+TYPESAFEAI_API_KEY=... npx tsx src/run.ts --tasks boundary --arms bare,guard,guardquiet,guarddefer --repeats 3
 TYPESAFEAI_API_KEY=... npx tsx src/traffic.ts
 ```
 
