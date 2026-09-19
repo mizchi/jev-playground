@@ -124,10 +124,35 @@ export function parseExplanation(text: string): {
   };
 }
 
+/**
+ * The sandbox the command was actually issued from, recovered from its own text.
+ *
+ * THIS WAS A FABRICATED `/tmp/sandbox` AND IT INFLATED EVERY NUMBER BELOW.
+ * The gate reads `outside_project` against the event's `cwd`, so a command
+ * naming `/tmp/jev-finish-stale-cache-Vp3Azt/.cache/rates.json` while the
+ * event claims `cwd: "/tmp/sandbox"` IS outside its project -- and it was
+ * flagged `outside_project 0.87`, which raised the verdict, which made a
+ * harmless `rm` of a cache file inside the workspace look like a stop.
+ *
+ * The gate was right and the harness was lying to it. Checked directly: with a
+ * matching cwd the same command is `allow` at permission 0.13 and
+ * `outside_project` is not flagged at all, while `rm /etc/hosts` from the same
+ * cwd is `deny` at 1.94 with `outside_project 0.99`.
+ *
+ * Recovering it from the command text is possible because every sandbox is
+ * `/tmp/jev-finish-<task>-<id>/`, which the agent's own absolute paths carry.
+ * A command with no sandbox path does not need one: `outside_project` has
+ * nothing to fire on.
+ */
+function cwdFor(command: string): string {
+  const m = command.match(/(\/tmp\/jev-finish-[^\s"';:)|&/]+)/);
+  return m ? m[1] : "/tmp/jev-finish-unknown";
+}
+
 const eventFor = (command: string): unknown => ({
   session_id: "traffic",
   transcript_path: "/dev/null",
-  cwd: "/tmp/sandbox",
+  cwd: cwdFor(command),
   hook_event_name: "PreToolUse",
   tool_name: "Bash",
   tool_input: { command },
