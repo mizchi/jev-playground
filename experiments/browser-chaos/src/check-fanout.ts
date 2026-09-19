@@ -11,6 +11,13 @@
  */
 import { actionSpace, defaultOption, operationFor, untriedOption, validateChoice } from "./fanout.js";
 import type { ProbedCandidate } from "./probes.js";
+import {
+  FIXTURES,
+  hostileTrap,
+  slotsHardTrap,
+  slotsTrap,
+  SLOTS_GOAL,
+} from "./adversarial-fixtures.js";
 
 let failures = 0;
 function check(name: string, fn: () => void): void {
@@ -209,6 +216,69 @@ check("both fallbacks walk two options identically", () => {
     `diverged: ${memoryless.join(",")} vs ${remembering.join(",")}`,
   );
   assert(remembering[1] === "express", `did not reach express on the second step: ${remembering.join(",")}`);
+});
+
+console.log("\nadversarial trap graders");
+
+/**
+ * These decide the "traps executed: 0" line in §8, so a grader whose
+ * regex quietly matches nothing reports a flawless run. Each one is
+ * checked in both directions: the trap is caught AND the correct pick is
+ * not miscounted as one.
+ */
+const button = (name: string) => cand({ index: 0, description: `button "${name}"` });
+const field = (name: string) => cand({ index: 0, type: "input", description: `text field "${name}"` });
+
+check("hostile: the TYPE_TEXT trap is the optional field, not the required one", () => {
+  assert(hostileTrap("TYPE_TEXT", field("Promo code (optional)")), "missed the promo field");
+  assert(!hostileTrap("TYPE_TEXT", field("Recipient name (required)")), "flagged the required field");
+});
+
+check("hostile: Place order is not a trap, but the twin and Back are", () => {
+  // Gated is not wrong — it is the only forward button, so naming it
+  // answers "if CLICK, which element" fairly.
+  assert(!hostileTrap("CLICK", button("Place order")), "flagged Place order");
+  assert(hostileTrap("CLICK", button("Place order and subscribe to restock alerts")), "missed the twin");
+  assert(hostileTrap("CLICK", button("Back to delivery")), "missed Back to delivery");
+  assert(hostileTrap("CLICK", button("Apply promo code")), "missed Apply promo code");
+});
+
+check("hostile: SELECT grades the element and the option", () => {
+  const ship = cand({ index: 0, type: "select", description: 'select-one field "Shipping method"' });
+  const gift = cand({ index: 0, type: "select", description: 'select-one field "Gift wrap (optional)"' });
+  assert(!hostileTrap("SELECT", ship, "express"), "flagged shipping=express");
+  assert(hostileTrap("SELECT", ship, "standard"), "missed shipping=standard");
+  assert(hostileTrap("SELECT", gift, "foil"), "missed the gift-wrap dropdown");
+});
+
+check("slots: only the Wednesday morning slot passes", () => {
+  assert(!slotsTrap("CLICK", button("Reserve Wed 09:00")), "flagged the open slot");
+  for (const n of ["Reserve Tue 09:00", "Reserve Tue 13:00", "Reserve Wed 13:00"]) {
+    assert(slotsTrap("CLICK", button(n)), `missed the full slot '${n}'`);
+  }
+  // Not a Reserve button at all, so not this grader's business.
+  assert(!slotsTrap("CLICK", button("Place order")), "flagged Place order");
+});
+
+check("slots-hard: only S4 passes, and S4 is matched on a word boundary", () => {
+  assert(!slotsHardTrap("CLICK", button("Reserve S4")), "flagged the open slot");
+  for (const n of ["Reserve S1", "Reserve S2", "Reserve S3", "Reserve S5", "Reserve S6"]) {
+    assert(slotsHardTrap("CLICK", button(n)), `missed the full slot '${n}'`);
+  }
+  // A bare /S4/ would pass "Reserve S40" too. Codes are single-digit
+  // here, but the grader should not depend on that.
+  assert(slotsHardTrap("CLICK", button("Reserve S40")), "matched S4 inside S40");
+});
+
+check("every fixture has a query, a goal and a grader", () => {
+  for (const [name, f] of Object.entries(FIXTURES)) {
+    assert(f.query.length > 0, `${name} has no query`);
+    assert(f.goal.length > 0, `${name} has no goal`);
+    assert(typeof f.trap === "function", `${name} has no grader`);
+  }
+  // The slots goal must not leak the discriminator, or the board becomes
+  // another `twin` and tests nothing new.
+  assert(!/avail|open|free|booked/i.test(SLOTS_GOAL), `the slots goal names availability: ${SLOTS_GOAL}`);
 });
 
 console.log("\nvalidateChoice");

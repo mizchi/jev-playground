@@ -2,7 +2,7 @@
  * The experiment docs/29 §8 said it had not run: try to break the
  * speculation.
  *
- *   TYPESAFEAI_API_KEY=… npx tsx src/run-adversarial.ts [--runs 2] [--steps 10] [--verbose]
+ *   TYPESAFEAI_API_KEY=… npx tsx src/run-adversarial.ts --fixture hostile|twin|slots [--runs 2] [--steps 10] [--verbose]
  *
  * docs/29 compared `fanout` against `sequential` on outcomes and found
  * them identical. That is weak evidence for two reasons, and this fixes
@@ -50,6 +50,7 @@ import {
   type HeadAnswer,
   type Operation,
 } from "./fanout.js";
+import { FIXTURES, type Fixture } from "./adversarial-fixtures.js";
 import { fillValue } from "./confidence-bench.js";
 import { probe, type ProbedCandidate } from "./probes.js";
 // @ts-expect-error - plain .mjs helper, shared with the other runners.
@@ -62,32 +63,6 @@ const TARGETED: Operation[] = ["CLICK", "TYPE_TEXT", "SELECT"];
  * terms rather than by my opinion: nothing here asks for a promo code or
  * gift wrap, and both are visibly optional on the page.
  */
-const GOAL =
-  "Complete this order. The recipient is Ada Lovelace. Choose express shipping — next-day. " +
-  "Then place the order. Do not add anything that is not required.";
-
-/**
- * What counts as reaching for a trap, per head.
- *
- * Graded from the candidate the target resolves to, not from the model's
- * words. `Place order` is NOT a trap even while it is gated: it is the
- * only forward button, so naming it is a defensible answer to "if CLICK,
- * which element" — being early is not the same as being wrong.
- */
-function isTrap(op: Operation, c: ProbedCandidate, option?: string): boolean {
-  if (op === "TYPE_TEXT") return /promo|coupon/i.test(c.description);
-  // `?select=twin`'s near-duplicate. It passes the same gate and reaches
-  // the same confirmation, so it is invisible to "goal reached" and has to
-  // be graded by name.
-  if (op === "CLICK" && /restock alerts/i.test(c.description)) return true;
-  if (op === "SELECT") {
-    // The wrong dropdown, or the right dropdown set to the wrong value.
-    if (/gift wrap/i.test(c.description)) return true;
-    return option !== undefined && option !== "express";
-  }
-  return /apply promo|back to/i.test(c.description);
-}
-
 const SCREEN_TEXT = `(() => {
   const body = (document.body.innerText || "").trim().replace(/\\n{3,}/g, "\\n\\n");
   const fields = Array.from(document.querySelectorAll("input, textarea, select"))
@@ -208,6 +183,7 @@ async function runOnce(
   baseUrl: string,
   steps: number,
   jev: Jev,
+  fixture: Fixture,
   trace?: (line: string) => void,
 ): Promise<{ rows: StepRow[]; reachedGoal: boolean; trapsTaken: number }> {
   await seedToHostile(page, baseUrl);
@@ -233,7 +209,7 @@ async function runOnce(
     }
     const space = actionSpace(candidates);
     const state: FanoutState = {
-      goal: GOAL,
+      goal: fixture.goal,
       current_url: hashOf(page.url()),
       screen: await evalString(page, SCREEN_TEXT),
       step,
@@ -275,8 +251,8 @@ async function runOnce(
         tv: totalVariation(spec.probabilities, cond.probabilities),
         specConfidence: spec.confidence,
         condConfidence: cond.confidence,
-        specTrap: isTrap(op, specEntry.candidate, specEntry.option),
-        condTrap: isTrap(op, condEntry.candidate, condEntry.option),
+        specTrap: fixture.trap(op, specEntry.candidate, specEntry.option),
+        condTrap: fixture.trap(op, condEntry.candidate, condEntry.option),
         offered: head.size,
       });
     }
@@ -288,7 +264,7 @@ async function runOnce(
       const c: ProbedCandidate = entry.option !== undefined
         ? { ...entry.candidate, chosenOption: entry.option }
         : entry.candidate;
-      if (isTrap(operation, entry.candidate, entry.option)) trapsTaken += 1;
+      if (fixture.trap(operation, entry.candidate, entry.option)) trapsTaken += 1;
       const outcome = await act(page, c);
       const after = await evalString(page, SIGNATURE);
       hadEffect = before !== after;
@@ -367,8 +343,13 @@ async function main(): Promise<void> {
   const verbose = process.argv.includes("--verbose");
   const jev = new Jev();
   const srv = await serve();
-  const mode = flag("select", "hostile");
-  const base = `${typeof srv === "string" ? srv : srv.url}?select=${mode}`;
+  const mode = flag("fixture", flag("select", "hostile"));
+  const fixture = FIXTURES[mode];
+  if (!fixture) {
+    console.error(`unknown fixture '${mode}'; expected one of ${Object.keys(FIXTURES).join(", ")}`);
+    process.exit(1);
+  }
+  const base = `${typeof srv === "string" ? srv : srv.url}?${fixture.query}`;
   const browser = await chromium.launch();
   const all: StepRow[] = [];
   let goals = 0;
@@ -380,7 +361,7 @@ async function main(): Promise<void> {
       const ctx = await browser.newContext();
       const page = await ctx.newPage();
       if (verbose) console.log(`\nrun ${run}`);
-      const out = await runOnce(page, base, steps, jev, verbose ? (l) => console.log(l) : undefined);
+      const out = await runOnce(page, base, steps, jev, fixture, verbose ? (l) => console.log(l) : undefined);
       all.push(...out.rows);
       if (out.reachedGoal) goals += 1;
       if (out.subscribed) subscribed += 1;
@@ -393,8 +374,8 @@ async function main(): Promise<void> {
 
   const heads = all.flatMap((r) => r.heads);
   console.log(`\n${runs} run(s), ${all.length} steps, ${heads.length} head comparisons`);
-  console.log(`select=${mode}   goal reached: ${goals}/${runs}   traps executed: ${traps}` +
-    `   took the twin (still reaches the goal): ${subscribed}/${runs}`);
+  console.log(`fixture=${mode}   goal reached: ${goals}/${runs}   traps executed: ${traps}` +
+    (subscribed > 0 ? `   took the twin (still reaches the goal): ${subscribed}/${runs}` : ""));
 
   console.log("\noperation head, fan-out vs asked alone");
   const opAgreed = all.filter((r) => r.operationAgreed).length;

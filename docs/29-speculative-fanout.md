@@ -266,12 +266,16 @@ beside it.
 
 ### It did not break
 
-36 head comparisons across both fixtures:
+45 head comparisons across four fixtures:
 
 | | n | agree | mean TV |
 |---|---|---|---|
-| head the operation **named** | 12 | **100%** | **0.000** |
+| head the operation **named** | 21 | **100%** | 0.003 |
 | head answered for nothing | 24 | 100% | 0.105 |
+
+On `hostile` and `twin`, where more than one head existed, the used head's TV
+was **exactly 0.000**; the 0.003 is the slot boards, where CLICK is the only
+head and it came in at 0.008–0.015.
 
 On every head that executed, the speculative answer was identical to the
 conditioned one — not merely the same argmax, **the same distribution, TV
@@ -279,8 +283,11 @@ exactly 0.000**. Goal 2/2 on both fixtures, in the minimum three steps, with
 **0 traps executed** and the twin taken 0/2.
 
 The operation head was not perturbed either. Asked alone, with nothing else in
-the request, it chose the same operation **6/6** on each fixture at mean TV
-0.022–0.028 — so the co-presence of three more questions does not move it.
+the request, it chose the same operation on **every step of every fixture** —
+15/15 — at mean TV 0.005–0.037, so the co-presence of three more questions does
+not move it.
+
+Goal reached 7/7 across the four boards, and **0 traps executed anywhere**.
 
 ### Why it holds, and when it could not
 
@@ -300,15 +307,71 @@ That also says what it would take to break it: **two equally good targets for
 the same operation, where only one is correct.** The twin was an attempt at
 exactly that and failed — the CLICK head named the plain "Place order" at
 confidence 1.00 in every run and never reached for the near-duplicate, because
-the goal ("do not add anything that is not required") settles it. Which is the
-principled limit, not a budget one: if the *goal* determines the answer the
-model gets it, and if the goal does not determine it then there is no wrong
-answer for a disagreement to be.
+the goal ("do not add anything that is not required") settles it.
 
-In all 12 used-head observations the used head sat at confidence 1.00. So what
-remains untested is speculation on a used head that is itself uncertain — and
-the shape of the data suggests that combination may be hard to construct rather
-than merely unvisited.
+Which is a principled limit and not a budget one, and it cuts both ways: if the
+goal determines the answer the model gets it, and if the goal does *not*
+determine it then there is no wrong answer for a disagreement to be. §8.1
+threads that needle — the discriminator is on the page and absent from the
+goal — and the model still gets it.
+
+In all 12 used-head observations the used head sat at confidence 1.00 — which
+§8.1 goes after directly.
+
+### 8.1 A discriminator the goal does not name
+
+`?slots=1` removes the thing that settled every earlier trap. Four buttons and
+nothing else — no field, no dropdown — so the operation is CLICK by
+construction and the whole contest moves inside one head. Three of the four
+slots are full, and **that fact appears only in the line of text above each
+button**: not in the button's accessible name, so the target criteria cannot
+carry it, and not in the goal, which says to reserve a slot without saying
+which. A full slot is refused by the app, so a wrong pick is wrong by outcome.
+
+`?slots=hard` takes away adjacency too: one capacity table at the top of the
+page keyed by slot code, buttons labelled only `Reserve S1`…`Reserve S6`, and
+the table reports capacity and bookings rather than a verdict. A correct pick
+needs a join by code and one subtraction.
+
+| board | goal | steps | used-head confidence | agree | traps |
+|---|---|---|---|---|---|
+| `slots` | 2/2 | 2 | 0.90–0.94 | 4/4 | 0 |
+| `slots-hard` | 2/2 | 2 | **0.95–0.97** | 4/4 | 0 |
+
+Both solved in the minimum two steps, picking `Reserve Wed 09:00` and
+`Reserve S4` every run, with speculative and conditioned heads agreeing at TV
+0.008–0.015. **So a discriminator the goal does not mention is handled**, and
+making the join harder made the model *more* confident, not less: explicit
+capacity numbers beat prose adjacency.
+
+### 8.2 The uncertain used head is not constructible here
+
+Four boards, and the used head never came in below 0.90:
+
+| board | what was contested | operation conf. | used-head conf. |
+|---|---|---|---|
+| `hostile` | all three operations needed, in any order | **0.55–0.83** | 1.00 |
+| `twin` | a near-duplicate of the working button | 0.78–0.83 | 1.00 |
+| `slots` | 1 of 4 buttons, discriminator in adjacent prose | 0.91–0.97 | 0.90–0.94 |
+| `slots-hard` | 1 of 6 buttons, discriminator behind a join | 0.92–0.97 | 0.95–0.97 |
+
+**Every attempt to make the used head unsure moved the uncertainty into the
+operation head instead.** The two never overlapped: where the operation was
+genuinely open (`hostile` at 0.55) its target was certain, and where the target
+was hard to find (`slots-hard`) the operation was easy.
+
+There is a structural reason. A target head contains only elements that accept
+its operation, so "which of these same-type controls" is a strictly narrower
+question than "what should happen next" — and narrowing is what the typed split
+does. Uncertainty about *what to do* does not decompose into uncertainty about
+*which element*.
+
+That is an empirical failure to construct rather than a proof, and it is
+the honest limit of this section. But it also means the practically important
+version of the question **is** answered: when a decision is genuinely
+uncertain, the uncertainty lands in the operation head, and the target head
+stays reliable — 20/20 used-head observations at ≥0.90, agreeing with their
+conditioned counterparts every time.
 
 ### What the run actually caught: a bug in the port
 
@@ -353,11 +416,24 @@ precisely so the headline does not rest on it. The claim that survives is
 `flat-memo` vs `fanout`: five extra steps on six options, scaling with option
 count.
 
-§8 ran the adversarial case on two dropdowns and 2 runs per fixture, 36 head
-comparisons in total. What it leaves open is a used head that is itself
-uncertain — 12/12 sat at confidence 1.00 — and a target head near the
-255-choice limit in `shared/jev.ts`; the largest here was 9.
+§8 ran four boards at 1–2 runs each, 45 head comparisons. The decisions were
+stable across runs, but that is stability and not prompt diversity — and 45
+comparisons cannot distinguish "speculation is free" from "speculation is free
+better than 98% of the time".
 
-The traps are also all *label*-distinguishable once the goal is read. A trap
-that requires cross-referencing page state the goal does not mention would be
-a harder fixture, and is not built.
+Two things §8 set out to test are closed: a discriminator absent from the goal
+(§8.1) and the uncertain used head (§8.2, not constructible across four
+attempts). What remains:
+
+- **A target head near the 255-choice limit** in `shared/jev.ts`. The largest
+  here was 9. A country picker would be 200+, and nothing says the speculative
+  and conditioned answers stay together at that width.
+- **More than one head at the same width.** `hostile` had 3/2/9 targets; an
+  action space with three heads of 50 each is a different request shape.
+- **A page that changes under the decision.** Every board here is static
+  between observation and action. jev-ultrafast guards this with a page
+  `fingerprint` and re-observes on a mismatch; this harness re-probes each
+  step but never races anything.
+- **A second model.** Everything here is `jev-latest`. That the target
+  question is the narrower half is an argument about question shape, but its
+  answers came from one model.

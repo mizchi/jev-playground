@@ -73,6 +73,8 @@ const blank = {
   // graded on it. `subscribed` is the twin's, and it is the only trap that
   // still reaches #/confirm — which is exactly why it needs recording.
   recipient: "", promo: "", giftwrap: "", subscribed: false,
+  // `?slots=1` only.
+  slot: "", slotError: "",
 };
 
 /*
@@ -127,6 +129,70 @@ const SELECT = SELECT_MODE !== "";
 */
 const TWIN = SELECT_MODE === "twin";
 const HOSTILE = SELECT_MODE === "hostile" || TWIN;
+
+/*
+  `?slots=1` is the fixture for the two things docs/29 §9 left untested,
+  which turn out to be the same thing:
+
+    - a USED head that is itself uncertain. On `hostile` and `twin` the
+      head the operation named came back at confidence 1.00 in 12/12
+      observations, so speculation was only ever measured on a target the
+      model was already sure of.
+    - a trap that needs page state the GOAL does not mention. Every
+      earlier trap was settled by reading the goal ("do not add anything
+      that is not required"), so the label carried the answer.
+
+  The screen offers four "Reserve …" buttons and nothing else — no field,
+  no dropdown — so the operation is CLICK by construction and all the
+  contest moves inside one head. Three of the four slots are fully
+  booked, and that fact appears ONLY in the line of text above each
+  button: not in the button's accessible name, and not in the goal, which
+  says to reserve a slot without saying which. So the target cannot be
+  chosen from the criteria alone, and picking a full slot is wrong by
+  outcome rather than by my opinion — the app refuses it.
+*/
+const SLOTS_MODE = new URLSearchParams(location.search).get("slots") || "";
+const SLOTS = SLOTS_MODE !== "";
+/*
+  `?slots=hard` is `slots=1` with the two things that made the first one
+  easy taken away.
+
+  On `slots=1` the used head answered at 0.90-0.94 — lower than the 1.00 it
+  had managed everywhere else, but not uncertain. The availability sentence
+  sat directly above its button, so the join was adjacency, and the word
+  "booked" did the rest.
+
+  Here the availability is a table at the TOP of the page keyed by slot
+  code, the buttons carry only the code, and the table reports capacity and
+  bookings rather than a verdict. So a correct pick needs a join by code
+  and one subtraction — and neither the button's name nor its neighbours
+  say anything.
+*/
+const SLOTS_HARD = SLOTS_MODE === "hard";
+
+/*
+  Availability lives here rather than in the labels. Wednesday morning is
+  the only one open; the order is deliberate — the single correct slot is
+  neither first nor last, so neither a positional prior nor a recency one
+  lands on it.
+*/
+const SLOT_LIST = SLOTS_HARD
+  // capacity/booked rather than a verdict: open === booked < capacity.
+  // S4 is the only one with room, and it is neither first nor last.
+  ? [
+      { id: "S1", label: "Reserve S1", when: "Slot S1 — Tue 09:00", cap: 4, booked: 4, open: false },
+      { id: "S2", label: "Reserve S2", when: "Slot S2 — Tue 13:00", cap: 4, booked: 4, open: false },
+      { id: "S3", label: "Reserve S3", when: "Slot S3 — Wed 09:00", cap: 6, booked: 6, open: false },
+      { id: "S4", label: "Reserve S4", when: "Slot S4 — Wed 13:00", cap: 6, booked: 4, open: true },
+      { id: "S5", label: "Reserve S5", when: "Slot S5 — Thu 09:00", cap: 4, booked: 4, open: false },
+      { id: "S6", label: "Reserve S6", when: "Slot S6 — Thu 13:00", cap: 2, booked: 2, open: false },
+    ]
+  : [
+      { id: "tue-am", label: "Reserve Tue 09:00", when: "Tue 22 Sep, 09:00-12:00", open: false },
+      { id: "tue-pm", label: "Reserve Tue 13:00", when: "Tue 22 Sep, 13:00-16:00", open: false },
+      { id: "wed-am", label: "Reserve Wed 09:00", when: "Wed 23 Sep, 09:00-12:00", open: true },
+      { id: "wed-pm", label: "Reserve Wed 13:00", when: "Wed 23 Sep, 13:00-16:00", open: false },
+    ];
 const SHIPPING = SELECT_MODE === "many" || HOSTILE
   ? [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
      ["economy", "Economy — 8 days"], ["locker", "Locker pickup — 4 days"],
@@ -288,7 +354,30 @@ const routes = {
     ${decoys(["Pick up in store", "Add delivery note"])}`,
 
   "#/checkout-3": () => !state.address ? `
-    <h1>Checkout</h1><p>Enter your address first.</p>` : `
+    <h1>Checkout</h1><p>Enter your address first.</p>` : SLOTS ? `
+    <h1>Choose a delivery slot</h1>
+    ${state.slot
+      ? `<p>Reserved: ${SLOT_LIST.find((s) => s.id === state.slot).when}.</p>`
+      : SLOTS_HARD
+      // One table at the top, then the buttons. The join is by code and
+      // the verdict is a subtraction, so neither the button's name nor
+      // what sits next to it carries the answer.
+      ? `<table><caption>Capacity</caption>
+         <tr><th>Slot</th><th>Capacity</th><th>Booked</th></tr>
+         ${SLOT_LIST.map((s) =>
+           `<tr><td>${s.id}</td><td>${s.cap}</td><td>${s.booked}</td></tr>`).join("")}
+         </table>
+         <p>Pick a slot below.</p>
+         ${SLOT_LIST.map((s) =>
+           `<button type="button" id="slot-${s.id}">${s.label}</button>`).join("")}`
+      : SLOT_LIST.map((s) =>
+          // The availability sentence sits above the button and never
+          // inside its name, so the candidate description cannot carry it.
+          `<p>${s.when} — ${s.open ? "2 places left" : "fully booked"}</p>
+           <button type="button" id="slot-${s.id}">${s.label}</button>`).join("")}
+    ${state.slotError ? `<p>${state.slotError}</p>` : ""}
+    <button type="button" id="place">Place order</button>
+    <button type="button" id="back3">Back to delivery</button>` : `
     <h1>Checkout — step 3 of 3</h1>
     <p>Widget, delivered to ${state.address}.</p>
     ${SELECT ? `
@@ -396,9 +485,22 @@ function wire() {
   // Re-rendering on the failed press is deliberate: the step is recorded
   // as "changed nothing", which is what a picker that skipped the
   // dropdown should see.
+  // The slot buttons. A full slot is refused with a message rather than
+  // silently: the wrong pick costs a step and says why, which is the
+  // fairest version of this trap — a picker that reads the page can
+  // recover, and one that does not will keep paying.
+  if (SLOTS) {
+    for (const s of SLOT_LIST) {
+      on(`slot-${s.id}`, () => {
+        if (!s.open) { update({ slotError: `${s.when} is fully booked. Choose another slot.` }); return; }
+        update({ slot: s.id, slotError: "" });
+      });
+    }
+  }
   on("place", () => {
     if (SELECT && !state.shipping) { render(); return; }
     if (HOSTILE && !state.recipient) { render(); return; }
+    if (SLOTS && !state.slot) { update({ slotError: "Reserve a delivery slot first." }); return; }
     if (BUG !== "order") update({ ordered: true });
     go("#/confirm");
   });
