@@ -50,7 +50,22 @@ export interface ProbedCandidate {
    */
   selector: string;
   description: string;
-  type: "click" | "input";
+  type: "click" | "input" | "select";
+  /**
+   * The dropdown's own options, as observed. Only a `select` has any.
+   * docs/29's SELECT head offers `index:option` pairs built from these, so
+   * a chosen value is always one the page already carried — the model
+   * names an option, it never writes one.
+   */
+  options: { value: string; label: string }[];
+  /** What the field holds right now; `""` for a button or link. */
+  currentValue: string;
+  /**
+   * Set by a caller that decided *which* option to take — docs/29's SELECT
+   * head does. Not part of the probe's output: the probe reports what is
+   * on the page, this records a decision about it.
+   */
+  chosenOption?: string;
   facts: CandidateFacts;
   /**
    * How a *generated test* should find this element later. The stamped
@@ -59,7 +74,7 @@ export interface ProbedCandidate {
    * `getByRole(role, { name })` otherwise, which is also the difference
    * between a test that survives a renamed button and one that does not.
    */
-  locator: { id?: string; role: "link" | "button" | "textbox"; name: string };
+  locator: { id?: string; role: "link" | "button" | "textbox" | "combobox"; name: string };
 }
 
 export interface ScreenFacts {
@@ -100,7 +115,11 @@ const PROBE = `(() => {
     if (r.width <= 0 || r.height <= 0) continue;
     n += 1;
     const tag = el.tagName.toLowerCase();
-    const isField = tag === "input" || tag === "textarea" || tag === "select";
+    // A <select> is a field, but it is not a *fill* target: Playwright's
+    // fill() rejects it. docs/29 needs it as its own operation, so the two
+    // are separated here rather than at the call site.
+    const isSelect = tag === "select";
+    const isField = tag === "input" || tag === "textarea" || isSelect;
     const id = el.id;
     // Stamped, not derived. The obvious construction --
     // \`tag + ":nth-of-type(" + n + ")"\` with n counting visible nodes
@@ -116,8 +135,17 @@ const PROBE = `(() => {
     el.setAttribute("data-probe-idx", String(n - 1));
     const selector = '[data-probe-idx="' + (n - 1) + '"]';
     const labelEl = id ? document.querySelector('label[for="' + id + '"]') : null;
-    const name = (el.getAttribute("aria-label") || el.innerText || (labelEl ? labelEl.textContent : "")
-      || el.placeholder || id || "").trim().slice(0, 60);
+    // A field's label beats its own text; everything else keeps its text
+    // first. The order only matters for <select>, whose innerText is every
+    // option run together -- a name like
+    // \`"Choose a shipping method…\\nStandard — 5 days\\nExpress — next d"\`,
+    // which is both unreadable and truncated before it says anything. An
+    // <input> has no innerText at all, so it already resolved through the
+    // label and its description is unchanged by this.
+    const own = isField
+      ? [el.getAttribute("aria-label"), labelEl ? labelEl.textContent : "", el.placeholder]
+      : [el.getAttribute("aria-label"), el.innerText, labelEl ? labelEl.textContent : "", el.placeholder];
+    const name = (own.find(function (v) { return v && v.trim(); }) || id || "").trim().slice(0, 60);
     const role = tag === "a" ? "link" : isField ? ((el.type || tag) + " field") : "button";
     const href = tag === "a" ? el.getAttribute("href") : null;
     const description = role + ' "' + name + '"' + (href ? " -> " + href : "");
@@ -150,10 +178,19 @@ const PROBE = `(() => {
     out.push({
       selector: selector,
       description: description,
-      type: isField ? "input" : "click",
+      type: isSelect ? "select" : isField ? "input" : "click",
+      // Observed, never invented: a SELECT target names one of these, so
+      // the value the harness sets came off the page rather than out of a
+      // model. Empty for everything else.
+      options: isSelect
+        ? Array.from(el.options).map(function (o) {
+            return { value: o.value, label: (o.label || o.textContent || "").trim().slice(0, 60) };
+          })
+        : [],
+      currentValue: isField ? String(el.value || "") : "",
       locator: {
         id: id || undefined,
-        role: tag === "a" ? "link" : isField ? "textbox" : "button",
+        role: tag === "a" ? "link" : isSelect ? "combobox" : isField ? "textbox" : "button",
         name: name,
       },
       facts: {

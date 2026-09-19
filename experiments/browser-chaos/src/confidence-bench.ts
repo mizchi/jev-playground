@@ -31,6 +31,7 @@
 import type { Page } from "playwright";
 import { Jev, choice, noul, type Question } from "../../shared/jev.js";
 import { notableFacts, probe, type ProbedCandidate } from "./probes.js";
+import { defaultOption } from "./fanout.js";
 
 export type FallbackMode = "none" | "random" | "probe-retry" | "probe-prune";
 
@@ -68,7 +69,7 @@ export interface StepLog {
   /** The geometry said this pick was unclickable, whether or not we used it. */
   wasBlocked: boolean;
   /** What was done, and how a generated test could find it again. */
-  action: "click" | "fill";
+  action: "click" | "fill" | "select";
   locator: ProbedCandidate["locator"];
   /** The value typed, for a fill. */
   value?: string;
@@ -104,7 +105,14 @@ const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[\\d+m`, "g");
 async function perform(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; error?: string }> {
   try {
     const el = page.locator(c.selector).first();
-    if (c.type === "input") await el.fill(fillValue(c.description), { timeout: 1500 });
+    if (c.type === "select") {
+      // `chosenOption` is set by docs/29's SELECT head. Without one, fall
+      // back the same way the flat arm does — see `defaultOption`, which
+      // documents why the placeholder has to be skipped.
+      const value = c.chosenOption ?? defaultOption(c);
+      if (value === undefined) return { ok: false, error: "no selectable option" };
+      await el.selectOption(value, { timeout: 1500 });
+    } else if (c.type === "input") await el.fill(fillValue(c.description), { timeout: 1500 });
     else await el.click({ timeout: 1500 });
     await page.waitForTimeout(60);
     return { ok: true };
@@ -431,9 +439,10 @@ export async function runPolicy(opts: RunOptions): Promise<RunResult> {
       advanced: depthOf() > depthBefore,
       error: outcome.error,
       wasBlocked,
-      action: chosen.type === "input" ? "fill" : "click",
+      action: chosen.type === "input" ? "fill" : chosen.type === "select" ? "select" : "click",
       locator: chosen.locator,
       ...(chosen.type === "input" ? { value: fillValue(chosen.description) } : {}),
+      ...(chosen.type === "select" ? { value: chosen.chosenOption } : {}),
     };
     log.push(row);
     await afterStep?.(row);

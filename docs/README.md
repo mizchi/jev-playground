@@ -35,6 +35,8 @@ cd experiments/browser-chaos  && npx tsx src/run-coverage.ts --seeds 3 # 26: カ
 cd experiments/browser-chaos  && npx tsx src/check-bugs.ts       # 27: 仕込んだバグ(API 不要)
 cd experiments/browser-chaos  && npx tsx src/run-testgen.ts      # 27: 自然言語 -> テスト生成
 cd experiments/browser-chaos  && npx tsx src/run-perf.ts --repeat 3 # 28: 計測 -> 診断 -> 検証
+cd experiments/browser-chaos  && npx tsx src/check-fanout.ts     # 29: action space と validateChoice(API 不要)
+cd experiments/browser-chaos  && npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 # 29: 投機的 fan-out
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
@@ -118,6 +120,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **assertion の候補はコードで抽出し、どれが「結果」かだけ聞く** | 前後の差分だけを候補にする。初期状態 4 件は **0.00 で落ちた**。捕まえたバグ 1 → 2 | 本リポジトリ | [27](27-nl-test-generation.md#1-何を分担させたか) |
 | **注記の散文は指標として扱える** | 「転送中はメインスレッドが空いている」を「ユーザーは壁時計を待ち切る」に直すだけで、推薦の実測価値が **188ms → 1,664ms** | 本リポジトリ | [28](28-perf-automation.md#結論先に) |
 | **再計測しないと機会損失が見えない** | 8% 速くして「当たり」に見えた診断の隣に 71% があった | 本リポジトリ | [28](28-perf-automation.md#6-輪を閉じたから分かったこと) |
+| **実行する単位を target にする(要素ではなく)** | 要素だけ指す形は値を呼び出し側の推測に残す。6 択で **+5 手**、選択肢数に比例して増える | [jev-ultrafast](https://github.com/browser-use/jev-ultrafast) | [29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving) |
+| **投機は無料だった** | 操作が決まる前に選んだ target は、決まった後に選んだものと**全実行で同一**。リクエストは半分、モデル壁時計は −56% | [jev-ultrafast](https://github.com/browser-use/jev-ultrafast) | [29](29-speculative-fanout.md#4-the-speculation-is-free) |
+| **confidence は質問の形の性質で、アーム間で比較できない** | 正しい側が 0.46-0.71、失敗する側が 0.93-0.99。閾値は形ごとに引き直す | 本リポジトリ | [29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
 > 14/24 のままだったものが、`choice` → `score` の一手で 19 → 23 になっています。
@@ -139,6 +144,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 解決しないセレクタで「効果なし」を数える | 押せないボタンが「効かないボタン」に化ける。実験は失敗せず**きれいな結果**を返す([26 §2.3](26-coverage-guidance.md#23-セレクタが-1-つも当たっていなかったこれが一番痛い)) |
 | 生成したテストを「生成できた」で評価する | クリック列 + 最終 URL は、注文を記録しないアプリに対して緑のまま通る([27](27-nl-test-generation.md#結論先に)) |
 | 固定の待ち時間でステップの費用を測る | `async` なハンドラは待たれないので、300KB の fetch が 20ms の無料ステップに見える([28](28-perf-automation.md#2-計測を-3-回直した)) |
+| 無駄手(画面が変わらない手)だけでループを検出する | 10 手連続で `standard ↔ economy` を往復しても画面は毎回変わるので、**無駄手 0 のまま予算を使い切る**([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
+| 「今の値と違う最初の選択肢」でドロップダウンを送る | 列挙ではなく 2 周期の**振動**になり、3 番目以降に永久に到達しない。記憶を持たせると 1 選択肢 1 手で終わる([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
 | ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 複数の noul を平均してゲートにする | 信号を持つ 1 問が薄まる。単独のほうが強いことがある([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 閾値の境界に乗った決定をそのまま採る | 些細な入力差で pass/block が入れ替わる。境界帯は人間へ([09](09-guardrails.md#3-cookbook-の-15-ケースの再現)) |
@@ -218,6 +225,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [26](26-coverage-guidance.md) | カバレッジ誘導 — 同じ事実を state に置くかゴールに置くか | ✅ |
 | [27](27-nl-test-generation.md) | 1 文から Playwright spec を生成し、ミューテーションで採点する | ✅ |
 | [28](28-perf-automation.md) | 計測 → 診断 → 適用 → 再計測([lightbringer](https://github.com/mizchi/lightbringer) の手法を借用) | ✅ |
+| [29](29-speculative-fanout.md) | 操作ごとに分けた action space を 1 リクエストで投機的に聞く([jev-ultrafast](https://github.com/browser-use/jev-ultrafast) の仕組みを移植) | ✅ |
 
 ## 上流に入ったもの
 

@@ -66,7 +66,36 @@
 
 <script>
 const KEY = "chaos-target-progress";
-const blank = { cart: 0, email: "", address: "", step: 0, ordered: false };
+const blank = { cart: 0, email: "", address: "", step: 0, ordered: false, shipping: "" };
+
+/*
+  `?select=1` puts a shipping <select> on checkout-3 and makes Place order
+  depend on it, for docs/29. A dropdown is the one control whose action a
+  flat candidate list cannot express: "the shipping field" names the
+  element but not the option, so a picker that only chooses elements has
+  to guess the value. The gate is what makes the head load-bearing —
+  without it, never touching the dropdown would still reach #/confirm and
+  the arms would be indistinguishable.
+
+  Default off, so every earlier bench sends the identical candidate list.
+*/
+/*
+  `?select=1` gives the two-option dropdown; `?select=many` gives six, with
+  the wanted one last. The count is the point: a picker that can only name
+  the element has to walk the options, so its cost scales with how many
+  there are, while a picker that names the option pays one step either way.
+  Two options hide that — walking them lands on the right answer in one
+  extra step, which reads as a rounding error rather than as the mechanism.
+*/
+const SELECT_MODE = new URLSearchParams(location.search).get("select") || "";
+const SELECT = SELECT_MODE !== "";
+const SHIPPING = SELECT_MODE === "many"
+  ? [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
+     ["economy", "Economy — 8 days"], ["locker", "Locker pickup — 4 days"],
+     ["saturday", "Saturday delivery"], ["courier", "Local courier — 2 days"],
+     ["express", "Express — next day"]]
+  : [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
+     ["express", "Express — next day"]];
 
 /*
   `?branches=1` makes four of the decoys real. Each is a NAMED function
@@ -222,6 +251,20 @@ const routes = {
     <h1>Checkout</h1><p>Enter your address first.</p>` : `
     <h1>Checkout — step 3 of 3</h1>
     <p>Widget, delivered to ${state.address}.</p>
+    ${SELECT ? `
+    <label for="shipping">Shipping method</label>
+    <select id="shipping">
+      ${SHIPPING
+        .map(([v, label]) =>
+          // `selected` from state, not left to the browser: every render
+          // rebuilds this element, and an unmarked <select> would snap back
+          // to the placeholder while state says a method was chosen. The
+          // probe reads the DOM, so that gap would look like a select that
+          // silently failed.
+          `<option value="${v}"${state.shipping === v ? " selected" : ""}>${label}</option>`)
+        .join("")}
+    </select>
+    ${state.shipping ? "" : "<p>Choose a shipping method to place the order.</p>"}` : ""}
     <button type="button" id="place">Place order</button>
     <button type="button" id="back3">Back to delivery</button>
     ${decoys(["Add gift wrap", "Apply store credit"])}`,
@@ -293,7 +336,17 @@ function wire() {
     const v = (document.getElementById("address") || {}).value || "";
     if (v.trim()) { update({ address: v.trim() }); go("#/checkout-3"); }
   });
-  on("place", () => { if (BUG !== "order") update({ ordered: true }); go("#/confirm"); });
+  // Gated on the dropdown under ?select=1, and unchanged without it.
+  // Re-rendering on the failed press is deliberate: the step is recorded
+  // as "changed nothing", which is what a picker that skipped the
+  // dropdown should see.
+  on("place", () => {
+    if (SELECT && !state.shipping) { render(); return; }
+    if (BUG !== "order") update({ ordered: true });
+    go("#/confirm");
+  });
+  const shipping = document.getElementById("shipping");
+  if (shipping) shipping.addEventListener("change", (e) => update({ shipping: e.target.value }));
   on("back1", () => go("#/cart"));
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));
