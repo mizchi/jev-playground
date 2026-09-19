@@ -96,6 +96,26 @@ check("a dropdown yields one target per settable option", () => {
   for (const key of head.keys()) assert(/^7:\d+$/.test(key), `target key '${key}' is not index:option`);
 });
 
+check("the placeholder is never a target", () => {
+  // docs/29's adversarial run found both arms naming it once shipping was
+  // set: a target that unsets a satisfied requirement. `defaultOption`
+  // always skipped it; `actionSpace` did not, which was an inconsistency
+  // rather than a decision.
+  for (const current of ["", "standard", "express"]) {
+    const head = actionSpace([{ ...shipping, currentValue: current }]).heads.get("SELECT");
+    for (const entry of head?.values() ?? []) {
+      assert(entry.option !== "", `offered the placeholder with currentValue='${current}'`);
+    }
+  }
+});
+
+check("a set dropdown never offers a target that empties it", () => {
+  const head = actionSpace([{ ...shipping, currentValue: "express" }]).heads.get("SELECT")!;
+  // Three options, one current, one placeholder -> one real alternative.
+  assert(head.size === 1, `expected 1 target, got ${head.size}`);
+  assert([...head.values()][0]!.option === "standard", "the remaining target is not the other real value");
+});
+
 check("every offered option came off the page", () => {
   const head = actionSpace([shipping]).heads.get("SELECT")!;
   const onPage = new Set(shipping.options.map((o) => o.value));

@@ -37,6 +37,7 @@ cd experiments/browser-chaos  && npx tsx src/run-testgen.ts      # 27: 自然言
 cd experiments/browser-chaos  && npx tsx src/run-perf.ts --repeat 3 # 28: 計測 -> 診断 -> 検証
 cd experiments/browser-chaos  && npx tsx src/check-fanout.ts     # 29: action space と validateChoice(API 不要)
 cd experiments/browser-chaos  && npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 # 29: 投機的 fan-out
+cd experiments/browser-chaos  && npx tsx src/run-adversarial.ts --select hostile --runs 2 # 29 §8: 投機を壊しにいく
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
@@ -121,7 +122,9 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **注記の散文は指標として扱える** | 「転送中はメインスレッドが空いている」を「ユーザーは壁時計を待ち切る」に直すだけで、推薦の実測価値が **188ms → 1,664ms** | 本リポジトリ | [28](28-perf-automation.md#結論先に) |
 | **再計測しないと機会損失が見えない** | 8% 速くして「当たり」に見えた診断の隣に 71% があった | 本リポジトリ | [28](28-perf-automation.md#6-輪を閉じたから分かったこと) |
 | **実行する単位を target にする(要素ではなく)** | 要素だけ指す形は値を呼び出し側の推測に残す。6 択で **+5 手**、選択肢数に比例して増える | [jev-ultrafast](https://github.com/browser-use/jev-ultrafast) | [29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving) |
-| **投機は無料だった** | 操作が決まる前に選んだ target は、決まった後に選んだものと**全実行で同一**。リクエストは半分、モデル壁時計は −56% | [jev-ultrafast](https://github.com/browser-use/jev-ultrafast) | [29](29-speculative-fanout.md#4-the-speculation-is-free) |
+| **投機は無料だった** | 操作が決まる前に選んだ target は、決まった後に選んだものと**同一**(実行された head は 12/12 で TV = 0.000)。リクエストは半分、モデル壁時計は −53%。トークンは得も損もしない | [jev-ultrafast](https://github.com/browser-use/jev-ultrafast) | [29](29-speculative-fanout.md#4-the-speculation-is-free) |
+| **曖昧さは「操作」側にあり、target 側には無い** | 全操作が必要な画面で operation は 0.55、その target は 1.00。投機が無料なのは target 質問が**簡単な半分**だから | 本リポジトリ | [29 §8](29-speculative-fanout.md#why-it-holds-and-when-it-could-not) |
+| **空 value の `<option>` を target にしてはいけない** | プレースホルダは値ではない。満たした要件を捨てる target になり、両アームが 0.4-0.7 で食いついた | 本リポジトリ | [29 §8](29-speculative-fanout.md#what-the-run-actually-caught-a-bug-in-the-port) |
 | **confidence は質問の形の性質で、アーム間で比較できない** | 正しい側が 0.46-0.71、失敗する側が 0.93-0.99。閾値は形ごとに引き直す | 本リポジトリ | [29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving) |
 
 > 一番効いたのは合成ロジックではなく**答えの形**でした。コード側の閾値をどう捏ねても
@@ -145,6 +148,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 生成したテストを「生成できた」で評価する | クリック列 + 最終 URL は、注文を記録しないアプリに対して緑のまま通る([27](27-nl-test-generation.md#結論先に)) |
 | 固定の待ち時間でステップの費用を測る | `async` なハンドラは待たれないので、300KB の fetch が 20ms の無料ステップに見える([28](28-perf-automation.md#2-計測を-3-回直した)) |
 | 無駄手(画面が変わらない手)だけでループを検出する | 10 手連続で `standard ↔ economy` を往復しても画面は毎回変わるので、**無駄手 0 のまま予算を使い切る**([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
+| 成功する罠を「ゴール到達」で採点する | 同じゲートを通って同じ確認画面に着く近似ボタンは、到達率には一切出ない。state で採点するしかない([29 §8](29-speculative-fanout.md#8-trying-to-break-the-speculation)) |
 | 「今の値と違う最初の選択肢」でドロップダウンを送る | 列挙ではなく 2 周期の**振動**になり、3 番目以降に永久に到達しない。記憶を持たせると 1 選択肢 1 手で終わる([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
 | ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
 | 複数の noul を平均してゲートにする | 信号を持つ 1 問が薄まる。単独のほうが強いことがある([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |
@@ -225,7 +229,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | [26](26-coverage-guidance.md) | カバレッジ誘導 — 同じ事実を state に置くかゴールに置くか | ✅ |
 | [27](27-nl-test-generation.md) | 1 文から Playwright spec を生成し、ミューテーションで採点する | ✅ |
 | [28](28-perf-automation.md) | 計測 → 診断 → 適用 → 再計測([lightbringer](https://github.com/mizchi/lightbringer) の手法を借用) | ✅ |
-| [29](29-speculative-fanout.md) | 操作ごとに分けた action space を 1 リクエストで投機的に聞く([jev-ultrafast](https://github.com/browser-use/jev-ultrafast) の仕組みを移植) | ✅ |
+| [29](29-speculative-fanout.md) | 操作ごとに分けた action space を 1 リクエストで投機的に聞く([jev-ultrafast](https://github.com/browser-use/jev-ultrafast) の仕組みを移植)+ §8 で投機を壊しにいった | ✅ |
 
 ## 上流に入ったもの
 

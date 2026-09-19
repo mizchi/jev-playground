@@ -33,6 +33,7 @@ sequential asker gets to condition on the operation as a decided fact. Nobody's
 README says whether that speculation costs accuracy. That is what this measures.
 
 - Run it: `cd experiments/browser-chaos && TYPESAFEAI_API_KEY=… npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 --verbose`
+- Try to break it (§8): `npx tsx src/run-adversarial.ts --select hostile --runs 2 --steps 9 --verbose`
 - No key needed: `npx tsx src/check-fanout.ts`
 
 ## 1. Four arms
@@ -98,10 +99,10 @@ Two runs per arm, 18-step budget, same goal.
 
 | arm | goal | steps | wasted | reqs | in_tok | out_tok | ms | express |
 |---|---|---|---|---|---|---|---|---|
-| `flat` | **0/2** | 18.0 (budget) | **0.0** | 18.0 | 18,769 | 2,632 | 2,533 | 0/2 |
-| `flat-memo` | 2/2 | 15.0 | 0.0 | 15.0 | 15,499 | 2,197 | 2,059 | 2/2 |
-| `fanout` | **2/2** | **10.0** | 0.0 | **10.0** | 16,196 | 1,938 | **1,324** | 2/2 |
-| `sequential` | 2/2 | 10.0 | 0.0 | 20.0 | 17,331 | 1,474 | 3,043 | 2/2 |
+| `flat` | **0/2** | 18.0 (budget) | **0.0** | 18.0 | 18,769 | 2,632 | 2,794 | 0/2 |
+| `flat-memo` | 2/2 | 15.0 | 0.0 | 15.0 | 15,499 | 2,197 | 2,164 | 2/2 |
+| `fanout` | **2/2** | **10.0** | 0.0 | **10.0** | 16,149 | 1,928 | **1,472** | 2/2 |
+| `sequential` | 2/2 | 10.0 | 0.0 | 20.0 | 17,331 | 1,474 | 3,132 | 2/2 |
 
 The flat arm burned its whole budget on one dropdown:
 
@@ -163,17 +164,22 @@ answered after X was decided, on every step where it mattered. The speculation
 cost nothing measurable, and `fanout` bought:
 
 - **half the requests** (10 vs 20 per run), and
-- **56% less wall-clock in the model** (1,324 ms vs 3,043 ms on six options).
+- **53% less wall-clock in the model** (1,472 ms vs 3,132 ms on six options).
 
-The token picture is more interesting than a straight loss. `fanout` sends
-more input than `flat` per step, because the extra heads' criteria are on the
-wire — 1.43× on two options. But per *run* on six options it sends **less than
-every other arm**: 16,196 in, against 18,769 for `flat`, 15,499 for
-`flat-memo` (which is cheaper per run only because it needs 15 steps rather
-than 18), and 17,331 for `sequential` (which sends the whole state twice).
-The unused heads cost less than the extra steps they remove. Output tokens are
-where the speculation shows up honestly: 1,938 against `sequential`'s 1,474,
+**Tokens are close to a wash, not a win.** `fanout` sends more input per step
+than `flat` — 1.43× on two options, because the extra heads' criteria are on
+the wire. Per *run* on six options it comes in under `flat` (16,149 vs 18,769)
+and under `sequential` (17,331, which sends the whole state twice), but
+**`flat-memo` is cheaper than all of them at 15,499**: fifteen steps of a
+one-question request beat ten steps of a four-question one. Output tokens are
+where the speculation shows up plainly — 1,928 against `sequential`'s 1,474,
 because heads nobody read still got answered.
+
+So `fanout` is not bought with tokens and does not save them either. What it
+buys over `flat-memo` is **five fewer steps**: five fewer actions taken against
+the real application, five fewer browser round trips, and a third less
+wall-clock. On a real app, steps are the expensive unit — each one is a
+mutation that can fail, race, or need undoing.
 
 ## 5. What came back with it
 
@@ -228,7 +234,114 @@ invalidates it rather than being clicked anyway.
 5. **Do not compare confidences across question shapes.** The better arm here
    reported roughly half the confidence of the worse one.
 
-## 8. Limits
+## 8. Trying to break the speculation
+
+§4's evidence was weak in two specific ways, and both are now closed.
+
+It **only ever read the winning head** — the losing heads were answered and
+discarded unmeasured, and on the next step a loser becomes the winner. And the
+**board was easy**: the operation was obvious at almost every step, so there
+was little for speculation to get wrong.
+
+`?select=hostile` contests it. Every head carries a trap that is attractive on
+its own terms:
+
+| head | trap | correct |
+|---|---|---|
+| `TYPE_TEXT` | "Promo code (optional)", empty | "Recipient name (required)", empty |
+| `SELECT` | a whole second dropdown, "Gift wrap" | shipping set to `express` — **1 of 9 targets** |
+| `CLICK` | "Apply promo code", "Back to delivery" | the gated "Place order" |
+
+All three operations are genuinely needed, in no fixed order, so the operation
+head is contested rather than obvious. Both traps *succeed* when taken — they
+are busywork, not errors, so nothing downstream notices. `?select=twin` adds a
+near-duplicate of the one button that works ("Place order and subscribe to
+restock alerts"), which passes the same gate and reaches the same confirmation:
+a trap invisible to "goal reached".
+
+`run-adversarial.ts` spends five requests per step — one fan-out with **every**
+head read, one operation head asked *alone*, and one conditioned target head
+per operation. The fan-out answer is what executes; the rest are observations
+beside it.
+
+### It did not break
+
+36 head comparisons across both fixtures:
+
+| | n | agree | mean TV |
+|---|---|---|---|
+| head the operation **named** | 12 | **100%** | **0.000** |
+| head answered for nothing | 24 | 100% | 0.105 |
+
+On every head that executed, the speculative answer was identical to the
+conditioned one — not merely the same argmax, **the same distribution, TV
+exactly 0.000**. Goal 2/2 on both fixtures, in the minimum three steps, with
+**0 traps executed** and the twin taken 0/2.
+
+The operation head was not perturbed either. Asked alone, with nothing else in
+the request, it chose the same operation **6/6** on each fixture at mean TV
+0.022–0.028 — so the co-presence of three more questions does not move it.
+
+### Why it holds, and when it could not
+
+The mechanism is visible in one line of the trace:
+
+```
+step=0  op=SELECT@0.55   *SELECT spec=10:6@1.00 cond=10:6@1.00 agree tv=0.00
+```
+
+**The uncertainty lives in the operation, not in the target.** At step 0 all
+three operations are independently required, so which to do *first* is
+genuinely near-arbitrary (0.55) — while *given* an operation, which target it
+means is determinate (1.00). Speculation is free because the target question
+is the easy half of the decision.
+
+That also says what it would take to break it: **two equally good targets for
+the same operation, where only one is correct.** The twin was an attempt at
+exactly that and failed — the CLICK head named the plain "Place order" at
+confidence 1.00 in every run and never reached for the near-duplicate, because
+the goal ("do not add anything that is not required") settles it. Which is the
+principled limit, not a budget one: if the *goal* determines the answer the
+model gets it, and if the goal does not determine it then there is no wrong
+answer for a disagreement to be.
+
+In all 12 used-head observations the used head sat at confidence 1.00. So what
+remains untested is speculation on a used head that is itself uncertain — and
+the shape of the data suggests that combination may be hard to construct rather
+than merely unvisited.
+
+### What the run actually caught: a bug in the port
+
+Before the fix, the SELECT head disagreed on 4 of 12 comparisons. Reading them
+was the point of the exercise:
+
+```
+step=1  SELECT  spec=10:1@0.71  cond=10:1@0.54   agree   spec-trap cond-trap
+step=2  SELECT  spec=10:1@0.59  cond=14:1@0.41   DISAGREE
+```
+
+With shipping already on `express`, `actionSpace` skips the current value and
+renumbers — so **`10:1` was the placeholder**, `"Choose a shipping method…"`.
+Both arms were naming "unset the shipping method" at 0.4–0.7 confidence, and at
+step 1 they *agreed* on it. It never executed only because the operation head
+did not pick SELECT on those steps, which is luck rather than safety.
+
+An empty-valued `<option>` is a placeholder, not a value; offering it as a
+target is offering to throw away a satisfied requirement. `defaultOption` and
+`untriedOption` had always skipped it — `actionSpace` not skipping it was an
+inconsistency inside one file rather than a decision. jev-ultrafast's own
+`action_space` offers every option, so it has the same hole.
+
+With the placeholder dropped, **every disagreement went away**: 18/18 agreement
+on each fixture. So all measured divergence between speculative and conditioned
+heads was caused by my action space, not by speculating.
+
+The residual 67% SELECT trap rate in both arms is target availability and
+nothing else: on steps 1 and 2 `express` is already set, so it is excluded from
+the head and no correct SELECT target exists — both arms pick the gift wrap,
+identically. 4 of 6 comparisons, which is exactly 67%.
+
+## 9. Limits
 
 One task, one fixture, one dropdown. Two runs per arm on the six-option board
 and three on the two-option one; the prompts are identical across runs, so
@@ -240,8 +353,11 @@ precisely so the headline does not rest on it. The claim that survives is
 `flat-memo` vs `fanout`: five extra steps on six options, scaling with option
 count.
 
-Nothing here tests more than one dropdown on a screen, a target head near the
-255-choice limit in `shared/jev.ts`, or the case the fan-out should be worst
-at — a page where the operation is genuinely ambiguous and the right target
-differs sharply per operation. That last one is the experiment that would
-actually try to break the speculation, and it has not been run.
+§8 ran the adversarial case on two dropdowns and 2 runs per fixture, 36 head
+comparisons in total. What it leaves open is a used head that is itself
+uncertain — 12/12 sat at confidence 1.00 — and a target head near the
+255-choice limit in `shared/jev.ts`; the largest here was 9.
+
+The traps are also all *label*-distinguishable once the goal is read. A trap
+that requires cross-referencing page state the goal does not mention would be
+a harder fixture, and is not built.

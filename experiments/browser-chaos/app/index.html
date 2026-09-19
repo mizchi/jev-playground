@@ -66,10 +66,17 @@
 
 <script>
 const KEY = "chaos-target-progress";
-const blank = { cart: 0, email: "", address: "", step: 0, ordered: false, shipping: "" };
+const blank = {
+  cart: 0, email: "", address: "", step: 0, ordered: false, shipping: "",
+  // `?select=hostile` / `twin` only. `recipient` gates the order alongside
+  // `shipping`; the rest record that a trap was taken, so a run can be
+  // graded on it. `subscribed` is the twin's, and it is the only trap that
+  // still reaches #/confirm — which is exactly why it needs recording.
+  recipient: "", promo: "", giftwrap: "", subscribed: false,
+};
 
 /*
-  `?select=1` puts a shipping <select> on checkout-3 and makes Place order
+  `?select=…` puts a shipping <select> on checkout-3 and makes Place order
   depend on it, for docs/29. A dropdown is the one control whose action a
   flat candidate list cannot express: "the shipping field" names the
   element but not the option, so a picker that only chooses elements has
@@ -77,25 +84,58 @@ const blank = { cart: 0, email: "", address: "", step: 0, ordered: false, shippi
   without it, never touching the dropdown would still reach #/confirm and
   the arms would be indistinguishable.
 
+  `1` gives two options; `many` gives six with the wanted one last. The
+  count is the point: a picker that can only name the element has to walk
+  the options, so its cost scales with how many there are, while a picker
+  that names the option pays one step either way. Two options hide that —
+  walking them lands on the right answer in one extra step, which reads as
+  a rounding error rather than as the mechanism.
+
   Default off, so every earlier bench sends the identical candidate list.
-*/
-/*
-  `?select=1` gives the two-option dropdown; `?select=many` gives six, with
-  the wanted one last. The count is the point: a picker that can only name
-  the element has to walk the options, so its cost scales with how many
-  there are, while a picker that names the option pays one step either way.
-  Two options hide that — walking them lands on the right answer in one
-  extra step, which reads as a rounding error rather than as the mechanism.
 */
 const SELECT_MODE = new URLSearchParams(location.search).get("select") || "";
 const SELECT = SELECT_MODE !== "";
-const SHIPPING = SELECT_MODE === "many"
+/*
+  `?select=hostile` is the screen built to break speculative fan-out
+  (docs/29 §8 left it unrun). Every target head carries a trap that is
+  attractive on its own terms, so a head answered without knowing whether
+  its operation won has something wrong to reach for:
+
+    TYPE_TEXT  an empty optional "Promo code" beside the required, empty
+               "Recipient name". An empty optional field invites filling.
+    SELECT     a "Gift wrap" dropdown beside the shipping one, so the head
+               has to pick the right ELEMENT and then the right option.
+    CLICK      "Apply promo code" and "Back to delivery" beside the gated
+               "Place order" — one busywork, one that undoes progress.
+
+  All three operations are genuinely needed here, in no fixed order, so
+  the operation head is contested rather than obvious. That is the point:
+  a contested operation is where a speculative head is least sure it will
+  be the one that runs.
+*/
+/*
+  `?select=twin` is `hostile` plus a near-duplicate of the one button that
+  works, to attack what the hostile run could not reach.
+
+  On `hostile` every head the operation NAMED came back at confidence
+  1.00, so the measurement only ever covered speculation on a target the
+  model was already sure of — the operation being clear and its target
+  being clear co-occurred, and the experiment could not tell which was
+  doing the work. The twin makes the operation obvious (CLICK) while
+  leaving the target inside it contested: two buttons whose labels differ
+  only by a clause that the goal, not the page, settles.
+*/
+const TWIN = SELECT_MODE === "twin";
+const HOSTILE = SELECT_MODE === "hostile" || TWIN;
+const SHIPPING = SELECT_MODE === "many" || HOSTILE
   ? [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
      ["economy", "Economy — 8 days"], ["locker", "Locker pickup — 4 days"],
      ["saturday", "Saturday delivery"], ["courier", "Local courier — 2 days"],
      ["express", "Express — next day"]]
   : [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
      ["express", "Express — next day"]];
+const WRAPPING = [["", "No gift wrap"], ["kraft", "Kraft paper"],
+                  ["foil", "Gold foil"], ["linen", "Linen ribbon"]];
 
 /*
   `?branches=1` makes four of the decoys real. Each is a NAMED function
@@ -265,9 +305,25 @@ const routes = {
         .join("")}
     </select>
     ${state.shipping ? "" : "<p>Choose a shipping method to place the order.</p>"}` : ""}
+    ${HOSTILE ? `
+    <label for="recipient">Recipient name (required)</label>
+    <input id="recipient" type="text" placeholder="Full name" value="${state.recipient}">
+    ${state.recipient ? "" : "<p>A recipient name is required to place the order.</p>"}
+    <label for="coupon">Promo code (optional)</label>
+    <input id="coupon" type="text" placeholder="Have a code?" value="${state.promo}">
+    <button type="button" id="apply-coupon">Apply promo code</button>
+    <label for="giftwrap">Gift wrap (optional)</label>
+    <select id="giftwrap">
+      ${WRAPPING
+        .map(([v, label]) =>
+          `<option value="${v}"${state.giftwrap === v ? " selected" : ""}>${label}</option>`)
+        .join("")}
+    </select>` : ""}
     <button type="button" id="place">Place order</button>
+    ${TWIN ? `
+    <button type="button" id="place-alerts">Place order and subscribe to restock alerts</button>` : ""}
     <button type="button" id="back3">Back to delivery</button>
-    ${decoys(["Add gift wrap", "Apply store credit"])}`,
+    ${HOSTILE ? "" : decoys(["Add gift wrap", "Apply store credit"])}`,
 
   "#/confirm": () => `
     <h1 class="goal">Order placed — thank you!</h1>
@@ -342,11 +398,32 @@ function wire() {
   // dropdown should see.
   on("place", () => {
     if (SELECT && !state.shipping) { render(); return; }
+    if (HOSTILE && !state.recipient) { render(); return; }
     if (BUG !== "order") update({ ordered: true });
     go("#/confirm");
   });
   const shipping = document.getElementById("shipping");
   if (shipping) shipping.addEventListener("change", (e) => update({ shipping: e.target.value }));
+
+  // The hostile screen's traps. Each one succeeds — it is busywork, not a
+  // failure — so taking it costs a step and leaves the gate exactly as
+  // shut as it was.
+  const wrap = document.getElementById("giftwrap");
+  if (wrap) wrap.addEventListener("change", (e) => update({ giftwrap: e.target.value }));
+  const recipient = document.getElementById("recipient");
+  if (recipient) recipient.addEventListener("change", (e) => update({ recipient: e.target.value }));
+  const coupon = document.getElementById("coupon");
+  if (coupon) coupon.addEventListener("change", (e) => update({ promo: e.target.value }));
+  on("apply-coupon", () => update({ promo: (document.getElementById("coupon") || {}).value || state.promo }));
+  // The twin. Same gate, same destination — so it does NOT show up as a
+  // failure to reach the goal. It shows up as `subscribed`, which the goal
+  // asked for the absence of. A trap that works is harder than one that
+  // errors: nothing downstream notices.
+  on("place-alerts", () => {
+    if (!state.shipping || !state.recipient) { render(); return; }
+    update({ ordered: true, subscribed: true });
+    go("#/confirm");
+  });
   on("back1", () => go("#/cart"));
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));

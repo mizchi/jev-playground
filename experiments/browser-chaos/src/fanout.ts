@@ -111,11 +111,25 @@ export function actionSpace(candidates: readonly ProbedCandidate[]): ActionSpace
     if (op === "SELECT") {
       // One target per option, not per element: the decision a dropdown
       // needs is which value, and an element-only target would leave the
-      // harness to guess it. Options equal to the current value are
-      // dropped — re-selecting what is already set is a guaranteed no-op.
+      // harness to guess it.
+      //
+      // Two options are dropped. The current value, because re-selecting
+      // it is a guaranteed no-op. And the empty-valued one, because it is
+      // a placeholder rather than a value — offering it as a target is
+      // offering "unset this field", and docs/29's adversarial run caught
+      // both arms taking that bait: with shipping already on `express`,
+      // the speculative and conditioned SELECT heads both named the
+      // placeholder at 0.5-0.7 confidence, agreeing on a target that
+      // would have thrown away a satisfied requirement. It never executed
+      // only because the operation head did not pick SELECT on those
+      // steps, which is luck and not safety.
+      //
+      // `defaultOption` and `untriedOption` already skipped it; this was
+      // an inconsistency inside this file. jev-ultrafast's own
+      // `action_space` offers every option, so it has the same hole.
       let n = 0;
       for (const o of c.options) {
-        if (o.value === c.currentValue) continue;
+        if (o.value === c.currentValue || o.value === "") continue;
         n += 1;
         head.set(`${c.index}:${n}`, { candidate: c, option: o.value });
       }
@@ -219,6 +233,117 @@ function operationCriteria(space: ActionSpace): Record<string, string> {
   return out;
 }
 
+/**
+ * The operation question, built once so every arm asks it identically.
+ * docs/29 §4's comparison is only worth anything if the two arms differ
+ * in what surrounds this question and not in the question itself.
+ */
+function operationQuestion(space: ActionSpace, state: FanoutState): Question {
+  return {
+    type: "choice",
+    instructions: { goal: state.goal, rules: NEXT_OPERATION },
+    criteria: operationCriteria(space),
+  };
+}
+
+export interface HeadAnswer {
+  choice: string;
+  confidence: number;
+  probabilities: Record<string, number>;
+}
+
+/**
+ * The operation head with nothing else in the request.
+ *
+ * The control for a question docs/29 did not ask: fan-out puts three or
+ * four questions in one request, and the model sees all of them. If the
+ * mere presence of the target heads moves the operation distribution,
+ * then "identical decisions" was luck on an easy board rather than a
+ * property of the shape.
+ */
+export async function askOperationAlone(
+  jev: Jev,
+  space: ActionSpace,
+  state: FanoutState,
+): Promise<HeadAnswer> {
+  const res = await jev.ask(state, { operation: operationQuestion(space, state) });
+  return validateChoice(res.answers.operation, space.operations);
+}
+
+/**
+ * One target head, asked alone, with the operation given as a fact.
+ *
+ * This is the counterfactual the speculative head is compared against:
+ * same candidates, same state, but the operation is settled rather than
+ * assumed. Any divergence here is the cost of speculating.
+ */
+export async function askTargetConditioned(
+  jev: Jev,
+  space: ActionSpace,
+  state: FanoutState,
+  operation: Operation,
+): Promise<HeadAnswer | null> {
+  const head = space.heads.get(operation);
+  if (!head) return null;
+  const res = await jev.ask(
+    { ...state, chosen_operation: operation },
+    {
+      target: {
+        type: "choice",
+        instructions: {
+          goal: state.goal,
+          operation,
+          rules: `The next operation is ${operation}. Choose its target. ${TARGET_RULE}`,
+        },
+        criteria: targetCriteria(head) as Record<string, string>,
+      },
+    },
+  );
+  return validateChoice(res.answers.target, [...head.keys()]);
+}
+
+/**
+ * Every head of one fan-out request, including the ones the operation did
+ * not name. docs/29 only ever read the winner; the losers are where the
+ * speculation would show up, because on the next step a loser becomes the
+ * winner.
+ */
+export async function askFanoutAllHeads(
+  jev: Jev,
+  space: ActionSpace,
+  state: FanoutState,
+): Promise<{ operation: HeadAnswer; heads: Map<Operation, HeadAnswer> }> {
+  const questions: Record<string, Question> = { operation: operationQuestion(space, state) };
+  for (const op of TARGETED) {
+    const head = space.heads.get(op);
+    if (!head) continue;
+    questions[`${op.toLowerCase()}_target`] = {
+      type: "choice",
+      instructions: { goal: state.goal, operation: op, rules: [NEXT_OPERATION, TARGET_RULE] },
+      criteria: targetCriteria(head) as Record<string, string>,
+    };
+  }
+  const res = await jev.ask(state, questions);
+  const operation = validateChoice(res.answers.operation, space.operations);
+  const heads = new Map<Operation, HeadAnswer>();
+  for (const op of TARGETED) {
+    const head = space.heads.get(op);
+    if (!head) continue;
+    // Every head is validated here, unlike `askFanout`, because this is a
+    // measurement of all of them rather than an action taken from one.
+    heads.set(op, validateChoice(res.answers[`${op.toLowerCase()}_target`], [...head.keys()]));
+  }
+  return { operation, heads };
+}
+
+/** Total variation distance, for comparing two distributions over the same keys. */
+export function totalVariation(a: Record<string, number>, b: Record<string, number>): number {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  let sum = 0;
+  for (const k of keys) sum += Math.abs((a[k] ?? 0) - (b[k] ?? 0));
+  return sum / 2;
+}
+
 export interface Decision {
   operation: Operation;
   /** Absent for DONE and BLOCKED. */
@@ -247,14 +372,7 @@ export async function askFanout(
   space: ActionSpace,
   state: FanoutState,
 ): Promise<Decision> {
-  const operations = operationCriteria(space);
-  const questions: Record<string, Question> = {
-    operation: {
-      type: "choice",
-      instructions: { goal: state.goal, rules: NEXT_OPERATION },
-      criteria: operations,
-    },
-  };
+  const questions: Record<string, Question> = { operation: operationQuestion(space, state) };
   for (const op of TARGETED) {
     const head = space.heads.get(op);
     if (!head) continue;
@@ -265,7 +383,7 @@ export async function askFanout(
     };
   }
   const res = await jev.ask(state, questions);
-  const op = validateChoice(res.answers.operation, Object.keys(operations));
+  const op = validateChoice(res.answers.operation, space.operations);
   const operation = op.choice as Operation;
   const offered = Object.fromEntries([...space.heads].map(([k, v]) => [k, v.size]));
   const head = space.heads.get(operation);
@@ -291,15 +409,8 @@ export async function askSequential(
   space: ActionSpace,
   state: FanoutState,
 ): Promise<Decision> {
-  const operations = operationCriteria(space);
-  const first = await jev.ask(state, {
-    operation: {
-      type: "choice",
-      instructions: { goal: state.goal, rules: NEXT_OPERATION },
-      criteria: operations,
-    },
-  });
-  const op = validateChoice(first.answers.operation, Object.keys(operations));
+  const first = await jev.ask(state, { operation: operationQuestion(space, state) });
+  const op = validateChoice(first.answers.operation, space.operations);
   const operation = op.choice as Operation;
   const offered = Object.fromEntries([...space.heads].map(([k, v]) => [k, v.size]));
   const head = space.heads.get(operation);
