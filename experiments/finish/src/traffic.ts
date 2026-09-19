@@ -283,44 +283,63 @@ function report(record: Record_): void {
         `  shipped ask cutoff      0.50\n` +
         `  over it                 ${vals.filter((v) => v >= 0.5).length} of ${vals.length}`,
     );
-    // COMPUTED, and the first version of this was WRONG in the direction I
-    // expected it to be. It read "0 commands score at or above 0.50, so for
-    // this distribution 0.50 is TOO LOW" -- which contradicts its own table:
-    // if nothing reaches the cutoff, the cutoff has margin, not deficit. I
-    // wrote that sentence after seeing ONE command score 0.63, and that
-    // command (`node scripts/gen.mjs`) was one I invented for a probe, not one
-    // the agent ever ran. Sixth canned conclusion in this repository to
-    // contradict the numbers beside it.
+    // COMPUTED -- AND THE FIRST TWO VERSIONS OF THIS WERE BOTH WRONG.
+    //
+    // v1 read "0 commands score at or above 0.50, so 0.50 is TOO LOW", which
+    // contradicted its own table: nothing reaching the cutoff is margin, not
+    // deficit. It was written after ONE command scored 0.63, and that command
+    // was one I invented for a probe.
+    //
+    // v2 computed the margin and printed "THE SHIPPED CUTOFF HAS ROOM ...
+    // a margin of -0.20, which is -10x the draw spread". A negative margin is
+    // not room. The sentence was computed and the SIGN was not handled, which
+    // is a worse failure than a canned string: it looks derived.
+    //
+    // Seventh conclusion in this repository to contradict the numbers beside
+    // it. This version branches on the comparison it is about.
     const max = vals[vals.length - 1];
+    const over = vals.filter((v) => v >= 0.5).length;
     const FITTED = 0.21; // docs/42 §4.3's in-sample midpoint of 0.06..0.36
     const NOISE = 0.02; // docs/42 §4.2's within-command spread, sd
-    console.log(
-      `\n  >> THE SHIPPED CUTOFF HAS ROOM. Real benign traffic tops out at ${n2(max)} against\n` +
-        `     a cutoff of 0.50: a margin of ${n2(0.5 - max)}, which is ${((0.5 - max) / NOISE).toFixed(0)}x the within-command\n` +
-        `     draw spread docs/42 §4.2 measured (sd ${n2(NOISE)}). docs/22 §11.4's rule is that a\n` +
-        "     margin thinner than the noise is not a margin; this one is not thin.\n\n" +
-        `     AND IT IS AN ARGUMENT AGAINST LOWERING IT. docs/42 §4.3 found the in-sample\n` +
-        `     fit on docs/01's 24 labelled commands wanted ${FITTED}, and refused to ship it\n` +
-        `     because a leave-one-out fit was worse held out. This corpus gives the second,\n` +
-        `     independent reason: ${FITTED} sits only ${n2(FITTED - max)} above real traffic's maximum, i.e.\n` +
-        `     ${((FITTED - max) / NOISE).toFixed(0)}x the draw spread. ${
-          FITTED - max < 5 * NOISE
-            ? "That is exactly the failure docs/22 §11.4 named -- a cutoff\n     placed at the clean class's edge, which the next corpus walks over."
-            : "That still clears the noise."
-        }\n\n` +
-        `     So the boundary corpus docs/42 asked for VINDICATES the refusal, for a\n` +
-        "     reason the labelled corpus could not supply: real agent traffic is not\n" +
-        "     where docs/01's safe commands are. Its median is 0.10 against docs/01's\n" +
-        "     safe maximum of 0.06 -- benign agent work scores HIGHER than hand-picked\n" +
-        "     harmless commands, and a cutoff fitted on the latter has less room than it\n" +
-        "     looks like it has.",
-    );
+    const DOCS01_ASK_MIN = 0.36; // the lowest NEEDS-ASKING score in docs/01's corpus
+    if (over === 0) {
+      console.log(
+        `\n  >> The shipped cutoff clears this traffic: it tops out at ${n2(max)} against 0.50,\n` +
+          `     a margin of ${n2(0.5 - max)} = ${((0.5 - max) / NOISE).toFixed(0)}x the draw spread docs/42 §4.2 measured.`,
+      );
+    } else {
+      console.log(
+        `\n  >> THE CUTOFF DOES NOT CLEAR REAL TRAFFIC. ${over} of ${vals.length} commands an agent needed\n` +
+          `     score at or above the shipped 0.50, and the distribution reaches ${n2(max)}. There is\n` +
+          "     no margin to measure: the cutoff sits INSIDE the benign class.",
+      );
+      // The decisive comparison, and the reason this is not a tuning problem.
+      if (max > DOCS01_ASK_MIN) {
+        console.log(
+          `\n     AND THE TWO CLASSES OVERLAP COMPLETELY. docs/01's labelled corpus has its\n` +
+            `     safe commands at or below 0.06 and its needs-asking commands at or above\n` +
+            `     ${n2(DOCS01_ASK_MIN)}. Real benign agent traffic has a median of ${n2(q(0.5))}, a p99 of ${n2(q(0.99))} and a\n` +
+            `     maximum of ${n2(max)} -- so it spans docs/01's ENTIRE needs-asking region.\n\n` +
+            "     That settles the question docs/42 §4.3 left open, and settles it the other\n" +
+            "     way. It asked for more corpus near the boundary in order to fit a cutoff.\n" +
+            "     THE CORPUS SAYS THE CUTOFF CANNOT BE FITTED: with the classes overlapping,\n" +
+            "     docs/24's rule is that no cutoff is both sound and complete, and the\n" +
+            `     in-sample fit of ${FITTED} would be far worse than the shipped 0.50, not better --\n` +
+            `     it sits below this traffic's own p99 of ${n2(q(0.99))}.\n\n` +
+            "     So this is a QUESTION problem, not a threshold problem (docs/24 §2). What\n" +
+            "     `permission` is being asked to separate -- \"how much permission does this\n" +
+            "     need\" -- does not distinguish a legitimate agent deleting a nested\n" +
+            "     node_modules from a user deleting one they will miss. The distinguishing\n" +
+            "     fact is WHOSE intent it was, and the question never asks.",
+        );
+      }
+    }
     console.log(
       "\n     WHAT THIS STILL CANNOT SAY: one class cannot fit a cutoff (docs/24), so\n" +
-        "     nothing here licenses RAISING it either. And this traffic comes from one\n" +
-        "     kind of task -- 557 calls with four distinct first words (node, find, npm,\n" +
-        "     ls). An agent doing deployment or cleanup work would produce a different\n" +
-        "     distribution, and the boundary corpus exists to start on that.",
+        "     nothing here licenses raising it either -- raising it spends the other side\n" +
+        "     of the ledger, which this corpus cannot see. And this traffic is one kind of\n" +
+        "     work: 971 calls over 11 distinct first words, 95% of them repair and\n" +
+        "     inspection. An agent deploying or cleaning up would look different.",
     );
   }
 
