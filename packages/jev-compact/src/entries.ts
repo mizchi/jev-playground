@@ -168,6 +168,70 @@ export function closePairs(entries: readonly Entry[], drop: ReadonlySet<string>,
   return out;
 }
 
+/**
+ * Which entries a deletion could actually reach, given the floors.
+ *
+ * `pinned` answers "is THIS entry protected". That is not the same question as
+ * "can this entry be dropped", because `closePairs` will only drop a call and
+ * its result TOGETHER -- so an unpinned entry whose partner is pinned can
+ * never go, however it scores.
+ *
+ * docs/40's homework (l) is why this exists. `compact()` chose its candidates
+ * with `!pinned(...)`, so it spent a question on entries that pairing was
+ * always going to retract: docs/38 §7.4's record shows the consequence in its
+ * own words -- "4 of 22 candidates cleared 1.5 but none could be dropped".
+ * Four paid answers that could not have changed the outcome.
+ *
+ * It is the same shape as the bug docs/40 §b found in the roguelike arm --
+ * asking about an option that is structurally unavailable -- with a milder
+ * consequence: there the unavailable option was RECOMMENDED and the agent
+ * walked into walls, here it is merely paid for. `maxCandidates` is a cost
+ * cap, though, so a wasted question can crowd out a real candidate.
+ */
+export function reachable(entries: readonly Entry[], floors: Floors = DEFAULT_FLOORS): Set<string> {
+  const keep = pinned(entries, floors);
+  const resultOf = new Map<string, Entry>();
+  for (const e of entries) if (e.answers) resultOf.set(e.answers, e);
+  const callerOf = new Map<string, Entry>();
+  for (const e of entries) for (const c of e.calls ?? []) callerOf.set(c, e);
+
+  /**
+   * ITERATED TO A FIXED POINT, and the first version was not.
+   *
+   * It checked whether a direct partner was PINNED, which is one step short.
+   * Take an assistant turn making two calls where only the second result is
+   * pinned: the turn is unreachable, and so is the FIRST result -- whose own
+   * partner (the turn) is not pinned, merely unreachable. One pass called it
+   * reachable. `closePairs` iterates for exactly this reason and says so in
+   * its own comment; the test in `test.ts` caught it because it was written
+   * around a two-call turn rather than around the implementation.
+   */
+  const out = new Set(entries.filter((e) => !keep.has(e.id)).map((e) => e.id));
+  for (let round = 0; round < entries.length + 1; round += 1) {
+    let changed = false;
+    for (const entry of entries) {
+      if (!out.has(entry.id)) continue;
+      let blocked = false;
+      // Every result this entry produced has to be droppable too.
+      for (const call of entry.calls ?? []) {
+        const result = resultOf.get(call);
+        if (result && !out.has(result.id)) blocked = true;
+      }
+      // And the call that produced this entry, if it is a result.
+      if (entry.answers) {
+        const caller = callerOf.get(entry.answers);
+        if (caller && !out.has(caller.id)) blocked = true;
+      }
+      if (blocked) {
+        out.delete(entry.id);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  return out;
+}
+
 /** True when the surviving transcript is structurally sound. */
 export function valid(entries: readonly Entry[]): { ok: boolean; why?: string } {
   const ids = new Set(entries.map((e) => e.id));

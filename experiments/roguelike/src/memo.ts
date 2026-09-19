@@ -56,12 +56,13 @@ const RECORDS = resolve(import.meta.dirname, "../records");
 const PATH = resolve(RECORDS, "memo.json");
 
 /** The five arms, in the order the table should read. */
-const LANES: ArmName[] = ["jev", "jevcount", "jevintent", "jevmemoraw", "jevmemo"];
+const LANES: ArmName[] = ["jev", "jevcount", "jevcountguard", "jevintent", "jevmemoraw", "jevmemo"];
 
 /** What each arm is for, so the table's last column is not positional. */
 const READING: Record<string, string> = {
   jev: "the baseline",
-  jevcount: "memory alone",
+  jevcount: "memory alone, counts on every square",
+  jevcountguard: "memory alone, counts withheld at walls (homework k)",
   jevintent: "the sentence alone",
   jevmemoraw: "both, with the contradiction (what docs/34 measured)",
   jevmemo: "both, contradiction removed -- SHIPPED",
@@ -73,6 +74,7 @@ const PREFIX: Record<string, string> = {
   jevcount: "MC",
   jevintent: "MI",
   jevmemo: "MM",
+  jevcountguard: "MG",
   jevmemoraw: "MR",
 };
 
@@ -89,7 +91,8 @@ function load(): Record_ | null {
 function policyFor(jev: Jev, arm: ArmName): Policy {
   return async (screen, actions, vitals, recent, seen) => {
     const hero = heroAt(screen) ?? undefined;
-    const memory = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemoraw" ? seen : undefined;
+    const memory =
+      arm === "jevmemo" || arm === "jevcount" || arm === "jevcountguard" || arm === "jevmemoraw" ? seen : undefined;
     const res = await jev.ask(stateFor(screen, vitals, recent, memory), questionFor(arm, actions, hero, memory, screen));
     const answer = res.answers[MOVE];
     if (answer.type !== "choice") throw new Error(`expected a choice, got ${answer.type}`);
@@ -118,7 +121,7 @@ function report(): void {
     const games = record.games.filter((g) => g.policy === arm);
     if (games.length === 0) continue;
     const has = {
-      counts: arm === "jevcount" || arm === "jevmemo" || arm === "jevmemoraw",
+      counts: arm === "jevcount" || arm === "jevcountguard" || arm === "jevmemo" || arm === "jevmemoraw",
       sentence: arm === "jevintent" || arm === "jevmemo" || arm === "jevmemoraw",
     };
     console.log(

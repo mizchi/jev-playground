@@ -25,6 +25,7 @@ import {
   DEFAULT_FLOORS,
   dropUntilFits,
   pinned,
+  reachable,
   rankBy,
   totalTokens,
   valid,
@@ -185,20 +186,35 @@ export async function compact(
   }
 
   /**
-   * Candidates, largest first.
+   * Candidates, largest first -- and only the ones deletion could reach.
    *
    * The ORDER here is not the deletion order -- that comes from the answers.
    * It decides which entries get a question when there are more candidates
    * than `maxCandidates`, and largest-first is the right triage because the
    * budget is in tokens: fifty short turns cannot free what one file read
    * can, so spending questions on them is spending them on nothing.
+   *
+   * THE FILTER USED TO BE `!keepSet.has(e.id)`, WHICH ASKED THE WRONG
+   * QUESTION. "Is this entry pinned" is not "can this entry be dropped": a
+   * call and its result go together or not at all, so an unpinned entry whose
+   * partner is pinned can never move however it scores. docs/38 §7.4's record
+   * printed the consequence itself -- "4 of 22 candidates cleared 1.5 but
+   * none could be dropped" -- and those were paid answers that could not have
+   * changed anything. docs/40's homework (l).
    */
+  const reachableSet = reachable(entries, config);
   const candidates = entries
-    .filter((e) => !keepSet.has(e.id))
+    .filter((e) => reachableSet.has(e.id))
     .sort((a, b) => b.text.length - a.text.length)
     .slice(0, config.maxCandidates);
   if (candidates.length === 0) {
-    return done(entries, "cannot-fit", "every entry is pinned by the floors", Date.now() - started);
+    return done(
+      entries,
+      "cannot-fit",
+      `no entry can be dropped: ${entries.length - reachableSet.size} of ${entries.length} are pinned by the ` +
+        "floors or held by a pinned tool-call partner",
+      Date.now() - started,
+    );
   }
 
   const fallback = (error: string): CompactResult => {
@@ -344,6 +360,7 @@ export {
   closePairs,
   dropUntilFits,
   pinned,
+  reachable,
   rankBy,
   tokensOf,
   totalTokens,

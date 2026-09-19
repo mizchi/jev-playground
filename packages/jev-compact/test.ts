@@ -21,6 +21,7 @@ import {
   payloadOf,
   pinned,
   questionsFor,
+  reachable,
   rankBy,
   stateFor,
   tokensOf,
@@ -154,6 +155,48 @@ tests.push(
     const { keep } = dropUntilFits(t, [t[1], t[3], t[4]], 2_100, { keepRecent: 1, keepGoal: true });
     ok(totalTokens(keep) <= 2_100, `left ${totalTokens(keep)} tokens against a budget of 2,100`);
     ok(valid(keep).ok, "the survivors are unsound");
+  }),
+);
+
+tests.push(
+  check("an entry held by a pinned partner is never asked about", () => {
+    /**
+     * docs/40's homework (l). `compact()` used to choose candidates with
+     * `!pinned(...)`, which is not the same question as "can this be
+     * dropped": a call and its result go together, so an unpinned entry
+     * whose partner is pinned can never move however it scores.
+     *
+     * The saving is small and measured as such (docs/40 §l: 0 to 2 questions
+     * per transcript, and ZERO at the shipped `keepRecent: 6` on docs/39's
+     * corpus). What the fix buys is that `reason` can now tell "pinned" from
+     * "held by a pinned partner", and that no paid answer is spent on an
+     * entry the code was always going to retract.
+     */
+    const t: Entry[] = [
+      { id: "0", role: "user", text: "goal", label: "user" },
+      { id: "1", role: "assistant", text: "two reads", calls: ["c1", "c2"], label: "assistant" },
+      { id: "2", role: "tool", text: "a".repeat(400), answers: "c1", label: "read" },
+      { id: "3", role: "tool", text: "b".repeat(400), answers: "c2", label: "read" },
+      { id: "4", role: "assistant", text: "done", label: "assistant" },
+    ];
+    // `keepRecent: 2` pins 3 and 4. Entry 3 is a result of entry 1, so entry
+    // 1 cannot be dropped -- and nor can entry 2, whose caller is entry 1.
+    const floors = { keepRecent: 2, keepGoal: true };
+    const keep = pinned(t, floors);
+    ok(!keep.has("1") && !keep.has("2"), "entries 1 and 2 should not be pinned by the floors themselves");
+    const reach = reachable(t, floors);
+    ok(!reach.has("1"), "entry 1 has a pinned result, so it can never be dropped");
+    ok(!reach.has("2"), "entry 2's caller can never be dropped, so nor can it");
+    eq(reach.size, 0, "nothing in this transcript is reachable: ");
+    // And the closure agrees, which is the invariant that makes the filter
+    // safe: anything `reachable` excludes, `closePairs` would have retracted.
+    for (const id of ["1", "2"]) {
+      eq(closePairs(t, new Set([id]), keep).size, 0, `closePairs kept ${id} droppable: `);
+    }
+    // A floor that lands on a pair boundary leaves both halves reachable, so
+    // the filter is not just removing things.
+    const even = reachable(t, { keepRecent: 1, keepGoal: true });
+    ok(even.has("1") && even.has("2") && even.has("3"), "a whole pair should be reachable when the floor clears it");
   }),
 );
 

@@ -23,14 +23,15 @@ import type { Vitals, Screen } from "./nethack.js";
 import { glyphAt, mapOf } from "./nethack.js";
 import { kindOf, steppable, type Action } from "./actions.js";
 
-export const ARMS = ["jev", "jevbare", "jevmemo", "jevcount", "jevintent", "jevmemoraw"] as const;
+export const ARMS = ["jev", "jevbare", "jevmemo", "jevcount", "jevcountguard", "jevintent", "jevmemoraw"] as const;
 export type ArmName = (typeof ARMS)[number];
 
 export const ARM_BLURB: Record<ArmName, string> = {
   jev: "each action labelled with the glyph it leads to",
   jevbare: "the direction names alone; the map must be read from the state",
   jevmemo: "like jev, plus visit counts and a goal that prefers unvisited ground -- counts WITHHELD where a step cannot land",
-  jevcount: "the memory ALONE: visit counts, and the base goal unchanged",
+  jevcount: "the memory ALONE: visit counts on every square, and the base goal unchanged",
+  jevcountguard: "the memory alone, with the count WITHHELD where a step cannot land",
   jevintent: "the sentence ALONE: the base goal plus 'prefer ground you have not walked'",
   jevmemoraw: "`jevmemo` BEFORE the guard: the count goes on every square, walls included",
 };
@@ -62,12 +63,13 @@ export const ARM_BLURB: Record<ArmName, string> = {
  * another in the record is how this bug survived a full sweep in the first
  * place.
  *
- * NOT CHANGED, AND MEASURED: `jevcount` carries counts with the base goal and
- * is still unguarded. It shows the same lock-up (200 refusals on one square,
- * 20% refused against `jev`'s 3%), so the counts mislead even with no sentence
- * telling the model to prefer them. Guarding it would change what docs/40 §a's
- * "memory alone" row measured, so it stays as it was and the guard for it is
- * docs/06's homework.
+ * `jevcount` STAYS UNGUARDED AND `jevcountguard` IS THE GUARDED TWIN, because
+ * docs/40 §a's "memory alone" row was measured with the unguarded one and
+ * changing it in place would leave that row describing something else. The
+ * question the pair answers is docs/06's homework (k): `jevcount` shows the
+ * same lock-up as the old `jevmemo` (200 refusals on one square, 20% refused
+ * against `jev`'s 3%) with NO sentence telling the model to prefer unvisited
+ * ground -- so do the counts mislead on their own?
  */
 
 /**
@@ -193,7 +195,8 @@ export function questionFor(
   screen?: Screen,
 ): Record<string, Question> {
   const criteria: Record<string, string> = {};
-  const carriesCounts = arm === "jevmemo" || arm === "jevcount" || arm === "jevmemoraw";
+  const carriesCounts =
+    arm === "jevmemo" || arm === "jevcount" || arm === "jevcountguard" || arm === "jevmemoraw";
   const carriesSentence = arm === "jevmemo" || arm === "jevintent" || arm === "jevmemoraw";
   for (const a of actions) {
     if (arm === "jevbare") {
@@ -209,7 +212,10 @@ export function questionFor(
       // true of every wall and reads as a reason to go there. `jevmemoraw` is
       // the arm that does not withhold it, kept to reproduce docs/34 §2.4.
       const to = { x: hero.x + a.dir.dx, y: hero.y + a.dir.dy };
-      const reachable = arm === "jevmemoraw" || arm === "jevcount" || (screen ? steppable(kindOf(glyphAt(screen, to.x, to.y))) : true);
+      // `jevmemoraw` and `jevcount` are the UNGUARDED arms, kept to reproduce
+      // what docs/34 §2.4 and docs/40 §a measured. Everything else guards.
+      const unguarded = arm === "jevmemoraw" || arm === "jevcount";
+      const reachable = unguarded || (screen ? steppable(kindOf(glyphAt(screen, to.x, to.y))) : true);
       if (reachable) {
         const been = memory.counts.get(`${to.x},${to.y}`) ?? 0;
         says += been === 0 ? "; you have never stood there" : `; you have stood there ${been} time${been === 1 ? "" : "s"} already`;
