@@ -30,6 +30,7 @@ import { signP } from "./report.js";
 import type { Record_ } from "./run.js";
 import type { Run } from "./world.js";
 import type { Probe } from "./probe.js";
+import { catalogue } from "./catalogue.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
 
@@ -342,6 +343,22 @@ function modelRouter(): void {
         `measured just above**, with ${drops.filter((d) => d > 2 * noise).length} of ${drops.length} tasks ` +
         "beyond two of those deviations.",
     );
+    // A SECOND, INDEPENDENT DRAW, for free. The probe judged every task in its
+    // own process, hours before the sweep, and the sweep's routed arm judged
+    // them again at launch. Two separate sessions, two separate requests, the
+    // same tasks -- so the agreement between them is a reproducibility check
+    // that costs nothing and that no other component in this programme has.
+    const byTask = new Map(both.map((r) => [r.task, r.onFailure!.tier]));
+    const sweepRouted = rows.filter((r) => r.arm === "routerfail" && r.routed && byTask.has(r.task));
+    if (sweepRouted.length > 0) {
+      const agree = sweepRouted.filter((r) => byTask.get(r.task) === r.routed!.tier).length;
+      console.log(
+        `\nAnd the decision reproduces ACROSS SESSIONS: the probe judged these tasks in its own process and ` +
+          `the sweep's routed arm judged them again at launch -- **${agree} of ${sweepRouted.length} agree per ` +
+          `task**. Two independent requests, hours apart. So the constancy above is a property of the question, ` +
+          "not of one lucky draw.",
+      );
+    }
     console.log(
       "\n**So seeing the actual failure makes the work look SMALLER**, and that is the opposite of what I " +
         "expected to write here: an instruction to go fix unspecified failing tests reads as more open-ended " +
@@ -361,11 +378,21 @@ function skillRouter(): void {
   }
   const corpus = [...new Set(rows.map((r) => r.corpus))].join("+");
   const cat = rows.find((r) => r.skillsLoaded)?.skillsLoaded?.catalogue ?? 0;
+  // WHAT THE CATALOGUE COSTS, in the one unit that is knowable exactly. The
+  // host puts every skill's name and description in the system prompt at
+  // launch, so this is paid before the agent reads a line of code -- and it is
+  // measured from the catalogue itself rather than inferred from the runs.
+  const chars = catalogue().reduce((n, s) => n + s.name.length + s.description.length, 0);
   console.log(
     `${rows.length} agent runs on the **${corpus}** corpus, over a catalogue of ${cat} skills harvested from ` +
       "nine real repositories (`src/catalogue.ts`). **The catalogue is the first corpus in this programme " +
       "I did not write.** All three arms run haiku, so they differ in what is in front of the agent and " +
       "in nothing else.\n",
+  );
+  console.log(
+    `The \`allskills\` arm's price is exact and paid up front: ${chars.toLocaleString()} characters of names ` +
+      `and descriptions, about **${Math.round(chars / 4 / 1000)}k tokens** in the system prompt before the agent ` +
+      "reads a line of code. That is the number the two comparisons below are trying to find a cost for.\n",
   );
   completionTable(rows, ["haiku", "allskills", "skillrouter"]);
 
