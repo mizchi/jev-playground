@@ -15,6 +15,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { dropUntilFits, pinned, rankBy, totalTokens, type Entry } from "../../packages/jev-compact/src/compact.js";
+import { shortenBy } from "./src/shorten.js";
 import type { Transcript } from "./src/corpus.js";
 import type { Record_ } from "./src/run.js";
 
@@ -220,6 +221,76 @@ check("`overlap` falls back rather than inventing an order with no goal", () => 
       .join(","),
     "with no goal text it should fall back to `largest`, not return input order: ",
   );
+});
+
+// ------------------------------------------------ the summarisation arms
+
+check("every shortening arm keeps every entry", () => {
+  // That is what makes it a summarisation and not a deletion wearing the
+  // name. If an arm could empty an entry it would be `jev` with extra steps.
+  for (const t of corpus) {
+    for (const arm of ["truncate", "headtail", "jev-shorten"] as const) {
+      const out = shortenBy(arm, { entries: t.entries, budgetTokens: Math.round(t.tokens * 0.3), floors: FLOORS });
+      eq(out.length, t.entries.length, `${t.id}/${arm} changed the entry count: `);
+      eq(new Set(out.map((e) => e.id)).size, t.entries.length, `${t.id}/${arm} lost or duplicated ids: `);
+      for (const e of out) ok(e.text.length > 0, `${t.id}/${arm}: entry ${e.id} was emptied, which is a deletion`);
+    }
+  }
+});
+
+check("every shortening arm actually reaches its budget", () => {
+  // The bug this guards cost the comparison its meaning once already: line
+  // snapping makes the size a step function of the scale, and bisection
+  // alone left `jev-shorten` 2,500 tokens under the 80% budget -- wasting a
+  // sixth of what it was allowed and then losing by two points.
+  for (const t of corpus) {
+    for (const arm of ["truncate", "headtail", "jev-shorten"] as const) {
+      for (const fraction of [0.8, 0.6, 0.4, 0.25]) {
+        const budget = Math.round(t.tokens * fraction);
+        const size = totalTokens(shortenBy(arm, { entries: t.entries, budgetTokens: budget, floors: FLOORS }));
+        ok(size <= budget, `${t.id}/${arm} at ${fraction}: ${size} tokens over a budget of ${budget}`);
+        ok(size >= budget * 0.9, `${t.id}/${arm} at ${fraction}: ${size} of ${budget} -- left a tenth unspent`);
+      }
+    }
+  }
+});
+
+check("a shortening arm never touches the goal or the recent tail", () => {
+  // The same floors deletion gets. Otherwise the comparison is about floors.
+  for (const t of corpus) {
+    const keep = pinned(t.entries, FLOORS);
+    for (const arm of ["truncate", "headtail", "jev-shorten"] as const) {
+      const out = shortenBy(arm, { entries: t.entries, budgetTokens: Math.round(t.tokens * 0.25), floors: FLOORS });
+      const byId = new Map(out.map((e) => [e.id, e]));
+      for (const e of t.entries) {
+        if (!keep.has(e.id)) continue;
+        eq(byId.get(e.id)?.text, e.text, `${t.id}/${arm}: pinned entry ${e.id} was shortened: `);
+      }
+    }
+  }
+});
+
+check("a surviving deletion entry is byte-identical, a shortened one is a prefix", () => {
+  // The structural difference the two actions have, stated as a test: a
+  // deletion cannot corrupt what it keeps. A shortening's output must still
+  // be made only of the original's bytes -- if an arm could add a character
+  // it would be an abstractive summariser, which nothing here is.
+  for (const t of corpus) {
+    const { keep } = dropUntilFits(t.entries, rankBy("overlap", t.entries), Math.round(t.tokens * 0.4), FLOORS);
+    const byId = new Map(t.entries.map((e) => [e.id, e]));
+    for (const e of keep) eq(e.text, byId.get(e.id)?.text, `${t.id}: deletion altered surviving entry ${e.id}: `);
+    for (const arm of ["truncate", "headtail"] as const) {
+      for (const e of shortenBy(arm, { entries: t.entries, budgetTokens: Math.round(t.tokens * 0.4), floors: FLOORS })) {
+        const original = byId.get(e.id)?.text ?? "";
+        for (const line of e.text.split("\n")) {
+          // The cut marker is the one line an extractive arm may add, and it
+          // says so in words rather than pretending to be content.
+          if (/^\.\.\. \d+ lines cut \.\.\.$/.test(line)) continue;
+          ok(original.includes(line), `${t.id}/${arm}: entry ${e.id} contains a line not in the original`);
+        }
+      }
+    }
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

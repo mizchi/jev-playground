@@ -26,6 +26,7 @@ import {
   totalTokens,
 } from "../../../packages/jev-compact/src/compact.js";
 import { drawNoise, type Sample } from "../../shared/thresholds.js";
+import { shortenBy, type Shortener } from "./shorten.js";
 import type { Kind, Transcript } from "./corpus.js";
 import type { Draw, Record_ } from "./run.js";
 
@@ -391,7 +392,170 @@ function main(): void {
 
   // ---------------------------------------------------------- §6 the cost
 
-  console.log("\n§6 what the ranking costs");
+  // ------------------------------- §6 deletion against summarisation
+
+  console.log("\n§6 deletion against summarisation, at the same budget");
+  console.log(
+    "\n  Deletion keeps some entries whole and drops the rest. Summarisation keeps every\n" +
+      "  entry and makes each one shorter. Same budget, same floors, same corpus.\n" +
+      "  `jev-shorten` uses THE SAME RECORDED ANSWERS as `jev`, so the two arms cost the\n" +
+      "  same and differ only in what they do with the judgment.\n",
+  );
+  console.log("  budget   arm                 action   facts kept   MANGLED   tokens left");
+  interface Row {
+    kept: number;
+    mangled: number;
+    facts: number;
+    tokens: number;
+    runs: number;
+  }
+  const rows = new Map<string, Row>();
+  const bump = (key: string, o: { kept: number; mangled: number; facts: number; tokens: number }): void => {
+    const at = rows.get(key) ?? { kept: 0, mangled: 0, facts: 0, tokens: 0, runs: 0 };
+    at.kept += o.kept;
+    at.mangled += o.mangled;
+    at.facts += o.facts;
+    at.tokens += o.tokens;
+    at.runs += 1;
+    rows.set(key, at);
+  };
+  /**
+   * Score a surviving transcript three ways, not two.
+   *
+   * `mangled` is the measurement this section exists for: the fact is gone,
+   * but a leading chunk of it is still sitting where it used to be, so the
+   * transcript carries a fragment instead of nothing.
+   *
+   * THE FIRST VERSION OF THIS FUNCTION WAS WRONG, AND WRONG IN MY FAVOUR. It
+   * looked for the prefix ANYWHERE in the surviving text, which counted any
+   * coincidental substring as damage -- it reported 11-33% mangling for the
+   * shortening arms, confirming exactly the claim I had come to check, and
+   * the cases turned out to be things like `dropAt: ` matching an unrelated
+   * `dropAt: Number.parseFloat(...)` on a different line of a different
+   * file. A measure that agrees with its author is the one to distrust.
+   *
+   * So the prefix must sit AT THE CUT in the entry that held the fact:
+   * either the entry's shortened text ends there, or the cut marker follows
+   * it. That is severing, and nothing else is.
+   */
+  const CUT_MARK = "... ";
+  const judge = (t: Transcript, keep: readonly Entry[]): { kept: number; mangled: number; facts: number; tokens: number } => {
+    const surviving = keep.map((e) => e.text).join("\n");
+    const byId = new Map(keep.map((e) => [e.id, e]));
+    let kept = 0;
+    let mangled = 0;
+    for (const f of t.facts) {
+      if (surviving.includes(f.text)) {
+        kept += 1;
+        continue;
+      }
+      const holder = byId.get(f.entryId);
+      if (!holder) continue; // Deleted outright: gone, not mangled.
+      const floor = Math.max(8, Math.ceil(f.text.length / 2));
+      for (let cut = f.text.length - 1; cut >= floor; cut -= 1) {
+        const prefix = f.text.slice(0, cut);
+        const at = holder.text.indexOf(prefix);
+        if (at < 0) continue;
+        const after = holder.text.slice(at + prefix.length);
+        if (after.length === 0 || after.startsWith("\n" + CUT_MARK) || after.startsWith(CUT_MARK)) {
+          mangled += 1;
+          break;
+        }
+      }
+    }
+    return { kept, mangled, facts: t.facts.length, tokens: totalTokens(keep) };
+  };
+
+  const SHORTENERS: Shortener[] = ["jev-shorten", "headtail", "truncate"];
+  for (const fraction of BUDGETS) {
+    for (const t of scored) {
+      const budget = Math.round(t.tokens * fraction);
+      // Deletion, for the same rows.
+      for (const d of draws.filter((x) => x.transcript === t.id)) {
+        bump(`${fraction}|jev|delete`, judge(t, dropUntilFits(t.entries, jevOrder(t, d), budget, FLOORS).keep));
+      }
+      bump(`${fraction}|overlap|delete`, judge(t, dropUntilFits(t.entries, rankBy("overlap", t.entries), budget, FLOORS).keep));
+      /**
+       * Summarisation, at the same budget. `shorten.ts`'s `fit` spends its
+       * leftover rather than undershooting, so no matched control is needed
+       * here -- the `tokens left` column is the check that it worked, and
+       * the arms come out within a few percent of each other.
+       */
+      for (const arm of SHORTENERS) {
+        if (arm === "jev-shorten") {
+          for (const d of draws.filter((x) => x.transcript === t.id)) {
+            const levels = new Map(d.ranked.filter((r) => Number.isFinite(r.level)).map((r) => [r.id, r.level]));
+            bump(
+              `${fraction}|${arm}|shorten`,
+              judge(t, shortenBy(arm, { entries: t.entries, budgetTokens: budget, floors: FLOORS, levels })),
+            );
+          }
+        } else {
+          bump(
+            `${fraction}|${arm}|shorten`,
+            judge(t, shortenBy(arm, { entries: t.entries, budgetTokens: budget, floors: FLOORS })),
+          );
+        }
+      }
+    }
+  }
+  const ARMS: [string, string][] = [
+    ["jev", "delete"],
+    ["overlap", "delete"],
+    ["jev-shorten", "shorten"],
+    ["headtail", "shorten"],
+    ["truncate", "shorten"],
+  ];
+  let mangledTotal = 0;
+  let mangledByDeletion = 0;
+  for (const fraction of BUDGETS) {
+    for (const [arm, action] of ARMS) {
+      const row = rows.get(`${fraction}|${arm}|${action}`);
+      if (!row) continue;
+      mangledTotal += row.mangled;
+      if (action === "delete") mangledByDeletion += row.mangled;
+      console.log(
+        `  ${`${(fraction * 100).toFixed(0)}%`.padStart(4)}     ${arm.padEnd(14)} ${action.padStart(8)}   ` +
+          `${pct(row.kept, row.facts).padStart(10)}   ${pct(row.mangled, row.facts).padStart(7)}   ` +
+          `${(row.tokens / row.runs).toFixed(0).padStart(11)}`,
+      );
+    }
+    console.log("");
+  }
+  console.log(
+    "  >> DELETION WINS, AND NOT FOR THE REASON THE DOCS CLAIMED.\n\n" +
+      "     `jev` and `jev-shorten` read the SAME recorded answers and pay the same\n" +
+      "     8,714 tokens per compaction. Deletion keeps 100/100/100/96% of the facts a\n" +
+      "     continuation needed; shortening keeps 100/78/78/67% -- while leaving MORE\n" +
+      "     tokens behind at every level, because deletion overshoots the budget and\n" +
+      "     shortening lands on it. So the gap is not bought with content.\n\n" +
+      "     The mechanism is simple and it is not the one docs/37 §3 argued. Shortening\n" +
+      "     spends the budget across EVERY entry, including the ones judgment called\n" +
+      "     spent, so the entries that matter get cut too. Deletion concentrates the\n" +
+      "     whole loss where judgment says it is safe. Same signal, same price; one\n" +
+      "     action applies it and the other averages it away.",
+  );
+  console.log(
+    `\n     AND THE CLAIM I CAME TO CONFIRM DID NOT SURVIVE. MANGLED is ${mangledTotal} across\n` +
+      "     every arm and budget. docs/37 §3 argued a summary can lose a fact silently\n" +
+      "     where a deletion cannot; on this corpus an extractive shortening loses facts\n" +
+      "     just as visibly -- it cuts on line boundaries, so a value goes whole or stays\n" +
+      "     whole, and the 108 fact-checks here produced no severed fragment at all.\n\n" +
+      "     The first version of this measure said 11-33%. It searched for the prefix\n" +
+      "     ANYWHERE in the survivors, so `dropAt: ` matched an unrelated\n" +
+      "     `dropAt: Number.parseFloat(...)` on another file's line and was counted as\n" +
+      "     damage. It confirmed the claim I held, which is the one result worth\n" +
+      "     distrusting on sight.\n\n" +
+      "     What stays untested is INVENTION -- an abstractive summariser writing `30s`\n" +
+      "     where the transcript said `300s`. Nothing here can do that: every byte in\n" +
+      "     every arm came from the input, because this container has no model that can\n" +
+      "     generate text (401 from api.anthropic.com) and Jev cannot write at all.\n" +
+      "     So `deletion is verifiable, a summary is not` is now: refuted for severing,\n" +
+      "     still open for invention, and unnecessary either way -- deletion wins on\n" +
+      "     fact survival alone.\n",
+  );
+
+  console.log("§7 what the ranking costs");
   const input = draws.reduce((s, d) => s + (d.usage?.input ?? 0), 0);
   const ms = draws.reduce((s, d) => s + d.ms, 0);
   console.log(

@@ -118,6 +118,15 @@ deleted on no judgment is gone, and nothing afterwards can notice that the fact
 it carried is missing. A summary that loses the same fact is at least a known
 quantity.
 
+That asymmetry is about deleting on NO judgment, and it survives
+[docs/39 §7](../../docs/39-compact-ranking.md) — but the neighbouring claim
+that a summary loses facts more silently than a deletion does not. Measured
+against extractive summarisers on the same transcripts, 108 fact-checks
+produced no severed fragment: line-boundary cutting loses a value whole. What
+deletion actually wins on is fact survival, because a summary spends the
+budget on every entry and cuts the live ones too: 100/100/100/96% against
+100/78/78/67% from the same requests at the same price.
+
 `onError: "baseline"` falls back to `overlap`, for a caller whose reason for
 being here is that summarisation costs too much to run at all. It trades a
 silent loss for a bounded bill and should be chosen deliberately.

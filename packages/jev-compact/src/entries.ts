@@ -6,14 +6,28 @@
  * compaction driven by Jev is necessarily SELECTION -- keep these entries,
  * drop those -- and never summarisation.
  *
- * That turns out to be the better half of the trade, for a reason that has
- * nothing to do with what Jev can do:
+ * That turns out to be the better half of the trade, and docs/39 §7 measured
+ * why -- which is NOT the reason this comment used to give.
  *
- *   A deletion is verifiable. You can say exactly what is gone, and a test
- *   can assert that a named fact survived.
- *   A summary is not. It can quietly invent, drop a qualifier, or merge two
- *   facts into a false one, and the only way to notice is to still have the
- *   original -- which is what was just thrown away.
+ * The old reason was that a deletion is verifiable and a summary is not: a
+ * summary can quietly invent, drop a qualifier, or merge two facts into a
+ * false one, and the only way to notice is to still have the original. Half
+ * of that did not survive being measured. Against an EXTRACTIVE summariser
+ * cutting the same transcripts to the same budget, 108 fact-checks produced
+ * no severed fragment at all: it cuts on line boundaries, so a value goes
+ * whole or stays whole, and its losses are as visible as a deletion's. The
+ * invention half remains untested, because nothing in that environment could
+ * generate text.
+ *
+ * The measured reason is simpler and does not depend on a summariser
+ * misbehaving:
+ *
+ *   A SUMMARY SPENDS THE BUDGET ON EVERY ENTRY. Shorten all of them and the
+ *   entries judgment called live get cut along with the spent ones, so the
+ *   signal is averaged away. Deletion puts the entire loss where judgment
+ *   said it was safe. Same request, same price: 100/100/100/96% of the
+ *   needed facts against 100/78/78/67%, with the summariser holding MORE
+ *   tokens at every budget.
  *
  * `tamaratran/fast-jev-compaction` states the same rule ("never rewrite, only
  * delete") and this package follows it.
