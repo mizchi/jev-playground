@@ -88,38 +88,73 @@ function main(): void {
 
   // Paired, because 21 tasks is not many and a two-task swing reads as ten
   // points. A pair is one (task, repeat) both arms attempted.
-  if (arms.includes("bare") && arms.includes("guard")) {
-    const pairs = rows
-      .filter((r) => r.arm === "bare")
-      .map((b) => ({ b, g: rows.find((x) => x.arm === "guard" && x.task === b.task && x.repeat === b.repeat) }))
-      .filter((p): p is { b: Run; g: Run } => Boolean(p.g));
-    const bareOnly = pairs.filter((p) => p.b.passed && !p.g.passed);
-    const guardOnly = pairs.filter((p) => !p.b.passed && p.g.passed);
-    const p = signP(bareOnly.length, guardOnly.length);
+  /**
+   * Every arm pair, paired by (task, repeat) and tested exactly.
+   *
+   * Generalised from a hard-coded bare-vs-guard because docs/43 §5.2's fix
+   * needed a third arm: `guardquiet` is the gate as it shipped before the
+   * rationale reached the model. The pair that answers the fix's own question
+   * is `guardquiet` against `guard` -- same gate, same decisions, the only
+   * difference being whether a blocked agent is told why.
+   *
+   * 21 tasks or 5, with 3 repeats, is not many, so a two-pair swing reads as
+   * several points. The test is the exact sign test on discordant pairs.
+   */
+  const pairsOf = (a: string, b: string, corpus?: string) =>
+    rows
+      .filter((r) => r.arm === a && (!corpus || r.corpus === corpus))
+      .map((x) => ({ x, y: rows.find((z) => z.arm === b && z.task === x.task && z.repeat === x.repeat) }))
+      .filter((p): p is { x: Run; y: Run } => Boolean(p.y));
+
+  console.log("§1a every arm pair, paired by (task, repeat), exact sign test\n");
+  console.log("  corpus     pair                    both   neither   only A   only B   exact p");
+  for (const corpus of corpora) {
+    for (const [a, b] of [
+      ["bare", "guard"],
+      ["bare", "guardquiet"],
+      ["guardquiet", "guard"],
+    ] as [string, string][]) {
+      if (!arms.includes(a) || !arms.includes(b)) continue;
+      const ps = pairsOf(a, b, corpus);
+      if (ps.length === 0) continue;
+      const onlyA = ps.filter((p) => p.x.passed && !p.y.passed);
+      const onlyB = ps.filter((p) => !p.x.passed && p.y.passed);
+      console.log(
+        `  ${corpus.padEnd(10)} ${`${a} vs ${b}`.padEnd(22)} ` +
+          `${String(ps.filter((p) => p.x.passed && p.y.passed).length).padStart(4)}   ` +
+          `${String(ps.filter((p) => !p.x.passed && !p.y.passed).length).padStart(7)}   ` +
+          `${String(onlyA.length).padStart(6)}   ${String(onlyB.length).padStart(6)}   ` +
+          `${signP(onlyA.length, onlyB.length).toFixed(3).padStart(7)}`,
+      );
+    }
+  }
+
+  // The question the fix exists to answer, stated once and computed.
+  if (arms.includes("guard") && arms.includes("guardquiet")) {
+    const ps = pairsOf("guardquiet", "guard");
+    const quietOnly = ps.filter((p) => p.x.passed && !p.y.passed).length;
+    const loudOnly = ps.filter((p) => !p.x.passed && p.y.passed).length;
+    const p = signP(quietOnly, loudOnly);
+    const spoke = rows.filter(
+      (r) => (r.arm === "guard" || r.arm === "guardquiet") && r.deniedByJev + r.askedByJev > 0,
+    ).length;
     console.log(
-      `\n  paired over ${pairs.length} (task, repeat) pairs both arms ran:\n` +
-        `    both finished        ${pairs.filter((x) => x.b.passed && x.g.passed).length}\n` +
-        `    both failed          ${pairs.filter((x) => !x.b.passed && !x.g.passed).length}\n` +
-        `    only bare finished   ${bareOnly.length}${bareOnly.length > 0 ? `  (${bareOnly.map((x) => `${x.b.task}/r${x.b.repeat}`).join(", ")})` : ""}\n` +
-        `    only guard finished  ${guardOnly.length}${guardOnly.length > 0 ? `  (${guardOnly.map((x) => `${x.g.task}/r${x.g.repeat}`).join(", ")})` : ""}\n` +
-        `    exact sign test      p = ${p.toFixed(3)}`,
-    );
-    // Computed. This repository has five conclusion strings on record that
-    // contradicted their own tables, every one because the sentence was fixed
-    // and the numbers were not.
-    const disc = bareOnly.length + guardOnly.length;
-    console.log(
-      disc === 0
-        ? "\n  >> THE GATE COST NOTHING IN COMPLETED WORK on this corpus: not one pair\n" +
-            "     where the two arms disagreed about finishing. That is the strongest form\n" +
-            "     this measurement can take, and it is also the least interesting one --\n" +
-            "     see §2, where the gate's cost is real and is measured in seconds."
-        : p <= 0.05
-          ? `\n  >> THE DIFFERENCE IS REAL (p = ${p.toFixed(3)}): ${bareOnly.length} pair(s) the bare agent finished\n` +
-            `     and the gated one did not, against ${guardOnly.length} the other way.`
-          : `\n  >> NOT ESTABLISHED. ${disc} of ${pairs.length} pairs disagreed and the exact sign test\n` +
-            `     gives p = ${p.toFixed(3)}, so the completion gap is what this many runs can\n` +
-            "     produce by chance. What IS measured is the latency in §2.",
+      `\n  >> DOES TELLING A BLOCKED AGENT WHY CHANGE WHETHER THE WORK GETS DONE?\n` +
+        `     ${ps.length} pairs, ${quietOnly + loudOnly} discordant (${loudOnly} only with the reason, ` +
+        `${quietOnly} only without), p = ${p.toFixed(3)}.\n` +
+        `     ${
+          spoke === 0
+            ? "AND THE PRECONDITION NEVER HELD: the gate did not speak in a single run of\n" +
+              "     either arm, so there was never a block for a reason to be attached to. The\n" +
+              "     two arms were the same gate answering the same way, and the pairs above\n" +
+              "     measure run-to-run noise. The fix is verified at the wire (docs/43 §5.2\n" +
+              "     quotes the agent reading the rationale back) and NOT verified to change\n" +
+              "     completion, because nothing here got blocked."
+            : p <= 0.05
+              ? `REAL (p = ${p.toFixed(3)}) over the ${spoke} runs where the gate spoke.`
+              : `NOT ESTABLISHED. The gate spoke in ${spoke} run(s), which is the denominator\n` +
+                `     that matters, and ${quietOnly + loudOnly} discordant pairs cannot separate the arms.`
+        }`,
     );
   }
 
