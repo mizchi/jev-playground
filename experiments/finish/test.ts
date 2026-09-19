@@ -40,6 +40,31 @@ const eq = <T,>(a: T, b: T, what = ""): void => {
   if (a !== b) throw new Error(`${what}expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
 };
 
+/**
+ * Every agent-run record in `records/`, not just `runs.json`.
+ *
+ * The integrity checks below used to read one hard-coded filename, which meant
+ * that the moment docs/44 split the sweeps across `model.json`, `skills.json`,
+ * `orch.json` and the `recheck-*.json` pair, 358 rows stopped being checked by
+ * the suite that exists to check them. Recognised by SHAPE, so a record added
+ * later is covered without editing a list.
+ */
+const runRecords = (): { file: string; rows: Run[] }[] =>
+  readdirSync(resolve(import.meta.dirname, "records"))
+    .filter((f) => f.endsWith(".json"))
+    .sort()
+    .flatMap((file) => {
+      try {
+        const rows = (JSON.parse(readFileSync(resolve(import.meta.dirname, "records", file), "utf8")) as { rows: Run[] })
+          .rows;
+        if (!Array.isArray(rows) || rows.length === 0) return [];
+        if (!Array.isArray(rows[0]?.calls) || typeof rows[0]?.passed !== "boolean") return [];
+        return [{ file, rows }];
+      } catch {
+        return [];
+      }
+    });
+
 const source = readFileSync(resolve(import.meta.dirname, "src/world.ts"), "utf8");
 const gateSource = readFileSync(resolve(import.meta.dirname, "src/gate.mjs"), "utf8");
 
@@ -209,33 +234,52 @@ check("the task corpus is the one that already carries a mechanical verdict", ()
   ok(all.some((t) => t.corpus === "hard"), "the hard corpus must be present");
 });
 
-check("the record, if present, keeps the whole ledger per run", () => {
-  const path = resolve(import.meta.dirname, "records/runs.json");
-  if (!existsSync(path)) return;
-  const rows = (JSON.parse(readFileSync(path, "utf8")) as { rows: Run[] }).rows;
-  if (rows.length === 0) return;
-  for (const r of rows) {
-    ok(Array.isArray(r.calls), `${r.task}/${r.arm}: calls must be an array`);
-    eq(typeof r.passed, "boolean", `${r.task}/${r.arm}: `);
-    // The ledger IS the corpus, so an empty one means the hook never fired and
-    // the run measured nothing -- worth failing over rather than averaging in.
-    ok(r.calls.length > 0 || Boolean(r.error), `${r.task}/${r.arm}/r${r.repeat}: no tool calls and no error`);
-    // A gate latency without a gated call, or the reverse, means the two are
-    // being summed from different places.
-    const gated = r.calls.filter((c) => c.gateMs !== undefined);
-    eq(
-      r.gateMs,
-      gated.reduce((n, c) => n + (c.gateMs ?? 0), 0),
-      `${r.task}/${r.arm}: gateMs must be the sum of the gated calls: `,
-    );
-    if (r.arm === "bare") eq(gated.length, 0, `${r.task}: the bare arm must have no gated calls: `);
+check("every record keeps the whole ledger per run", () => {
+  for (const { file, rows } of runRecords()) {
+    for (const r of rows) {
+      const who = `${file} ${r.task}/${r.arm}/r${r.repeat}`;
+      ok(Array.isArray(r.calls), `${who}: calls must be an array`);
+      eq(typeof r.passed, "boolean", `${who}: `);
+      // The ledger IS the corpus, so an empty one means the hook never fired
+      // and the run measured nothing -- worth failing over rather than
+      // averaging in.
+      ok(r.calls.length > 0 || Boolean(r.error), `${who}: no tool calls and no error`);
+      // A gate latency without a gated call, or the reverse, means the two are
+      // being summed from different places.
+      const gated = r.calls.filter((c) => c.gateMs !== undefined);
+      eq(
+        r.gateMs,
+        gated.reduce((n, c) => n + (c.gateMs ?? 0), 0),
+        `${who}: gateMs must be the sum of the gated calls: `,
+      );
+      if (r.arm === "bare") eq(gated.length, 0, `${who}: the bare arm must have no gated calls: `);
+    }
+  }
+});
+
+check("a pass is never recorded alongside a changed test file", () => {
+  // The invariant docs/44 §4 exists to enforce, checked on the RECORDS rather
+  // than on the code that writes them: a row may be `passed` and it may have
+  // `testsIntact: false`, but a reader who sees only `passed` must never be
+  // able to mistake the second for a completion. Where both are present the
+  // report has to be the thing that combines them (components.ts `finished`),
+  // so this check is that the raw fact is there to combine.
+  for (const { file, rows } of runRecords()) {
+    for (const r of rows.filter((x) => x.testsIntact === false)) {
+      ok(
+        r.calls.some((c) => (c.tool === "Edit" || c.tool === "Write" || c.tool === "Bash")),
+        `${file} ${r.task}/${r.arm}: a changed test file with no edit or command that could have done it`,
+      );
+    }
+    // And a record taken after the fix must have the field on EVERY row, or
+    // some rows are silently unchecked inside a record that looks checked.
+    const has = rows.filter((r) => r.testsIntact !== undefined).length;
+    ok(has === 0 || has === rows.length, `${file}: ${has} of ${rows.length} rows carry testsIntact -- pick one`);
   }
 });
 
 check("a bare run is never credited with the gate's work", () => {
-  const path = resolve(import.meta.dirname, "records/runs.json");
-  if (!existsSync(path)) return;
-  const rows = (JSON.parse(readFileSync(path, "utf8")) as { rows: Run[] }).rows;
+  const rows = runRecords().flatMap((r) => r.rows);
   for (const r of rows.filter((x) => x.arm === "bare")) {
     eq(r.deniedByJev, 0, `${r.task}: the bare arm cannot have jev denials: `);
     eq(r.askedByJev, 0, `${r.task}: the bare arm cannot have jev asks: `);

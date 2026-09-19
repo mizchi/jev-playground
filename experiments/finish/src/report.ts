@@ -39,11 +39,35 @@ export function signP(a: number, b: number): number {
   return Math.min(1, (2 * tail) / 2 ** n);
 }
 
-function main(): void {
-  if (!existsSync(resolve(import.meta.dirname, "../records/runs.json"))) {
-    throw new Error("no records/runs.json -- run `npm run run` first");
+/**
+ * Which record(s) to report on.
+ *
+ * `--in` exists because TODO §3.0's re-sweep is a SEPARATE measurement rather
+ * than a correction of `runs.json`. The 186 rows there are the ones docs/43
+ * reports and its sandboxes are gone, so they cannot be re-graded -- only
+ * re-run, which produces new draws. Overwriting them would have made docs/43
+ * unreproducible in exchange for nothing, so the re-sweep lands in its own
+ * files and this flag points the same report at them.
+ *
+ * Several files merge because the re-sweep had to be split in two: the easy
+ * and boundary corpora ran as concurrent processes, and `save()` is
+ * read-then-write, so sharing one file would have dropped rows.
+ */
+function recordsFrom(): { rows: Run[]; label: string } {
+  const argv = process.argv.slice(2);
+  const i = argv.indexOf("--in");
+  const names = i >= 0 ? (argv[i + 1] ?? "").split(",").filter(Boolean) : ["runs.json"];
+  const rows: Run[] = [];
+  for (const name of names) {
+    const path = resolve(import.meta.dirname, "../records", name);
+    if (!existsSync(path)) throw new Error(`no records/${name} -- run \`npm run run\` first`);
+    rows.push(...(JSON.parse(readFileSync(path, "utf8")) as Record_).rows);
   }
-  const rows = (JSON.parse(readFileSync(resolve(import.meta.dirname, "../records/runs.json"), "utf8")) as Record_).rows;
+  return { rows, label: names.join(" + ") };
+}
+
+function main(): void {
+  const { rows, label } = recordsFrom();
   const arms = [...new Set(rows.map((r) => r.arm))];
   const of = (arm: string): Run[] => rows.filter((r) => r.arm === arm);
   const repeats = new Set(rows.map((r) => r.repeat)).size;
@@ -51,8 +75,22 @@ function main(): void {
 
   console.log(
     `\n  Does the agent FINISH the work. ${rows.length} real agent runs: ` +
-      `${taskIds.length} tasks x ${arms.length} arms x ${repeats} repeats.\n` +
+      `${taskIds.length} tasks x ${arms.length} arms x ${repeats} repeats. (${label})\n` +
       "  `claude -p` generates, jev gates through PreToolUse, `node --test` decides.\n",
+  );
+  // WHETHER THESE ROWS WERE CHECKED AGAINST THE PROMPT'S OWN PROHIBITION.
+  // Printed at the top, not buried: for `runs.json` the answer is "they were
+  // not", and a reader who takes the completion figures below without knowing
+  // that is taking a number the grader could not vouch for (docs/44 §4).
+  const checked = rows.filter((r) => r.testsIntact !== undefined).length;
+  const changed = rows.filter((r) => r.testsIntact === false).length;
+  console.log(
+    checked === 0
+      ? "  ! NO ROW HERE CARRIES `testsIntact`. Both prompts forbid touching the test files and\n" +
+        "    `passed` is only the exit code, which an agent that rewrote the assertions also gets.\n" +
+        "    See `src/audit.ts` for what the ledger can still say about it, and docs/44 §4.\n"
+      : `  Test files as shipped in ${checked - changed}/${checked} checked runs` +
+        `${changed > 0 ? ` -- ${changed} CHANGED A TEST FILE and its pass is not a pass` : ""}.\n`,
   );
 
   // ------------------------------------------------------------ §1 completion
