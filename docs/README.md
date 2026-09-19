@@ -235,13 +235,14 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 
 ## 上流に入ったもの
 
-この探索から [chaosbringer](https://github.com/mizchi/chaosbringer) に 2 本入った。
-どちらも「Jev を賢くする」側ではなく、**driver に渡す情報**の側である。
+この探索から [chaosbringer](https://github.com/mizchi/chaosbringer) に 3 本入った。
+前 2 本はどちらも「Jev を賢くする」側ではなく、**driver に渡す情報**の側である。
 
 | PR | 中身 | 出どころ |
 | --- | --- | --- |
 | [#142](https://github.com/mizchi/chaosbringer/pull/142) | 候補一覧をステップ毎に作り直す / `DriverStep.currentUrl` / `aiDriver({ minConfidence })` | [05 §4](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない) の指摘、[25](25-confidence-fallback.md) が読もうとした信号 |
 | [#143](https://github.com/mizchi/chaosbringer/pull/143) | `DriverCandidate.bbox` を実際に埋める + `inViewport` / `inert` / `coveredBy` / `isObstructed()` | [25 §5](25-confidence-fallback.md#5-効いたのはモデルに聞かないほうだった) で効いたもの |
+| [#144](https://github.com/mizchi/chaosbringer/pull/144) | traceparent を入れた状態での strict HAR replay を回帰テストで固定 | [#129 §2](https://github.com/mizchi/chaosbringer/issues/129) の triage。**報告されたバグは存在しなかった**が、`route.fallback()` に依存している経路に一切カバレッジが無かった |
 
 **効いたのは後者だった。** 前者(`confidence`)は「あったのに読んでいなかった」信号で、
 読んでも無駄手は拾えなかった。後者は「そもそも測っていなかった」信号で、12/12 当てた。

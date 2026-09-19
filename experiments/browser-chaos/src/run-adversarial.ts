@@ -2,7 +2,11 @@
  * The experiment docs/29 §8 said it had not run: try to break the
  * speculation.
  *
- *   TYPESAFEAI_API_KEY=… npx tsx src/run-adversarial.ts --fixture hostile|twin|slots [--runs 2] [--steps 10] [--verbose]
+ *   TYPESAFEAI_API_KEY=… npx tsx src/run-adversarial.ts \
+ *     --fixture hostile|twin|slots|slots-hard [--runs 2] [--steps 10] [--verbose]
+ *
+ * The boards and their trap graders live in `adversarial-fixtures.ts`,
+ * which `check-fanout.ts` tests without a browser.
  *
  * docs/29 compared `fanout` against `sequential` on outcomes and found
  * them identical. That is weak evidence for two reasons, and this fixes
@@ -16,11 +20,18 @@
  *
  *   2. **The board was easy.** On the docs/29 fixture the operation was
  *      obvious at almost every step, so there was little for speculation
- *      to get wrong. `?select=hostile` contests it: a required empty
- *      field beside an optional empty one, a shipping dropdown beside a
- *      gift-wrap dropdown, and a gated Place order beside two buttons
- *      that are busywork. Every head has a trap that is attractive on
- *      its own terms.
+ *      to get wrong. `hostile` contests it: a required empty field beside
+ *      an optional empty one, a shipping dropdown beside a gift-wrap
+ *      dropdown, and a gated Place order beside two buttons that are
+ *      busywork. Every head has a trap that is attractive on its own
+ *      terms. `twin` adds a near-duplicate of the working button that
+ *      passes the same gate, so it is invisible to "goal reached".
+ *
+ *      `slots` and `slots-hard` attack the other side. They offer
+ *      buttons and nothing else, so the operation is CLICK by
+ *      construction and the whole contest sits inside one head — and the
+ *      discriminator is page state that the GOAL never mentions, so
+ *      neither the criteria nor the goal carry the answer.
  *
  * Two more controls, neither of which docs/29 ran:
  *
@@ -58,11 +69,6 @@ import { serve } from "./serve.mjs";
 
 const TARGETED: Operation[] = ["CLICK", "TYPE_TEXT", "SELECT"];
 
-/**
- * The goal names every requirement, so a trap is a trap by the goal's own
- * terms rather than by my opinion: nothing here asks for a promo code or
- * gift wrap, and both are visibly optional on the page.
- */
 const SCREEN_TEXT = `(() => {
   const body = (document.body.innerText || "").trim().replace(/\\n{3,}/g, "\\n\\n");
   const fields = Array.from(document.querySelectorAll("input, textarea, select"))
@@ -120,14 +126,14 @@ async function evalString(page: Page, source: string): Promise<string> {
 }
 
 /**
- * Land directly on the hostile screen.
+ * Land directly on checkout-3, whichever board is mounted there.
  *
  * Seeding the earlier steps rather than walking them is what makes this
  * affordable: every step spent on `#/products` is five requests that
  * measure an uncontested decision. The seed only fills in what the
  * earlier screens would have set.
  */
-async function seedToHostile(page: Page, baseUrl: string): Promise<void> {
+async function seedToBoard(page: Page, baseUrl: string): Promise<void> {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
     sessionStorage.setItem(
@@ -186,7 +192,7 @@ async function runOnce(
   fixture: Fixture,
   trace?: (line: string) => void,
 ): Promise<{ rows: StepRow[]; reachedGoal: boolean; trapsTaken: number }> {
-  await seedToHostile(page, baseUrl);
+  await seedToBoard(page, baseUrl);
   const rows: StepRow[] = [];
   const recent: string[] = [];
   const hashOf = (u: string) => (u.includes("#") ? u.slice(u.indexOf("#")) : "#/home");
