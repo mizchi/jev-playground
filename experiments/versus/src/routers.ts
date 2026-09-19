@@ -124,8 +124,24 @@ const load = (): Record_ =>
           "Same questions, same policy code, labels from docs/36 and docs/29.",
       };
 
+/**
+ * Write the record back, MERGING whatever is on disk.
+ *
+ * The two arms take about half an hour each and write the same file, and the
+ * obvious `writeFileSync(JSON.stringify(record))` loses every row the other
+ * process added since this one's `load()`: each holds its own copy and the
+ * last writer wins. Merging on (which, arm, item) makes the two runnable at
+ * once, and makes a crashed run cost one row instead of all of them.
+ */
 const save = (r: Record_): void => {
   mkdirSync(RECORDS, { recursive: true });
+  const key = (x: RouterRow): string => `${x.which}/${x.arm}/${x.item}`;
+  const merged = new Map<string, RouterRow>();
+  if (existsSync(PATH)) {
+    for (const x of (JSON.parse(readFileSync(PATH, "utf8")) as Record_).rows) merged.set(key(x), x);
+  }
+  for (const x of r.rows) merged.set(key(x), x);
+  r.rows = [...merged.values()];
   writeFileSync(PATH, `${JSON.stringify(r, null, 2)}\n`);
 };
 
@@ -716,6 +732,45 @@ function report(): void {
       console.log("  (* marks an under-route: the tier that was measured to FAIL on this task)");
     }
 
+    // ------------------------------------- when every judge says the same
+    //
+    // This table decides whether §1 is about the ROUTER or about the LABEL,
+    // and it is the reason the section does not end at "jev over-escalates".
+    const judged = ARMS.filter((a) => model.some((r) => r.arm === a && r.rung !== undefined));
+    if (judged.length >= 2) {
+      const common = tasks.filter((t) => judged.every((a) => model.some((r) => r.arm === a && r.item === t && r.rung !== undefined)));
+      const rungAt = (a: string, t: string): number => model.find((r) => r.arm === a && r.item === t)?.rung as number;
+      const unanimous = common.filter((t) => new Set(judged.map((a) => rungAt(a, t))).size === 1);
+      const unanimousOver = unanimous.filter((t) => rungAt(judged[0], t) > (wantRung.get(t) as number));
+      const attempts = (
+        JSON.parse(readFileSync(resolve(import.meta.dirname, "../../router/records/labels.json"), "utf8")) as {
+          attempts: { task: string; tier: string; repeat: number }[];
+        }
+      ).attempts;
+      const draws = new Set(attempts.map((a) => a.repeat)).size;
+      console.log(`\n  and the table that decides what §1 is ABOUT: do the judges agree?\n`);
+      console.log(
+        `  ${judged.join(", ")} chose the SAME rung on ${unanimous.length} of the ${common.length} tasks all of\n` +
+          `  them answered, and on ${unanimousOver.length} of those the agreed rung is ABOVE the label.\n`,
+      );
+      if (unanimousOver.length > unanimous.length / 2) {
+        console.log(
+          "  >> SO THE OVER-ESCALATION IS NOT ONE ARM'S DEFECT. Three independent\n" +
+            "     judgment sources -- a continuous `score`, haiku, and sonnet -- read these\n" +
+            "     repair tasks as needing the middle rung, and the label says the cheap rung\n" +
+            `     sufficed. AND THE LABEL IS ${draws === 1 ? "ONE ATTEMPT" : `${draws} ATTEMPTS`} PER (TASK, TIER): \`label.ts\` defaults to\n` +
+            "     `--repeats 1`, and `passed` is a single `node --test` exit code after a\n" +
+            "     single `claude -p` run. A task haiku happens to fix once is not a task\n" +
+            "     haiku is sufficient for.\n" +
+            "     docs/25's rule is that one draw settles nothing, and it does not stop\n" +
+            "     applying because the one draw is on the LABEL side. So the honest reading\n" +
+            "     of this section is: on this corpus the routers cannot be separated from\n" +
+            "     `always-haiku`, and the corpus cannot separate a wrong judgment from a\n" +
+            "     lucky exit code. Both halves need repeats before either is a verdict.",
+        );
+      }
+    }
+
     console.log("\n  why each arm went up, by the shipped policy's own `reason`:\n");
     for (const arm of ARMS) {
       const xs = model.filter((r) => r.arm === arm);
@@ -732,10 +787,16 @@ function report(): void {
   if (skill.length > 0) {
     const n = skill.filter((r) => r.arm === "jev").length;
     console.log(`\n§2 the skill router: the same 74-wide fan-out, on ${n} projects\n`);
+    const want = skill.filter((r) => r.arm === "jev").reduce((a, r) => a + (r.hit ?? 0) + (r.miss ?? 0), 0);
     console.log(
       "  One request per project, 74 skills rated in it, then the SHIPPED\n" +
-        "  `selectFrom` (loadAt 2.5, maxLoad 3) decides what loads. Labels are\n" +
-        "  docs/29's, derived from the catalogue's own tier legend.\n",
+        `  \`selectFrom\` (loadAt ${DEFAULT_SKILL_CONFIG.loadAt}, maxLoad ${DEFAULT_SKILL_CONFIG.maxLoad}) decides what loads. Labels are\n` +
+        "  docs/29's, derived from the catalogue's own tier legend.\n\n" +
+        `  RECALL IS CAPPED BY THE CAP, for every arm equally. The ${n} projects carry\n` +
+        `  ${want} \`want\` labels between them and \`maxLoad\` is ${DEFAULT_SKILL_CONFIG.maxLoad}, so no arm can exceed\n` +
+        `  ${((100 * DEFAULT_SKILL_CONFIG.maxLoad * n) / Math.max(1, want)).toFixed(0)}% recall however well it judges. PRECISION is the column that\n` +
+        "  discriminates: of the few skills an arm is allowed to load, how many were\n" +
+        "  wanted. docs/30 §5 is why the cap exists -- precision falls as it rises.\n",
     );
     console.log("  arm       loaded/project   wanted-found   precision   recall   rated all 74   median ms");
     for (const arm of ARMS) {

@@ -569,6 +569,37 @@ function report(record: Record_): void {
       "     fixed that by demanding the bytes, which no summary writes. The reported\n" +
       "     invention count is what survived looking for the mistake twice.\n",
   );
+  // --------------------------------------------------------------- §3 cost
+
+  console.log("§3 what each arm costs to run\n");
+  console.log("  arm                 total ms   median ms   input tokens   $ / 1,000 compactions");
+  const jevTokens = existsSync(RANKING)
+    ? (JSON.parse(readFileSync(RANKING, "utf8")) as { draws: (Draw & { usage?: { input: number } })[] }).draws
+        .filter((d) => d.repeat === 0)
+        .reduce((n, d) => n + (d.usage?.input ?? 0), 0)
+    : 0;
+  for (const arm of arms) {
+    const xs = record.rows.filter((r) => r.arm === arm);
+    if (xs.length === 0) continue;
+    const ms = [...xs.map((r) => r.ms)].sort((a, b) => a - b);
+    // Jev's published input price; output is free (docs/00). `claude -p` does
+    // not report tokens, so the model rows are BLANK rather than guessed --
+    // docs/41 §4's rule, because a guess would land in the most prominent
+    // column of the most quotable table.
+    const dollars =
+      arm === "jev" && jevTokens > 0 ? `$${((jevTokens / xs.length / 1e6) * 0.042 * 1000).toFixed(4)}` : "(not reported)";
+    console.log(
+      `  ${arm.padEnd(18)} ${String(xs.reduce((n, r) => n + r.ms, 0)).padStart(8)}   ` +
+        `${String(ms[Math.floor(ms.length / 2)] ?? 0).padStart(9)}   ` +
+        `${(arm === "jev" && jevTokens > 0 ? String(jevTokens) : "-").padStart(12)}   ${dollars.padStart(21)}`,
+    );
+  }
+  console.log(
+    "\n  The latency gap is the part that decides whether a compactor is usable: a\n" +
+      "  compaction runs when the context window is already full, with the user\n" +
+      "  waiting. jev's ranking is ONE request for the whole transcript; the model\n" +
+      "  arms are one long generation each.\n",
+  );
   console.log(`  ${record.rows.length} rows.\n`);
 }
 
