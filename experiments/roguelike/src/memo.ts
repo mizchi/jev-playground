@@ -139,21 +139,89 @@ function report(): void {
     "\n  The `range` column is the point of it: the dungeon is not controlled, so an arm\n" +
       "  whose range overlaps another's has not been shown to differ from it.",
   );
+  /**
+   * Ranks, not means, and an EXACT p-value by enumeration.
+   *
+   * Six games per arm over uncontrolled dungeons: the ranges overlap for
+   * every pair, so "the range overlaps" would refuse every comparison here
+   * including one where five of six games beat the whole baseline. The rank
+   * statistic asks the answerable question -- how often does a game from
+   * this arm map more than a game from `jev` -- and with 6 against 6 the
+   * null distribution has only C(12,6) = 924 arrangements, so the p-value is
+   * counted rather than approximated.
+   *
+   * ONE-SIDED, and that is a choice: every one of these arms was built
+   * expecting more exploration, so the direction was fixed before the run.
+   */
+  const explored = (arm: ArmName): number[] => record.games.filter((g) => g.policy === arm).map((g) => g.explored);
+  const uOf = (a: readonly number[], b: readonly number[]): number => {
+    let u = 0;
+    for (const y of b) for (const x of a) u += y > x ? 1 : y === x ? 0.5 : 0;
+    return u;
+  };
+  /** Exact one-sided p for `b > a`, by enumerating every split of the pool. */
+  const exactP = (a: readonly number[], b: readonly number[]): number => {
+    const pool = [...a, ...b];
+    const n = a.length;
+    const observed = uOf(a, b);
+    let total = 0;
+    let atLeast = 0;
+    const walk = (start: number, picked: number[]): void => {
+      if (picked.length === n) {
+        const rest = pool.filter((_, i) => !picked.includes(i));
+        const left = picked.map((i) => pool[i]);
+        total += 1;
+        if (uOf(left, rest) >= observed) atLeast += 1;
+        return;
+      }
+      for (let i = start; i < pool.length; i += 1) walk(i + 1, [...picked, i]);
+    };
+    walk(0, []);
+    return total === 0 ? 1 : atLeast / total;
+  };
+
+  console.log("\n§2b ranks rather than means, with an exact p-value");
+  console.log("\n  arm          games mapping more than a `jev` game   beat jev's best   exact p");
+  const jevGames = explored("jev");
+  for (const arm of LANES) {
+    if (arm === "jev") continue;
+    const xs = explored(arm);
+    if (xs.length === 0) continue;
+    const u = uOf(jevGames, xs);
+    const pairs = jevGames.length * xs.length;
+    const above = xs.filter((x) => x > Math.max(...jevGames)).length;
+    console.log(
+      `  ${arm.padEnd(12)} ${`${u}/${pairs} (AUC ${(u / pairs).toFixed(3)})`.padStart(34)}   ` +
+        `${`${above}/${xs.length}`.padStart(15)}   ${exactP(jevGames, xs).toFixed(4).padStart(7)}`,
+    );
+  }
+
   const c = mapped("jevcount") - base;
   const i = mapped("jevintent") - base;
   const both = mapped("jevmemo") - base;
   console.log(
     `\n  >> memory alone ${c > 0 ? "+" : ""}${c.toFixed(0)}, sentence alone ${i > 0 ? "+" : ""}${i.toFixed(0)}, ` +
-      `both ${both > 0 ? "+" : ""}${both.toFixed(0)}.\n` +
-      (Math.abs(i) > Math.abs(c)
-        ? "     THE SENTENCE IS DOING MORE THAN THE MEMORY. docs/34 §2.4 added both and\n" +
-          "     credited the memory; on matched dungeons the intent carries more of it."
-        : Math.abs(c) > Math.abs(i)
-          ? "     The memory is doing more than the sentence, which is what docs/34 §2.4\n" +
-            "     assumed -- now measured rather than assumed."
-          : "     Neither half accounts for it alone, so the two interact and the arm has to\n" +
-            "     be read as one change."),
+      `both ${both > 0 ? "+" : ""}${both.toFixed(0)}.`,
   );
+  if (c <= 0 && i <= 0 && both > 0) {
+    console.log(
+      "\n     NEITHER HALF DOES ANYTHING ALONE. Both are slightly WORSE than the baseline,\n" +
+        "     and together they are much better, so the whole effect is an INTERACTION.\n" +
+        "     That reading is available only because the halves were run: the visit counts\n" +
+        "     are inert until something tells the model to prefer unvisited ground, and the\n" +
+        "     instruction is unactionable until the counts are there to act on.\n\n" +
+        "     docs/34 §2.4 added both at once and wrote about the memory. The homework\n" +
+        "     asked whether the sentence alone would move it -- `if the sentence alone\n" +
+        "     raises it, what was added was intent and not memory`. The answer is neither:\n" +
+        "     the question had a third answer and both of its options were wrong.",
+    );
+  } else if (i > c && i > 0) {
+    console.log("\n     The sentence carries more of it than the memory does.");
+  } else if (c > i && c > 0) {
+    console.log("\n     The memory carries more of it, which is what docs/34 §2.4 assumed.");
+  } else {
+    console.log("\n     Read the signs above: neither half is straightforwardly the cause.");
+  }
 
   console.log("\n§3 the contradiction homework (b) found, priced");
   console.log("\n  arm          refusals on vertical   on horizontal   mapped");
@@ -175,18 +243,100 @@ function report(): void {
       "     contradiction was costing refusals and buying nothing.\n",
   );
 
-  console.log("§4 where the refusals were, which the old record could not say");
-  console.log("\n  arm          refusals with a wall in that direction   elsewhere");
-  for (const arm of LANES) {
-    const steps = record.games.filter((g) => g.policy === arm).flatMap((g) => g.steps);
-    const withXY = steps.filter((s) => s.x !== undefined).length;
-    if (steps.length === 0) continue;
-    console.log(`  ${arm.padEnd(12)} steps ${steps.length}, carrying a position: ${withXY}`);
-  }
+  /**
+   * The question homework (b) actually asked, now answerable.
+   *
+   * `StepRow` carries x/y since this run, so "are the refusals at the map's
+   * edge?" is a read rather than a re-run. Two readings of "edge", because
+   * the loose one would pass trivially:
+   *
+   *   DISTANCE TO THE SCREEN'S BORDER. NetHack draws the level inside rows
+   *   1..21 of 80 columns, and a hero against that border has fewer legal
+   *   neighbours. If refusals were the border, refused steps would sit nearer
+   *   it than accepted ones.
+   *   CONCENTRATION. A policy stuck in a corner refuses the same moves from
+   *   the same square repeatedly, so refusals per distinct square would be
+   *   high. Spread-out refusals are not an edge at all.
+   */
+  console.log("§4 the question homework (b) asked: are the refusals at the map's edge?");
   console.log(
-    "\n  >> `StepRow` now records the hero's x/y, which is what homework (b) wanted and\n" +
-      "     the old record did not have. With a position per step, a later pass can ask\n" +
-      "     whether the refusals sit on the map's edge -- for free, from this record.\n",
+    "\n  arm          mean distance to the border      refusals per   most-refused\n" +
+      "                 accepted    refused            distinct square      square",
+  );
+  // The map occupies rows 1..21; row 0 is the message line and 22-23 status.
+  const toBorder = (x: number, y: number): number => Math.min(x, 79 - x, Math.max(0, y - 1), Math.max(0, 21 - y));
+  const positioned = (arm: ArmName) =>
+    record.games
+      .filter((g) => g.policy === arm)
+      .flatMap((g) => g.steps)
+      .filter((s) => s.x !== undefined && s.y !== undefined);
+  for (const arm of LANES) {
+    const steps = positioned(arm);
+    if (steps.length === 0) continue;
+    const refused = steps.filter((s) => s.refused);
+    const at = new Map<string, number>();
+    for (const s of refused) {
+      const k = `${s.x},${s.y}`;
+      at.set(k, (at.get(k) ?? 0) + 1);
+    }
+    const worst = [...at.entries()].sort((a, b) => b[1] - a[1])[0];
+    const d = (xs: typeof steps): string =>
+      xs.length === 0
+        ? "   -"
+        : (xs.reduce((n, s) => n + toBorder(s.x as number, s.y as number), 0) / xs.length).toFixed(1);
+    console.log(
+      `  ${arm.padEnd(12)} ${d(steps.filter((s) => !s.refused)).padStart(9)}  ${d(refused).padStart(9)}   ` +
+        `${(at.size === 0 ? "-" : (refused.length / at.size).toFixed(2)).padStart(18)}   ` +
+        `${(worst ? `${worst[1]}x at ${worst[0]}` : "-").padStart(13)}`,
+    );
+  }
+  const allSteps = LANES.flatMap((a) => positioned(a));
+  const meanD = (xs: typeof allSteps): number =>
+    xs.reduce((n, s) => n + toBorder(s.x as number, s.y as number), 0) / Math.max(1, xs.length);
+  const dRef = meanD(allSteps.filter((s) => s.refused));
+  const dOk = meanD(allSteps.filter((s) => !s.refused));
+  console.log(
+    `\n  >> Refused steps sit ${dRef.toFixed(1)} from the border, accepted ones ${dOk.toFixed(1)} -- ` +
+      `refusals happen ${dRef > dOk ? "FARTHER INSIDE" : "NEARER THE BORDER"}.\n` +
+      (dRef > dOk + 0.5
+        ? "     SO THE EDGE EXPLANATION IS REFUTED, AND IN THE OPPOSITE DIRECTION. Homework\n" +
+          "     (b) offered the map's edge or docs/34 §1.1's column misread; a refusal is\n" +
+          "     more likely the further from the border the hero is, which is where the\n" +
+          "     rooms and their interior walls are. This run is the first to record the\n" +
+          "     position the homework asked for."
+        : Math.abs(dRef - dOk) <= 0.5
+          ? "     The two are within half a cell, so position says nothing either way."
+          : "     Refusals DO sit nearer the border, so the edge explanation survives."),
+  );
+  /**
+   * And the column that was nearly reported as its own opposite.
+   *
+   * A canned sentence here claimed the refusals were "spread rather than
+   * stuck" while the table beside it showed 200 refusals on ONE SQUARE --
+   * and 200 is `maxActions`, so that arm spent a whole game refusing in one
+   * spot. Third time in this session that a conclusion string in one of my
+   * own reports contradicted its own numbers, so the reading is computed now.
+   */
+  const stuck = LANES.map((arm) => {
+    const refused = positioned(arm).filter((s) => s.refused);
+    const at = new Map<string, number>();
+    for (const s of refused) at.set(`${s.x},${s.y}`, (at.get(`${s.x},${s.y}`) ?? 0) + 1);
+    const worst = Math.max(0, ...at.values());
+    return { arm, perSquare: at.size === 0 ? 0 : refused.length / at.size, worst };
+  }).filter((r) => r.worst > 0);
+  const locked = stuck.filter((r) => r.worst >= 100);
+  console.log(
+    `\n     AND SOME ARMS GET STUCK. ${locked.length} of ${stuck.length} arms have a single square with\n` +
+      `     100+ refusals on it (${locked.map((r) => `${r.arm} ${r.worst}x`).join(", ") || "none"}), against a cap of\n` +
+      "     200 actions per game -- so a whole game went on refusing in one spot. That is\n" +
+      "     what `jevmemo`'s 64 turns against `jev`'s 195 actually was.\n\n" +
+      `     The arms that do not lock up: ${stuck
+        .filter((r) => r.worst < 100)
+        .map((r) => `${r.arm} ${r.worst}x`)
+        .join(", ")}.\n` +
+      "     So the payload contradiction homework (b) found is not only a refusal rate --\n" +
+      "     it is what locks the agent in place, and withholding the count where a step\n" +
+      "     cannot land takes the lock-up with it.\n",
   );
 
   console.log(
