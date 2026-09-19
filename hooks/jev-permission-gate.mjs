@@ -82,6 +82,17 @@ const opt = (name, fallback) => {
 const TIMEOUT_MS = Number.parseInt(opt("timeout", "2500"), 10);
 const ALLOW_SAFE = flag("allow-safe");
 const DRY_RUN = flag("dry-run");
+/**
+ * Restore the pre-docs/43 behaviour: send an `ask` rationale to
+ * `systemMessage` only, where the model cannot read it.
+ *
+ * This flag exists ONLY so the measurement that changed the default stays
+ * replayable. docs/43 §5.2 measured what the old shape cost a headless agent
+ * ("A hook requires confirmation to run the Bash command", and it stopped), and
+ * a before/after that cannot be re-run is an anecdote. Nothing should pass it
+ * in production.
+ */
+const QUIET_ASK = flag("quiet-ask");
 const LOG_PATH = opt("log", "");
 const DENY_MAX = { allow: ALLOW, ask: ASK, deny: DENY }[opt("deny-max", "deny")] ?? DENY;
 const MODEL = opt("model", "jev-latest");
@@ -439,14 +450,41 @@ async function main() {
   // Without it, a safe verdict defers and the normal flow decides.
   if (verdict === ALLOW && !ALLOW_SAFE) defer(`rated safe in ${elapsed}ms; not widening`);
 
-  const out = { hookEventName: "PreToolUse", permissionDecision: VERDICT_NAME[verdict] };
-  if (verdict === ASK) {
-    // The contract says to omit the reason for `ask`; the rationale still
-    // belongs in the transcript.
-    out.systemMessage = explanation;
-  } else {
-    out.permissionDecisionReason = explanation;
-  }
+  // THE REASON GOES IN `permissionDecisionReason` FOR EVERY VERDICT, and this
+  // used to be conditional. The old code sent `ask` rationales to
+  // `systemMessage` only, with the comment "the contract says to omit the
+  // reason for `ask`".
+  //
+  // THE CONTRACT DOES NOT SAY THAT. The CLI documents
+  // `permissionDecisionReason` as "Reason for the permission decision
+  // (PreToolUse only)" with no verdict restriction, and its schema carries
+  // `permissionDecision` and `permissionDecisionReason` as independent
+  // optionals.
+  //
+  // And the cost of the old behaviour was measured, both ways, on a real
+  // headless agent (docs/43 §5.2):
+  //
+  //   deny + permissionDecisionReason   the agent quoted the reason back
+  //                                     accurately and explained what it could
+  //                                     not do
+  //   ask  + systemMessage only         the agent said "A hook requires
+  //                                     confirmation to run the Bash command"
+  //                                     and stopped
+  //
+  // A blocked agent that is not told what was wrong cannot route around the
+  // block -- and on a headless session `ask` IS a block: the CLI's own
+  // PreModelSwitch contract says "ask asks the user to confirm (a headless
+  // session refuses instead)", which docs/43 §5.1 measured independently.
+  //
+  // `systemMessage` stays as well on an `ask`, because that is where a HUMAN
+  // reads it; the two fields have two audiences and the rationale is for both.
+  const out = {
+    hookEventName: "PreToolUse",
+    permissionDecision: VERDICT_NAME[verdict],
+    permissionDecisionReason: explanation,
+  };
+  if (verdict === ASK) out.systemMessage = explanation;
+  if (QUIET_ASK && verdict === ASK) delete out.permissionDecisionReason;
   process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
   process.exit(0);
 }

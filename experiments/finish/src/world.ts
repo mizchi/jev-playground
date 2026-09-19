@@ -159,6 +159,8 @@ export interface ToolCall {
   reason?: string;
   gateMs?: number;
   gateSaidNothing?: boolean;
+  /** Did the gate's rationale land in the field the model reads? docs/43 §5.2. */
+  reasonReachedAgent?: boolean;
 }
 
 export interface Run {
@@ -173,6 +175,10 @@ export interface Run {
   untouched: boolean;
   /** Wall clock for the whole agent run. */
   ms: number;
+  /** Which shipped-hook flags this row was run under. Recorded, not inferred:
+   *  a record that cannot say which version produced a row is a record that
+   *  cannot be re-read after the code changes. */
+  gateFlags?: string[];
   /** Every tool call, with what the hooks did to it. */
   calls: ToolCall[];
   /** Summed latency the gate added to the critical path. */
@@ -191,6 +197,12 @@ export interface ArmSpec {
   guard: boolean;
   /** Which model generates. The model router's decision, when it has one. */
   model: string;
+  /**
+   * Flags for the shipped hook. Used for ONE thing: `--quiet-ask` restores the
+   * behaviour docs/43 §5.2 replaced, so the before/after of that fix is a
+   * measurement and not an anecdote.
+   */
+  gateFlags?: string[];
 }
 
 /**
@@ -216,6 +228,7 @@ export async function runOnce(
     arm: arm.name,
     model: arm.model,
     repeat,
+    ...(arm.gateFlags && arm.gateFlags.length > 0 ? { gateFlags: arm.gateFlags } : {}),
     passed: false,
     untouched: true,
     ms: 0,
@@ -260,6 +273,7 @@ export async function runOnce(
       FINISH_SANDBOX: sandbox,
       JEV_GATE: arm.guard ? "1" : "0",
       JEV_GATE_BIN: SHIPPED_GATE,
+      JEV_GATE_FLAGS: (arm.gateFlags ?? []).join(","),
     };
 
     const res = await claude(prompt, arm.model, sandbox, env, opts.timeoutMs ?? 600_000);

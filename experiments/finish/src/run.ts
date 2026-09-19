@@ -48,6 +48,15 @@ const HAIKU = "claude-haiku-4-5-20251001";
 export const ARMS: Record<string, ArmSpec> = {
   bare: { name: "bare", guard: false, model: HAIKU },
   guard: { name: "guard", guard: true, model: HAIKU },
+  /**
+   * The gate as it shipped BEFORE docs/43 §5.2, where an `ask` rationale went
+   * to `systemMessage` only and the model never saw it.
+   *
+   * This arm exists so the fix is a measurement. Without it, "the agent now
+   * knows why it was blocked" is a quotation from one probe; with it, the
+   * question becomes whether knowing why changes whether the work gets done.
+   */
+  guardquiet: { name: "guardquiet", guard: true, model: HAIKU, gateFlags: ["quiet-ask"] },
 };
 
 export interface Record_ {

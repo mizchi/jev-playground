@@ -33,6 +33,7 @@
  *   FINISH_SANDBOX  the only directory the agent may touch (required)
  *   JEV_GATE        "1" to consult jev-guard as well
  *   JEV_GATE_BIN    path to the shipped hook (required when JEV_GATE=1)
+ *   JEV_GATE_FLAGS  comma-separated flags for the shipped hook, e.g. quiet-ask
  *
  * Fails open, always. A hook that throws in front of an agent stops work that
  * judgment was only advising on -- the shipped gate's own rule, kept here.
@@ -137,7 +138,13 @@ if (!bin) {
  * a node start-up, which is honest: that is what a user wiring it up pays.
  */
 const started = Date.now();
-const out = spawnSync(process.execPath, [bin], {
+// Flags the arm wants the shipped hook to run with. `--quiet-ask` restores
+// the pre-docs/43 behaviour so the before/after stays replayable.
+const extra = (process.env.JEV_GATE_FLAGS ?? "")
+  .split(",")
+  .filter(Boolean)
+  .map((f) => (f.startsWith("--") ? f : `--${f}`));
+const out = spawnSync(process.execPath, [bin, ...extra], {
   input: JSON.stringify(event),
   encoding: "utf8",
   timeout: 20_000,
@@ -161,8 +168,28 @@ if (!verdict?.permissionDecision) {
   carryOn();
 }
 
-decide(verdict.permissionDecision, verdict.permissionDecisionReason ?? "jev-guard", {
+// PASS THE GATE'S REASON THROUGH UNCHANGED, INCLUDING ITS ABSENCE.
+//
+// This used to be `?? "jev-guard"`, which quietly defeated the whole
+// `--quiet-ask` arm: that arm exists to reproduce a gate whose rationale does
+// NOT reach the model, and a wrapper that substitutes a placeholder reason
+// hands the model a reason anyway. The arms would have differed in the text of
+// the reason rather than in whether there was one.
+const out2 = {
+  hookEventName: "PreToolUse",
+  permissionDecision: verdict.permissionDecision,
+  ...(typeof verdict.permissionDecisionReason === "string" && verdict.permissionDecisionReason.length > 0
+    ? { permissionDecisionReason: verdict.permissionDecisionReason }
+    : {}),
+  ...(typeof verdict.systemMessage === "string" ? { systemMessage: verdict.systemMessage } : {}),
+};
+log({
   ...base,
   by: "jev",
   gateMs: ms,
+  decision: verdict.permissionDecision,
+  reason: verdict.permissionDecisionReason ?? "",
+  reasonReachedAgent: Boolean(out2.permissionDecisionReason),
 });
+console.log(JSON.stringify({ hookSpecificOutput: out2 }));
+process.exit(0);
