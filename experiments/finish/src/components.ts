@@ -37,6 +37,8 @@ const RECORDS = resolve(import.meta.dirname, "../records");
 const pct = (x: number, n: number): string => (n === 0 ? "    -" : `${((100 * x) / n).toFixed(0).padStart(3)}%`);
 const med = (xs: number[]): number =>
   xs.length === 0 ? Number.NaN : [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+/** A p-value, never printed as "0.000" -- that reads as exactly zero. */
+const pval = (p: number): string => (p < 0.001 ? "p < 0.001" : `p = ${p.toFixed(3)}`);
 
 function load(name: string): Run[] {
   const path = resolve(RECORDS, name);
@@ -172,7 +174,7 @@ function costTable(rows: Run[], pairs: [string, string][], of: (r: Run) => numbe
     if (c.aLess + c.bLess + c.tied === 0) continue;
     console.log(
       `| \`${a}\` vs \`${b}\` | ${c.medianDiff > 0 ? "+" : ""}${c.medianDiff.toFixed(1)} ${unit} | ` +
-        `${c.aLess} | ${c.bLess} | ${c.tied} | p = ${c.p.toFixed(3)}` +
+        `${c.aLess} | ${c.bLess} | ${c.tied} | ${pval(c.p)}` +
         `${c.p > 0.05 ? " -- NOT SIGNIFICANT" : " **significant**"} |`,
     );
   }
@@ -184,7 +186,7 @@ function signLine(rows: Run[], a: string, b: string): void {
   const verdict =
     n === 0
       ? "**no discordant pair at all**: every task went the same way in both arms, so this corpus cannot separate them"
-      : `p = ${signP(p.aOnly, p.bOnly).toFixed(3)}${signP(p.aOnly, p.bOnly) > 0.05 ? " -- NOT SIGNIFICANT" : ""}`;
+      : `${pval(signP(p.aOnly, p.bOnly))}${signP(p.aOnly, p.bOnly) > 0.05 ? " -- NOT SIGNIFICANT" : ""}`;
   console.log(
     `| \`${a}\` vs \`${b}\` | ${p.both} | ${p.aOnly} | ${p.bOnly} | ${p.neither} | ${verdict} |`,
   );
@@ -245,9 +247,44 @@ function modelRouter(): void {
     return g.length === 0 ? Number.NaN : g.filter(finished).length / g.length;
   };
   const dh = pass("routerfail") - pass("haiku");
+  const turns = pairedNumber(rows, "routerfail", "haiku", (r) => r.calls.length);
   console.log(
     `It finished ${(100 * pass("routerfail")).toFixed(0)}% against haiku's ${(100 * pass("haiku")).toFixed(0)}%: ` +
-      `${dh > 0 ? "+" : ""}${(100 * dh).toFixed(0)} points for that multiple.`,
+      `${dh > 0 ? "+" : ""}${(100 * dh).toFixed(0)} points of completion for that multiple. **But completion is ` +
+      "not the only axis, and on this corpus it is the wrong one** -- see the turn and time tables above. " +
+      // `aLess` is the ROUTED arm's wins, `bLess` is haiku's. Naming them
+      // rather than indexing by memory: the first version of this sentence
+      // printed haiku's count and read as the opposite claim, which is the
+      // same sign slip docs/43 §4.3 had to correct in a computed conclusion.
+      `The routed arm used fewer tool calls on ${turns.aLess} of ${turns.aLess + turns.bLess + turns.tied} ` +
+      `tasks and more on ${turns.bLess} (${pval(turns.p)}). So the money bought **fewer turns**, not more ` +
+      "finished work.",
+  );
+  // The wall-clock claim gets its own sentence because it does NOT come out the
+  // same as the turn claim, and bundling them would have carried the weaker
+  // one on the stronger one's significance.
+  const secs = pairedNumber(rows, "routerfail", "haiku", (r) => r.ms / 1000);
+  console.log(
+    `\nWall clock is weaker and has to be said separately: the routed arm was faster on ${secs.aLess} of ` +
+      `${secs.aLess + secs.bLess + secs.tied} tasks, median ${secs.medianDiff.toFixed(1)} s, ${pval(secs.p)}` +
+      `${secs.p > 0.05 ? " -- **which does not clear the line**, so fewer turns is the claim and less wall clock is not" : " **significant**"}.`,
+  );
+  // AND THIS IS WHERE THE TIDY CONCLUSION WOULD HAVE BEEN WRONG.
+  //
+  // §1.2 below finds the shipped confidence floor pushing 14 of 58 tasks up to
+  // sonnet that the router's OWN tier score put at haiku, always in the
+  // expensive direction -- which reads like waste, and I was ready to write it
+  // that way. The tables above say the expensive direction bought something
+  // real and significant. Both are true, and the honest statement is the
+  // conjunction rather than whichever half is tidier.
+  console.log(
+    "\n**So §1.2's finding must NOT be read as `minConfidence: 0.5` being wrong.** It pushes work up the " +
+      "ladder more often than the tier score alone would, and up the ladder takes measurably fewer turns " +
+      "here (not measurably less wall clock -- see the sentence above). " +
+      "What §1.2 establishes is narrower and still worth having: **the number is doing most of the deciding, " +
+      "and it was placed without anyone looking at where the answers land.** Whether 0.5 is the right place " +
+      "is a question this corpus cannot answer, because the corpus has no completion headroom to trade the " +
+      "turns against (TODO §1.4 and §2.5).",
   );
 
   // THE FINDING THAT DID NOT COME FROM THE AGENT RUNS AT ALL.
