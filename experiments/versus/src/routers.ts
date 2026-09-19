@@ -822,20 +822,37 @@ function report(): void {
   if (skill.length > 0) {
     const n = skill.filter((r) => r.arm === "jev").length;
     console.log(`\n§2 the skill router: the same 74-wide fan-out, on ${n} projects\n`);
-    const want = skill.filter((r) => r.arm === "jev").reduce((a, r) => a + (r.hit ?? 0) + (r.miss ?? 0), 0);
+    // ONLY THE PROJECTS EVERY ARM ANSWERED, and computed BEFORE the preamble
+    // so the recall cap is stated over the same set the table scores. An arm
+    // still in flight has fewer projects, and summing `wanted-found` over
+    // different project sets printed 10/61 against 8/37 in one column -- two
+    // numbers that cannot be compared, which is §1's denominator mistake
+    // arriving in the other section.
+    const armsHere = ARMS.filter((a) => skill.some((r) => r.arm === a));
+    const common = [...new Set(skill.map((r) => r.item))].filter((item) =>
+      armsHere.every((a) => skill.some((r) => r.arm === a && r.item === item)),
+    );
+    const scored = skill.filter((r) => common.includes(r.item));
+    const want = scored
+      .filter((r) => r.arm === armsHere[0])
+      .reduce((a, r) => a + (r.hit ?? 0) + (r.miss ?? 0), 0);
+    const cap = DEFAULT_SKILL_CONFIG.maxLoad * common.length;
     console.log(
       "  One request per project, 74 skills rated in it, then the SHIPPED\n" +
         `  \`selectFrom\` (loadAt ${DEFAULT_SKILL_CONFIG.loadAt}, maxLoad ${DEFAULT_SKILL_CONFIG.maxLoad}) decides what loads. Labels are\n` +
         "  docs/29's, derived from the catalogue's own tier legend.\n\n" +
-        `  RECALL IS CAPPED BY THE CAP, for every arm equally. The ${n} projects carry\n` +
-        `  ${want} \`want\` labels between them and \`maxLoad\` is ${DEFAULT_SKILL_CONFIG.maxLoad}, so no arm can exceed\n` +
-        `  ${((100 * DEFAULT_SKILL_CONFIG.maxLoad * n) / Math.max(1, want)).toFixed(0)}% recall however well it judges. PRECISION is the column that\n` +
-        "  discriminates: of the few skills an arm is allowed to load, how many were\n" +
-        "  wanted. docs/30 §5 is why the cap exists -- precision falls as it rises.\n",
+        `  Scored over the ${common.length} project(s) EVERY arm answered` +
+        `${common.length < n ? `, not all ${n} -- an arm still running has fewer` : ""}.\n\n` +
+        `  RECALL IS CAPPED BY THE CAP, for every arm equally. Those ${common.length} projects carry\n` +
+        `  ${want} \`want\` labels between them and \`maxLoad\` is ${DEFAULT_SKILL_CONFIG.maxLoad}, so no arm can load more than\n` +
+        `  ${cap} skills in total and none can exceed ${((100 * cap) / Math.max(1, want)).toFixed(0)}% recall however well it judges.\n` +
+        "  PRECISION is the column that discriminates: of the few skills an arm is\n" +
+        "  allowed to load, how many were wanted. docs/30 §5 is why the cap exists --\n" +
+        "  precision falls as it rises.\n",
     );
     console.log("  arm       loaded/project   wanted-found   precision   recall   rated all 74   median ms");
-    for (const arm of ARMS) {
-      const xs = skill.filter((r) => r.arm === arm);
+    for (const arm of armsHere) {
+      const xs = skill.filter((r) => r.arm === arm && common.includes(r.item));
       if (xs.length === 0) continue;
       const hit = xs.reduce((a, r) => a + (r.hit ?? 0), 0);
       const loaded = xs.reduce((a, r) => a + (r.loaded ?? 0), 0);
@@ -855,6 +872,56 @@ function report(): void {
         "  it has made a partial one -- and a skill it never rated cannot load,\n" +
         "  which lowers `loaded/project` for a reason that is not judgment.",
     );
+    // ---------------------------------------- do they load the SAME skills?
+    //
+    // Precision within a point of each other could be three arms agreeing or
+    // three arms picking different skills and scoring alike. The labels cannot
+    // tell those apart; this can.
+    if (armsHere.length >= 2 && common.length > 0) {
+      console.log("\n  do the arms load the same skills?\n");
+      const setOf = (arm: string, item: string): Set<string> =>
+        new Set((skill.find((r) => r.arm === arm && r.item === item)?.answer ?? "").split(",").filter(Boolean));
+      let shared = 0;
+      let union = 0;
+      for (const item of common) {
+        const sets = armsHere.map((a) => setOf(a, item));
+        const all = new Set(sets.flatMap((x) => [...x]));
+        union += all.size;
+        shared += [...all].filter((nm) => sets.every((x) => x.has(nm))).length;
+      }
+      console.log(
+        `  over ${common.length} project(s): ${shared} of ${union} distinct skills were loaded by EVERY arm ` +
+          `(${((100 * shared) / Math.max(1, union)).toFixed(0)}%).`,
+      );
+      for (const item of common) {
+        const sets = armsHere.map((a) => setOf(a, item));
+        const all = [...new Set(sets.flatMap((x) => [...x]))].sort();
+        const only = all.filter((nm) => !sets.every((x) => x.has(nm)));
+        if (only.length === 0) continue;
+        console.log(`  ${item}: not unanimous on ${only.map((nm) => `${nm} (${armsHere.filter((a, i) => sets[i].has(nm)).join("+")})`).join(", ")}`);
+      }
+    }
+
+    // ------------------------------------------------------------- the price
+    //
+    // AND THIS COLUMN GOES THE OTHER WAY. jev pays for the rubric 74 times --
+    // one `instructions` per question -- while the model prompt states it once
+    // and lists the skills. docs/30 §7 measured that overhead from the inside
+    // (moving shared criteria out of per-question `instructions` took a
+    // request from 260 questions to 520); here it is visible as a bill.
+    const jevTokens = scored.filter((r) => r.arm === "jev").reduce((a, r) => a + (r.inputTokens ?? 0), 0);
+    const jevN = scored.filter((r) => r.arm === "jev").length;
+    if (jevTokens > 0) {
+      console.log(
+        `\n  jev's fan-out costs ${Math.round(jevTokens / jevN)} input tokens per project ` +
+          `= $${((jevTokens / jevN / 1e6) * 0.042 * 1000).toFixed(4)} / 1,000 projects.\n` +
+          "  The model is shown the SAME 74 skills in about a quarter of that, because the\n" +
+          "  four-level rubric is stated once instead of once per question. So on this\n" +
+          "  component jev's per-question overhead is real and the model's prompt is the\n" +
+          "  cheaper shape -- it is the LATENCY that is not close (0.6 s against 42-75 s).",
+      );
+    }
+
     console.log("\n  per project:\n");
     console.log("  project          arm      loaded   hit   miss   extra   rated   ms");
     for (const item of [...new Set(skill.map((r) => r.item))]) {

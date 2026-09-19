@@ -1948,6 +1948,33 @@
       "extra": 1,
       "loaded": 3,
       "reason": "capped/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "sonnet",
+      "item": "frontend-review",
+      "answer": "frontend-expert,frontend-ops-expert,frontend-review-ci",
+      "want": "apm-usage,dotenvx,frontend-expert,frontend-ops-expert,frontend-review-ci,frontend-review-deps,frontend-review-hygiene,frontend-review-performance,frontend-review-security,frontend-review-state,frontend-review-testing,frontend-review-triage,frontend-review-weekly,gh-fix-ci,node-sqlite-vec,opentelemetry,otel-node,performance-expert,pi-coding-agent,pkfire,playwright-cli,playwright-test,react-expert,security-expert",
+      "ms": 58021,
+      "hit": 3,
+      "miss": 21,
+      "extra": 0,
+      "loaded": 3,
+      "reason": "capped/rated 74 of 74"
+    },
+    {
+      "which": "skill",
+      "arm": "jev",
+      "item": "aws-ecs",
+      "answer": "aws-github-oidc-scoped-role,conventional-changelog",
+      "want": "apm-usage,aws-github-oidc-scoped-role,conventional-changelog,gh-fix-ci,pkfire",
+      "ms": 535,
+      "hit": 2,
+      "miss": 3,
+      "extra": 0,
+      "loaded": 2,
+      "reason": "judged/rated 74 of 74",
+      "inputTokens": 20043
     }
   ],
   "note": "The model router and the skill router, asked of jev and of `claude -p`. Same questions, same policy code, labels from docs/36 and docs/29."
