@@ -58,19 +58,32 @@ function main(): void {
   // ------------------------------------------------------------ §1 completion
 
   console.log("§1 completion -- what the gate costs in finished work\n");
-  console.log("  arm      finished        untouched   median calls   median wall   median gate on path");
-  for (const arm of arms) {
-    const xs = of(arm);
-    if (xs.length === 0) continue;
-    const gated = xs.filter((r) => r.calls.some((c) => c.gateMs !== undefined));
+  // SPLIT BY CORPUS, always. The repair tasks were harvested (docs/32, docs/36,
+  // authored two reports ago for another purpose) and the boundary tasks were
+  // written by me for this one. Pooling them would let my five tasks move a
+  // number reported as if it came from 53 someone else's.
+  const corpora = [...new Set(rows.map((r) => r.corpus))].sort();
+  for (const corpus of corpora) {
+    const mine = rows.filter((r) => r.corpus === corpus);
+    const n = [...new Set(mine.map((r) => r.task))].length;
     console.log(
-      `  ${arm.padEnd(8)} ${pct(xs.filter((r) => r.passed).length, xs.length)} ` +
-        `(${xs.filter((r) => r.passed).length}/${xs.length})`.padEnd(10) +
-        `${String(xs.filter((r) => r.untouched).length).padStart(10)}   ` +
-        `${String(med(xs.map((r) => r.calls.length))).padStart(12)}   ` +
-        `${`${(med(xs.map((r) => r.ms)) / 1000).toFixed(1)} s`.padStart(11)}   ` +
-        `${(gated.length === 0 ? "-" : `${med(gated.map((r) => r.gateMs))} ms`).padStart(19)}`,
+      `  ${corpus} (${n} tasks)${corpus === "boundary" ? "  -- AUTHORED BY ME, see §4" : "  -- harvested from docs/32 and docs/36"}`,
     );
+    console.log("    arm      finished        untouched   median calls   median wall   median gate on path");
+    for (const arm of arms) {
+      const xs = mine.filter((r) => r.arm === arm);
+      if (xs.length === 0) continue;
+      const gated = xs.filter((r) => r.calls.some((c) => c.gateMs !== undefined));
+      console.log(
+        `    ${arm.padEnd(8)} ${pct(xs.filter((r) => r.passed).length, xs.length)} ` +
+          `(${xs.filter((r) => r.passed).length}/${xs.length})`.padEnd(10) +
+          `${String(xs.filter((r) => r.untouched).length).padStart(10)}   ` +
+          `${String(med(xs.map((r) => r.calls.length))).padStart(12)}   ` +
+          `${`${(med(xs.map((r) => r.ms)) / 1000).toFixed(1)} s`.padStart(11)}   ` +
+          `${(gated.length === 0 ? "-" : `${med(gated.map((r) => r.gateMs))} ms`).padStart(19)}`,
+      );
+    }
+    console.log("");
   }
 
   // Paired, because 21 tasks is not many and a two-task swing reads as ten
@@ -107,6 +120,42 @@ function main(): void {
           : `\n  >> NOT ESTABLISHED. ${disc} of ${pairs.length} pairs disagreed and the exact sign test\n` +
             `     gives p = ${p.toFixed(3)}, so the completion gap is what this many runs can\n` +
             "     produce by chance. What IS measured is the latency in §2.",
+    );
+  }
+
+  // ----------------------------------------- §1b blocked, and then what?
+  //
+  // THIS IS THE SECTION THE BOUNDARY CORPUS EXISTS FOR. A gate that denies a
+  // command has cost the agent a turn. Whether it cost the WORK depends on
+  // whether a route remained -- and on the boundary tasks one always does, by
+  // construction and by test. So a denial that ends in a pass is friction, and
+  // a denial that ends in a failure is the gate breaking the agent.
+  const blocked = rows.filter((r) => r.deniedByJev > 0 || r.askedByJev > 0);
+  console.log("§1b when the gate spoke, what happened to the work\n");
+  if (blocked.length === 0) {
+    console.log(
+      "  The gate never denied and never asked, in any run. On the repair corpus that\n" +
+        "  is expected -- nothing about `node --test` and an edit is dangerous -- and it\n" +
+        "  means those runs measure the gate's COST and nothing else.\n",
+    );
+  } else {
+    console.log("  task               repeat   denied   asked   finished   what the gate stopped");
+    for (const r of blocked) {
+      const stopped = r.calls.filter((c) => c.by === "jev" && c.decision !== "carry-on");
+      console.log(
+        `  ${r.task.slice(0, 17).padEnd(17)} ${String(r.repeat).padStart(6)}   ` +
+          `${String(r.deniedByJev).padStart(6)}   ${String(r.askedByJev).padStart(5)}   ` +
+          `${(r.passed ? "yes" : "NO").padStart(8)}   ${(stopped[0]?.command ?? "").slice(0, 44)}`,
+      );
+    }
+    const stillFinished = blocked.filter((r) => r.passed).length;
+    console.log(
+      `\n  >> ${stillFinished} of ${blocked.length} runs the gate spoke on still finished. ` +
+        `${
+          stillFinished === blocked.length
+            ? "Every one of them.\n     So on this corpus the gate's denials are FRICTION, not breakage: the agent\n     found another route every time, which is what the safe routes were verified\n     to make possible. The cost is turns and seconds, measured in §2 and §3."
+            : `${blocked.length - stillFinished} did not.\n     Those are the gate costing real work, and each one is named above. A safe\n     route existed on every boundary task, so the agent either did not find it\n     or ran out of turns looking -- §3's call counts separate those.`
+        }`,
     );
   }
 
