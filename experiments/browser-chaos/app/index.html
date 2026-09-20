@@ -312,6 +312,50 @@ const decoys = (names) => names
   .map((n) => `<button type="button" data-decoy="1">${n}</button>`)
   .join("");
 
+/*
+  `?wide=N` appends N filler controls to every screen, for docs/30's
+  retrieval measurement. A candidate list of 10-17 is too small for
+  "narrow it before asking" to mean anything; a real application's screen
+  is 100+.
+
+  The filler is deliberately ADVERSARIAL to lexical retrieval rather than
+  noise. Half of it is built from the goal's own vocabulary — order,
+  checkout, shipping, express, next-day, Widget, confirm — so a retriever
+  scoring candidates against the goal ranks filler like "Order a paper
+  catalogue" and "Express interest in restocking" above the control that
+  actually advances the flow ("Proceed to checkout"). Filler named
+  `Filler 7` would make retrieval look free, which is the opposite of a
+  measurement.
+
+  Deterministic: the same N always produces the same labels, so a run is
+  reproducible and two arms see an identical page.
+*/
+const WIDE = Math.max(0, Math.min(400, Number(new URLSearchParams(location.search).get("wide")) || 0));
+
+const FILLER_VERBS = ["View", "Save", "Compare", "Share", "Report", "Hide", "Pin", "Export"];
+const FILLER_NOUNS = [
+  // Drawn from the goal's vocabulary on purpose.
+  "order history", "checkout help", "shipping policy", "express delivery FAQ",
+  "next-day cutoff times", "Widget accessories", "Widget specifications",
+  "order confirmation emails", "delivery methods", "confirmed addresses",
+  // And ordinary shop furniture, so the list is not uniformly adversarial.
+  "gift cards", "store locations", "return policy", "size guide", "reviews",
+  "wishlist", "recently viewed", "loyalty points", "payment methods", "invoices",
+];
+
+function filler(n) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const verb = FILLER_VERBS[i % FILLER_VERBS.length];
+    const noun = FILLER_NOUNS[Math.floor(i / FILLER_VERBS.length) % FILLER_NOUNS.length];
+    // The index keeps labels unique past verbs x nouns without adding a
+    // token a retriever could key on for the right answer.
+    const suffix = i >= FILLER_VERBS.length * FILLER_NOUNS.length ? ` (${i})` : "";
+    out.push(`<button type="button" data-filler="1">${verb} ${noun}${suffix}</button>`);
+  }
+  return out.join("");
+}
+
 const routes = {
   "#/home": () => `
     <h1>Welcome</h1>
@@ -440,7 +484,9 @@ function render() {
   }
   const hash = location.hash || "#/home";
   const view = routes[hash] || (() => `<h1>Not found</h1>`);
-  document.getElementById("view").innerHTML = view();
+  // Filler goes on every screen, appended here rather than in each route,
+  // so it cannot accidentally differ between screens or between arms.
+  document.getElementById("view").innerHTML = view() + (WIDE ? filler(WIDE) : "");
   document.title = `Chaos target — ${hash}`;
   if (window.__visited[window.__visited.length - 1] !== hash) window.__visited.push(hash);
   document.getElementById("status").textContent =

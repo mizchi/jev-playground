@@ -46,14 +46,26 @@ interface Arm {
   prune: boolean;
   /** Attach the geometry to the candidates that are offered. */
   tell: boolean;
+  /**
+   * Offer only what is on screen. docs/30 §6.4's recommendation, which
+   * the offline recall sweep could only test against a scripted correct
+   * action — this is whether a driver restricted that way still arrives.
+   */
+  viewport?: boolean;
 }
 
-const ARMS: Arm[] = [
+const ABLATION: Arm[] = [
   { name: "all", typed: true, prune: true, tell: true },
   { name: "-typed", typed: false, prune: true, tell: true },
   { name: "-prune", typed: true, prune: false, tell: true },
   { name: "-geometry", typed: true, prune: false, tell: false },
   { name: "none", typed: false, prune: false, tell: false },
+];
+
+/** `--wide`: does the §6.4 recommendation survive a real driver? */
+const WIDE_ARMS: Arm[] = [
+  { name: "everything", typed: true, prune: true, tell: true },
+  { name: "viewport", typed: true, prune: true, tell: true, viewport: true },
 ];
 
 const GOAL =
@@ -177,6 +189,12 @@ async function runArm(
     // screen whose every control is blocked still has to be leavable.
     const notInert = candidates.filter((c) => !inert.has(c.description));
     let offered = notInert.length >= 2 ? notInert : candidates;
+    if (arm.viewport) {
+      // Spatial, not lexical. Never narrowed to nothing: a screen with
+      // nothing on it still has to be leavable.
+      const onScreen = offered.filter((c) => c.facts.inViewport);
+      if (onScreen.length >= 1) offered = onScreen;
+    }
     if (arm.prune) {
       const live = offered.filter((c) => !blocked(c));
       if (live.length >= 1) offered = live;
@@ -290,13 +308,19 @@ async function main(): Promise<void> {
   const verbose = process.argv.includes("--verbose");
   const jev = new Jev();
   const srv = await serve();
-  const base = `${typeof srv === "string" ? srv : srv.url}?overlay=1&select=many`;
+  // `--wide` swaps the board and the arms: docs/30 §3 is the overlay
+  // ablation, §6.4 is the retrieval question, and they need different
+  // pages to be about anything.
+  const wide = process.argv.includes("--wide");
+  const arms = wide ? WIDE_ARMS : ABLATION;
+  const query = wide ? "select=many&wide=200" : "overlay=1&select=many";
+  const base = `${typeof srv === "string" ? srv : srv.url}?${query}`;
   const browser = await chromium.launch();
   const rows: ArmResult[] = [];
 
   try {
     for (let run = 0; run < runs; run += 1) {
-      for (const arm of ARMS) {
+      for (const arm of arms) {
         const ctx = await browser.newContext();
         const page = await ctx.newPage();
         if (verbose) console.log(`\n${arm.name} run=${run}`);
@@ -309,9 +333,9 @@ async function main(): Promise<void> {
     await browser.close();
   }
 
-  console.log(`\noverlay=1 select=many, ${steps} step budget, ${runs} run(s) per arm`);
+  console.log(`\n${query}, ${steps} step budget, ${runs} run(s) per arm`);
   console.log("\narm         goal  steps  wasted  blocked  reqs  in_tok  out_tok    ms  express");
-  for (const arm of ARMS) {
+  for (const arm of arms) {
     const mine = rows.filter((r) => r.arm === arm.name);
     const n = mine.length;
     const avg = (f: (r: ArmResult) => number) => (mine.reduce((a, r) => a + f(r), 0) / n).toFixed(1);
