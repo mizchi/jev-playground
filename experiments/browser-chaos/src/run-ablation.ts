@@ -59,6 +59,12 @@ interface Arm {
    * to put them in.
    */
   scroll?: boolean;
+  /**
+   * Offer CLEAR. Without it "this field must end up empty" cannot be
+   * expressed at all, because `fillValue` derives a non-empty string from
+   * the description every time — see docs/30 §6.7.
+   */
+  clear?: boolean;
 }
 
 const ABLATION: Arm[] = [
@@ -67,6 +73,12 @@ const ABLATION: Arm[] = [
   { name: "-prune", typed: true, prune: false, tell: true },
   { name: "-geometry", typed: true, prune: false, tell: false },
   { name: "none", typed: false, prune: false, tell: false },
+];
+
+/** `--clear`: is an explicit CLEAR the only way to empty a field? */
+const CLEAR_ARMS: Arm[] = [
+  { name: "no-clear", typed: true, prune: true, tell: true },
+  { name: "clear", typed: true, prune: true, tell: true, clear: true },
 ];
 
 /** `--wide`: does the §6.4 recommendation survive a real driver? */
@@ -125,6 +137,8 @@ interface ArmResult {
   invalid: number;
   /** Steps spent moving the view rather than acting. */
   scrolls: number;
+  /** What the discount field ended on. `""` is the goal under ?clear=1. */
+  discount: string;
 }
 
 async function act(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; error?: string }> {
@@ -261,7 +275,9 @@ async function runArm(
       decision = await decide(
         arm.typed ? "fanout" : "flat-memo",
         jev,
-        shown,
+        // The no-clear arm must not see the CLEAR head at all. Presenting
+        // it and refusing to execute would measure something else.
+        arm.clear ? shown : shown.map((c) => (c.type === "input" ? { ...c, currentValue: "" } : c)),
         state,
         memo,
         // One direction only, and only while there is unswept page. See
@@ -279,6 +295,30 @@ async function runArm(
     if (decision.operation === "DONE" || decision.operation === "BLOCKED") {
       trace?.(`  step=${step} ${decision.operation}@${decision.confidence.toFixed(2)}`);
       break;
+    }
+
+    if (decision.operation === "CLEAR") {
+      const entry = decision.entry!;
+      const real = offered.find((c) => c.index === entry.candidate.index) ?? entry.candidate;
+      const el = page.locator(real.selector).first();
+      try {
+        await el.fill("", { timeout: 1500 });
+        await el.dispatchEvent("change");
+      } catch {}
+      await page.waitForTimeout(60);
+      const after = await evalString(page, SIGNATURE);
+      const had = after !== before;
+      if (!had) {
+        wasted += 1;
+        inert.add(real.description);
+      }
+      recent.push(`CLEAR ${real.description}`);
+      lastAction = `CLEAR ${real.description}`;
+      lastHadEffect = had;
+      lastError = undefined;
+      noEffectStreak = had ? 0 : noEffectStreak + 1;
+      trace?.(`  step=${step} CLEAR@${decision.confidence.toFixed(2)} ${had ? "ok  " : "NOOP"} ${real.description}`);
+      continue;
     }
 
     if (isScroll(decision.operation)) {
@@ -338,6 +378,13 @@ async function runArm(
     if (seen.has(GOAL_STATE)) break;
   }
 
+  const discount = await page.evaluate(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("chaos-target-progress") || "{}").discount ?? "";
+    } catch {
+      return "";
+    }
+  });
   const shipping = await page.evaluate(() => {
     try {
       return JSON.parse(sessionStorage.getItem("chaos-target-progress") || "{}").shipping || undefined;
@@ -357,6 +404,7 @@ async function runArm(
     outputTokens: jev.outputTokens - startOut,
     ms: jev.totalMs - startMs,
     shipping: shipping as string | undefined,
+    discount: discount as string,
     invalid,
     scrolls,
   };
@@ -379,14 +427,17 @@ async function main(): Promise<void> {
   // ablation, §6.4 is the retrieval question, and they need different
   // pages to be about anything.
   const wide = process.argv.includes("--wide");
-  const arms = wide ? WIDE_ARMS : ABLATION;
   // `--before` prepends the filler so the flow sits below the fold. That
   // is the only arrangement where viewport narrowing has to give
   // something up, and therefore the only one where SCROLL is testable.
   const before = process.argv.includes("--before");
-  const query = wide
-    ? `select=many&wide=200${before ? "&fillerpos=before" : ""}`
-    : "overlay=1&select=many";
+  const clearMode = process.argv.includes("--clear");
+  const arms = clearMode ? CLEAR_ARMS : wide ? WIDE_ARMS : ABLATION;
+  const query = clearMode
+    ? "select=many&clear=1"
+    : wide
+      ? `select=many&wide=200${before ? "&fillerpos=before" : ""}`
+      : "overlay=1&select=many";
   const base = `${typeof srv === "string" ? srv : srv.url}?${query}`;
   const browser = await chromium.launch();
   const rows: ArmResult[] = [];
@@ -419,7 +470,8 @@ async function main(): Promise<void> {
         `${avg((r) => r.blockedPicks).padStart(7)}  ${avg((r) => r.requests).padStart(4)}  ` +
         `${avg((r) => r.inputTokens).padStart(6)}  ${avg((r) => r.outputTokens).padStart(7)}  ` +
         `${avg((r) => r.ms).padStart(4)}  ` +
-        `${String(mine.filter((r) => r.shipping === "express").length)}/${n}`,
+        `${String(mine.filter((r) => r.shipping === "express").length)}/${n}` +
+        (clearMode ? `  discount=${[...new Set(mine.map((r) => r.discount || "(empty)"))].join("/")}` : ""),
     );
   }
 

@@ -18,6 +18,7 @@ import {
   validateChoice,
 } from "./fanout.js";
 import type { ProbedCandidate } from "./probes.js";
+import { fillValue } from "./confidence-bench.js";
 import {
   FIXTURES,
   hostileTrap,
@@ -69,7 +70,9 @@ const shipping = cand({
 
 console.log("action space");
 
-check("each candidate maps to exactly one operation", () => {
+// No longer "exactly one" — see the CLEAR section. This pins the
+// primary mapping, which is what builds every head except CLEAR.
+check("each candidate maps to one primary operation", () => {
   assert(operationFor(cand({ index: 0 })) === "CLICK", "a button is not CLICK");
   assert(operationFor(cand({ index: 1, type: "input" })) === "TYPE_TEXT", "an input is not TYPE_TEXT");
   assert(operationFor(shipping) === "SELECT", "a select is not SELECT");
@@ -79,9 +82,56 @@ check("heads contain only elements that accept their operation", () => {
   const { heads } = actionSpace([cand({ index: 0 }), cand({ index: 1, type: "input" }), shipping]);
   for (const [op, head] of heads) {
     for (const [, entry] of head) {
+      // CLEAR is the one head `operationFor` does not name, because a
+      // filled field accepts both it and TYPE_TEXT. Covered separately
+      // below rather than excused here.
+      if (op === "CLEAR") continue;
       assert(operationFor(entry.candidate) === op, `${op} head holds a ${entry.candidate.type}`);
     }
   }
+});
+
+console.log("\nCLEAR");
+
+const filled = cand({
+  index: 4,
+  type: "input",
+  description: 'text field "Discount code"',
+  currentValue: "SAVE99",
+  locator: { id: "discount", role: "textbox", name: "Discount code" },
+});
+
+check("a filled field belongs to both TYPE_TEXT and CLEAR", () => {
+  // The invariant that changed. It has to, and for a structural reason:
+  // Jev answers `choice` only, so there is no field on a target where a
+  // `clear: true` flag could live the way browser-use has it. The
+  // distinction moves into the operation, and the element is in two heads.
+  const { heads, operations } = actionSpace([filled]);
+  assert(heads.get("TYPE_TEXT")?.has("4"), "not offered for replacement");
+  assert(heads.get("CLEAR")?.has("4"), "not offered for clearing");
+  assert(operations.includes("CLEAR"), "CLEAR missing from the operation list");
+});
+
+check("an empty field is offered for typing but not for clearing", () => {
+  // Clearing what is already blank is a guaranteed no-op, the same rule
+  // the SELECT head applies to the current value.
+  const { heads, operations } = actionSpace([{ ...filled, currentValue: "" }]);
+  assert(heads.get("TYPE_TEXT")?.has("4"), "an empty field should still take text");
+  assert(!heads.has("CLEAR"), "offered CLEAR on an empty field");
+  assert(!operations.includes("CLEAR"), "CLEAR still in the operation list");
+});
+
+check("CLEAR is never offered for a button or a dropdown", () => {
+  const { heads } = actionSpace([cand({ index: 0 }), shipping]);
+  assert(!heads.has("CLEAR"), "offered CLEAR with no text field at all");
+});
+
+check("clearing is not the same as replacing", () => {
+  // The whole reason the operation exists. `fillValue` derives a
+  // non-empty string from the description every time, so a TYPE_TEXT on
+  // a field the goal wants *empty* leaves a different value behind — and
+  // on the ?clear=1 board the gate stays shut while anything is there.
+  assert(fillValue('text field "Discount code"') !== "", "fillValue can already produce an empty value");
 });
 
 check("an operation with no candidates is not offered", () => {

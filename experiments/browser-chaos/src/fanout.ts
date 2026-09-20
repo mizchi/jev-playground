@@ -37,13 +37,14 @@ import type { ProbedCandidate } from "./probes.js";
 export type Operation =
   | "CLICK"
   | "TYPE_TEXT"
+  | "CLEAR"
   | "SELECT"
   | "SCROLL_DOWN"
   | "SCROLL_UP"
   | "DONE"
   | "BLOCKED";
 
-const TARGETED: Operation[] = ["CLICK", "TYPE_TEXT", "SELECT"];
+const TARGETED: Operation[] = ["CLICK", "TYPE_TEXT", "CLEAR", "SELECT"];
 
 /** Operations that move the viewport instead of acting on a target. */
 export const SCROLLS: Operation[] = ["SCROLL_DOWN", "SCROLL_UP"];
@@ -92,7 +93,18 @@ export function untriedOption(c: ProbedCandidate, tried: ReadonlySet<string>): s
 /** Per-element record of the options a flat caller has already set. */
 export type OptionMemo = Map<string, Set<string>>;
 
-/** Which operation a probed candidate accepts. One each, by construction. */
+/**
+ * Which operation a probed candidate accepts *primarily*.
+ *
+ * No longer one-to-one. A field that currently holds a value accepts both
+ * `TYPE_TEXT` (replace it) and `CLEAR` (empty it), so `actionSpace` adds
+ * it to the CLEAR head as well. That is the whole reason `CLEAR` has to
+ * be its own operation here rather than a flag on the text target the way
+ * browser-use has it (`InputTextAction{index, text, clear}`): Jev answers
+ * `choice` only, so there is no field on a target it could set. The
+ * distinction has to live where a choice can express it — in the
+ * operation.
+ */
 export function operationFor(c: ProbedCandidate): Operation {
   if (c.type === "select") return "SELECT";
   if (c.type === "input") return "TYPE_TEXT";
@@ -220,6 +232,17 @@ export function actionSpace(
     }
     heads.set(op, head);
   }
+
+  // A field holding a value can also be emptied. Built after the main
+  // loop because it is the one case where a candidate belongs to two
+  // heads, and an empty field is deliberately excluded — clearing what is
+  // already blank is a guaranteed no-op, the same rule the SELECT head
+  // uses for the current value.
+  const clearable = candidates.filter((c) => c.type === "input" && c.currentValue !== "");
+  if (clearable.length > 0) {
+    heads.set("CLEAR", new Map(clearable.map((c) => [String(c.index), { candidate: c }])));
+  }
+
   const operations: Operation[] = [
     ...TARGETED.filter((op) => heads.has(op)),
     ...(opts.canScrollDown ? (["SCROLL_DOWN"] as Operation[]) : []),
@@ -320,6 +343,8 @@ function operationCriteria(space: ActionSpace): Record<string, string> {
   const labels: Record<string, string> = {
     CLICK: "Click a button, link, or option.",
     TYPE_TEXT: "Enter or replace text in an editable field.",
+    CLEAR:
+      "Empty a field that currently holds a value. Use this when the goal wants nothing in it — replacing the text leaves a different value behind, which is not the same as removing it.",
     SELECT: "Set an observed dropdown to one of its offered values.",
     SCROLL_DOWN:
       "Scroll down. The controls offered below are only the ones on screen; this reveals the ones further down the page.",

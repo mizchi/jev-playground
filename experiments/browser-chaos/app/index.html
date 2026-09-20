@@ -73,6 +73,9 @@ const blank = {
   // graded on it. `subscribed` is the twin's, and it is the only trap that
   // still reaches #/confirm — which is exactly why it needs recording.
   recipient: "", promo: "", giftwrap: "", subscribed: false,
+  // `?clear=1` starts this NON-empty on purpose: the order is blocked
+  // until it is blank again.
+  discount: "SAVE99",
   // `?slots=1` only.
   slot: "", slotError: "",
 };
@@ -151,6 +154,25 @@ const HOSTILE = SELECT_MODE === "hostile" || TWIN;
   chosen from the criteria alone, and picking a full slot is wrong by
   outcome rather than by my opinion — the app refuses it.
 */
+/*
+  `?clear=1` puts an already-filled, invalid discount code on checkout-3
+  and refuses the order while it is there, for docs/30 §6.7.
+
+  This is the one end-state a driver here cannot express. Playwright's
+  `fill()` already replaces, so *changing* a value needs no clear — what
+  needs one is making a field EMPTY, and `fillValue()` derives a
+  non-empty string from the description every time. So "this field must
+  end up blank" is unreachable by construction, and the failure is silent:
+  TYPE_TEXT on the field replaces SAVE99 with "test input", which is
+  still a code, so the gate stays shut and the step looks like it worked.
+
+  browser-use makes this explicit — `InputTextAction{index, text, clear}`,
+  where `text=""` with `clear=True` empties the field. docs/29 §8 met the
+  same gap from the other side: jev-ultrafast has no clear either, and its
+  dropdown placeholder became an *accidental* one.
+*/
+const CLEARABLE = new URLSearchParams(location.search).get("clear") === "1";
+
 const SLOTS_MODE = new URLSearchParams(location.search).get("slots") || "";
 const SLOTS = SLOTS_MODE !== "";
 /*
@@ -441,6 +463,12 @@ const routes = {
         .join("")}
     </select>
     ${state.shipping ? "" : "<p>Choose a shipping method to place the order.</p>"}` : ""}
+    ${CLEARABLE ? `
+    <label for="discount">Discount code</label>
+    <input id="discount" type="text" value="${state.discount}">
+    ${state.discount
+      ? `<p>Code ${state.discount} is not valid for this order. Remove it to continue.</p>`
+      : "<p>No discount code applied.</p>"}` : ""}
     ${HOSTILE ? `
     <label for="recipient">Recipient name (required)</label>
     <input id="recipient" type="text" placeholder="Full name" value="${state.recipient}">
@@ -561,6 +589,9 @@ function wire() {
     if (SELECT && !state.shipping) { render(); return; }
     if (HOSTILE && !state.recipient) { render(); return; }
     if (SLOTS && !state.slot) { update({ slotError: "Reserve a delivery slot first." }); return; }
+    // Any non-empty code blocks, so replacing SAVE99 with another string
+    // does not help — only emptying it does.
+    if (CLEARABLE && state.discount) { render(); return; }
     if (BUG !== "order") update({ ordered: true });
     go("#/confirm");
   });
@@ -574,6 +605,8 @@ function wire() {
   if (wrap) wrap.addEventListener("change", (e) => update({ giftwrap: e.target.value }));
   const recipient = document.getElementById("recipient");
   if (recipient) recipient.addEventListener("change", (e) => update({ recipient: e.target.value }));
+  const discount = document.getElementById("discount");
+  if (discount) discount.addEventListener("change", (e) => update({ discount: e.target.value }));
   const coupon = document.getElementById("coupon");
   if (coupon) coupon.addEventListener("change", (e) => update({ promo: e.target.value }));
   on("apply-coupon", () => update({ promo: (document.getElementById("coupon") || {}).value || state.promo }));
