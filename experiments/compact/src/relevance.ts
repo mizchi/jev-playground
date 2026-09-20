@@ -429,6 +429,48 @@ function main(): void {
     );
   }
 
+  // WHY `overlap` SCORES WHAT IT SCORES, because a free arm that ties with a
+  // judgment deserves to be understood rather than just tabulated. The answer
+  // turned out to change how its 15/40 reads: on `longest-doc` the fact entry
+  // shares exactly one word with the goal (`and`) and still ranks 4th, which
+  // is a stopword beating 57 entries at 0.000 rather than a relevance signal.
+  const vocabulary = (text: string): Set<string> =>
+    new Set(text.toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g) ?? []);
+  console.log("\n### 3.1 What `overlap` is actually matching on\n");
+  console.log("| transcript | goal words the answer-bearing entry shares | entries at 0.000 | `overlap` rank |");
+  console.log("| --- | --- | --- | --- |");
+  for (const t of ts) {
+    const d = all.find((x) => x.transcript === t.id);
+    if (!d) continue;
+    const candidates = new Set(d.ranked.map((r) => r.id));
+    const factIds = new Set(t.facts.map((f) => f.entryId));
+    const goal = vocabulary(t.entries.find((e) => e.role === "user")?.text ?? "");
+    const e = t.entries.find((x) => factIds.has(x.id));
+    const words = vocabulary(e?.text ?? "");
+    const shared = [...goal].filter((g) => words.has(g));
+    const zero = t.entries.filter((x) => {
+      if (x.id === "goal") return false;
+      const w = vocabulary(x.text);
+      return [...goal].every((g) => !w.has(g));
+    }).length;
+    const rank = med(rankOfFact(keepOrderFree("overlap", t.entries as Entry[], candidates), factIds));
+    console.log(
+      `| \`${t.id}\` | ${shared.length === 0 ? "**(none)**" : shared.length === 1 ? `**\`${shared[0]}\` only**` : shared.map((w) => `\`${w}\``).join(" ")} | ` +
+        `${zero}/${t.entries.length - 1} | **${rank}** |`,
+    );
+  }
+  console.log(
+    "\n**`overlap` takes first place exactly where the goal NAMES the thing** (`dropat`, the `flags` of " +
+      "`registerFlag`, `scenarios`) **and falls away where the goal asks for a comparison** (`longest`, " +
+      "`most`, the link count) -- because a comparison's answer is a number the goal cannot name. " +
+      "That is the scope of docs/39's \"a free word count takes most of the value\", and docs/39 could not " +
+      "see it: it scored survival under a budget rather than the rank of the one answer-bearing entry.\n\n" +
+      "**And it is why the tie above should not be read as \"either arm works\".** On `longest-doc` the " +
+      "fact entry shares one stopword with the goal and still ranks 4th, because almost everything else " +
+      "shares nothing. That is a rank produced by an empty field, not by relevance. **n = 8, so this is a " +
+      "shape and not a rule.**\n",
+  );
+
   const unstable = ts.filter((t) => new Set(jevPerTranscript.get(t.id) ?? []).size > 1).length;
   console.log(
     `\n**jev's rank moved between draws on ${unstable} of ${ts.length} transcripts**, which is the ` +
@@ -447,8 +489,12 @@ function main(): void {
       `\`overlap\`: ${overlap.top1}/${overlap.n} and ${overlap.top5}/${overlap.n}. ` +
       `Paired by transcript, ${jevBetter} against ${freeBetter} with ` +
       `${pairs.length - jevBetter - freeBetter} tied, **p = ` +
-      `${signTest(jevBetter, freeBetter).toFixed(3)}**. **A null, not a win either way** -- and when a ` +
-      "judgment and a free word count tie, the word count is the one to ship.\n" +
+      `${signTest(jevBetter, freeBetter).toFixed(3)}**. **A null, not a win either way.**\n` +
+      "- **But the tie is not \"either arm works\", and §3.1 is why.** `overlap` takes first place only " +
+      "where the goal names the thing it is asking about, and on `longest-doc` its 4th place comes from " +
+      "sharing one stopword in a field where 57 of 62 entries share none. **So the free arm to ship is " +
+      "the free arm on identifier-shaped goals, and neither arm is established on comparison-shaped " +
+      "ones** -- which is the half of the corpus a compaction front-end would most want.\n" +
       "- **Which makes this docs/39's measurement seen from a different angle, not a new one.** Same " +
       "corpus, same record, same eight transcripts. docs/39's conclusion -- that a free word count takes " +
       "most of the value -- survives being asked a different question about the same data, which is the " +
