@@ -105,51 +105,80 @@ function main(): void {
       "docs/44 §4.5 had to re-ask 220 commands to find out where its variance lived.",
   );
 
-  // AND THE COMPARISON THE FIX MAKES POSSIBLE. `traffic.ts` re-asked the same
-  // commands; the overlap between the two sets is where the debt is priced.
-  const trafficPath = resolve(RECORDS, "traffic.json");
-  if (existsSync(trafficPath)) {
-    const traffic = (JSON.parse(readFileSync(trafficPath, "utf8")) as {
-      rows: { command: string; permission: number | null; cwdRecorded?: boolean }[];
-    }).rows;
-    const asked = new Map(traffic.filter((r) => typeof r.permission === "number").map((r) => [r.command, r.permission as number]));
-    // In-run scores, deduplicated per command by the median of its draws.
+  // AND THE COMPARISON THE FIX MAKES POSSIBLE. Every traffic record there is,
+  // pooled -- docs/43's `traffic.json` plus the post-§3.2 harvests -- because
+  // the paired set is what prices the debt and restricting it to one harvest
+  // threw two thirds of the pairs away (72 instead of 209).
+  const trafficFiles = ["traffic.json", "traffic-scored.json", "traffic-scored-easy.json"].filter((f) =>
+    existsSync(resolve(RECORDS, f)),
+  );
+  if (trafficFiles.length > 0) {
+    const traffic = trafficFiles.flatMap(
+      (f) =>
+        (
+          JSON.parse(readFileSync(resolve(RECORDS, f), "utf8")) as {
+            rows: { command: string; permission: number | null; cwdRecorded?: boolean }[];
+          }
+        ).rows,
+    );
+    const asked = new Map<string, number>();
+    for (const r of traffic) if (typeof r.permission === "number" && !asked.has(r.command)) asked.set(r.command, r.permission);
     const inRun = new Map<string, number[]>();
     for (const x of scored) {
-      const k = x.v.command;
-      if (!asked.has(k)) continue;
-      inRun.set(k, [...(inRun.get(k) ?? []), x.v.score as number]);
+      if (!asked.has(x.v.command)) continue;
+      inRun.set(x.v.command, [...(inRun.get(x.v.command) ?? []), x.v.score as number]);
     }
-    console.log("\n## How wrong was the re-ask? (TODO §3.1's actual question)\n");
+    console.log(
+      `\n## How wrong was the re-ask? (TODO §3.1's actual question)\n\n` +
+        `Pooled over ${trafficFiles.map((f) => `\`${f}\``).join(", ")}.\n`,
+    );
     if (inRun.size === 0) {
-      console.log(
-        "**No command appears in both sets**, so the gap cannot be priced here. `traffic.json` was harvested " +
-          "from `runs.json`, whose sandbox paths differ from this sweep's -- and the commands carry those " +
-          "paths, so they are different strings. Re-harvesting `traffic.ts` against `scored.json` would " +
-          "line them up.\n",
-      );
+      console.log("**No command appears in both sets**, so the gap cannot be priced here.\n");
     } else {
       const diffs = [...inRun.entries()].map(([k, v]) => ({ command: k, inRun: med(v), asked: asked.get(k) as number }));
       const gaps = diffs.map((d) => Math.abs(d.inRun - d.asked));
       const crossed = diffs.filter((d) => d.inRun >= ASK_MIN !== d.asked >= ASK_MIN);
+      const askedAll = diffs.map((d) => d.asked);
+      const runAll = diffs.map((d) => d.inRun);
+      console.log("| on the same commands | n | median | p99 | max |");
+      console.log("| --- | --- | --- | --- | --- |");
       console.log(
-        `**${diffs.length} commands appear in both.** Median absolute gap between the in-run score and the ` +
-          `re-asked one: **${med(gaps).toFixed(3)}**, p90 ${quantile(gaps, 0.9).toFixed(3)}, max ` +
-          `${Math.max(...gaps).toFixed(3)}. **${crossed.length} of ${diffs.length} land on different sides ` +
-          `of docs/01's ${ASK_MIN} floor**, which is the only difference that would have changed a reading.`,
+        `| **re-asked** (docs/43's method) | ${diffs.length} | ${med(askedAll).toFixed(2)} | ` +
+          `${quantile(askedAll, 0.99).toFixed(2)} | **${Math.max(...askedAll).toFixed(2)}** |`,
+      );
+      console.log(
+        `| **in the run** | ${diffs.length} | ${med(runAll).toFixed(2)} | ` +
+          `${quantile(runAll, 0.99).toFixed(2)} | **${Math.max(...runAll).toFixed(2)}** |`,
+      );
+      console.log(
+        `| absolute gap, paired | ${diffs.length} | **${med(gaps).toFixed(3)}** | ` +
+          `${quantile(gaps, 0.99).toFixed(3)} | ${Math.max(...gaps).toFixed(3)} |`,
+      );
+      console.log(
+        `\n**Per command the re-ask is close: median gap ${med(gaps).toFixed(3)}, and ${crossed.length} of ` +
+          `${diffs.length} land on different sides of docs/01's ${ASK_MIN} floor** -- the only difference that ` +
+          "would have changed a reading. **So docs/43 §4.3's conclusion does not depend on the re-ask**, " +
+          "which is what TODO §3.1 left in doubt.\n\n" +
+          `**But the extremes are the re-ask's, not the run's.** docs/43 §4.3 quotes a maximum of 0.70; on ` +
+          `these same commands the runs peaked at ${Math.max(...runAll).toFixed(2)}. Both sit far above ` +
+          `docs/01's ${SAFE_MAX} safe ceiling, so the overlap stands -- but a number quoted as "what a real ` +
+          'agent\'s traffic reaches" was a draw taken afterwards, and the run\'s own answer is lower. ' +
+          "**Quote the in-run figure.**",
       );
       if (crossed.length > 0) {
         console.log("\n| command | in the run | re-asked |");
         console.log("| --- | --- | --- |");
         for (const d of crossed.slice(0, 10)) {
-          console.log(`| \`${d.command.replace(/\n/g, " ").slice(0, 52)}\` | ${d.inRun.toFixed(2)} | ${d.asked.toFixed(2)} |`);
+          console.log(
+            `| \`${d.command.replace(/\n/g, " ").slice(0, 52)}\` | ${d.inRun.toFixed(2)} | ${d.asked.toFixed(2)} |`,
+          );
         }
       }
     }
     const guessed = traffic.filter((r) => r.cwdRecorded === false).length;
     const recorded = traffic.filter((r) => r.cwdRecorded === true).length;
     console.log(
-      `\n**TODO §3.2**: of \`traffic.json\`'s ${traffic.length} rows, ${recorded} were asked about a ` +
+      `\n**TODO §3.2**: of ${traffic.length} traffic rows pooled, ${recorded} were asked about a ` +
         `RECORDED directory and ${guessed} about one recovered from the command text` +
         `${recorded + guessed < traffic.length ? ` (${traffic.length - recorded - guessed} predate the field)` : ""}. ` +
         "The ledger now carries `cwd` from the hook event, so the regex is a fallback for old rows rather " +
