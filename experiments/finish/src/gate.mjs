@@ -83,10 +83,17 @@ const command = typeof input.command === "string" ? input.command : "";
 // WHICH call did it. The path is relative to the sandbox so the ledger does not
 // carry a different temp directory in every row.
 const filePath = typeof input.file_path === "string" ? input.file_path : "";
+// `cwd` AS WELL, and this closes TODO §3.2. docs/43 §4.4's measurement bug was
+// fixed by recovering `/tmp/jev-finish-<task>-<id>/` out of the command text
+// with a regex -- which works and depends on the sandbox naming convention, so
+// it breaks silently the day that changes. The hook is HANDED the directory in
+// the event, so the ledger records it and nothing downstream has to guess.
+const eventCwd = typeof event.cwd === "string" ? event.cwd : (process.env.FINISH_SANDBOX ?? "");
 const base = {
   at: Date.now(),
   tool,
   command: command.slice(0, 400),
+  cwd: eventCwd,
   ...(filePath ? { path: filePath.replace(process.env.FINISH_SANDBOX ?? "", "").replace(/^\//, "") } : {}),
 };
 

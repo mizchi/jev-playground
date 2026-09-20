@@ -22,13 +22,18 @@
  *   orchestration  PreToolUse with a matcher on `Task`          WIRABLE
  *   model router   --model at launch, PreModelSwitch mid-run    WIRABLE
  *   skill router   which skills exist in .claude/skills/        WIRABLE
- *   compactor      PreCompact can BLOCK or rewrite the summary
- *                  INSTRUCTIONS, and nothing more               NOT WIRABLE
+ *   compactor      PreCompact takes `custom_instructions`, AND
+ *                  PostCompact hands over the summary itself    WIRABLE
  *
- * The compactor is the one that does not fit, and the reason is exact: its
- * whole design is "delete, never summarise" (docs/39), and the host's only
- * compaction seam hands a summariser different instructions. Four of five, and
- * the fifth is a statement about the host, not about the component.
+ * THE COMPACTOR'S LINE SAID `NOT WIRABLE` FOR TWO REPORTS, on the reading that
+ * `PreCompact` can only block or reword the summariser's prompt while
+ * `jev-compact`'s design is "delete, never summarise" (docs/39). Reading the
+ * installed binary instead of reasoning about the docs found a SECOND hook --
+ * `PostCompact { trigger, compact_summary }` -- so the summary can be scored
+ * directly, and `claude -p "/compact" --resume <sid>` drives it headlessly.
+ * docs/44 §5 does that. The answer is about the HOST's summariser rather than
+ * about a jev component, because `jev-compact` still has nowhere to sit: five
+ * of five seams, four of five components.
  */
 import {
   cpSync,
@@ -172,6 +177,12 @@ export interface ToolCall {
   /** For an Edit/Write: the file, relative to the sandbox. See `testsIntact`. */
   path?: string;
   /**
+   * The directory the hook was told the command runs in, recorded rather than
+   * recovered. TODO §3.2: docs/43 §4.4 recovered it from the command text with
+   * a regex that depended on the sandbox naming convention.
+   */
+  cwd?: string;
+  /**
    * Who decided: "fence" (the harness's safety device), "jev" (the guard),
    * "orchestrator" (the fan-out gate), or "none" (nobody was consulted).
    *
@@ -267,7 +278,19 @@ export interface Run {
    * exactly where it matters -- an `allow` and an `ask` the hook deferred are
    * the same thing to the host and opposite things to the gate.
    */
-  verdicts?: { command: string; verdict: string; ms: number }[];
+  verdicts?: {
+    command: string;
+    verdict: string;
+    ms: number;
+    /** The `permission` score, as the gate saw it IN THIS RUN. See `readVerdicts`. */
+    score?: number;
+    confidence?: number;
+    /** Which path produced the verdict: the score, or an atom. */
+    fromScore?: string;
+    fromAtoms?: string;
+    /** Every `noul` atom the battery answered, by name. */
+    atoms?: Record<string, number>;
+  }[];
   /** Calls the gate stopped, and calls the harness fence stopped. */
   deniedByJev: number;
   deniedByFence: number;
@@ -634,15 +657,70 @@ function readSpawns(path: string): Run["spawns"] {
     }));
 }
 
-function readVerdicts(path: string): { command: string; verdict: string; ms: number }[] {
+/**
+ * The shipped gate's own decisions, read out of its `--log`.
+ *
+ * THE FIRST VERSION THREW THE SCORES AWAY. The hook writes the whole `answers`
+ * object -- `permission` as a `score` with its confidence, every atom noul,
+ * and `from_score` / `from_atoms` saying which of the two paths decided -- and
+ * this read `command`, `verdict` and `ms`, nothing else.
+ *
+ * What that cost: docs/43 §4's score distribution had to come from `traffic.ts`
+ * RE-ASKING the harvested commands afterwards, and a re-ask is a different
+ * draw. It is the distribution docs/43 §4.3's conclusion rests on -- real
+ * benign traffic at median 0.04, p99 0.48, max 0.70 against docs/01's
+ * needs-asking floor of 0.36, hence "the two classes overlap, so this is a
+ * question problem and not a threshold problem". Resting that on a re-ask was
+ * TODO §3.1, and the fix is to keep what the hook already wrote.
+ *
+ * `from_score` and `from_atoms` come along because they are free and they say
+ * something the verdict alone cannot: WHICH path produced it. A verdict of
+ * `ask` that came from an atom rather than from the `permission` score is a
+ * different event, and docs/01 §3's whole subject is that those two disagree.
+ */
+function readVerdicts(path: string): NonNullable<Run["verdicts"]> {
   if (!existsSync(path)) return [];
   return readFileSync(path, "utf8")
     .split("\n")
     .filter(Boolean)
     .flatMap((line) => {
       try {
-        const j = JSON.parse(line) as { command?: string; verdict?: string; ms?: number };
-        return [{ command: j.command ?? "", verdict: j.verdict ?? "?", ms: j.ms ?? 0 }];
+        const j = JSON.parse(line) as {
+          command?: string;
+          verdict?: string;
+          ms?: number;
+          from_score?: string | null;
+          from_atoms?: string | null;
+          answers?: Record<string, { score?: number; confidence?: number; noul?: number }>;
+        };
+        const permission = j.answers?.permission;
+        return [
+          {
+            command: j.command ?? "",
+            verdict: j.verdict ?? "?",
+            ms: j.ms ?? 0,
+            // Absent rather than zero when the answer did not arrive: a
+            // missing score and a score of 0 are opposite claims, and docs/42
+            // §4 spent three corrections on exactly that confusion.
+            ...(typeof permission?.score === "number" ? { score: permission.score } : {}),
+            ...(typeof permission?.confidence === "number" ? { confidence: permission.confidence } : {}),
+            ...(j.from_score ? { fromScore: j.from_score } : {}),
+            ...(j.from_atoms ? { fromAtoms: j.from_atoms } : {}),
+            // Every atom, so a verdict driven by `destructive` or
+            // `outside_project` rather than by `permission` can be told apart
+            // after the fact. docs/44 §4.5 needed exactly this and had to
+            // re-ask for it.
+            ...(j.answers
+              ? {
+                  atoms: Object.fromEntries(
+                    Object.entries(j.answers)
+                      .filter(([, v]) => typeof v?.noul === "number")
+                      .map(([k, v]) => [k, v.noul as number]),
+                  ),
+                }
+              : {}),
+          },
+        ];
       } catch {
         return [];
       }

@@ -46,8 +46,25 @@ import type { Record_ as Runs } from "./run.js";
 import { SHIPPED_GATE } from "./world.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
-const PATH = resolve(RECORDS, "traffic.json");
-const RUNS = resolve(RECORDS, "runs.json");
+/**
+ * Which record to harvest from, and where to put the result.
+ *
+ * `--in` / `--out` exist so that a sweep taken AFTER TODO §3.2 can be
+ * harvested without overwriting `traffic.json`, which is the record docs/43
+ * §4 reports. The default stays docs/43's pair.
+ *
+ * The reason to harvest a newer sweep at all: `traffic.json`'s 489 rows were
+ * all asked about a directory recovered from the command text, because the
+ * ledger of the day did not record one. A sweep whose ledger carries `cwd`
+ * lets the same commands be asked about the directory the run ACTUALLY had --
+ * and the two answers side by side are what prices the debt (`src/scored.ts`).
+ */
+const argvAt = (name: string, dflt: string): string => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? (process.argv[i + 1] ?? dflt) : dflt;
+};
+const PATH = resolve(RECORDS, argvAt("out", "traffic.json"));
+const RUNS = resolve(RECORDS, argvAt("in", "runs.json"));
 
 export interface TrafficRow {
   command: string;
@@ -65,6 +82,18 @@ export interface TrafficRow {
   /** Whether the reason reached the field an agent can read. */
   reasonReachedAgent: boolean;
   raw: string;
+  /**
+   * The directory the gate was asked about, and WHETHER IT WAS RECORDED.
+   *
+   * These two are separate fields because they are separate evidence. A `cwd`
+   * the host reported through the hook event is what the run actually saw; one
+   * recovered from the command text by regex is this file's guess about it.
+   * docs/43 §4.4 is what happens when a guess is treated as the former -- a
+   * fabricated `/tmp/sandbox` made the gate flag `outside_project` and turned
+   * four harmless `rm`s into stops, and the gate was right the whole time.
+   */
+  cwd?: string;
+  cwdRecorded?: boolean;
 }
 
 interface Record_ {
@@ -90,15 +119,18 @@ const save = (r: Record_): void => {
 };
 
 /** Every distinct command, with whether any passing run needed it. */
-export function harvest(): { command: string; seen: number; fromPassingRun: boolean }[] {
+export function harvest(): { command: string; seen: number; fromPassingRun: boolean; cwd?: string }[] {
   const runs = (JSON.parse(readFileSync(RUNS, "utf8")) as Runs).rows;
-  const by = new Map<string, { seen: number; fromPassingRun: boolean }>();
+  const by = new Map<string, { seen: number; fromPassingRun: boolean; cwd?: string }>();
   for (const run of runs) {
     for (const call of run.calls) {
       if (call.tool !== "Bash" || !call.command) continue;
       const had = by.get(call.command) ?? { seen: 0, fromPassingRun: false };
       had.seen += 1;
       had.fromPassingRun = had.fromPassingRun || run.passed;
+      // The recorded directory, once the ledger carries one (TODO §3.2). Rows
+      // from before that leave it undefined and `cwdOf` falls back.
+      if (!had.cwd && call.cwd) had.cwd = call.cwd;
       by.set(call.command, had);
     }
   }
@@ -149,10 +181,26 @@ function cwdFor(command: string): string {
   return m ? m[1] : "/tmp/jev-finish-unknown";
 }
 
-const eventFor = (command: string): unknown => ({
+/**
+ * The directory to ask about: RECORDED if the ledger has it, recovered only if
+ * it does not. TODO §3.2.
+ *
+ * `gate.mjs` now writes the `cwd` the host handed it, so the regex above is a
+ * fallback for rows taken before that and nothing else. Which matters more than
+ * tidiness: the hook resolves the directory as `event.cwd ?? process.cwd()`,
+ * and docs/44 §4.5b is the story of a harness that put `cwd` where the hook
+ * does not look and so judged every command as if it were in this repository.
+ * A recorded value cannot drift from the run that produced it; a regex over the
+ * command text can, and silently, the day the sandbox naming changes.
+ */
+function cwdOf(row: { command: string; cwd?: string }): { cwd: string; recorded: boolean } {
+  return row.cwd ? { cwd: row.cwd, recorded: true } : { cwd: cwdFor(row.command), recorded: false };
+}
+
+const eventFor = (command: string, cwd?: string): unknown => ({
   session_id: "traffic",
   transcript_path: "/dev/null",
-  cwd: cwdFor(command),
+  cwd: cwd ?? cwdFor(command),
   hook_event_name: "PreToolUse",
   tool_name: "Bash",
   tool_input: { command },
@@ -172,10 +220,10 @@ const eventFor = (command: string): unknown => ({
  * one thing dry-run cannot show is WHICH FIELD the rationale lands in -- and
  * that field decides whether a blocked agent learns anything (§4).
  */
-function ask(command: string): TrafficRow {
+function ask(command: string, cwd?: string): TrafficRow {
   const t0 = Date.now();
   const dry = spawnSync(process.execPath, [SHIPPED_GATE, "--dry-run"], {
-    input: JSON.stringify(eventFor(command)),
+    input: JSON.stringify(eventFor(command, cwd)),
     encoding: "utf8",
     timeout: 20_000,
     env: process.env,
@@ -190,7 +238,7 @@ function ask(command: string): TrafficRow {
   let raw = err.slice(0, 600);
   if (decision && decision !== "allow") {
     const real = spawnSync(process.execPath, [SHIPPED_GATE], {
-      input: JSON.stringify(eventFor(command)),
+      input: JSON.stringify(eventFor(command, cwd)),
       encoding: "utf8",
       timeout: 20_000,
       env: process.env,
@@ -386,7 +434,7 @@ async function main(): Promise<void> {
   }
   const commands = harvest();
   console.log(`\n  ${commands.length} distinct commands harvested from records/runs.json\n`);
-  for (const { command, seen, fromPassingRun } of commands) {
+  for (const { command, seen, fromPassingRun, cwd } of commands) {
     const had = record.rows.find((r) => r.command === command);
     if (had) {
       // Refresh the provenance, never the verdict: more runs may have issued
@@ -395,7 +443,11 @@ async function main(): Promise<void> {
       had.fromPassingRun = fromPassingRun;
       continue;
     }
-    const row = { ...ask(command), seen, fromPassingRun };
+    const where = cwdOf({ command, cwd });
+    // `cwdRecorded` goes in the row so a reader can tell a directory the host
+    // reported from one this file guessed -- the two are not the same evidence
+    // and docs/43 §4.4 is what happens when they are treated as if they were.
+    const row = { ...ask(command, where.cwd), seen, fromPassingRun, cwd: where.cwd, cwdRecorded: where.recorded };
     record.rows.push(row);
     save(record);
     if (row.decision) {
