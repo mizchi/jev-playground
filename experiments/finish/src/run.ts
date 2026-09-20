@@ -80,6 +80,32 @@ export const ARMS: Record<string, ArmSpec> = {
    * back to those rules instead, which is what an ALLOW verdict already does.
    */
   guarddefer: { name: "guarddefer", guard: true, model: HAIKU, gateFlags: ["unattended-ask", "defer"] },
+  /**
+   * The fourth way to resolve an `ask` nobody can answer: refuse it ON PURPOSE.
+   *
+   * docs/43 §5.1 measured that a headless host turns `ask` into a refusal
+   * anyway, so this arm is not about the OUTCOME -- it is about who chose it
+   * and what the model is told. Verified at the wire before it was run (five
+   * draws each on the one command docs/43's corpus reliably gets asked about):
+   *
+   *   default            `ask`  + the gate's reason -> the HOST refuses, with
+   *                      its own wording, having made a decision nobody asked
+   *                      it to make
+   *   `--quiet-ask`      `ask`  and NO reason       -> same refusal, and the
+   *                      model is not told why (the pre-docs/43 §5.2 bug)
+   *   `--unattended-ask block`
+   *                      `deny` + the gate's reason PLUS one added sentence:
+   *                      "No human is attached to confirm, so this is a
+   *                      refusal rather than a prompt."
+   *   `--unattended-ask defer`
+   *                      no decision at all -> the user's own permission rules
+   *                      apply, which is what an ALLOW verdict already does
+   *
+   * So the four arms differ in exactly one thing -- how an `ask` is resolved --
+   * and `block` is the one that says so out loud. Whether saying so changes
+   * whether the work gets done is what docs/43 §4b.4 left open.
+   */
+  guardblock: { name: "guardblock", guard: true, model: HAIKU, gateFlags: ["unattended-ask", "block"] },
 
   // ------------------------------------------------- the other three components
   //

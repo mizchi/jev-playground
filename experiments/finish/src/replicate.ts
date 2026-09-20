@@ -193,8 +193,13 @@ const CLAIMS: Claim[] = [
   // reported `guarddefer` 15/15 having apparently deferred nothing, which
   // would have meant the arm was never tested). Read the judgment's log for
   // what it DECIDED; read the ledger for what the host DID.
-  ...(["guard", "guardquiet", "guarddefer"] as const).map((arm) => ({
-    what: `${arm === "guarddefer" ? "**" : ""}\`${arm}\`: asks in the GATE's own log${arm === "guarddefer" ? " (invisible to the host)**" : ""}`,
+  ...(["guard", "guardquiet", "guardblock", "guarddefer"] as const).map((arm) => ({
+    what:
+      arm === "guarddefer"
+        ? `**\`${arm}\`: asks in the GATE's own log (invisible to the host)**`
+        : arm === "guardblock"
+          ? `**\`${arm}\`: asks in the GATE's own log (each emitted as \`deny\`)**`
+          : `\`${arm}\`: asks in the GATE's own log`,
     where: "§4b.3",
     of: (rows: Run[]) => {
       const g = rows.filter((r) => r.arm === arm && r.corpus === "boundary");
@@ -234,6 +239,140 @@ const CLAIMS: Claim[] = [
     },
   },
 ];
+
+/**
+ * WHAT ONE INTERVENTION COSTS, pooled across every boundary sweep there is.
+ *
+ * Why pool here when the table above refuses to: the table compares two
+ * MEASUREMENTS of the same claim, and averaging those destroys the
+ * replication. This asks a different question -- "when the gate speaks, what
+ * happens" -- whose unit is the intervention, not the sweep. docs/43 answered
+ * it on 7 speaking runs from one sweep and 1 failure; three sweeps make the
+ * denominator 17.
+ *
+ * AND IT SEPARATES A CONFOUND THAT THE HEADLINE NUMBER HIDES. Runs the gate
+ * spoke to are exactly the runs where the agent reached for the destructive
+ * route, and that route may cost turns by itself -- every boundary task has a
+ * safe route too, which is what the corpus was built for. So "spoken-to runs
+ * take 4 more calls" is not the gate's cost until it is compared against
+ * `bare` ON THE SAME TASK, which is what the per-task rows below do.
+ */
+function interventionCost(): void {
+  const rows = rowsOf("runs.json", "recheck-boundary.json", "block.json").filter((r) => r.corpus === "boundary");
+  if (rows.length === 0) return;
+  const spoke = (r: Run): boolean => (r.verdicts ?? []).some((v) => v.verdict === "ask");
+  const done = (r: Run): boolean => r.passed && r.testsIntact !== false;
+  const asks = rows.reduce((n, r) => n + (r.verdicts ?? []).filter((v) => v.verdict === "ask").length, 0);
+  const spoken = rows.filter(spoke);
+  const silent = rows.filter((r) => !spoke(r));
+
+  console.log(
+    `\n## What one intervention costs (${rows.length} boundary runs, every sweep pooled)\n\n` +
+      `**${asks} interventions across ${rows.length} runs**, landing in ${spoken.length} of them. ` +
+      `docs/43 had 7 spoken-to runs and one failure; three sweeps make that denominator ${spoken.length}.\n`,
+  );
+  console.log("| | runs | finished | median tool calls |");
+  console.log("| --- | --- | --- | --- |");
+  console.log(
+    `| the gate spoke | ${spoken.length} | **${spoken.filter(done).length}/${spoken.length}** | ` +
+      `${med(spoken.map((r) => r.calls.length))} |`,
+  );
+  console.log(
+    `| it stayed silent | ${silent.length} | ${silent.filter(done).length}/${silent.length} | ` +
+      `${med(silent.map((r) => r.calls.length))} |`,
+  );
+
+  // THE CONFOUND, SEPARATED. Per task, because only two tasks are ever spoken
+  // to and the other three would dilute the comparison with runs where there
+  // was nothing to intervene in.
+  const speakTasks = [...new Set(spoken.map((r) => r.task))].sort();
+  console.log(
+    `\nAnd the same thing per task, against \`bare\` -- the arm with no gate at all -- so that the ` +
+      "destructive route's own cost is not charged to the gate:\n",
+  );
+  console.log("| task | `bare`, no gate | gated, gate silent | gated, gate SPOKE |");
+  console.log("| --- | --- | --- | --- |");
+  const cell = (g: Run[]): string =>
+    g.length === 0 ? "—" : `${med(g.map((r) => r.calls.length))} calls, ${g.filter(done).length}/${g.length}`;
+  for (const t of speakTasks) {
+    const g = rows.filter((r) => r.task === t);
+    console.log(
+      `| \`${t}\` | ${cell(g.filter((r) => r.arm === "bare"))} | ` +
+        `${cell(g.filter((r) => r.arm !== "bare" && !spoke(r)))} | ` +
+        `**${cell(g.filter((r) => r.arm !== "bare" && spoke(r)))}** |`,
+    );
+  }
+  const others = rows.filter((r) => !speakTasks.includes(r.task));
+  console.log(`| the other ${new Set(others.map((r) => r.task)).size}, all arms | ${cell(others)} | — | never |`);
+
+  // RESTRICTED TO THE SPEAKING TASKS, all three of them, or the comparison
+  // mixes a pooled median against a per-task one. The silent median over ALL
+  // tasks is dragged down by the three tasks the gate never speaks on, which
+  // are also the shorter tasks -- so quoting it beside `bare`-on-these-two
+  // would credit the hook with a difference that is the corpus's.
+  const onSpeakTasks = (g: Run[]): Run[] => g.filter((r) => speakTasks.includes(r.task));
+  const silentMed = med(onSpeakTasks(silent).map((r) => r.calls.length));
+  const bareMed = med(rows.filter((r) => r.arm === "bare" && speakTasks.includes(r.task)).map((r) => r.calls.length));
+  const spokeMed = med(spoken.map((r) => r.calls.length));
+  console.log(
+    `\n**Three readings, and only the third is the gate's.**\n\n` +
+      `1. The hook's PRESENCE costs nothing: on these same two tasks, gated-but-silent runs sit at ` +
+      `${silentMed} calls against \`bare\`'s ${bareMed}. A node start-up per tool call does not show up in ` +
+      "how many turns the work takes.\n" +
+      `2. The destructive ROUTE costs turns by itself -- \`bare\` on these two tasks runs ${bareMed} calls ` +
+      `against ${med(others.map((r) => r.calls.length))} on the other three, with no gate involved at all.\n` +
+      `3. **On top of both, being spoken to costs a few more turns** (${spokeMed} against \`bare\`'s ` +
+      `${bareMed} on the same tasks) **and cost a completion ${spoken.length - spoken.filter(done).length} ` +
+      `time in ${spoken.length}.**\n`,
+  );
+  const failed = spoken.filter((r) => !done(r));
+  if (failed.length > 0) {
+    console.log(
+      `The ${failed.length === 1 ? "one failure" : `${failed.length} failures`}: ` +
+        `${failed.map((r) => `\`${r.arm}/${r.task}/r${r.repeat}\``).join(", ")} -- ` +
+        "docs/43 §4b's instance, and still the only one. " +
+        `Of the two tasks the gate speaks on, one has lost a task once and the other has been spoken to ` +
+        `${rows.filter((r) => spoke(r) && r.task !== failed[0].task).length} times and never lost one.\n`,
+    );
+  }
+  // PER ARM, and this is the table TODO §1.2 actually asked for: the four ways
+  // an unanswerable `ask` can be resolved, each with its own denominator. The
+  // `guardblock` arm lives in `block.json` and is NOT part of the 186-run
+  // replication above -- it is a third sweep of a fourth arm, which is why it
+  // is here and not in that table.
+  console.log("\nAnd per arm -- the four ways an `ask` nobody can answer gets resolved:\n");
+  console.log("| arm | how the `ask` resolves | interventions | runs spoken to | finished |");
+  console.log("| --- | --- | --- | --- | --- |");
+  const HOW: Record<string, string> = {
+    guard: "`ask` + reason -> the HOST refuses",
+    guardquiet: "`ask`, no reason -> host refuses, model not told why",
+    guardblock: "**`deny` + reason + \"no human is attached\"**",
+    guarddefer: "no decision -> the user's own rules apply",
+  };
+  for (const arm of ["guard", "guardquiet", "guardblock", "guarddefer"]) {
+    const g = rows.filter((r) => r.arm === arm);
+    if (g.length === 0) continue;
+    const n = g.reduce((k, r) => k + (r.verdicts ?? []).filter((v) => v.verdict === "ask").length, 0);
+    const hit = g.filter(spoke);
+    console.log(
+      `| \`${arm}\` | ${HOW[arm]} | ${n} | ${hit.length} of ${g.length} | ` +
+        `${hit.length === 0 ? "—" : `**${hit.filter(done).length}/${hit.length}**`} |`,
+    );
+  }
+  const perArm = ["guard", "guardquiet", "guardblock", "guarddefer"]
+    .map((arm) => rows.filter((r) => r.arm === arm).filter(spoke).length)
+    .filter((n) => n > 0);
+  console.log(
+    "\n**So how the `ask` is resolved has no measurable effect on completion.** All four resolutions " +
+      `finish, on ${Math.min(...perArm)} to ${Math.max(...perArm)} spoken-to runs each, and the single ` +
+      "failure in the whole corpus is under the DEFAULT (`ask`, which the host then refuses in wording " +
+      "nobody chose) rather than under any of the three explicit resolutions.\n\n" +
+      "**That is a null result on a small denominator, not a demonstration that the wording does not " +
+      "matter.** TODO §1.2 asked for the arm, and the arm is what this is; what would settle the question " +
+      "is more interventions, and interventions are exactly the thing this corpus is stingy with " +
+      `(${asks} in ${rows.length} runs).\n`,
+  );
+}
 
 function main(): void {
   const original = rowsOf("runs.json");
@@ -289,6 +428,7 @@ function main(): void {
       "in both sweeps lands on those two tasks, so the commands are not independent trials and a p-value " +
       "computed as if they were would overstate the evidence by the size of the clustering.",
   );
+  interventionCost();
   console.log(
     "\n**What the right-hand column can and cannot do.** It CAN say whether docs/43's findings reproduce " +
       "on fresh draws, which none of them had. It CANNOT retroactively grade the left-hand column's runs: " +
