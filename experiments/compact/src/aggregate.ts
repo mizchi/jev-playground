@@ -113,6 +113,27 @@ export function commandGroups(t: Transcript): Map<string, { id: string; label: s
   return groups;
 }
 
+/**
+ * Every line of one command group that leads with a number, in order.
+ *
+ * Exported because TODO §1.8's `keepnums` arm hands exactly this list to the
+ * summariser, and two implementations of "the group's numeric lines" would be
+ * two things that could drift. `maxIn` below is the same list plus a reduce.
+ */
+export function numericLinesOf(t: Transcript, cmd: string, skipTotals = false): string[] {
+  const es = commandGroups(t).get(cmd) ?? [];
+  return es
+    .flatMap((e) =>
+      e.text
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean),
+    )
+    .filter(
+      (l) => Number.isFinite(leadingNumber(l)) && !(skipTotals && /^[0-9][0-9,]*\s+total\b/i.test(l)),
+    );
+}
+
 /** Which command group the planted answer lives in. The label for §3. */
 export function answerGroup(t: Transcript): string | null {
   const want = new Set(t.facts.map((f) => f.entryId));
@@ -360,15 +381,10 @@ const NOTE =
  * labelled, not the better figure quoted alone.
  */
 function maxIn(t: Transcript, cmd: string, skipTotals = false): { line: string; hit: boolean } {
-  const es = commandGroups(t).get(cmd) ?? [];
-  const want = t.facts[0].text;
-  const lines = es.flatMap((e) => e.text.split("\n").map((l) => l.trim()).filter(Boolean));
-  const numeric = lines.filter(
-    (l) => Number.isFinite(leadingNumber(l)) && !(skipTotals && /^[0-9][0-9,]*\s+total\b/i.test(l)),
-  );
+  const numeric = numericLinesOf(t, cmd, skipTotals);
   if (numeric.length === 0) return { line: "", hit: false };
   const line = numeric.reduce((a, b) => (leadingNumber(b) > leadingNumber(a) ? b : a));
-  return { line, hit: line.includes(want) };
+  return { line, hit: line.includes(t.facts[0].text) };
 }
 
 /** The free stage-2 arm: goal overlap with the command label, not its output. */

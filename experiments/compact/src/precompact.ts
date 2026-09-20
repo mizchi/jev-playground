@@ -59,6 +59,7 @@ import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { judge, type Transcript } from "../../versus/src/compaction.js";
+import { isComparison, numericLinesOf } from "./aggregate.js";
 
 const HERE = import.meta.dirname;
 const RECORDS = resolve(HERE, "../records");
@@ -114,6 +115,70 @@ export function oracleInstructions(t: Transcript): string {
   );
 }
 
+
+/**
+ * The `keepnums` arms' instructions: every numeric line of ONE command group,
+ * verbatim. [TODO §1.8]
+ *
+ * WHY THIS EXISTS AND WHY IT IS NOT A FOURTH STAGE. docs/47 measured a
+ * three-stage front-end for superlative goals -- detect, narrow to a command,
+ * take the maximum -- and got 1 of 4 end to end. §3.3 located the remaining
+ * failure in the narrowing: a `wc` group covers two different argument sets and
+ * the goal restricts to one, so the maximum over the group is the wrong file.
+ * TODO §1.8 listed two ways to cut finer and one way out:
+ *
+ *   3. **do not add a stage.** If three stages give 1/4, ask whether the design
+ *      is right before adding a fourth.
+ *
+ *  That is this. **The front-end's job is not to FIND the answer, it is to not
+ *  LOSE it** -- and keeping every numeric line of the chosen group does that
+ *  without knowing which line is the answer. The argument-scope problem then
+ *  stops being a problem: `wc experiments` in the group means 44 lines kept
+ *  instead of 9, and the answer is still among them.
+ *
+ * Size is why it is the NUMERIC lines and not the whole group: the groups run
+ * to 96,000 characters (`read` on `dropat-default`, which is most of the
+ * transcript), and their numeric lines run to 1,630.
+ *
+ * `which` picks whose choice to trust, so the ceiling and the real pipeline are
+ * separate arms rather than one arm with a caveat:
+ *
+ *   "jev"    the group docs/47 §3's `choice` actually picked -- the pipeline
+ *   "answer" the group the planted fact lives in -- the ceiling
+ */
+export function keepNumericLines(t: Transcript, which: "jev" | "answer"): string {
+  const picked = pickedGroup(t.id, which);
+  if (picked === null) return "";
+  const lines = numericLinesOf(t, picked);
+  if (lines.length === 0) return "";
+  return (
+    `Your summary must contain these exact lines verbatim, all of them, each on its own line: ` +
+    `${lines.map((l) => `"${l}"`).join(", ")}. They are the measured values this conversation ` +
+    "established; reproduce them character for character rather than paraphrasing, rounding or " +
+    "summarising them into a sentence."
+  );
+}
+
+/**
+ * Which command group to keep, read off docs/47's record.
+ *
+ * Read rather than recomputed: the `jev` choice is a request that was already
+ * paid for and recorded, and asking again would be a fresh draw of something
+ * the record holds (docs/44 §1.3).
+ */
+function pickedGroup(transcript: string, which: "jev" | "answer"): string | null {
+  const path = resolve(RECORDS, "aggregate.json");
+  if (!existsSync(path)) return null;
+  const rows = (
+    JSON.parse(readFileSync(path, "utf8")) as {
+      rows: { transcript: string; want: string; jev: { choice: string } | null }[];
+    }
+  ).rows;
+  const row = rows.find((r) => r.transcript === transcript);
+  if (row === undefined) return null;
+  return which === "answer" ? row.want : (row.jev?.choice ?? null);
+}
+
 export interface Arm {
   name: string;
   /** Passed after `/compact`. Empty means the host's default summariser prompt. */
@@ -147,6 +212,17 @@ export const ARMS: Arm[] = [
   { name: "plainagain", instructions: "" },
   /** The upper bound. See `oracleInstructions`. [TODO §1.5] */
   { name: "oracle", instructions: "", build: oracleInstructions },
+  /**
+   * TODO §1.8: keep the chosen group's numeric lines instead of aggregating.
+   *
+   * `keepnums` is the pipeline (jev's own stage-2 choice); `keepnumsmax` is its
+   * ceiling (the group the answer is actually in). Both are empty on a
+   * transcript whose goal is not a comparison, and `compact` skips an arm whose
+   * built instructions come back empty rather than silently running it as
+   * `plain` -- see `main`.
+   */
+  { name: "keepnums", instructions: "", build: (t) => keepNumericLines(t, "jev") },
+  { name: "keepnumsmax", instructions: "", build: (t) => keepNumericLines(t, "answer") },
 ];
 
 export interface Row {
@@ -614,6 +690,130 @@ function show(rec: Record_): void {
     }
   }
 
+  // ------------------------------------------------ TODO §1.8's kept lines
+  const keep = byArm("keepnums");
+  const keepMax = byArm("keepnumsmax");
+  if (keep.length > 0 || keepMax.length > 0) {
+    const ts = transcripts();
+    const sup = ts.filter((t) => isComparison(t.entries.find((e) => e.role === "user")?.text ?? ""));
+    console.log("\n## Do you have to FIND the value, or only not lose it? [TODO §1.8]\n");
+    console.log(
+      "docs/47 measured a three-stage front-end for superlative goals -- detect the goal type, narrow " +
+        "to a command group, take the maximum -- and got **1 of 4 end to end**. Its §3.3 located the " +
+        "remaining failure in the narrowing: a `wc` group covers two argument sets and the goal " +
+        "restricts to one, so the maximum over the group is the wrong file. TODO §1.8 listed two ways to " +
+        "cut finer, and one way out: **do not add a stage.**\n",
+    );
+    console.log(
+      "**So this arm drops stage 3 instead.** It hands the summariser *every numeric line of the chosen " +
+        "group*, verbatim, and never decides which one is the answer -- because **the front-end's job is " +
+        "not to find the value, it is to not lose it**. The argument-scope problem then stops being a " +
+        "problem: `wc experiments` in the group means 44 lines kept instead of 9, and the answer is " +
+        "still among them.\n",
+    );
+    // PAIRED ON THE ROWS THE ARM ACTUALLY RAN, because `plain` is 6/9 over the
+    // whole corpus and the rows this arm can run on are not a random half.
+    const scope = [...new Set([...keep, ...keepMax].map((r) => r.transcript))];
+    const at = (arm: string, t: string): Row | undefined =>
+      rec.rows.find((r) => r.arm === arm && r.transcript === t && !r.error);
+    console.log(
+      "| transcript | superlative | `plain` | `plainagain` | `instructed` | `oracle` | **`keepnums`** | **`keepnumsmax`** |",
+    );
+    console.log("| --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const id of scope) {
+      const cell = (arm: string): string => {
+        const r = at(arm, id);
+        return r === undefined ? "—" : `${r.kept}/${r.facts}`;
+      };
+      console.log(
+        `| \`${id}\` | ${sup.some((t) => t.id === id) ? "**yes**" : "—"} | ${cell("plain")} | ` +
+          `${cell("plainagain")} | ${cell("instructed")} | ${cell("oracle")} | ` +
+          `**${cell("keepnums")}** | **${cell("keepnumsmax")}** |`,
+      );
+    }
+    const tot = (arm: string): { kept: number; facts: number } => {
+      const rs = scope.map((id) => at(arm, id)).filter((r): r is Row => r !== undefined);
+      return { kept: rs.reduce((n, r) => n + r.kept, 0), facts: rs.reduce((n, r) => n + r.facts, 0) };
+    };
+    console.log(
+      `\n| on these ${scope.length} rows | facts kept |\n| --- | --- |\n` +
+        ["plain", "plainagain", "instructed", "oracle", "keepnums", "keepnumsmax"]
+          .map((a) => {
+            const x = tot(a);
+            const ran = scope.map((id) => at(a, id)).filter((r) => r !== undefined).length;
+            const mark = a.startsWith("keepnums") || a === "oracle" ? "**" : "";
+            // THE DENOMINATOR IS PER ARM, because `keepnums` cannot run on
+            // every row and printing 4/4 under a heading that says "these 5
+            // rows" reads as a perfect score on the same population.
+            return (
+              `| ${mark}\`${a}\`${mark} | ${mark}${x.kept}/${x.facts}${mark}` +
+              `${ran < scope.length ? ` (ran on ${ran} of ${scope.length})` : ""} |`
+            );
+          })
+          .join("\n") +
+        "\n",
+    );
+    const o = tot("oracle");
+    const km = tot("keepnumsmax");
+    console.log(
+      `**\`keepnumsmax\` matches the oracle: ${km.kept}/${km.facts} against ${o.kept}/${o.facts}** -- ` +
+        "and it matches without being told which line is the answer. **That is the finding: on these " +
+        "rows you do not have to find the value to preserve it.** So the aggregation stage docs/47 " +
+        "measured at 2/4 is not on the critical path at all, and TODO §1.8's argument-scope question " +
+        "is a question about a stage that does not need to exist.\n",
+    );
+    // THE ROW THAT CARRIES IT, because 5 facts cannot separate arms that differ
+    // by one -- but a row where three arms score 0 and this one scores 1 is not
+    // a draw.
+    const decisive = scope.filter((id) => {
+      const p = at("plain", id);
+      const a = at("plainagain", id);
+      const i = at("instructed", id);
+      const k = at("keepnumsmax", id);
+      return p?.kept === 0 && a?.kept === 0 && i?.kept === 0 && (k?.kept ?? 0) > 0;
+    });
+    if (decisive.length > 0) {
+      console.log(
+        `**And one row carries it**: ${decisive.map((d) => `\`${d}\``).join(", ")} is kept by ` +
+          "`oracle` and by `keepnumsmax` and by **nothing else** -- `plain`, `plainagain` and " +
+          "`instructed` all score 0 there, so it is not the summariser's draw. Every other row in this " +
+          "table is inside the draw docs/44 §5.2 measured (`plainagain` differs from `plain` on one of " +
+          "them), which is why the table is here and a pooled percentage is not.\n",
+      );
+    }
+    const pipeline = sup.map((t) => at("keepnums", t.id)).filter((r): r is Row => r !== undefined);
+    const pipelineKept = pipeline.reduce((n, r) => n + r.kept, 0);
+    console.log(
+      `**End to end on the superlative half: ${pipelineKept}/${sup.length}** -- ` +
+        `\`keepnums\` uses jev's own stage-2 choice and ran on ${pipeline.length} of the ${sup.length} ` +
+        "superlative transcripts, skipping the one where stage 2 picked a group with no numeric lines " +
+        `in it. **docs/47's three-stage pipeline was 1/${sup.length} on the same rows**, so removing a ` +
+        "stage tripled it.\n",
+    );
+    const dilution = scope.filter((id) => {
+      const t = ts.find((x) => x.id === id);
+      const built = t ? keepNumericLines(t, "answer") : "";
+      return t !== undefined && built !== "" && !t.facts.every((f) => built.includes(f.text));
+    });
+    if (dilution.length > 0) {
+      console.log(
+        `**And the dilution control came for free.** ${dilution.map((d) => `\`${d}\``).join(", ")} ` +
+          `${dilution.length === 1 ? "is" : "are"} not a superlative goal, so the kept lines do **not** ` +
+          "contain its answer -- the arm handed the summariser several hundred characters of values that " +
+          `were beside the point. **Its answer survived anyway** (${dilution
+            .map((d) => `${at("keepnumsmax", d)?.kept ?? 0}/${at("keepnumsmax", d)?.facts ?? 0}`)
+            .join(", ")}), so keeping irrelevant values did not cost the relevant one. ` +
+          "**That was not designed; it fell out of the arm running where it had lines to keep.**\n",
+      );
+    }
+    console.log(
+      "> **What this does not show.** 5 facts. `keepnums` cannot run at all where stage 2 picks a " +
+        "group with no numbers in it, and that is a silent failure rather than a wrong answer -- a " +
+        "caller would get the host's default summary and no signal. And every arm here is measured " +
+        "against a corpus of eight transcripts that I wrote ([TODO §2.1](../../TODO.md)).\n",
+    );
+  }
+
   const failed = rec.rows.filter((r) => r.error);
   if (failed.length > 0) {
     console.log(
@@ -651,9 +851,16 @@ function show(rec: Record_): void {
       if (g.length === 0) continue;
       const kept = g.reduce((n, r) => n + r.kept, 0);
       const facts = g.reduce((n, r) => n + r.facts, 0);
+      // A DIFFERENT DENOMINATOR GETS SAID, not just printed. The heading of
+      // this table is "on the same nine facts", and TODO §1.8's arms cannot
+      // run on every transcript -- so 4/4 here is not comparable to 9/9 above
+      // and a bare 100% would read as if it were.
+      const whole = facts === byArm("plain").reduce((n, r) => n + r.facts, 0);
       console.log(
         `| **\`${arm.name}\`** (here) | **the HOST's compaction summariser**` +
-          `${arm.instructions ? ", instructions rewritten" : ""} | **${kept}/${facts} (${pct(kept, facts)})** |`,
+          `${arm.instructions ? ", instructions rewritten" : ""}` +
+          `${whole ? "" : ` — **only ${g.length} of ${byArm("plain").length} transcripts**, so not comparable to the rows above`}` +
+          ` | **${kept}/${facts} (${pct(kept, facts)})** |`,
       );
     }
     const sum = rows.filter((r) => r.arm.endsWith("summarise"));
@@ -837,6 +1044,21 @@ async function main(): Promise<void> {
   try {
     for (const t of all) {
       for (const arm of arms) {
+        /**
+         * AN ARM WITH NOTHING TO SAY IS SKIPPED, NOT RUN AS `plain`.
+         *
+         * `keepnums` builds its text from a command group, and that text is
+         * empty on a goal that is not a comparison, or when stage 2 picked a
+         * group with no numeric lines at all. Running it anyway would send no
+         * instructions -- which is exactly `plain` -- and the row would then
+         * be a fourth draw of `plain` wearing another arm's name. docs/44
+         * §5.2 spent a whole arm establishing how wide that draw is; adding
+         * an unlabelled one to the table would undo it.
+         */
+        if (arm.build && arm.build(t) === "") {
+          process.stderr.write(`${t.id.padEnd(16)} ${arm.name.padEnd(11)} skipped: nothing to keep\n`);
+          continue;
+        }
         const got = compact(t, arm, root);
         const scored = judge(t, got.summary);
         rows.push({

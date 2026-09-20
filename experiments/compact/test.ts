@@ -21,6 +21,8 @@ import type { Record_ } from "./src/run.js";
 import { ARMS, oracleInstructions } from "./src/precompact.js";
 import { keepOrderFree, keepOrderDigits, rankOfFact } from "./src/relevance.js";
 import { SUPERLATIVE, answerGroup, commandGroups, isComparison } from "./src/aggregate.js";
+import { numericLinesOf } from "./src/aggregate.js";
+import { keepNumericLines } from "./src/precompact.js";
 
 let pass = 0;
 let fail = 0;
@@ -320,13 +322,17 @@ check("the oracle arm hands over every fact of its transcript, verbatim", () => 
   }
 });
 
-check("the oracle arm is the only one whose text depends on the transcript", () => {
-  // If a second arm gained a `build`, the draw arms would stop being controls
-  // and the `plainagain` comparison that carries docs/44 §5.2 would silently
-  // become something else.
-  const built = ARMS.filter((a) => a.build);
-  eq(built.length, 1, "exactly one arm may build per-transcript text: ");
-  eq(built[0].name, "oracle", "the built arm must be `oracle`: ");
+check("the draw controls send nothing, and every built arm is a declared one", () => {
+  // The invariant is NOT "one arm builds" -- TODO §1.8 legitimately added two
+  // more. It is that `plain` and `plainagain` stay byte-identical requests, so
+  // the draw docs/44 §5.2 measured keeps meaning what it measured, and that no
+  // arm acquires per-transcript text without being named here.
+  const built = ARMS.filter((a) => a.build).map((a) => a.name).sort();
+  eq(
+    built.join(","),
+    ["keepnums", "keepnumsmax", "oracle"].join(","),
+    "an arm gained or lost per-transcript text without this test being updated: ",
+  );
   const draws = ARMS.filter((a) => a.name === "plain" || a.name === "plainagain");
   eq(draws.length, 2, "both draw arms must exist for §5.2's control: ");
   for (const a of draws) {
@@ -472,6 +478,62 @@ check("command grouping covers every labelled tool entry, once", () => {
     eq(got, want, `${t.id}: grouping lost or duplicated entries: `);
     const ids = [...commandGroups(t).values()].flatMap((es) => es.map((e) => e.id));
     eq(new Set(ids).size, ids.length, `${t.id}: an entry is in two groups: `);
+  }
+});
+
+
+// ------------------------------------------- TODO §1.8's "keep, do not find"
+//
+// The whole claim of docs/48 is that keeping a group's numeric lines preserves
+// the answer WITHOUT identifying it. Three things would make that hollow.
+
+check("the kept lines all lead with a number and come from the named group", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  let nonEmpty = 0;
+  for (const t of ts) {
+    for (const cmd of commandGroups(t).keys()) {
+      const lines = numericLinesOf(t, cmd);
+      if (lines.length > 0) nonEmpty += 1;
+      const groupText = (commandGroups(t).get(cmd) ?? []).map((e) => e.text).join("\n");
+      for (const l of lines) {
+        ok(/^[0-9]/.test(l), `${t.id}/${cmd}: "${l.slice(0, 30)}" does not lead with a number`);
+        ok(groupText.includes(l), `${t.id}/${cmd}: "${l.slice(0, 30)}" is not in that group's output`);
+      }
+    }
+  }
+  ok(nonEmpty > 0, "no group has any numeric line, so the arm is vacuous everywhere");
+});
+
+check("the keep arm never reveals which line is the answer", () => {
+  // If the instructions singled the answer out -- put it first, or included
+  // only it -- the arm would be `oracle` with extra steps and its result would
+  // say nothing about "keep, do not find".
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  let checked = 0;
+  for (const t of ts) {
+    const text = keepNumericLines(t, "answer");
+    if (text === "") continue;
+    const lines = numericLinesOf(t, answerGroup(t) as string);
+    ok(lines.length > 1, `${t.id}: only ${lines.length} line kept, so keeping is the same as finding`);
+    // Order must be the group's own order, not the answer first.
+    const quoted = [...text.matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+    eq(quoted.join("|"), lines.join("|"), `${t.id}: the kept lines were reordered: `);
+    checked += 1;
+  }
+  ok(checked > 0, "the arm built nothing anywhere, so this test is vacuous");
+});
+
+check("the keep arm is empty where there is nothing to keep, not silently plain", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  for (const t of ts) {
+    const g = answerGroup(t) as string;
+    const lines = numericLinesOf(t, g);
+    const text = keepNumericLines(t, "answer");
+    if (lines.length === 0) eq(text, "", `${t.id}: built instructions from a group with no numeric lines: `);
+    else ok(text.length > 0, `${t.id}: has ${lines.length} numeric lines but built nothing`);
   }
 });
 
