@@ -165,7 +165,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | エージェントに質問を書かせて評価しない | 同じプロンプトで 10/24〜23/24 に振れる([04](04-agent-built-prompts.md#1-結果-書かせたままでは当たらないばらつきが巨大)) |
 | score の閾値を分布を見ずに決める | rubric が実際に出す値と噛み合わず全部下位に落ちる([04](04-agent-built-prompts.md#2-原因は設計ではなく閾値だった)) |
 | driver の候補一覧をステップ毎に作り直さない | SPA では 2 手目以降が古い候補から選ぶ([05](05-browser-chaos.md#4-chaosbringer-側への指摘-driver-の候補一覧が-1-ページ-1-回しか作られない))。上流は [#142](https://github.com/mizchi/chaosbringer/pull/142) で修正済み |
-| confidence を無駄手の検出器に使う | 無駄手 13 件のうち 12 件が **0.99 以上**。低い手は「正しいが手応えのない手」だった([25](25-confidence-fallback.md#4-校正-confidence-は何を測っていたのか)) |
+| confidence を無駄手の検出器に使う(**失敗を state に戻さないまま**) | 無駄手 13 件のうち 12 件が **0.99 以上**。低い手は「正しいが手応えのない手」だった([25](25-confidence-fallback.md#4-校正-confidence-は何を測っていたのか))。**戻せば反応する** —— `last_action_error` と無効果連続数を入れると 0.91 → 0.45 と減衰する([30 §3.2](30-browser-accuracy.md#32--geometry-が払ったもの)) |
 | `takePreciseCoverage` を 1 発で全体像として読む | 未カバーは時間とともに消え、カウンタは毎 take リセットされる([26](26-coverage-guidance.md#2-計測側で-3-回転んだどれももっともらしい出力を出す)) |
 | 解決しないセレクタで「効果なし」を数える | 押せないボタンが「効かないボタン」に化ける。実験は失敗せず**きれいな結果**を返す([26 §2.3](26-coverage-guidance.md#23-セレクタが-1-つも当たっていなかったこれが一番痛い)) |
 | 生成したテストを「生成できた」で評価する | クリック列 + 最終 URL は、注文を記録しないアプリに対して緑のまま通る([27](27-nl-test-generation.md#結論先に)) |

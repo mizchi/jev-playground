@@ -42,7 +42,7 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 
 | | 何 | 結果 | 出典 |
 | --- | --- | --- | --- |
-| **confidence フォールバック** | 低 confidence の手だけ別扱いする 4 policy | **confidence は無駄手の検出器ではない**(13 件中 12 件が 0.99 以上)。効いたのはジオメトリ | [25](25-confidence-fallback.md) |
+| **confidence フォールバック** | 低 confidence の手だけ別扱いする 4 policy | **confidence は初見の無駄手を検出しない**(13 件中 12 件が 0.99 以上。失敗を state に戻せば反応する → 26)。効いたのはジオメトリ | [25](25-confidence-fallback.md) |
 | **カバレッジ誘導** | 未実行の関数名を渡す。**state の配列 vs ゴール文** | 同じ名前集合で分岐 **3/12 → 11/12** | [26](26-coverage-guidance.md) |
 | **1 文 → テスト生成** | 生成してミューテーションで採点 | 捕まえたバグ **1 → 2**。初期状態由来の候補は 0.00 で落ちる | [27](27-nl-test-generation.md) |
 | **性能改善の自動化** | 計測 → 診断 → **適用 → 再計測** | 注記 1 行で推薦の実測価値が **188ms → 1,664ms** | [28](28-perf-automation.md) |
@@ -245,7 +245,7 @@ action キャッシュはそれを**無料かつ無音**にする —— 壊れ�
 `wasted` が 0 の失敗が 3 回出た。
 逆に、**その事実を state に戻せば confidence は反応する** ——
 `last_action_error` と無効果連続数を入れると blocked な手が 0.91 → 0.45 と減衰した。
-[25](25-confidence-fallback.md) で同じ手が 0.99 で返っていたのは渡していなかったからで、
+[25](25-confidence-fallback.md) で同じ手が 0.99 で返っていたのは、渡していなかったからである。
 → **信号が無いのではなく、信号を作る事実を state に戻していなかった。**
 
 **27. 自分の解釈を後から測って否定した。**
