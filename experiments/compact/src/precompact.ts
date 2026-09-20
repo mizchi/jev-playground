@@ -73,6 +73,22 @@ export interface Arm {
 export const ARMS: Arm[] = [
   { name: "plain", instructions: "" },
   { name: "instructed", instructions: KEEP_FACTS },
+  /**
+   * `plain` A SECOND TIME, under a different name. The control against itself.
+   *
+   * Added after the first full sweep came back 7/9 for both arms with one
+   * transcript better and one worse -- a 1-vs-1 flip on 8 transcripts, which
+   * could be the instructions doing two small opposite things or could be the
+   * summariser being a draw. Those are different findings and a caveat cannot
+   * separate them.
+   *
+   * So this arm asks the question that docs/44 §1.3 got for free and this one
+   * has to pay for: **how much does the same request move between draws?** If
+   * `plain` disagrees with itself as much as it disagrees with `instructed`,
+   * the arm comparison is not measurable at this n and the honest output is to
+   * say so with a number.
+   */
+  { name: "plainagain", instructions: "" },
 ];
 
 export interface Row {
@@ -361,6 +377,41 @@ function show(rec: Record_): void {
     );
   }
 
+  // THE DRAW, MEASURED, so the null above can be read. `plainagain` is `plain`
+  // with the same (absent) instructions, so any per-transcript disagreement
+  // between them is the summariser's own variation and nothing else.
+  const self = transcripts()
+    .map((t) => {
+      const a = rec.rows.find((r) => r.transcript === t.id && r.arm === "plain" && !r.error);
+      const b = rec.rows.find((r) => r.transcript === t.id && r.arm === "plainagain" && !r.error);
+      return a && b ? { id: t.id, a, b } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  if (self.length > 0) {
+    const moved = self.filter((p) => p.a.kept !== p.b.kept);
+    const armPairs = transcripts()
+      .map((t) => {
+        const a = rec.rows.find((r) => r.transcript === t.id && r.arm === "plain" && !r.error);
+        const b = rec.rows.find((r) => r.transcript === t.id && r.arm === "instructed" && !r.error);
+        return a && b && a.kept !== b.kept ? t.id : null;
+      })
+      .filter(Boolean);
+    console.log(
+      `\n## How much does the same request move? (\`plainagain\` is \`plain\` again)\n\n` +
+        `**\`plain\` disagrees with ITSELF on ${moved.length} of ${self.length} transcripts** ` +
+        `(${moved.map((p) => `\`${p.id}\` ${p.a.kept}->${p.b.kept}`).join(", ") || "none"}), against ` +
+        `${armPairs.length} where it disagrees with \`instructed\`.\n\n` +
+        (moved.length >= armPairs.length
+          ? "**So the arm comparison is not measurable at this n.** The summariser moves between draws by at " +
+            "least as much as the instructions move it, on 8 transcripts carrying 9 facts. That is not a " +
+            "caveat about the null result above -- it is the reason the null result cannot be interpreted, " +
+            "and it took one extra arm to say it with a number instead of a hedge."
+          : "The instructions move more than the draw does, so the per-transcript column above is worth " +
+            "reading. It is still 8 transcripts.") +
+      "\n",
+    );
+  }
+
   const failed = rec.rows.filter((r) => r.error);
   if (failed.length > 0) {
     console.log(
@@ -411,13 +462,33 @@ function show(rec: Record_): void {
     const hereFacts = here.reduce((n, r) => n + r.facts, 0);
     if (hereFacts > 0 && sumFacts > 0) {
       const better = hereKept / hereFacts > sumKept / sumFacts;
+      const medChars = med(here.map((r) => r.summaryChars));
+      // BOTH BRANCHES GET THEIR OWN EXPLANATION. The first version of this
+      // paragraph branched on the verb and then gave one reason for both --
+      // and the reason it gave was written for the branch that did not
+      // happen, so the sentence would have read "the host's summariser does
+      // not beat them, and the likely reason is that it has no budget, which
+      // means the headroom is not there to buy". That is self-contradictory:
+      // being beaten IS the headroom. Seventh time in this programme a
+      // conclusion has survived its own table changing under it.
       console.log(
-        `\n**The host's summariser ${better ? "beats" : "does not beat"} the model arms that rewrite** ` +
-          `(${pct(hereKept, hereFacts)} against ${pct(sumKept, sumFacts)} pooled), and the likely reason is ` +
-          "structural rather than clever: docs/42's `summarise` arms were compressing to a TOKEN BUDGET, and " +
-          `the host's is not -- its summaries here run ${med(here.map((r) => r.summaryChars)).toLocaleString()} ` +
-          "characters. **Which means the headroom the instructions were supposed to buy mostly is not there " +
-          "to buy**, and §2's null result should be read with that in front of it.",
+        better
+          ? `\n**The host's summariser beats the model arms that rewrite** (${pct(hereKept, hereFacts)} against ` +
+              `${pct(sumKept, sumFacts)} pooled), and the likely reason is structural rather than clever: ` +
+              "docs/42's `summarise` arms were compressing to a TOKEN BUDGET and the host's is not -- its " +
+              `summaries here run ${medChars.toLocaleString()} characters. **So the headroom the instructions ` +
+              "were supposed to buy mostly is not there to buy**, and §2 should be read with that in front of it."
+          : `\n**The host's own compaction summariser keeps FEWER facts than any arm docs/42 measured** ` +
+              `(${pct(hereKept, hereFacts)} against ${pct(sumKept, sumFacts)} pooled for the rewriting arms, ` +
+              "and against 100% for all three that preserve bytes). That is the opposite of what the setup " +
+              "predicts: docs/42's `summarise` arms were compressing to a quarter of the transcript, and the " +
+              `host's is under no budget at all -- ${medChars.toLocaleString()} characters of summary for a ` +
+              "transcript of 9,000 to 27,000 tokens.\n\n" +
+              "**So the loss is not compression pressure. It is what the summariser chooses to be about.** " +
+              "Reading the summaries, they are narrative -- what was attempted, in what order, what the user " +
+              "then asked for -- and a measured value survives when it happens to be load-bearing for that " +
+              "story. **Which is exactly the headroom the instructions were supposed to buy**, and §2 says how " +
+              "much of it they actually bought.",
       );
     }
   }
@@ -508,6 +579,31 @@ async function main(): Promise<void> {
     seams();
     return;
   }
+  if (argv.includes("--rejudge")) {
+    // Re-score the stored summaries with the CURRENT judge, and say how many
+    // verdicts moved. docs/42's `--rejudge` is the precedent and it earned its
+    // keep the day this judge was fixed: it proved the fix left docs/42's
+    // published numbers untouched (0 of 40 rows), so the comparison in the
+    // report is between like and like.
+    const rec = JSON.parse(readFileSync(PATH, "utf8")) as Record_;
+    const byId = new Map(transcripts().map((t) => [t.id, t]));
+    let moved = 0;
+    for (const row of rec.rows) {
+      const t = byId.get(row.transcript);
+      if (!t || row.error) continue;
+      if (row.summary.length !== row.summaryChars) {
+        console.log(`  ${row.transcript} ${row.arm}: stored summary is truncated, re-run this row instead`);
+        continue;
+      }
+      const re = judge(t, row.summary);
+      if (re.kept !== row.kept || re.invented !== row.invented || re.absent !== row.absent) moved += 1;
+      Object.assign(row, re);
+    }
+    console.log(`  ${moved} of ${rec.rows.length} rows changed verdict.\n`);
+    writeFileSync(PATH, `${JSON.stringify(rec, null, 2)}\n`);
+    show(rec);
+    return;
+  }
   const only = argv.includes("--limit") ? Number(argv[argv.indexOf("--limit") + 1]) : 999;
   const root = resolve("/tmp", `jev-precompact-${Date.now()}`);
   mkdirSync(root, { recursive: true });
@@ -527,7 +623,14 @@ async function main(): Promise<void> {
           tokensBefore: t.tokens,
           ms: got.ms,
           sawInstructions: got.sawInstructions,
-          summary: got.summary.slice(0, 6000),
+          // THE WHOLE SUMMARY, not a slice. The first version capped this at
+          // 6,000 characters and 6 of 16 rows hit the cap -- the SCORING used
+          // the full text, so the numbers were right, but the record could not
+          // reproduce them and a later `--rejudge` would have quietly scored
+          // less text than the original run. docs/42 stores its `sample` whole
+          // for the same reason, which is why its numbers could be re-derived
+          // when this judge changed.
+          summary: got.summary,
           ...(got.error ? { error: got.error } : {}),
         });
         process.stderr.write(

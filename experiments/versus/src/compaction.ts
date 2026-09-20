@@ -207,6 +207,29 @@ const save = (r: Record_): void => {
 const WINDOW = 160;
 
 /**
+ * Strip digit grouping before comparing. `30,130` is `30130`.
+ *
+ * THE SECOND TIME THIS CHECK CALLED A CORRECT ANSWER WRONG. Its docblock above
+ * records the first: a verbatim check scored `661 docs/31-orchestration.md` as
+ * an invention because the summary had reworded it, and the fix was the window.
+ * The window tolerates REWORDING and not REFORMATTING -- so when the host's own
+ * compaction summariser wrote
+ *
+ *   jev-hermes: Examined 5 source files, largest is pi.ts at 30,130 bytes
+ *
+ * against a fact of `30130 packages/jev-hermes/src/pi.ts`, the value was not
+ * found, a digit-shaped token WAS found beside the probe, and the check
+ * reported an invention -- of the right number, written the way people write
+ * numbers.
+ *
+ * The lesson is the one docs/39 §7 and docs/42 §1.2 both landed on from the
+ * other side: an invention is the most serious thing this judge can say, so
+ * every way of being right has to be subtracted first. A separator is not a
+ * claim.
+ */
+const ungroup = (text: string): string => text.replace(/(\d),(?=\d\d\d\b)/g, "$1");
+
+/**
  * EXPORTED, because `experiments/compact/src/precompact.ts` scores the host
  * summariser's output with the same window check. Reimplementing it there
  * would make the two reports' "facts kept" mean different things while
@@ -234,20 +257,25 @@ export function judge(t: Transcript, surviving: string): Omit<Row, "transcript" 
       continue;
     }
     checkable += 1;
+    // Ungrouped ONCE, up front, so the window offsets and the value comparison
+    // below are computed against the same string. Doing it per-comparison
+    // would shift the windows out from under the indices.
+    const hay = ungroup(surviving);
+    const needle = ungroup(split.value);
     const windows: string[] = [];
-    for (let at = surviving.indexOf(split.probe); at >= 0; at = surviving.indexOf(split.probe, at + 1)) {
-      windows.push(surviving.slice(Math.max(0, at - WINDOW), at + split.probe.length + WINDOW));
+    for (let at = hay.indexOf(split.probe); at >= 0; at = hay.indexOf(split.probe, at + 1)) {
+      windows.push(hay.slice(Math.max(0, at - WINDOW), at + split.probe.length + WINDOW));
     }
     if (windows.length === 0) {
       absent += 1;
       continue;
     }
-    if (windows.some((w) => w.includes(split.value))) {
+    if (windows.some((w) => w.includes(needle))) {
       kept += 1;
       continue;
     }
     // The probe is there and the true value is not. Is something else there?
-    const shape = /^[\d.]+$/.test(split.value) ? /[\d][\d.]*/ : /\S+/;
+    const shape = /^[\d.]+$/.test(needle) ? /[\d][\d.]*/ : /\S+/;
     if (windows.some((w) => shape.test(w.replace(split.probe, " ")))) {
       invented += 1;
       continue;
