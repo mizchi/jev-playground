@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Every link in docs/ resolves. No network, no key.
+ * Every link in the repository's markdown resolves. No network, no key.
  *
  *   node scripts/check-doc-links.mjs
  *
@@ -24,12 +24,21 @@
  * So the slug rule below is the one GitHub actually uses (drop punctuation and
  * symbols, keep letters/numbers/marks, space -> hyphen, lowercase), and both
  * anchor forms are collected.
+ *
+ * AND THE THIRD MISTAKE WAS SCOPE. It read `docs/` only, so `pi/README.md`,
+ * the package READMEs and the root `README.md` -- 276 links -- were never
+ * checked at all. A blind spot reports zero broken links for exactly the same
+ * reason a working one does. Adding them found nothing broken, which is the
+ * outcome that makes the widening free rather than the one that makes it
+ * unnecessary.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { existsSync } from "node:fs";
 import { dirname, join, normalize, relative, resolve } from "node:path";
 
-const DOCS = resolve(import.meta.dirname, "..", "docs");
+const REPO = resolve(import.meta.dirname, "..");
+/** Not ours to check: dependencies, build output, and package caches. */
+const SKIP = new Set(["node_modules", ".git", "_build", ".mooncakes", ".openseek", "out"]);
 
 /** GitHub's heading slug: lowercase, drop punctuation and symbols, spaces to hyphens. */
 function slug(heading) {
@@ -57,29 +66,52 @@ function anchorsOf(source) {
   return found;
 }
 
-const files = readdirSync(DOCS).filter((f) => f.endsWith(".md"));
-const anchors = new Map(files.map((f) => [f, anchorsOf(readFileSync(join(DOCS, f), "utf8"))]));
+/** Every markdown file in the repository, by absolute path. */
+function markdown(dir, depth = 0) {
+  if (depth > 4) return [];
+  const out = [];
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry)) continue;
+    const p = join(dir, entry);
+    let st;
+    try {
+      st = statSync(p);
+    } catch {
+      continue;
+    }
+    if (st.isDirectory()) out.push(...markdown(p, depth + 1));
+    else if (entry.endsWith(".md")) out.push(p);
+  }
+  return out;
+}
+
+const files = markdown(REPO).sort();
+// Keyed by absolute path, because the links now come from several directories
+// and `docs/44-components.md` is not a unique name once `pi/README.md` and
+// `packages/jev-guard/README.md` are in the set too.
+const anchors = new Map(files.map((f) => [f, anchorsOf(readFileSync(f, "utf8"))]));
 
 let broken = 0;
 let checked = 0;
-for (const file of files.sort()) {
-  const source = readFileSync(join(DOCS, file), "utf8");
+for (const file of files) {
+  const source = readFileSync(file, "utf8");
+  const here = dirname(file);
+  const name = relative(REPO, file);
   for (const m of source.matchAll(/\]\((?!https?:|mailto:)([^)#\s]*)(#[^)\s]*)?\)/g)) {
     const [, target, hash] = m;
     checked += 1;
-    const path = target ? normalize(join(DOCS, target)) : join(DOCS, file);
+    const path = target ? normalize(join(here, target)) : file;
     if (target && !existsSync(path)) {
-      console.log(`  BROKEN FILE   ${file} -> ${target}`);
+      console.log(`  BROKEN FILE   ${name} -> ${target}`);
       broken += 1;
       continue;
     }
     if (!hash) continue;
-    const key = relative(DOCS, path);
-    // A link into a non-doc file (../TODO.md, ../README.md) is checked for
-    // existence above; its anchors are out of scope here.
-    if (!anchors.has(key)) continue;
-    if (!anchors.get(key).has(hash.slice(1))) {
-      console.log(`  BROKEN ANCHOR ${file} -> ${target}${hash}`);
+    // A link into a file that is not markdown is checked for existence above;
+    // its anchors are out of scope.
+    if (!anchors.has(path)) continue;
+    if (!anchors.get(path).has(hash.slice(1))) {
+      console.log(`  BROKEN ANCHOR ${name} -> ${target}${hash}`);
       broken += 1;
     }
   }

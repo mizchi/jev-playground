@@ -1,0 +1,27 @@
+{
+  "name": "@jev-playground/pi-resident",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "This repository as a Pi agent: jev-hermes alone -- all five components in one extension, one request per turn, one budget. The alternative profile is ../components -- load one or the other, never both.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "jev"
+  ],
+  "pi": {
+    "extensions": [
+      "extensions/*.ts"
+    ]
+  },
+  "dependencies": {
+    "jev-hermes": "file:../../packages/jev-hermes"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
