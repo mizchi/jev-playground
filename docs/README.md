@@ -42,6 +42,8 @@ cd experiments/browser-chaos  && npx tsx src/run-adversarial.ts --fixture slots-
 cd experiments/browser-chaos  && npx tsx src/run-ablation.ts --runs 2 --steps 16 # 30: 手法を重ねたときの ablation
 cd experiments/browser-chaos  && npx tsx src/check-retrieve.ts --wide 200 # 30 §6: 候補検索の recall@k(API 不要)
 cd experiments/browser-chaos  && npx tsx src/run-ablation.ts --wide --runs 2 # 30 §6.4: 視野で絞る
+cd experiments/browser-chaos  && npx tsx src/check-retrieve.ts --wide 200 --before # 30 §6.5: 答えを折り返しの下に(API 不要)
+cd experiments/browser-chaos  && npx tsx src/run-ablation.ts --wide --before --runs 2 --steps 18 # 30 §6.5: SCROLL
 python3 -m http.server -d web 8000                             # 11: リプレイを Web 再生 → :8000/replay.html
 cd experiments/eslint-oracle  && npm i && npx tsx src/run.ts   # 16: ESLint の合否予測
 cd experiments/task-picker    && npm i && npx tsx src/run.ts --scale # 17: タスク選択
@@ -131,6 +133,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **target head を不確実にしようとすると、不確実さは operation 側に移る** | 4 盤面で試して used head は 20/20 が ≥0.90。型付き分割が質問を狭めている以上、「何をするか」の迷いは「どの要素か」の迷いに分解されない | 本リポジトリ | [29 §8.2](29-speculative-fanout.md#82-the-uncertain-used-head-is-not-constructible-here) |
 | **空 value の `<option>` を target にしてはいけない** | プレースホルダは値ではない。満たした要件を捨てる target になり、両アームが 0.4-0.7 で食いついた | 本リポジトリ | [29 §8](29-speculative-fanout.md#what-the-run-actually-caught-a-bug-in-the-port) |
 | **候補を絞るなら空間で、語彙一致で絞らない** | ゴール語彙検索は recall@20 が **1/10**(何もせず先頭 20 件なら 10/10)。視野で絞ると候補数が**ページ幅に依存せず** 58-64 で、トークン **−67%**・精度同じ | 本リポジトリ / playwright-mcp の `browser_find` | [30 §6](30-browser-accuracy.md#6-browser_find-を移してみた--候補検索は安全ではなかった) |
+| **ただしその節約は「答えが今の画面にある」仮定を担保に借りている** | `SCROLL` を足しても返せない。自由な選択なら振動(18/18 手)、掃引なら答えを通り過ぎ、**効いていた盤面で 2/2 → 0/2**。ページ全体を相手にするなら絞らない | 本リポジトリ | [30 §6.5](30-browser-accuracy.md#65-scroll-を実装したら64-の推奨が崩れた) |
+| **位置の事実で判断を駆動すると振動する** | ドロップダウン(29 §3)とスクロール(30 §6.5)で同じ形。必要なのは進捗の事実で、選択ではなく掃引にする | 本リポジトリ | [30 §6.5](30-browser-accuracy.md#65-scroll-を実装したら64-の推奨が崩れた) |
 | **ゴールは結果を名指し、コントロールは遷移で名付けられている** | だから語彙が噛み合わない。`Continue to delivery` はゴールとスコア 0、ゴール語彙から作った filler が上に来る | 本リポジトリ | [30 §6.1](30-browser-accuracy.md#61-ゴールに対する語彙検索は使えない) |
 | **手法の価値は足し算ではなく崖** | 型付き欠損も ジオメトリ欠損も**単独なら着く**(2/2)。両方欠けたときだけ **0/2**。各手法はもう一方が在ることを前提に予算内に収まっている | 本リポジトリ | [30 §3.1](30-browser-accuracy.md#31-足し算ではなく崖だった) |
 | **4 実装すべてが値を実行単位に乗せている** | 「要素だけ指して値は呼び出し側が推測」は誰も出荷していない。独立に 4 回同じ結論 | jev-ultrafast / playwright-mcp / stagehand / browser-use | [30 §1](30-browser-accuracy.md#1-実装-4-つの決定点) |
@@ -160,6 +164,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 固定の待ち時間でステップの費用を測る | `async` なハンドラは待たれないので、300KB の fetch が 20ms の無料ステップに見える([28](28-perf-automation.md#2-計測を-3-回直した)) |
 | 無駄手(画面が変わらない手)だけでループを検出する | 10 手連続で `standard ↔ economy` を往復しても画面は毎回変わるので、**無駄手 0 のまま予算を使い切る**([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
 | 成功する罠を「ゴール到達」で採点する | 同じゲートを通って同じ確認画面に着く近似ボタンは、到達率には一切出ない。state で採点するしかない([29 §8](29-speculative-fanout.md#8-trying-to-break-the-speculation)) |
+| 視野で絞ったうえで `SCROLL` を操作として足す | 見えないものを探すのが探索で、見えなくしたのは絞り込み自身。Playwright はクリック時に自動スクロールするので、全部送るなら `SCROLL` は要らない([30 §6.5](30-browser-accuracy.md#65-scroll-を実装したら64-の推奨が崩れた)) |
 | ゴールとの語彙一致で候補を絞る | 正解を**答えから遠ざける方向**に並べ替える。画面テキストを足すと全体のスコアが上がって識別が消え、小さい k ではさらに悪化する([30 §6.1](30-browser-accuracy.md#61-ゴールに対する語彙検索は使えない)) |
 | 「今の値と違う最初の選択肢」でドロップダウンを送る | 列挙ではなく 2 周期の**振動**になり、3 番目以降に永久に到達しない。記憶を持たせると 1 選択肢 1 手で終わる([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
 | ゲートの noul を他のロスターからそのまま移す | 「スキルとは何か」の定義が埋まっている。純損失になりうる([08](08-skill-suggestion.md#43-cookbook-のゲートはこのロスターでは純損失だった)) |

@@ -331,6 +331,9 @@ const decoys = (names) => names
   reproducible and two arms see an identical page.
 */
 const WIDE = Math.max(0, Math.min(400, Number(new URLSearchParams(location.search).get("wide")) || 0));
+// `after` (default) keeps every earlier measurement; `before` is the one
+// that puts the flow below the fold. See the note in render().
+const FILLER_POS = new URLSearchParams(location.search).get("fillerpos") === "before" ? "before" : "after";
 
 const FILLER_VERBS = ["View", "Save", "Compare", "Share", "Report", "Hide", "Pin", "Export"];
 const FILLER_NOUNS = [
@@ -484,9 +487,20 @@ function render() {
   }
   const hash = location.hash || "#/home";
   const view = routes[hash] || (() => `<h1>Not found</h1>`);
-  // Filler goes on every screen, appended here rather than in each route,
+  // Filler goes on every screen, applied here rather than in each route,
   // so it cannot accidentally differ between screens or between arms.
-  document.getElementById("view").innerHTML = view() + (WIDE ? filler(WIDE) : "");
+  //
+  // `?fillerpos=before` puts it FIRST, which is the only way to test
+  // scrolling: appended filler leaves every real control near the top and
+  // therefore always on screen, so docs/30 §6.4's viewport narrowing never
+  // has to give anything up. Prepending models a real page's long nav or
+  // filter rail and pushes the flow below the fold.
+  const body = view();
+  document.getElementById("view").innerHTML = !WIDE
+    ? body
+    : FILLER_POS === "before"
+      ? filler(WIDE) + body
+      : body + filler(WIDE);
   document.title = `Chaos target — ${hash}`;
   if (window.__visited[window.__visited.length - 1] !== hash) window.__visited.push(hash);
   document.getElementById("status").textContent =

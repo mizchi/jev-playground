@@ -80,6 +80,16 @@ for (const md of readdirSync(DOCS).filter((f) => f.endsWith(".md")).sort()) {
     if (anchors === null) broken.push(`${md} -> ${target} (no such file)`);
     else if (!anchors.has(anchor)) broken.push(`${md} -> ${target}#${anchor}`);
   }
+  // Same-file anchors, `](#section)`. These were invisible to the check
+  // above, whose pattern requires a filename before the `#` — and two
+  // broken ones had already shipped by the time that was noticed. A
+  // within-document link rots exactly as easily as a cross-document one:
+  // renaming a heading breaks both, and this is the more common edit.
+  for (const m of text.matchAll(/\]\(#([^)]+)\)/g)) {
+    const [, anchor] = m;
+    checked += 1;
+    if (!anchorsFor(md).has(anchor)) broken.push(`${md} -> #${anchor} (same file)`);
+  }
 }
 
 for (const b of broken) console.error(`  broken  ${b}`);

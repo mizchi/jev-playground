@@ -33,7 +33,7 @@
 import { chromium, type Page } from "playwright";
 import { Jev } from "../../shared/jev.js";
 import { blocked, fillValue } from "./confidence-bench.js";
-import { decide, defaultOption, type FanoutState, type OptionMemo } from "./fanout.js";
+import { decide, defaultOption, isScroll, ScrollSweep, type FanoutState, type OptionMemo } from "./fanout.js";
 import { notableFacts, probe, type ProbedCandidate } from "./probes.js";
 // @ts-expect-error - plain .mjs helper, shared with the other runners.
 import { serve } from "./serve.mjs";
@@ -52,6 +52,13 @@ interface Arm {
    * action — this is whether a driver restricted that way still arrives.
    */
   viewport?: boolean;
+  /**
+   * Offer SCROLL_DOWN / SCROLL_UP when there is something off screen.
+   * Only meaningful with `viewport`: without narrowing there is nothing
+   * the scrolls could reveal, and the flat picker has no operation head
+   * to put them in.
+   */
+  scroll?: boolean;
 }
 
 const ABLATION: Arm[] = [
@@ -66,6 +73,7 @@ const ABLATION: Arm[] = [
 const WIDE_ARMS: Arm[] = [
   { name: "everything", typed: true, prune: true, tell: true },
   { name: "viewport", typed: true, prune: true, tell: true, viewport: true },
+  { name: "viewport+scroll", typed: true, prune: true, tell: true, viewport: true, scroll: true },
 ];
 
 const GOAL =
@@ -115,6 +123,8 @@ interface ArmResult {
   shipping?: string;
   /** A rejected answer, which is a result rather than a crash. */
   invalid: number;
+  /** Steps spent moving the view rather than acting. */
+  scrolls: number;
 }
 
 async function act(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; error?: string }> {
@@ -164,8 +174,10 @@ async function runArm(
   const seen = new Set<string>([hashOf(page.url())]);
   const recent: string[] = [];
   const memo: OptionMemo = new Map();
+  const sweep = new ScrollSweep();
   let wasted = 0;
   let blockedPicks = 0;
+  let scrolls = 0;
   let requests = 0;
   let invalid = 0;
   let taken = 0;
@@ -189,6 +201,11 @@ async function runArm(
     // screen whose every control is blocked still has to be leavable.
     const notInert = candidates.filter((c) => !inert.has(c.description));
     let offered = notInert.length >= 2 ? notInert : candidates;
+    // What the viewport narrowing is giving up, measured before it does.
+    // A candidate off screen is above or below depending on its box top,
+    // which `inViewport` alone cannot say.
+    const below = offered.filter((c) => !c.facts.inViewport && c.facts.viewportTop >= 0).length;
+    const above = offered.filter((c) => !c.facts.inViewport && c.facts.viewportTop < 0).length;
     if (arm.viewport) {
       // Spatial, not lexical. Never narrowed to nothing: a screen with
       // nothing on it still has to be leavable.
@@ -210,6 +227,17 @@ async function runArm(
         })
       : offered;
 
+    if (arm.scroll) {
+      const pos = (await page.evaluate(
+        "JSON.stringify([Math.round(scrollY), Math.round(document.documentElement.scrollHeight - innerHeight - scrollY)])",
+      )) as string;
+      const [scrollY, remaining] = JSON.parse(pos) as [number, number];
+      // The screen key is the route plus its rendered HTML, so a
+      // re-render on the same route restarts the sweep — the page may
+      // have grown or shrunk under it.
+      sweep.observe(before, scrollY, remaining > 4);
+    }
+
     const state: FanoutState = {
       goal: GOAL,
       current_url: hashOf(page.url()),
@@ -222,11 +250,24 @@ async function runArm(
       last_action_error: lastError,
       actions_with_no_effect_in_a_row: noEffectStreak,
       controls_already_tried_here_with_no_effect: [...inert],
+      // Only told to an arm that is actually hiding things. Without this
+      // a SCROLL_DOWN in the operation list is a guess: a narrowed
+      // candidate list looks complete from the inside.
+      ...(arm.scroll ? { controls_below_the_view: below } : {}),
     };
 
     let decision;
     try {
-      decision = await decide(arm.typed ? "fanout" : "flat-memo", jev, shown, state, memo);
+      decision = await decide(
+        arm.typed ? "fanout" : "flat-memo",
+        jev,
+        shown,
+        state,
+        memo,
+        // One direction only, and only while there is unswept page. See
+        // `ScrollSweep` for why offering both oscillates.
+        arm.scroll ? { canScrollDown: sweep.canScrollDown && below > 0 } : undefined,
+      );
     } catch (err) {
       invalid += 1;
       trace?.(`  step=${step} INVALID ${err instanceof Error ? err.message : String(err)}`);
@@ -238,6 +279,31 @@ async function runArm(
     if (decision.operation === "DONE" || decision.operation === "BLOCKED") {
       trace?.(`  step=${step} ${decision.operation}@${decision.confidence.toFixed(2)}`);
       break;
+    }
+
+    if (isScroll(decision.operation)) {
+      // One viewport, less a little overlap, so a control straddling the
+      // fold is not skipped over. A scroll is a real step: it costs a
+      // request and a budget slot like anything else.
+      const dir = decision.operation === "SCROLL_DOWN" ? 1 : -1;
+      await page.evaluate(
+        `window.scrollBy(0, ${dir} * Math.round(window.innerHeight * 0.8))`,
+      );
+      await page.waitForTimeout(60);
+      scrolls += 1;
+      const after = await evalString(page, SIGNATURE);
+      // Scrolling does not change the page, only the view, so the
+      // no-op detector must not count it as a wasted step.
+      recent.push(decision.operation);
+      lastAction = decision.operation;
+      lastHadEffect = true;
+      lastError = undefined;
+      trace?.(
+        `  step=${step} ${decision.operation}@${decision.confidence.toFixed(2)} ` +
+          `n=${offered.length} below=${below} above=${above}` +
+          `${after === before ? "" : "  (page also changed)"}`,
+      );
+      continue;
     }
 
     // The note was only ever for the prompt; act on the real candidate.
@@ -292,6 +358,7 @@ async function runArm(
     ms: jev.totalMs - startMs,
     shipping: shipping as string | undefined,
     invalid,
+    scrolls,
   };
 }
 
@@ -313,7 +380,13 @@ async function main(): Promise<void> {
   // pages to be about anything.
   const wide = process.argv.includes("--wide");
   const arms = wide ? WIDE_ARMS : ABLATION;
-  const query = wide ? "select=many&wide=200" : "overlay=1&select=many";
+  // `--before` prepends the filler so the flow sits below the fold. That
+  // is the only arrangement where viewport narrowing has to give
+  // something up, and therefore the only one where SCROLL is testable.
+  const before = process.argv.includes("--before");
+  const query = wide
+    ? `select=many&wide=200${before ? "&fillerpos=before" : ""}`
+    : "overlay=1&select=many";
   const base = `${typeof srv === "string" ? srv : srv.url}?${query}`;
   const browser = await chromium.launch();
   const rows: ArmResult[] = [];
@@ -334,14 +407,15 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n${query}, ${steps} step budget, ${runs} run(s) per arm`);
-  console.log("\narm         goal  steps  wasted  blocked  reqs  in_tok  out_tok    ms  express");
+  console.log("\narm              goal  steps  scroll  wasted  blocked  reqs  in_tok  out_tok    ms  express");
   for (const arm of arms) {
     const mine = rows.filter((r) => r.arm === arm.name);
     const n = mine.length;
     const avg = (f: (r: ArmResult) => number) => (mine.reduce((a, r) => a + f(r), 0) / n).toFixed(1);
     console.log(
-      `${arm.name.padEnd(11)} ${String(mine.filter((r) => r.reachedGoal).length)}/${n}  ` +
-        `${avg((r) => r.steps).padStart(5)}  ${avg((r) => r.wasted).padStart(6)}  ` +
+      `${arm.name.padEnd(16)} ${String(mine.filter((r) => r.reachedGoal).length)}/${n}  ` +
+        `${avg((r) => r.steps).padStart(5)}  ${avg((r) => r.scrolls).padStart(6)}  ` +
+        `${avg((r) => r.wasted).padStart(6)}  ` +
         `${avg((r) => r.blockedPicks).padStart(7)}  ${avg((r) => r.requests).padStart(4)}  ` +
         `${avg((r) => r.inputTokens).padStart(6)}  ${avg((r) => r.outputTokens).padStart(7)}  ` +
         `${avg((r) => r.ms).padStart(4)}  ` +

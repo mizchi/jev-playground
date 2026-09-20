@@ -9,7 +9,14 @@
  * is the one that would otherwise rot silently — a validator nobody tests
  * passes everything.
  */
-import { actionSpace, defaultOption, operationFor, untriedOption, validateChoice } from "./fanout.js";
+import {
+  actionSpace,
+  defaultOption,
+  operationFor,
+  ScrollSweep,
+  untriedOption,
+  validateChoice,
+} from "./fanout.js";
 import type { ProbedCandidate } from "./probes.js";
 import {
   FIXTURES,
@@ -41,7 +48,7 @@ function cand(over: Partial<ProbedCandidate> & { index: number }): ProbedCandida
     type: "click",
     options: [],
     currentValue: "",
-    facts: { enabled: true, inViewport: true, inert: false },
+    facts: { enabled: true, inViewport: true, inert: false, viewportTop: 0 },
     locator: { role: "button", name: "Place order" },
     ...over,
   };
@@ -216,6 +223,51 @@ check("both fallbacks walk two options identically", () => {
     `diverged: ${memoryless.join(",")} vs ${remembering.join(",")}`,
   );
   assert(remembering[1] === "express", `did not reach express on the second step: ${remembering.join(",")}`);
+});
+
+console.log("\nscroll sweep");
+
+check("a scroll is not offered until the caller says there is somewhere to go", () => {
+  const bare = actionSpace([cand({ index: 0 })]);
+  assert(!bare.operations.includes("SCROLL_DOWN"), "offered SCROLL_DOWN unasked");
+  assert(!bare.operations.includes("SCROLL_UP"), "offered SCROLL_UP unasked");
+  const down = actionSpace([cand({ index: 0 })], { canScrollDown: true });
+  assert(down.operations.includes("SCROLL_DOWN"), "did not offer SCROLL_DOWN when asked");
+  assert(!down.operations.includes("SCROLL_UP"), "offered the direction not asked for");
+});
+
+check("the sweep stops offering a direction once the bottom is reached", () => {
+  // The oscillation this replaces: offering both directions makes the
+  // position facts point each way in turn, and a driver ping-pongs
+  // forever without acting. docs/30 §6.5 measured 18 of 18 steps spent
+  // scrolling.
+  const s = new ScrollSweep();
+  s.observe("screen-a", 0, true);
+  assert(s.canScrollDown, "refused to start sweeping");
+  s.observe("screen-a", 600, true);
+  assert(s.canScrollDown, "stopped mid-page");
+  s.observe("screen-a", 1200, false);
+  assert(!s.canScrollDown, "kept offering at the bottom");
+  assert(s.swept, "did not record the sweep as finished");
+});
+
+check("a new screen restarts the sweep", () => {
+  const s = new ScrollSweep();
+  s.observe("screen-a", 1200, false);
+  assert(!s.canScrollDown, "precondition");
+  // The page changed underneath, so what was swept no longer exists.
+  s.observe("screen-b", 0, true);
+  assert(s.canScrollDown, "a new screen inherited the old screen's sweep");
+});
+
+check("returning up the same screen does not reopen the sweep", () => {
+  // Without this the sweep is just the oscillation again with extra
+  // steps: scroll to the bottom, get carried back up by a re-render at
+  // the same signature, and start over.
+  const s = new ScrollSweep();
+  s.observe("screen-a", 1200, false);
+  s.observe("screen-a", 0, true);
+  assert(!s.canScrollDown, "reopened the sweep on the same screen");
 });
 
 console.log("\nadversarial trap graders");

@@ -87,7 +87,11 @@ async function main(): Promise<void> {
   const wide = arg("wide", 200);
   const mode = process.argv.includes("--goal-plus-screen") ? "goal+screen" : "goal";
   const srv = await serve();
-  const base = `${typeof srv === "string" ? srv : srv.url}?select=many&wide=${wide}`;
+  // `--before` prepends the filler, which is the only arrangement where
+  // the flow is below the fold and viewport narrowing has to give
+  // something up.
+  const pos = process.argv.includes("--before") ? "&fillerpos=before" : "";
+  const base = `${typeof srv === "string" ? srv : srv.url}?select=many&wide=${wide}${pos}`;
   const browser = await chromium.launch();
   const page = await browser.newPage();
   const rows: Row[] = [];
@@ -130,7 +134,7 @@ async function main(): Promise<void> {
     await browser.close();
   }
 
-  console.log(`wide=${wide}, query = ${mode}\n`);
+  console.log(`wide=${wide}, filler ${process.argv.includes("--before") ? "BEFORE" : "after"}, query = ${mode}\n`);
   console.log("step  what             offered  rank  score  what outranked it");
   for (const r of rows) {
     console.log(

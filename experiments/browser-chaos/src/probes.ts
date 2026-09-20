@@ -40,6 +40,14 @@ export interface CandidateFacts {
   coveredBy?: string;
   /** `pointer-events: none`, or an opacity low enough to read as inert. */
   inert: boolean;
+  /**
+   * The box's top edge in viewport coordinates, so an off-screen
+   * candidate can be told apart from one that is merely off-screen
+   * *upwards*. `inViewport` alone cannot: docs/30 §6.4 narrows the offered
+   * set to the viewport, and a driver that does that needs to know which
+   * way to scroll before scrolling is worth offering.
+   */
+  viewportTop: number;
 }
 
 export interface ProbedCandidate {
@@ -198,6 +206,7 @@ const PROBE = `(() => {
         inViewport: inViewport,
         inert: cs.pointerEvents === "none" || Number(cs.opacity) < 0.4,
         coveredBy: coveredBy,
+        viewportTop: Math.round(r.top),
       },
     });
     if (isField && !el.value) empty.push(description);

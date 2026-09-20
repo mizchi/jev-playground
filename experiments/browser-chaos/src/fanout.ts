@@ -29,10 +29,28 @@
 import { Jev, choice, type Answer, type Question } from "../../shared/jev.js";
 import type { ProbedCandidate } from "./probes.js";
 
-/** What an operation head can name. `DONE`/`BLOCKED` carry no target. */
-export type Operation = "CLICK" | "TYPE_TEXT" | "SELECT" | "DONE" | "BLOCKED";
+/**
+ * What an operation head can name. `DONE`/`BLOCKED` carry no target, and
+ * neither do the scrolls — they change which candidates exist rather than
+ * acting on one.
+ */
+export type Operation =
+  | "CLICK"
+  | "TYPE_TEXT"
+  | "SELECT"
+  | "SCROLL_DOWN"
+  | "SCROLL_UP"
+  | "DONE"
+  | "BLOCKED";
 
 const TARGETED: Operation[] = ["CLICK", "TYPE_TEXT", "SELECT"];
+
+/** Operations that move the viewport instead of acting on a target. */
+export const SCROLLS: Operation[] = ["SCROLL_DOWN", "SCROLL_UP"];
+
+export function isScroll(op: Operation): boolean {
+  return op === "SCROLL_DOWN" || op === "SCROLL_UP";
+}
 
 /**
  * What a caller that can only name the *element* has to fall back on.
@@ -95,15 +113,78 @@ export interface ActionSpace {
   operations: Operation[];
 }
 
+export interface ActionSpaceOptions {
+  /**
+   * Whether there is anything to reach by scrolling. Passed in rather
+   * than derived, because a caller that narrows to the viewport hands
+   * `actionSpace` only the candidates it kept — the ones it dropped are
+   * exactly the reason to scroll, and they are no longer visible here.
+   *
+   * Offered conditionally for the same reason `SELECT` is: a `choice`
+   * question always names something, so an unreachable direction in the
+   * operation list is an answer that cannot execute.
+   */
+  canScrollDown?: boolean;
+  canScrollUp?: boolean;
+}
+
+/**
+ * Whether scrolling down would reveal anything not yet seen on this
+ * screen, and nothing else.
+ *
+ * The first version offered both directions whenever either had content,
+ * and it oscillated: at the top `controls_below_the_view` is large so
+ * SCROLL_DOWN looks right, at the bottom `controls_above_the_view` is
+ * large so SCROLL_UP does, and the driver ping-pongs forever without ever
+ * acting. That is the same 2-cycle as the memoryless dropdown fallback in
+ * `defaultOption`, arrived at from a different direction, and it has the
+ * same cause — a *position* fact drives the decision where a *progress*
+ * fact is needed.
+ *
+ * So scrolling is a sweep rather than a choice. One direction, tracked
+ * per screen, and once the bottom is reached the operation stops being
+ * offered at all. The model is then only ever deciding "act on what I can
+ * see, or look further" — never "which way".
+ */
+export class ScrollSweep {
+  #screen = "";
+  #deepest = 0;
+  #atBottom = false;
+
+  /** Call before each step with a fingerprint of the current screen. */
+  observe(screen: string, scrollY: number, canScrollFurther: boolean): void {
+    if (screen !== this.#screen) {
+      this.#screen = screen;
+      this.#deepest = scrollY;
+      this.#atBottom = false;
+    }
+    if (scrollY >= this.#deepest) this.#deepest = scrollY;
+    if (!canScrollFurther) this.#atBottom = true;
+  }
+
+  /** Offer SCROLL_DOWN only while there is unswept page below. */
+  get canScrollDown(): boolean {
+    return !this.#atBottom;
+  }
+
+  get swept(): boolean {
+    return this.#atBottom;
+  }
+}
+
 /**
  * Split candidates into one head per operation.
  *
  * An operation with no candidates is not offered at all — jev-ultrafast's
  * `action_space` does the same, and it matters: offering `SELECT` on a
  * page with no dropdown invites a choice that cannot execute, and a
- * `choice` question always names something.
+ * `choice` question always names something. The scrolls follow the same
+ * rule via `opts`.
  */
-export function actionSpace(candidates: readonly ProbedCandidate[]): ActionSpace {
+export function actionSpace(
+  candidates: readonly ProbedCandidate[],
+  opts: ActionSpaceOptions = {},
+): ActionSpace {
   const heads = new Map<Operation, Map<string, TargetEntry>>();
   for (const c of candidates) {
     const op = operationFor(c);
@@ -139,7 +220,13 @@ export function actionSpace(candidates: readonly ProbedCandidate[]): ActionSpace
     }
     heads.set(op, head);
   }
-  const operations = [...TARGETED.filter((op) => heads.has(op)), "DONE" as Operation, "BLOCKED" as Operation];
+  const operations: Operation[] = [
+    ...TARGETED.filter((op) => heads.has(op)),
+    ...(opts.canScrollDown ? (["SCROLL_DOWN"] as Operation[]) : []),
+    ...(opts.canScrollUp ? (["SCROLL_UP"] as Operation[]) : []),
+    "DONE",
+    "BLOCKED",
+  ];
   return { heads, operations };
 }
 
@@ -205,6 +292,15 @@ export interface FanoutState {
   last_action_error?: string;
   actions_with_no_effect_in_a_row: number;
   controls_already_tried_here_with_no_effect: string[];
+  /**
+   * How many controls exist off screen, each way. Without these, a
+   * `SCROLL_DOWN` in the operation list is a guess: the candidate list is
+   * the only thing the model can see, and a narrowed one looks complete.
+   * Absent when the caller is not narrowing, so an arm that offers every
+   * candidate is not told about a distinction that does not apply to it.
+   */
+  controls_below_the_view?: number;
+  controls_above_the_view?: number;
 }
 
 function targetCriteria(head: Map<string, TargetEntry>): Record<string, unknown> {
@@ -225,6 +321,9 @@ function operationCriteria(space: ActionSpace): Record<string, string> {
     CLICK: "Click a button, link, or option.",
     TYPE_TEXT: "Enter or replace text in an editable field.",
     SELECT: "Set an observed dropdown to one of its offered values.",
+    SCROLL_DOWN:
+      "Scroll down. The controls offered below are only the ones on screen; this reveals the ones further down the page.",
+    SCROLL_UP: "Scroll up, to get back to controls above the current view.",
     DONE: "Every requirement is visibly satisfied.",
     BLOCKED: "No offered operation can make progress.",
   };
@@ -514,11 +613,16 @@ export async function decide(
   candidates: readonly ProbedCandidate[],
   state: FanoutState,
   memo?: OptionMemo,
+  space?: ActionSpaceOptions,
 ): Promise<Decision> {
+  // The flat picker has no operation head, so there is nowhere to put a
+  // scroll: an arm that narrows to the viewport needs the typed shape
+  // before it can offer a way back out of it.
   if (strategy === "flat") return askFlat(jev, candidates, state);
   if (strategy === "flat-memo") return askFlat(jev, candidates, state, memo ?? new Map());
-  const space = actionSpace(candidates);
-  return strategy === "fanout" ? askFanout(jev, space, state) : askSequential(jev, space, state);
+  const spaceOpts = space ?? {};
+  const built = actionSpace(candidates, spaceOpts);
+  return strategy === "fanout" ? askFanout(jev, built, state) : askSequential(jev, built, state);
 }
 
 /** Re-exported so callers can read a raw answer without importing both. */
