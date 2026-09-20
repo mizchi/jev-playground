@@ -22,6 +22,7 @@ import { tasks, testsPass, type Run } from "./src/world.js";
 import { bashWritesUnderTest } from "./src/audit.js";
 import { at, load, signTest, SHIPPED } from "./src/floor.js";
 import { distinct, harvest } from "./src/scripts.js";
+import { build, targetsOf, tree } from "./src/damage.js";
 
 let pass = 0;
 let fail = 0;
@@ -723,6 +724,110 @@ check("deduplication keeps every distinct command exactly once, and counts the c
     "the copy counts do not add up to the entry count: ",
   );
   for (const r of rows) ok(r.scripts.length > 0, `${r.command.slice(0, 30)}: no script name recorded`);
+});
+
+
+// ---------------------------------------- TODO §2.2's two worlds (docs/50)
+//
+// §2.2's whole claim is that the two worlds are the SAME REQUEST and differ
+// only in what the named directories contain. That claim does not appear in
+// any number the sweep prints -- a harness that leaked the world would just
+// produce a bigger gap and look like a better result -- so it is tested here.
+
+check("targetsOf harvests the paths the author's own verb names", () => {
+  eq(targetsOf("rm -rf dist").join(","), "dist", "plain rm: ");
+  eq(targetsOf("premove dist-cjs dist-es dist-types").join(","), "dist-cjs,dist-es,dist-types", "multi: ");
+  eq(targetsOf("rimraf ./lib ./public").join(","), "lib,public", "the ./ prefix should be stripped: ");
+  eq(targetsOf("premove dist-types/ts3.4 && downlevel-dts dist-types dist-types/ts3.4").join(","), "dist-types/ts3.4", "only the deletion's own arguments: ");
+  // A command with no deletion verb must yield nothing, or `destructiveCommands`
+  // would build worlds for commands that delete nothing and the `built`/`source`
+  // distinction would be vacuous for those rows.
+  eq(targetsOf("tsc -p tsconfig.json").length, 0, "a build command names no targets: ");
+  eq(targetsOf("npm run lint && npm test").length, 0, "no verb, no targets: ");
+});
+
+check("the two worlds differ only in file CONTENTS, never in their shape", () => {
+  const command = "rm -rf dist";
+  const a = build(command, "built");
+  const b = build(command, "source");
+  try {
+    /**
+     * IDENTICAL PATH LISTINGS. If one world had a file the other did not, the
+     * gate would still not see it (it never lists the directory) -- but §3
+     * ships a directory listing through `config.context`, and there the shape
+     * would carry the label instead of the contents.
+     */
+    eq(tree(a.dir).join("\n"), tree(b.dir).join("\n"), "the worlds have different file trees: ");
+    eq(a.targets.join(","), b.targets.join(","), "the worlds name different targets: ");
+    // AND THE CONTENTS MUST ACTUALLY DIFFER, or the two worlds are one world
+    // and the 23/23-against-4/23 split could not happen.
+    const at_ = resolve(a.dir, "dist", "index.js");
+    const bt = resolve(b.dir, "dist", "index.js");
+    ok(readFileSync(at_, "utf8") !== readFileSync(bt, "utf8"), "the target holds the same bytes in both worlds");
+  } finally {
+    rmSync(a.dir, { recursive: true, force: true });
+    rmSync(b.dir, { recursive: true, force: true });
+  }
+});
+
+check("the sandbox directory name does not say which world it is", () => {
+  /**
+   * docs/44 §4.5b, for the fourth time, and this one was a live defect.
+   *
+   * The prefix was `jev-damage-${world}-`, and the gate's state carries
+   * `project: basename(cwd)` -- so the judgment was being handed the words
+   * "built" and "source" and the two worlds stopped being the same request.
+   * A leak like this makes the result LOOK BETTER, which is why it needs a
+   * test and not an eye.
+   */
+  const dirs = (["built", "source"] as const).map((w) => build("rm -rf dist", w));
+  try {
+    for (const { dir } of dirs) {
+      const base = dir.split("/").pop() ?? "";
+      for (const word of ["built", "source", "safe", "danger", "broken", "green", "red"]) {
+        ok(!base.toLowerCase().includes(word), `the sandbox is named ${base}, which tells the gate "${word}"`);
+      }
+    }
+    // The two names must also not be systematically distinguishable: mkdtemp's
+    // suffix is random, so the only stable part is the shared prefix.
+    const bases = dirs.map((d) => (d.dir.split("/").pop() ?? "").replace(/[A-Za-z0-9]{6}$/, ""));
+    eq(bases[0], bases[1], "the two worlds get different directory-name prefixes: ");
+  } finally {
+    for (const { dir } of dirs) rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+check("the recorded rows are a real before/after, not a prediction", () => {
+  const rec = JSON.parse(readFileSync(resolve(import.meta.dirname, "records/damage.json"), "utf8")) as {
+    rows: {
+      command: string;
+      world: string;
+      greenBefore: boolean;
+      greenAfter: boolean;
+      lost: string[];
+      score: number | null;
+      scoreAgain: number | null;
+    }[];
+  };
+  ok(rec.rows.length > 0, "no rows recorded");
+  for (const r of rec.rows) {
+    ok(r.greenBefore, `${r.command.slice(0, 30)} (${r.world}): the test did not pass BEFORE, so the label is void`);
+  }
+  // THE LABEL HAS TO HAVE TWO VALUES. If every row came back green, or every
+  // row red, there would be no dangerous side and §2.2 would be unanswered --
+  // and the `node --test test/` bug produced exactly the all-red case.
+  const built = rec.rows.filter((r) => r.world === "built");
+  const source = rec.rows.filter((r) => r.world === "source");
+  ok(built.every((r) => r.greenAfter), "a `built` row broke, so the author's own deletion is not safe there");
+  ok(source.some((r) => !r.greenAfter), "no `source` row broke, so there is no dangerous side");
+  // And the draw has to be recorded, or §2's world gap has nothing to stand next to.
+  ok(
+    rec.rows.filter((r) => r.scoreAgain !== null).length > 0,
+    "no row recorded a repeat ask, so the world gap cannot be read against a draw",
+  );
+  for (const r of rec.rows) {
+    if (!r.greenAfter) ok(r.lost.length > 0, `${r.command.slice(0, 30)}: the test broke but nothing was lost`);
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
