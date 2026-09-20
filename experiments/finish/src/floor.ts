@@ -50,9 +50,9 @@ import type { Run } from "./world.js";
 const RECORDS = resolve(import.meta.dirname, "../records");
 
 /** The shipped floor, read off the config rather than typed in again. */
-const SHIPPED = DEFAULT_CONFIG.minConfidence;
+export const SHIPPED = DEFAULT_CONFIG.minConfidence;
 
-interface Paired {
+export interface Paired {
   task: string;
   /** jev's own tier score and confidence, from the routed arm's record. */
   score: number;
@@ -67,7 +67,7 @@ interface Paired {
   sonnetPassed: boolean;
 }
 
-function load(): Paired[] {
+export function load(): Paired[] {
   const path = resolve(RECORDS, "model.json");
   if (!existsSync(path)) throw new Error(`no ${path} -- run \`tsx src/run.ts model\` first`);
   const rows = (JSON.parse(readFileSync(path, "utf8")) as Record_).rows;
@@ -107,7 +107,7 @@ function load(): Paired[] {
  * reasons without ever hitting it. If a future sweep did escalate, §0 would
  * fail instead of quietly mispricing.
  */
-function at(p: Paired, minConfidence: number): { tier: string; reason: string } {
+export function at(p: Paired, minConfidence: number): { tier: string; reason: string } {
   const d = decide({
     config: { ...DEFAULT_CONFIG, minConfidence },
     judgment: {
@@ -131,7 +131,7 @@ const med = (xs: number[]): number => {
 };
 
 /** Exact two-sided sign test on the discordant pairs. */
-function signTest(less: number, more: number): number {
+export function signTest(less: number, more: number): number {
   const n = less + more;
   if (n === 0) return 1;
   const c = (k: number): number => {

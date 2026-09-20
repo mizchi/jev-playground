@@ -20,6 +20,7 @@ import { resolve } from "node:path";
 import { ARMS } from "./src/run.js";
 import { tasks, testsPass, type Run } from "./src/world.js";
 import { bashWritesUnderTest } from "./src/audit.js";
+import { at, load, signTest, SHIPPED } from "./src/floor.js";
 
 let pass = 0;
 let fail = 0;
@@ -595,6 +596,74 @@ check("a dead orchestration driver fails OPEN, and the row says so", () => {
   } finally {
     rmSync(stub, { recursive: true, force: true });
   }
+});
+
+
+// ------------------------------------------------------- TODO §1.4's floor
+//
+// docs/45 §1 prices `minConfidence` by replaying the recorded decisions
+// through the SHIPPED policy with one number changed. Three things would let
+// that look like a result while being wrong, and they are the three here:
+// the replay not reproducing the record, the sign test being miscoded, and
+// the sweep not being monotone in the floor.
+
+check("every recorded router decision replays through the shipped policy", () => {
+  const rows = load();
+  ok(rows.length > 0, "no paired tasks in records/model.json");
+  const bad = rows.filter((r) => at(r, SHIPPED).reason !== r.recordedReason);
+  eq(bad.length, 0, `${bad.map((r) => `${r.task}: ${r.recordedReason} != ${at(r, SHIPPED).reason}`).join("; ")} -- `);
+});
+
+check("raising the floor never sends MORE work to the cheap tier", () => {
+  const rows = load();
+  let prev = Number.POSITIVE_INFINITY;
+  for (let i = 0; i <= 100; i += 1) {
+    const n = rows.filter((r) => at(r, i / 100).tier === "haiku").length;
+    ok(n <= prev, `floor ${(i / 100).toFixed(2)} routed ${n} to haiku, above the ${prev} of a lower floor`);
+    prev = n;
+  }
+});
+
+check("the floor only ever holds work UP, never pushes it down", () => {
+  // policy.ts's guard is `target < currentRung`, so a higher floor can only
+  // keep a task on the starting rung. If any floor produced a tier BELOW what
+  // floor 0 produced, the sweep would be measuring something else entirely.
+  const rows = load();
+  for (const r of rows) {
+    const lowest = at(r, 0).tier;
+    for (let i = 0; i <= 100; i += 10) {
+      const t = at(r, i / 100).tier;
+      ok(
+        t === lowest || t === "sonnet",
+        `${r.task} at floor ${(i / 100).toFixed(2)} became ${t}, which is neither ${lowest} nor the start`,
+      );
+    }
+  }
+});
+
+check("the exact sign test matches hand-computed values", () => {
+  eq(signTest(0, 0), 1, "no discordant pairs is p = 1: ");
+  eq(signTest(3, 0).toFixed(3), (0.25).toFixed(3), "3 vs 0: ");
+  eq(signTest(8, 0).toFixed(3), (0.0078125).toFixed(3), "8 vs 0: ");
+  eq(signTest(1, 1), 1, "1 vs 1 is p = 1: ");
+  ok(signTest(28, 1) < 0.001, "28 vs 1 must clear 0.001");
+  eq(signTest(4, 4).toFixed(3), signTest(4, 4).toFixed(3), "symmetry: ");
+  eq(signTest(2, 5).toFixed(6), signTest(5, 2).toFixed(6), "the test must be symmetric in its arguments: ");
+});
+
+check("the cost label is derived from runs that actually happened", () => {
+  // The whole of docs/45 §1.2 rests on both fixed arms having run every task.
+  // If one arm is missing a task, `load` drops the pair -- so the count is the
+  // check, and it is compared against the record rather than a constant.
+  const rows = load();
+  for (const r of rows) {
+    ok(r.haikuCalls > 0, `${r.task} has no haiku tool calls, so its cost label is not measured`);
+    ok(r.sonnetCalls > 0, `${r.task} has no sonnet tool calls, so its cost label is not measured`);
+  }
+  ok(
+    rows.every((r) => r.confidence >= 0 && r.confidence <= 1),
+    "a confidence outside [0,1] would make the floor sweep meaningless",
+  );
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

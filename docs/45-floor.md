@@ -14,11 +14,19 @@
 ```bash
 cd experiments/finish && npm install
 npx tsx src/floor.ts                                  # §1、記録から。API 不要・CLI 不要
+npm test                                              # 37 件(うち §1 の不変量が 5 件)
 cd ../compact && npx tsx src/precompact.ts --show     # §2、記録から
+npm test                                              # 19 件(うち oracle の前提が 3 件)
 npx tsx src/precompact.ts --seams                     # 配線確認(CLI と API キーが要る)
 
 TYPESAFEAI_API_KEY=... npx tsx src/precompact.ts --arm oracle   # §2 のアームを引き直す
 ```
+
+追加したテストは**壊して落ちることを確認してあります**(
+再生を出荷値以外の床に変える / 単調性の比較を反転する / 符号検定の期待値を 0.125 にする /
+oracle が事実を言い換える —— 4 つとも落ちました)。
+[44 §5.1](44-components.md) の「**通り得ない wire check は、失敗し得ない wire check より悪い**」の裏で、
+**失敗し得ないテストも同じくらい悪い**ので。
 
 ---
 

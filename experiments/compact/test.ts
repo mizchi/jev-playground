@@ -18,6 +18,7 @@ import { dropUntilFits, pinned, rankBy, totalTokens, type Entry } from "../../pa
 import { shortenBy } from "./src/shorten.js";
 import type { Transcript } from "./src/corpus.js";
 import type { Record_ } from "./src/run.js";
+import { ARMS, oracleInstructions } from "./src/precompact.js";
 
 let pass = 0;
 let fail = 0;
@@ -289,6 +290,60 @@ check("a surviving deletion entry is byte-identical, a shortened one is a prefix
           ok(original.includes(line), `${t.id}/${arm}: entry ${e.id} contains a line not in the original`);
         }
       }
+    }
+  }
+});
+
+
+// --------------------------------------------- TODO §1.5's oracle arm
+//
+// The `oracle` arm is only an UPPER BOUND if it really hands over every fact
+// verbatim. If it paraphrased, rounded, or dropped one, a ceiling result would
+// be measuring something weaker than "the summariser was given the answer" --
+// and the conclusion drawn from it ("no classifier can do better") would not
+// follow. So the arm's premise is checked against the corpus rather than
+// assumed.
+
+check("the oracle arm hands over every fact of its transcript, verbatim", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  ok(existsSync(corpus), "no records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  ok(ts.length > 0, "empty corpus");
+  for (const t of ts) {
+    const text = oracleInstructions(t);
+    ok(t.facts.length > 0, `${t.id} has no facts, so the oracle would hand over nothing`);
+    for (const f of t.facts) {
+      ok(text.includes(f.text), `${t.id}: the oracle instructions do not contain "${f.text}" verbatim`);
+    }
+  }
+});
+
+check("the oracle arm is the only one whose text depends on the transcript", () => {
+  // If a second arm gained a `build`, the draw arms would stop being controls
+  // and the `plainagain` comparison that carries docs/44 §5.2 would silently
+  // become something else.
+  const built = ARMS.filter((a) => a.build);
+  eq(built.length, 1, "exactly one arm may build per-transcript text: ");
+  eq(built[0].name, "oracle", "the built arm must be `oracle`: ");
+  const draws = ARMS.filter((a) => a.name === "plain" || a.name === "plainagain");
+  eq(draws.length, 2, "both draw arms must exist for §5.2's control: ");
+  for (const a of draws) {
+    eq(a.instructions, "", `${a.name} must send no instructions at all: `);
+    ok(a.build === undefined, `${a.name} must not build per-transcript text`);
+  }
+});
+
+check("the general-rule arm names nothing from the corpus", () => {
+  // KEEP_FACTS is about SHAPE. If it ever named a package, a number or a path
+  // it would become a lookup table for the facts it is scored on, which is the
+  // way that arm could most easily cheat.
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  const rule = ARMS.find((a) => a.name === "instructed")?.instructions ?? "";
+  ok(rule.length > 0, "the instructed arm has no instructions");
+  for (const t of ts) {
+    for (const f of t.facts) {
+      ok(!rule.includes(f.text), `KEEP_FACTS leaks the fact "${f.text}" from ${t.id}`);
     }
   }
 });
