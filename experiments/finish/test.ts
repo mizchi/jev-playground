@@ -31,6 +31,7 @@ import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 // The suite caught it; the import did not announce itself.
 import { ARMS as INTENT_ARMS, INTENT_AXES, PART_OF_WORK, contextFor, count, stateFor } from "./src/intent.js";
 import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
+import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
 
 let pass = 0;
 let fail = 0;
@@ -1227,6 +1228,103 @@ check("every recorded fan-out row carries the judgment and the plan", () => {
   for (const k of ["parallel", "sequential", "single"]) {
     ok(rec.rows.some((r) => r.klass === k), `no ${k} rows were swept`);
   }
+});
+
+
+// ---------------------------------------- TODO §2.5's ceiling analysis (docs/54)
+
+check("docs/36's harness really had no Bash, which is what docs/54 rests on", () => {
+  /**
+   * THE WHOLE REPORT RESTS ON THIS ONE FACT about a different experiment.
+   *
+   * docs/54 explains the completion ceiling by comparing docs/36 (31/32) with
+   * docs/44 (32/32) on the same corpus, and attributes the difference to Bash
+   * being in `--allowedTools`. If somebody adds Bash to the router harness,
+   * that explanation becomes false and **nothing in docs/54's output would
+   * show it** -- the numbers are from a frozen record either way.
+   */
+  const src = readFileSync(resolve(import.meta.dirname, "../router/src/label.ts"), "utf8");
+  const at = src.indexOf('"--allowedTools"');
+  ok(at > 0, "docs/36's harness no longer passes --allowedTools");
+  const argv = src.slice(at, src.indexOf("{ cwd: dir", at));
+  ok(argv.length > 20, "could not find docs/36's argv to check");
+  for (const t of ["Read", "Edit", "Write"]) {
+    ok(argv.includes(`"${t}"`), `docs/36's harness no longer allows ${t}`);
+  }
+  ok(!argv.includes('"Bash"'), "docs/36's harness NOW ALLOWS Bash -- docs/54 §1's explanation is void");
+  // And this experiment's own harness must still allow it, or the contrast is gone.
+  const mine = readFileSync(resolve(import.meta.dirname, "src/world.ts"), "utf8");
+  const mineAt = mine.indexOf('"--allowedTools"');
+  ok(mine.slice(mineAt, mineAt + 200).includes('"Bash"'), "this harness no longer allows Bash");
+});
+
+check("the completion ceiling is still a ceiling across every recorded run", () => {
+  const recs = runRecords();
+  ok(recs.length >= 9, `only ${recs.length} run-shaped records found`);
+  const all = recs.flatMap((r) => r.rows);
+  ok(all.length > 600, `only ${all.length} runs across the records`);
+  const passed = all.filter((r) => r.passed).length;
+  /**
+   * If this ever drops meaningfully, §2.5 has stopped being true and docs/54
+   * needs re-reading rather than quietly becoming stale. The bound is loose
+   * on purpose: the claim is "at the ceiling", not an exact count.
+   */
+  ok(passed / all.length > 0.99, `completion is no longer at the ceiling: ${passed}/${all.length}`);
+  // And the model arms specifically, which is the tier question.
+  const model = recs.find((r) => r.file === "model.json");
+  ok(model !== undefined, "model.json is missing -- the tier comparison cannot run");
+  for (const arm of ["haiku", "sonnet"]) {
+    const g = (model as { rows: { arm: string; passed: boolean }[] }).rows.filter((r) => r.arm === arm);
+    ok(g.length > 0, `no ${arm} rows`);
+    ok(g.every((r) => r.passed), `${arm} no longer passes everything -- docs/54 §0 needs re-reading`);
+  }
+});
+
+check("no cap beats the call count, at every cap -- the theorem docs/54 §2 asserts", () => {
+  /**
+   * docs/54 §2 claims that "finished within K calls" cannot separate the tiers
+   * better than the call count does, because thresholding is a monotone
+   * many-to-one map. That is mathematics, not a property of the corpus -- so
+   * a test can hold it at EVERY K rather than at the one the report prints.
+   */
+  const model = runRecords().find((r) => r.file === "model.json");
+  ok(model !== undefined, "model.json is missing");
+  const rows = (model as { rows: Parameters<typeof sepAuc>[0] }).rows;
+  const continuous = sepAuc(rows, null);
+  ok(continuous > 0.5, `the count does not separate the tiers at all: AUC ${continuous.toFixed(3)}`);
+  const caps = sweepCaps(rows);
+  ok(caps.length >= 5, `only ${caps.length} caps swept`);
+  for (const c of caps) {
+    const capped = sepAuc(rows, c.k);
+    ok(
+      capped <= continuous + 1e-9,
+      `cap K=${c.k} beats the count (${capped.toFixed(3)} > ${continuous.toFixed(3)}) -- either the ` +
+        "theorem is wrong or sepAuc/sweepCaps disagree about what they measure",
+    );
+  }
+  // And the sweep must actually contain a cap that separates something, or the
+  // theorem is being confirmed by every cap being useless.
+  ok(caps.some((c) => c.dearOnly > 0), "no cap produced a single discordant pair -- the sweep is vacuous");
+});
+
+check("equals-k3 is the one task that ever separated the tiers, and it flips with Bash", () => {
+  const hard = routerAttempts().filter((a) => a.corpus === "hard");
+  ok(hard.length > 20, `only ${hard.length} hard attempts in docs/36's record`);
+  const cheapFails = hard.filter((a) => a.tier === "haiku" && !a.passed);
+  eq(cheapFails.length, 1, "docs/36's haiku failure count changed: ");
+  eq(cheapFails[0].task, "equals-k3", "the separating task changed: ");
+  // docs/36 ran the higher tier ONLY there, which is why it cannot be paired.
+  const dear = hard.filter((a) => a.tier === "sonnet");
+  eq(dear.length, 1, "docs/36's sonnet column is no longer a single row: ");
+  eq(dear[0].task, "equals-k3", "docs/36 ran sonnet on a different task: ");
+  // And with Bash, the cheap tier passes it -- using Bash to do so.
+  const model = runRecords().find((r) => r.file === "model.json");
+  const row = (model as { rows: { arm: string; task: string; passed: boolean; calls: { tool?: string }[] }[] }).rows
+    .find((r) => r.arm === "haiku" && r.task.includes("equals-k3"));
+  ok(row !== undefined, "equals-k3 is not in model.json");
+  ok((row as { passed: boolean }).passed, "haiku no longer passes equals-k3 with Bash -- §1's one row is void");
+  const bash = (row as { calls: { tool?: string }[] }).calls.filter((c) => c.tool === "Bash");
+  ok(bash.length > 0, "haiku passed equals-k3 without using Bash -- the mechanism claim is unsupported");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
