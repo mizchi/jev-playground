@@ -23,6 +23,8 @@ import { bashWritesUnderTest } from "./src/audit.js";
 import { at, load, signTest, SHIPPED } from "./src/floor.js";
 import { distinct, harvest } from "./src/scripts.js";
 import { build, targetsOf, tree } from "./src/damage.js";
+import { AXIS_NAMES, CONTROLS, READERS, contextFacts, value } from "./src/question.js";
+import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 
 let pass = 0;
 let fail = 0;
@@ -828,6 +830,107 @@ check("the recorded rows are a real before/after, not a prediction", () => {
   for (const r of rec.rows) {
     if (!r.greenAfter) ok(r.lost.length > 0, `${r.command.slice(0, 30)}: the test broke but nothing was lost`);
   }
+});
+
+
+// ------------------------------------- TODO §2.3's nine questions (docs/51)
+
+check("value() reads the shapes jev-core actually returns, not guessed keys", () => {
+  /**
+   * THE BUG THIS PINS WOULD HAVE ZEROED SEVEN OF NINE QUESTIONS.
+   *
+   * `Answer` is a discriminated union and the arms put their number under
+   * different keys: `{type:"noul", noul}` and `{type:"score", score,...}`.
+   * The first version of `value()` looked for `probability`/`value`/`score`/
+   * `level`/`index` -- which finds `score` and misses `noul` entirely, and
+   * seven of the nine questions are noul (including §2.3's own candidate).
+   */
+  eq(value({ type: "noul", noul: 0.96 }), 0.96, "noul: ");
+  eq(value({ type: "score", score: 1.16, confidence: 0.28 }), 1.16, "score: ");
+  eq(value({ type: "noul", noul: 0 }), 0, "a zero noul is a value, not a missing one: ");
+  // A shape it cannot read must return null so the caller throws, rather than
+  // a number that reads as "this question did not move".
+  eq(value({ type: "choice", choice: "a", confidence: 1 }), null, "choice is not a scalar: ");
+  eq(value({ type: "noul" }), null, "a noul with no number: ");
+  eq(value({ type: "score", score: "1" }), null, "a stringified score: ");
+  eq(value(undefined), null, "undefined: ");
+  eq(value({ probability: 0.5 }), null, "the key the first version guessed: ");
+});
+
+check("the axes are exactly the shipped battery's questions", () => {
+  const shipped = Object.keys(QUESTIONS).sort();
+  eq(AXIS_NAMES.slice().sort().join(","), shipped.join(","), "the axis list drifted from the battery: ");
+  eq(READERS.length + CONTROLS.length, AXIS_NAMES.length, "an axis is in neither group: ");
+});
+
+check("the hook and the shipped package ask the same nine questions, word for word", () => {
+  /**
+   * docs/51 reads every answer out of the HOOK's audit log and names the axes
+   * from the PACKAGE's battery. If the two ever diverge, the report would be
+   * labelling one component's answers with another's questions.
+   */
+  const src = readFileSync(resolve(import.meta.dirname, "../../hooks/jev-permission-gate.mjs"), "utf8");
+  for (const [name, q] of Object.entries(QUESTIONS)) {
+    ok(new RegExp(`\\n  ${name}:\\s`).test(src), `the hook does not ship a \`${name}\` question`);
+    const instructions = (q as { instructions?: string }).instructions;
+    if (typeof instructions === "string") {
+      ok(src.includes(instructions), `\`${name}\` is worded differently in the hook: "${instructions}"`);
+    }
+  }
+});
+
+check("the reads/control split is a fixed constant, not fitted to the result", () => {
+  /**
+   * docs/51 §3's control FIRED -- `affects_others` produced the strongest
+   * effect in the table. The honest response was to leave the split alone and
+   * explain it (§4), because relabelling an axis after seeing its p-value is
+   * exactly docs/47's warning.
+   *
+   * SO THIS TEST EXISTS TO MAKE THAT RELABELLING FAIL. If a later edit
+   * quietly promotes `affects_others` to a reader, the report's §3 stops being
+   * a pre-registered prediction and becomes a description of its own output.
+   */
+  eq(READERS.slice().sort().join(","), "blast_radius,destructive,irreversible,permission", "readers changed: ");
+  eq(
+    CONTROLS.slice().sort().join(","),
+    "affects_others,exfiltrates,obfuscated,outside_project,privileged",
+    "controls changed (affects_others belongs here even though it moved): ",
+  );
+});
+
+check("every recorded row carries all nine answers in all three modes", () => {
+  const rec = JSON.parse(readFileSync(resolve(import.meta.dirname, "records/question.json"), "utf8")) as {
+    rows: { command: string; world: string; greenBefore: boolean; blind: Record<string, number>; again: Record<string, number>; informed: Record<string, number> }[];
+  };
+  ok(rec.rows.length > 0, "no rows recorded");
+  for (const r of rec.rows) {
+    for (const mode of ["blind", "again", "informed"] as const) {
+      for (const a of AXIS_NAMES) {
+        ok(
+          typeof r[mode][a] === "number",
+          `${r.command.slice(0, 24)} (${r.world}) has no ${mode}.${a} -- a missing answer reads as "does not move"`,
+        );
+      }
+    }
+  }
+});
+
+check("the informed context distinguishes the worlds by exactly one field", () => {
+  /**
+   * docs/51 §4's finding, and the correction it makes to docs/50 §4 ("three
+   * mechanical facts"). Two of the three are byte-identical between the two
+   * worlds, so they carry no information about which world it is.
+   *
+   * Tested on two commands rather than all 23, because each one builds two
+   * real git repositories; the property is structural (the builder writes a
+   * file of the same NAME in both worlds and commits everything in both), so
+   * it does not need the full corpus to catch a regression.
+   */
+  const facts = contextFacts(["rm -rf dist", "rimraf ./lib ./public"]);
+  const carriers = facts.filter((f) => f.differs > 0);
+  eq(carriers.length, 1, `${carriers.map((c) => c.field).join(", ")} distinguish the worlds, expected 1: `);
+  eq(carriers[0]?.field, "the_test_requires", "the carrying field changed: ");
+  eq(carriers[0]?.differs, carriers[0]?.n, "the carrying field does not carry on every command: ");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
