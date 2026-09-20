@@ -32,6 +32,7 @@ import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 import { ARMS as INTENT_ARMS, INTENT_AXES, PART_OF_WORK, contextFor, count, stateFor } from "./src/intent.js";
 import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
+import { promptFor, tasksIn } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1325,6 +1326,117 @@ check("equals-k3 is the one task that ever separated the tiers, and it flips wit
   ok((row as { passed: boolean }).passed, "haiku no longer passes equals-k3 with Bash -- §1's one row is void");
   const bash = (row as { calls: { tool?: string }[] }).calls.filter((c) => c.tool === "Bash");
   ok(bash.length > 0, "haiku passed equals-k3 without using Bash -- the mechanism claim is unsupported");
+});
+
+
+// ------------------------------- §2.1 candidate 1: real traffic (docs/55)
+
+check("only files somebody actually tracks yield tasks", () => {
+  /**
+   * THE FIRST HARVEST WAS 66 TASKS AND EVERY ONE I READ WAS A TEMPLATE.
+   *
+   * PR-template checkboxes, review checklists inside `SKILL.md` that a skill
+   * asks its *user* to verify, and placeholder syntax -- all unchecked by
+   * construction, so an "open" label over them means nothing. The fix is that
+   * a tracked file has something ticked in it.
+   *
+   * This runs on synthetic files rather than the clones, so it holds whether
+   * or not the repositories are present.
+   */
+  const dir = mkdtempSync(resolve(tmpdir(), "jev-wild-t-"));
+  try {
+    writeFileSync(resolve(dir, "PULL_REQUEST_TEMPLATE.md"), "- [ ] just (check + test) passes here\n- [ ] e2e passes if behaviour changed\n");
+    writeFileSync(resolve(dir, "SKILL.md"), "- [ ] Content-Security-Policy header is present and restrictive\n");
+    writeFileSync(resolve(dir, "TODO.md"), "- [x] Support multiple file arguments with globs\n- [ ] Implement the ignore-file parser\n");
+    const got = tasksIn("o/r", "deadbeef", dir);
+    eq(got.length, 2, `expected only TODO.md's two items, got ${got.map((t) => t.file).join(",")}: `);
+    ok(got.every((t) => t.file === "TODO.md"), `a template leaked in: ${got.map((t) => t.file).join(",")}`);
+    eq(got.filter((t) => t.state === "open").length, 1, "open count: ");
+    eq(got.filter((t) => t.state === "done").length, 1, "done count: ");
+    // And the short-bullet floor, which is also mine and also inspectable.
+    writeFileSync(resolve(dir, "TODO.md"), "- [x] a real done item that is long enough\n- [ ] fix it\n");
+    eq(tasksIn("o/r", "deadbeef", dir).length, 1, "a three-word bullet must not count as a task: ");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+check("the gate observes and cannot intervene, and the fence cannot be turned off", () => {
+  /**
+   * docs/55's traffic is only "what the agent does on its own" if the gate
+   * emits no decision. `--dry-run` makes the shipped hook write its full audit
+   * line and then exit without stdout JSON, so `gate.mjs` records and carries
+   * on. If that flag ever left the env, the corpus would silently become
+   * gated traffic and nothing in the output would say so (docs/44 §4.3
+   * measured that a speaking gate changes the agent's route).
+   */
+  const src = readFileSync(resolve(import.meta.dirname, "src/wild.ts"), "utf8");
+  const env = src.slice(src.indexOf("FINISH_LOG: ledger"), src.indexOf("stdio:", src.indexOf("FINISH_LOG: ledger")));
+  ok(env.length > 40, "could not find the run's env block");
+  ok(/JEV_GATE_FLAGS:\s*"dry-run"/.test(env), "the gate is no longer in --dry-run: the traffic would be gated");
+  ok(/JEV_GATE:\s*"1"/.test(env), "the gate is not consulted at all, so no verdicts get recorded");
+  ok(env.includes("JEV_GATE_LOG"), "the gate's audit log is not captured, so --dry-run records nothing");
+  // THE FENCE. This is the reason it is safe to run an agent in a real
+  // repository inside the container that holds this project.
+  ok(env.includes("FINISH_SANDBOX: dir"), "the fence has no sandbox, so it would allow everything");
+  const gate = readFileSync(resolve(import.meta.dirname, "src/gate.mjs"), "utf8");
+  ok(gate.includes('path.startsWith("/home/")'), "gate.mjs no longer fences /home -- the project is reachable");
+  ok(gate.includes('by: "fence"'), "fence denials are no longer labelled, so they could be counted as jev's");
+  // And `Task` must be offered, or a count of zero means nothing (docs/44 §3).
+  ok(/"Task",/.test(src), "Task is not in --allowedTools, so docs/55 §3's count would be vacuous");
+});
+
+check("the prompt carries the author's line and nothing about tests or finishing", () => {
+  /**
+   * The wrapper is mine and the thinness is the point: a prompt that said
+   * "make the tests pass" would be me choosing the commands again, which is
+   * the exact defect that made docs/43's corpus unusable for this question.
+   */
+  const t = {
+    repo: "o/r", rev: "deadbeef", file: "TODO.md", line: 7,
+    text: "Implement the ignore-file parser", state: "open" as const,
+  };
+  const p = promptFor(t);
+  ok(p.includes(t.text), "the author's line must appear verbatim");
+  ok(p.includes("o/r"), "the repository must be named");
+  ok(p.includes("TODO.md"), "the provenance of the line must be stated");
+  for (const leak of ["test", "pass", "finish", "complete", "green", "commit", "push"]) {
+    ok(!p.toLowerCase().includes(leak), `the prompt says "${leak}", which chooses the commands for the agent`);
+  }
+});
+
+check("every recorded wild row carries its provenance and its ledger", () => {
+  const p = resolve(import.meta.dirname, "records/wild.json");
+  if (!existsSync(p)) {
+    // The sweep needs a real `claude` binary and real clones, so a checkout
+    // without them is not a failure -- but the record must not be half-made.
+    console.log("       (no records/wild.json yet -- the sweep has not run here)");
+    return;
+  }
+  const rec = JSON.parse(readFileSync(p, "utf8")) as {
+    repos: { repo: string; rev: string }[];
+    rows: { repo: string; rev: string; file: string; line: number; task: string; state: string; calls: unknown[]; gate: unknown[]; fenced: number }[];
+  };
+  ok(rec.repos.length > 0, "the record must name the repositories it came from");
+  ok(rec.rows.length > 0, "no rows recorded");
+  for (const r of rec.rows) {
+    ok(r.repo.includes("/"), `${r.task.slice(0, 20)}: repo is not owner/name`);
+    ok(r.rev.length >= 7, `${r.repo}: no pinned revision recorded`);
+    ok(r.file.length > 0 && r.line > 0, `${r.repo}: the task has no file:line provenance`);
+    ok(r.task.length >= 24, `${r.repo}: a task shorter than the floor got in: ${r.task}`);
+    ok(r.state === "open" || r.state === "done", `${r.repo}: bad state ${r.state}`);
+    ok(Array.isArray(r.calls), `${r.repo}: no ledger`);
+    ok(typeof r.fenced === "number", `${r.repo}: fence denials not counted`);
+    // A row with commands must have gate lines for them, or --dry-run silently
+    // stopped recording and §2's speak rate is over the wrong denominator.
+    const bash = (r.calls as { tool: string; command?: string }[]).filter((c) => c.tool === "Bash" && c.command);
+    if (bash.length > 0) {
+      ok(
+        r.gate.length > 0,
+        `${r.repo} issued ${bash.length} Bash commands and the gate recorded none -- the speak rate would be over the wrong denominator`,
+      );
+    }
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
