@@ -17,6 +17,9 @@
  *   `<a id="...">` anchors rather than relying on the heading slug.
  * - A heading can contain a markdown link, and only its *text* is part of
  *   the slug: `## A. ... → [07](07-escalation.md)` slugs without the URL.
+ * - Link syntax inside a code span or a fenced block is documentation,
+ *   not a link. docs/30's findings block quotes the very pattern this
+ *   script matches, and the first version reported it as broken.
  *
  * No dependencies, no network. `just check-doc-anchors`.
  */
@@ -55,6 +58,19 @@ function anchorsOf(text) {
   return out;
 }
 
+/**
+ * Strip fenced blocks and inline code before looking for links.
+ *
+ * Replaced with blank lines of the same shape rather than removed, so a
+ * fenced block cannot splice two unrelated lines together and invent a
+ * link that is in neither.
+ */
+function withoutCode(text) {
+  return text
+    .replace(/^```[\s\S]*?^```/gm, (m) => m.replace(/[^\n]/g, " "))
+    .replace(/`[^`\n]*`/g, (m) => " ".repeat(m.length));
+}
+
 const cache = new Map();
 function anchorsFor(file) {
   if (!cache.has(file)) {
@@ -70,7 +86,7 @@ function anchorsFor(file) {
 let checked = 0;
 const broken = [];
 for (const md of readdirSync(DOCS).filter((f) => f.endsWith(".md")).sort()) {
-  const text = readFileSync(join(DOCS, md), "utf8");
+  const text = withoutCode(readFileSync(join(DOCS, md), "utf8"));
   // Only intra-docs links carrying an anchor. A bare `](12-comeback.md)`
   // cannot rot the same way, and external URLs are not ours to verify.
   for (const m of text.matchAll(/\]\((\d[\w.-]*\.md)#([^)]+)\)/g)) {
