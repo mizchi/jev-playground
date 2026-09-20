@@ -145,6 +145,47 @@ check("the grader actually catches a neutered test file", () => {
   }
 });
 
+check("the four ask-resolution arms differ in one flag and nothing else", () => {
+  // TODO §1.2's arm. The point of `guardblock` is that the refusal is CHOSEN
+  // and says so, against a default where the host refuses in wording nobody
+  // picked -- so the arms must be identical apart from the flag, or the
+  // comparison is between something else.
+  const four = ["guard", "guardquiet", "guardblock", "guarddefer"];
+  for (const a of four) {
+    eq(ARMS[a].guard, true, `${a} must wire the gate: `);
+    eq(ARMS[a].model, ARMS.guard.model, `${a} must share the model: `);
+    eq(ARMS[a].orchestrate, undefined, `${a} must not also wire the orchestrator: `);
+    eq(ARMS[a].skills, undefined, `${a} must place no skills: `);
+  }
+  eq(ARMS.guardblock.gateFlags?.join(" "), "unattended-ask block", "the block arm's flag: ");
+  eq(ARMS.guarddefer.gateFlags?.join(" "), "unattended-ask defer", "the defer arm's flag: ");
+  eq(ARMS.guardquiet.gateFlags?.join(" "), "quiet-ask", "the quiet arm's flag: ");
+  eq(ARMS.guard.gateFlags, undefined, "the default arm must pass no flag: ");
+});
+
+check("a re-asking harness tells the gate where it is", () => {
+  // THE BUG THAT MADE THIS CHECK EXIST, twice in one afternoon. The shipped
+  // hook resolves the working directory as `event.cwd ?? process.cwd()`, so a
+  // `cwd` placed inside `tool_input` -- where a reader might reasonably expect
+  // it -- is silently ignored and every command is judged as if it were in
+  // whatever directory the harness happens to be in. That turned
+  // `rm -rf <sandbox>/src/node_modules` into an out-of-project deletion
+  // (`outside_project` 0.93) and made `src/variance.ts` disagree with its own
+  // recorded sweeps on five commands.
+  const gate = readFileSync(resolve(import.meta.dirname, "../../hooks/jev-permission-gate.mjs"), "utf8");
+  ok(gate.includes("event.cwd ?? process.cwd()"), "the hook's cwd resolution must be the one this assumes");
+  const v = readFileSync(resolve(import.meta.dirname, "src/variance.ts"), "utf8");
+  // `cwd` at the event's TOP level, which is where the host puts it...
+  ok(/tool_input:\s*\{\s*command\s*\},\s*cwd:\s*sandbox/.test(v), "cwd must be a top-level event field");
+  // ...and the spawn's own cwd too, so the `??` fallback cannot mislead.
+  ok(/encoding:\s*"utf8",\s*cwd:\s*sandbox/.test(v), "the spawn must also run IN the sandbox");
+  // And no-JSON-on-stdout must not be read as a verdict: it means either a
+  // judged allow or a command judgment never saw, and only the log separates
+  // them. Without that the stability figure counts a regex as a judgment.
+  ok(v.includes('"--log", log'), "the re-asking must pass --log to tell allow from prefiltered");
+  ok(v.includes('return { verdict: "prefiltered", ms }'), "a command judgment never saw must be labelled");
+});
+
 check("the tampering checker does not cry wolf on the test runner", () => {
   // THE FIRST VERSION OF THIS CHECKER REPORTED 142 HITS and every one of them
   // was `node --test test/x.test.js 2>&1` -- the regex read `2>&1` as a
