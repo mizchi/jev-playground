@@ -32,7 +32,7 @@ import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 import { ARMS as INTENT_ARMS, INTENT_AXES, PART_OF_WORK, contextFor, count, stateFor } from "./src/intent.js";
 import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
-import { promptFor, tasksIn } from "./src/wild.js";
+import { fencePrefixes, headMatch, promptFor, tasksIn } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1436,6 +1436,85 @@ check("every recorded wild row carries its provenance and its ledger", () => {
         `${r.repo} issued ${bash.length} Bash commands and the gate recorded none -- the speak rate would be over the wrong denominator`,
       );
     }
+  }
+});
+
+check("every fenced command lands in a named class, so the table cannot lose one", () => {
+  /**
+   * I wrote docs/55 §3's fence table by hand from a summary and got it wrong:
+   * two of the five were called a toolchain install, when one of them named
+   * the container's proxy CA bundle -- a different thing the agent reached
+   * for. So the table is derived from the command text now, and this is the
+   * guard: a fenced command that no prefix matches would silently vanish from
+   * a table whose total is printed separately.
+   */
+  const p = resolve(import.meta.dirname, "records/wild.json");
+  if (!existsSync(p)) {
+    console.log("       (no records/wild.json yet -- the sweep has not run here)");
+    return;
+  }
+  const rec = JSON.parse(readFileSync(p, "utf8")) as {
+    rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
+  };
+  const fenced = rec.rows.flatMap((r) => r.calls).filter((c) => c.by === "fence");
+  eq(
+    fenced.length,
+    rec.rows.reduce((n, r) => n + r.fenced, 0),
+    "the per-row fence counts and the labelled ledger rows disagree: ",
+  );
+  for (const c of fenced) {
+    const got = fencePrefixes(c.command ?? "");
+    ok(
+      got.length > 0,
+      `a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+    );
+    // And the fence's own rule must be the thing being classified.
+    ok(
+      got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
+      `classified a path the fence does not protect: ${got.join(",")}`,
+    );
+  }
+});
+
+check("the clones' revisions are measured against the roster, never assumed equal", () => {
+  /**
+   * docs/55's limits claimed "the task text is the author's current version",
+   * which assumed a shallow clone could not be at the pinned rev. Reading the
+   * clone trees said otherwise -- 7 of 9 matched, including both repositories
+   * that produced any task -- so the claim was a limitation I had invented.
+   *
+   * `headMatch` is the fix, and `same: null` is what makes it honest: a
+   * missing head is an unasked question, not a match.
+   */
+  const m = headMatch({
+    repos: [{ repo: "o/same", rev: "a".repeat(40) }, { repo: "o/diff", rev: "b".repeat(40) }, { repo: "o/gone", rev: "c".repeat(40) }],
+    heads: [{ repo: "o/same", head: "a".repeat(40) }, { repo: "o/diff", head: "d".repeat(40) }],
+  });
+  eq(m.find((x) => x.repo === "o/same")?.same, true, "an equal head must read as same: ");
+  eq(m.find((x) => x.repo === "o/diff")?.same, false, "a different head must read as a mismatch: ");
+  eq(
+    m.find((x) => x.repo === "o/gone")?.same,
+    null,
+    "a repo with no recorded head must read as unknown, not as a match: ",
+  );
+  // A record with no heads at all must not claim nine matches.
+  const none = headMatch({ repos: [{ repo: "o/r", rev: "a".repeat(40) }] });
+  eq(none[0].same, null, "an absent heads field must not resolve to a match: ");
+  // And the shipped record must carry the field, or the report's limit is unmeasured.
+  const p = resolve(import.meta.dirname, "records/wild.json");
+  if (!existsSync(p)) return;
+  const rec = JSON.parse(readFileSync(p, "utf8")) as {
+    repos: { repo: string; rev: string }[];
+    heads?: { repo: string; head: string | null }[];
+    rows: { repo: string }[];
+  };
+  ok(rec.heads !== undefined, "the record has no heads: docs/55's pinned-revision limit would be unmeasured");
+  eq(rec.heads?.length, rec.repos.length, "every roster repo needs a head entry, present or null: ");
+  // The repositories that produced the traffic are the ones that must be checkable.
+  for (const repo of new Set(rec.rows.map((r) => r.repo))) {
+    const h = headMatch(rec).find((x) => x.repo === repo);
+    ok(h !== undefined, `${repo} produced rows but is not in the roster`);
+    ok(h?.same !== null, `${repo} produced rows and has no recorded head, so its task text is uncheckable`);
   }
 });
 
