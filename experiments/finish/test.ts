@@ -30,6 +30,7 @@ import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 // run.ts's arms started failing with "cannot read properties of undefined".
 // The suite caught it; the import did not announce itself.
 import { ARMS as INTENT_ARMS, INTENT_AXES, PART_OF_WORK, contextFor, count, stateFor } from "./src/intent.js";
+import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 
 let pass = 0;
 let fail = 0;
@@ -1076,6 +1077,156 @@ check("every recorded intent row carries all ten answers in all four arms", () =
   const source = rec.rows.filter((r) => r.world === "source");
   ok(built.every((r) => r.greenAfter), "a `built` row broke, so the author's own deletion is not safe there");
   ok(source.some((r) => !r.greenAfter), "no `source` row broke, so there is no dangerous side");
+});
+
+
+// ------------------------------------- TODO §2.0's fan-out corpus (docs/53)
+
+check("siblingsIn catches every spelling, including the bare form it first missed", () => {
+  const siblings = {
+    build: "tsc", "build:types": "tsc -p a", "build:es": "tsc -p b", "build:cjs": "tsc -p c",
+    clean: "rimraf dist", lint: "eslint .", unit: "node --test",
+  };
+  const of = (cmd: string): string => siblingsIn(cmd, siblings, "top").join(",");
+  eq(of("npm run clean && npm run build"), "clean,build", "npm run: ");
+  eq(of("concurrently 'yarn:build:types' 'yarn:build:es'"), "build:types,build:es", "the yarn: shorthand: ");
+  /**
+   * THE BUG THIS PINS. `concurrently 'yarn:build:types' 'yarn:build:es' && yarn
+   * build:cjs` has THREE branches and the first version captured two, because
+   * it required `yarn run X` or `yarn:X` and never matched a bare `yarn X`.
+   * The request shown to the gate is built from this list, so the gate was
+   * being asked about less work than the author wrote.
+   */
+  eq(
+    of("concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs"),
+    "build:types,build:es,build:cjs",
+    "the bare `yarn X` form: ",
+  );
+  eq(of("npm-run-all --parallel lint unit"), "lint,unit", "the multi-argument runner: ");
+  // A bare token that is NOT a sibling must not be picked up, or `tsc -p build`
+  // would read as a call to the `build` script.
+  eq(of("tsc -p build"), "", "a bare word that is not preceded by a runner: ");
+  eq(of("yarn nonexistent"), "", "a runner naming something that is not a sibling: ");
+  eq(of("yarn top"), "", "a script must not count as its own branch: ");
+});
+
+check("the request never carries the operator that IS the label", () => {
+  /**
+   * docs/53's whole design. If `concurrently`, `&&` or `npm-run-all` survived
+   * into the rendered request, the gate would be reading the author's answer
+   * back -- docs/45 §2's oracle -- and every number in the report would be
+   * measuring whether it can spot a keyword.
+   */
+  const items = corpus();
+  const par = items.filter((i) => i.klass === "parallel");
+  const seq = items.filter((i) => i.klass === "sequential");
+  ok(par.length > 10, `only ${par.length} parallel subjects -- the harvest is not finding them`);
+  ok(seq.length > 10, `only ${seq.length} sequential subjects`);
+  for (const i of items) {
+    // THE PARALLEL VERBS ARE THE LABEL. None may appear, in any class.
+    for (const leak of ["concurrently", "npm-run-all", "run-p ", "lerna run", "turbo run", "nx run-many"]) {
+      ok(
+        !i.request.includes(leak),
+        `${i.pkg} [${i.script}] leaks "${leak}" into the request the gate sees`,
+      );
+    }
+    // The author's own composite line must never be sent verbatim.
+    ok(
+      i.klass === "single" || !i.request.includes(i.command),
+      `${i.pkg}: the author's own composite command is in the request`,
+    );
+  }
+  /**
+   * A `&&` CAN APPEAR, AND HERE IS WHY THAT IS ALLOWED.
+   *
+   * A branch's own command may be a chain -- `build` might be `tsc && rollup`
+   * -- and that is the branch's work, legitimately shown. It is only safe if
+   * the two composite classes carry it at similar rates; if `sequential`
+   * branches were full of `&&` and `parallel` ones were not, the count of `&&`
+   * in the request would track the label.
+   *
+   * The first version of this test forbade `&&` outright, flagged a row, and
+   * **the row turned out to be a different bug**: `tsc -p a && tsc -p b` calls
+   * no sibling and had fallen into `single`, which is supposed to mean one
+   * command. That class was narrowed; this assertion checks the parity that
+   * makes the remaining `&&`s harmless.
+   */
+  const rate = (k: string): number => {
+    const g = items.filter((i) => i.klass === k);
+    return g.filter((i) => i.branches.some((b) => /&&/.test(b.command))).length / g.length;
+  };
+  const rp = rate("parallel");
+  const rs = rate("sequential");
+  ok(
+    Math.abs(rp - rs) < 0.15,
+    `branch-internal && rates differ too much to be harmless: parallel ${(100 * rp).toFixed(0)}% vs sequential ${(100 * rs).toFixed(0)}%`,
+  );
+  // And `single` must genuinely be one command, with no shell operator at all.
+  for (const i of items.filter((x) => x.klass === "single")) {
+    ok(
+      !/(&&|\|\||[;|])/.test(i.command),
+      `${i.pkg} [${i.script}] is classed single but chains: ${i.command.slice(0, 50)}`,
+    );
+  }
+});
+
+check("the same branch set renders identically whichever class it came from", () => {
+  /**
+   * The strongest form of the no-leak check: two authors writing the same
+   * work, one with `concurrently` and one with `&&`, must produce the SAME
+   * request. If they do not, something about the class is reaching the gate.
+   */
+  const branches = [
+    { name: "lint", command: "eslint ." },
+    { name: "unit", command: "node --test" },
+  ];
+  eq(
+    requestFor("@x/y", branches),
+    requestFor("@x/y", branches),
+    "rendering is not deterministic: ",
+  );
+  // And it must be built from the branches alone -- no class, no operator.
+  const rendered = requestFor("@x/y", branches);
+  ok(rendered.includes("eslint ."), "the branch commands must be in the request");
+  ok(rendered.includes("lint"), "the branch names must be in the request");
+  for (const leak of ["concurrently", "&&", "parallel", "sequential", "at once", "in order"]) {
+    ok(!rendered.toLowerCase().includes(leak), `the rendering says "${leak}"`);
+  }
+});
+
+check("the classes are the author's verb, not my reading of the work", () => {
+  const items = corpus();
+  for (const i of items) {
+    if (i.klass === "parallel") {
+      ok(
+        /\b(concurrently|npm-run-all\s+(-p\b|--parallel)|run-p\b|wsrun\b|pnpm\s+-r\b|lerna\s+run\b|turbo\s+run\b|nx\s+run-many\b)/.test(i.command),
+        `${i.pkg} [${i.script}] is classed parallel but its author used no parallel verb: ${i.command.slice(0, 50)}`,
+      );
+      ok(i.branches.length >= 1, `${i.pkg}: a parallel subject with no branches`);
+    }
+    if (i.klass === "single") eq(i.branches.length, 1, `${i.pkg}: a single subject with several branches: `);
+    if (i.klass === "sequential") ok(i.branches.length >= 2, `${i.pkg}: a sequential subject with one branch`);
+  }
+});
+
+check("every recorded fan-out row carries the judgment and the plan", () => {
+  const rec = JSON.parse(readFileSync(resolve(import.meta.dirname, "records/fanout.json"), "utf8")) as {
+    gateAt: number;
+    rows: { pkg: string; klass: string; gate: number; size: number; topology: string | null; split: boolean; shape: string }[];
+  };
+  ok(rec.rows.length > 100, `only ${rec.rows.length} rows recorded`);
+  ok(rec.gateAt > 0, "the record must say which cutoff produced its splits");
+  for (const r of rec.rows) {
+    ok(Number.isFinite(r.gate), `${r.pkg} has no gate score`);
+    ok(Number.isFinite(r.size), `${r.pkg} has no size answer -- §3's reading depends on it`);
+    ok(r.topology !== undefined, `${r.pkg} has no topology`);
+    // `split` must agree with the cutoff the record names, or the two halves
+    // of the report are describing different policies.
+    if (r.split) ok(r.gate >= rec.gateAt, `${r.pkg} split with gate ${r.gate} below ${rec.gateAt}`);
+  }
+  for (const k of ["parallel", "sequential", "single"]) {
+    ok(rec.rows.some((r) => r.klass === k), `no ${k} rows were swept`);
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
