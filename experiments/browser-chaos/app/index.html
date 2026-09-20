@@ -264,6 +264,27 @@ const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
 const ROUTES = new URLSearchParams(location.search).get("routes") === "1";
 
 /*
+  Two knobs for docs/27 §4.7, which asks WHY the choice collapses onto
+  one route. They vary the two page-side candidate explanations
+  independently, and both need the screen text and the candidate list to
+  agree — which is why they live here rather than being faked in the
+  harness.
+
+    ?exfirst=1   renders Express checkout BEFORE Proceed to checkout,
+                 moving position while the wording stays put
+    ?exswap=1    exchanges the two labels, moving the wording while the
+                 position stays put
+
+  Under `?exswap=1` the labels deliberately lie about what the buttons
+  do. The ids do not move, so which route was taken is still known.
+*/
+const EX_FIRST = new URLSearchParams(location.search).get("exfirst") === "1";
+const EX_SWAP = new URLSearchParams(location.search).get("exswap") === "1";
+const CART_LABELS = EX_SWAP
+  ? { steps: "Express checkout", express: "Proceed to checkout" }
+  : { steps: "Proceed to checkout", express: "Express checkout" };
+
+/*
   `?bug=NAME` breaks one thing on purpose, for docs/27: a generated test
   is only worth keeping if it fails when the app does. Each mutation is
   the smallest edit that breaks one real behaviour, and the app keeps
@@ -426,8 +447,13 @@ const routes = {
   "#/cart": () => state.cart > 0 ? `
     <h1>Cart</h1>
     <p>${state.cart} item(s) in your cart.</p>
-    <button type="button" id="checkout">Proceed to checkout</button>
-    ${ROUTES ? `<button type="button" id="express">Express checkout</button>` : ""}
+    ${!ROUTES
+      ? `<button type="button" id="checkout">Proceed to checkout</button>`
+      : (EX_FIRST
+          ? `<button type="button" id="express">${CART_LABELS.express}</button>
+             <button type="button" id="checkout">${CART_LABELS.steps}</button>`
+          : `<button type="button" id="checkout">${CART_LABELS.steps}</button>
+             <button type="button" id="express">${CART_LABELS.express}</button>`)}
     <button type="button" id="empty">Empty cart</button>
     ${decoys(["Apply promo code", "Save cart for later", "Continue shopping"])}` : `
     <h1>Cart</h1>
