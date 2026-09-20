@@ -1,0 +1,18 @@
+{
+  "name": "jev-threshold-fit",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Cutoffs as a component instead of a hand fit: per question, held out, and weighed against measured cost (docs/25-thresholds.md)",
+  "type": "module",
+  "scripts": {
+    "report": "tsx src/run.ts",
+    "criteria": "tsx src/run.ts --criteria",
+    "tasks": "tsx src/run.ts --tasks",
+    "draws": "tsx src/run.ts --draws",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

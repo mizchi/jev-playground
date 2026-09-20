@@ -1,0 +1,14 @@
+{
+  "name": "jev-router-eval",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Does the model router's prediction match which tier actually succeeds? (docs/36 §5)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/report.ts",
+    "label": "tsx src/label.ts",
+    "ask": "tsx src/ask.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

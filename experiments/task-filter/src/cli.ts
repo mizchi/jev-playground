@@ -6,6 +6,7 @@
  *   npx tsx src/cli.ts --base main          # diff a branch instead of the worktree
  *   npx tsx src/cli.ts --scenario comment_typo   # a corpus branch, no git needed
  *   npx tsx src/cli.ts --threshold 1.25 --json
+ *   npx tsx src/cli.ts --penalty 600          # decide by cost, not by one cutoff
  *
  * It prints a score per goal and a `just` command line. The command line names
  * only the goals: `just` resolves the prerequisites itself, which is the same
@@ -14,6 +15,7 @@
  */
 import { Jev, noul, score } from "../../shared/jev.js";
 import { ALL_WASTE, BEHAVIOUR, questionsFor, stateFor, type ArmName } from "./arms.js";
+import { impliedCutoff, planLeastLoss } from "./cost.js";
 import { changedFiles, DEFAULT_LIMITS, git } from "./gitdiff.js";
 import { loadGraph, ROOT, TaskGraph } from "./graph.js";
 import { plan, planAll } from "./select.js";
@@ -54,6 +56,10 @@ async function main(): Promise<void> {
   const dir = opt("dir", ROOT);
   const arm = opt("arm", "diff") as ArmName;
   const threshold = Number(opt("threshold", "1.0"));
+  // With --penalty, the cutoff is not a number any more: each recipe's bar
+  // comes from its own measured cost against what a missed red check costs
+  // (docs/25 §B). Without it, docs/23's single cutoff.
+  const penalty = flag("penalty") ? Number(opt("penalty", "600")) : null;
   const graph = new TaskGraph(loadGraph(dir));
 
   let scenario: Scenario;
@@ -89,8 +95,16 @@ async function main(): Promise<void> {
     return { task: t.name, score: a.score, confidence: a.confidence, cost: t.cost };
   });
   rows.sort((a, b) => b.score - a.score || b.cost - a.cost);
-  const selected = rows.filter((r) => r.score >= threshold).map((r) => r.task);
-  const chosen = plan(graph, selected);
+  const needs = (cost: number): number =>
+    penalty === null ? threshold : impliedCutoff(cost, penalty);
+  const chosen =
+    penalty === null
+      ? plan(
+          graph,
+          rows.filter((r) => r.score >= threshold).map((r) => r.task),
+        )
+      : planLeastLoss(graph, Object.fromEntries(rows.map((r) => [r.task, r.score])), penalty);
+  const selected = chosen.selected;
   const all = planAll(graph);
   const behaviour = noul(res.answers[BEHAVIOUR]);
   const allWaste = noul(res.answers[ALL_WASTE]);
@@ -110,12 +124,16 @@ async function main(): Promise<void> {
       (scenario.branch ? `  on ${scenario.branch}` : ""),
   );
   console.log("");
-  console.log(`  ${"score".padStart(6)} ${"conf".padStart(5)} ${"cost".padStart(6)}  task`);
+  console.log(
+    `  ${"score".padStart(6)} ${"conf".padStart(5)} ${"cost".padStart(6)} ${"needs".padStart(6)}  task`,
+  );
   for (const r of rows) {
-    const mark = r.score >= threshold ? "RUN " : "skip";
+    const mark = selected.includes(r.task) ? "RUN " : "skip";
+    const bar = needs(r.cost);
     console.log(
       `  ${r.score.toFixed(2).padStart(6)} ${r.confidence.toFixed(2).padStart(5)} ` +
-        `${`${r.cost}s`.padStart(7)}  ${mark} ${r.task}`,
+        `${`${r.cost}s`.padStart(7)} ${(bar === 0 ? "any" : Number.isFinite(bar) ? bar.toFixed(2) : "never").padStart(6)}` +
+        `  ${mark} ${r.task}`,
     );
   }
   console.log("");
@@ -123,9 +141,18 @@ async function main(): Promise<void> {
     `  p(this change alters behaviour) ${behaviour.toFixed(2)}   ` +
       `p(nothing needs running) ${allWaste.toFixed(2)}`,
   );
+  console.log(
+    penalty === null
+      ? `  one cutoff at ${threshold.toFixed(2)}`
+      : `  least expected loss, a missed red check costs ${penalty}s`,
+  );
   console.log("");
   if (selected.length === 0) {
-    console.log("  nothing scored above the threshold. Run nothing, or lower --threshold.");
+    console.log(
+      penalty === null
+        ? "  nothing scored above the threshold. Run nothing, or lower --threshold."
+        : "  nothing is worth its seconds. Run nothing, or raise --penalty.",
+    );
   } else {
     console.log(
       `  ${chosen.run.length} of ${all.run.length} tasks: ` +

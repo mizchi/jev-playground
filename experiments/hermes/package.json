@@ -1,0 +1,15 @@
+{
+  "name": "hermes-experiment",
+  "private": true,
+  "type": "module",
+  "description": "Does asking three components' questions in one request give the same answers as asking them separately?",
+  "scripts": {
+    "demo": "tsx src/report.ts",
+    "run": "tsx src/run.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

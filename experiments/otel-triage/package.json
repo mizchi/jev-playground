@@ -1,0 +1,16 @@
+{
+  "name": "jev-otel-triage",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Anomaly triage over OTLP-shaped telemetry: detection in code, triage in Jev (docs/27-otel-triage.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

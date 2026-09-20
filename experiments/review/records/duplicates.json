@@ -1,0 +1,302 @@
+{
+  "bin": "/root/.cargo/bin/similarity-ts",
+  "threshold": 0.85,
+  "pairs": [
+    {
+      "similarity": 1,
+      "a": "experiments/orchestration/src/run.ts:473-512",
+      "b": "experiments/repair/src/run.ts:413-473",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 40
+    },
+    {
+      "similarity": 1,
+      "a": "experiments/eslint-oracle/src/metrics.ts:30-61",
+      "b": "experiments/eslint-plugin-jev/experiment/metrics.mjs:11-43",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 32
+    },
+    {
+      "similarity": 1,
+      "a": "experiments/eslint-oracle/src/metrics.ts:64-76",
+      "b": "experiments/eslint-plugin-jev/experiment/metrics.mjs:54-66",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 13
+    },
+    {
+      "similarity": 0.97,
+      "a": "experiments/eslint-oracle/src/metrics.ts:64-76",
+      "b": "experiments/shared/thresholds.ts:59-66",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 8
+    },
+    {
+      "similarity": 0.97,
+      "a": "experiments/eslint-plugin-jev/experiment/metrics.mjs:54-66",
+      "b": "experiments/shared/thresholds.ts:59-66",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 8
+    },
+    {
+      "similarity": 0.9089,
+      "a": "experiments/skill-pick/src/run.ts:247-256",
+      "b": "experiments/skill-pick/src/run.ts:519-530",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 10
+    },
+    {
+      "similarity": 0.9070999999999999,
+      "a": "experiments/skill-pick/src/run.ts:519-530",
+      "b": "experiments/task-filter/src/arms.ts:54-70",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 12
+    },
+    {
+      "similarity": 0.9044,
+      "a": "experiments/repair/src/run.ts:475-509",
+      "b": "experiments/review/src/run.ts:458-488",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 31
+    },
+    {
+      "similarity": 0.9,
+      "a": "experiments/eslint-plugin-jev/src/rules.mjs:120-163",
+      "b": "experiments/skill-select/src/rules.ts:53-78",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 26
+    },
+    {
+      "similarity": 0.8976999999999999,
+      "a": "experiments/skill-select/src/run.ts:508-517",
+      "b": "experiments/skill-select/src/run.ts:619-628",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 10
+    },
+    {
+      "similarity": 0.8956999999999999,
+      "a": "experiments/orchestration/src/run.ts:514-548",
+      "b": "experiments/skill-select/src/run.ts:751-790",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 35
+    },
+    {
+      "similarity": 0.8933,
+      "a": "experiments/orchestration/src/run.ts:514-548",
+      "b": "experiments/repair/src/run.ts:475-509",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 35
+    },
+    {
+      "similarity": 0.8929,
+      "a": "experiments/review/src/run.ts:458-488",
+      "b": "experiments/skill-pick/src/run.ts:792-832",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 31
+    },
+    {
+      "similarity": 0.8892,
+      "a": "experiments/orchestration/src/run.ts:275-313",
+      "b": "experiments/orchestration/src/run.ts:405-428",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 24
+    },
+    {
+      "similarity": 0.8848999999999999,
+      "a": "experiments/eslint-plugin-jev/experiment/run-criteria.mjs:227-239",
+      "b": "experiments/skill-select/src/catalog.ts:157-186",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 13
+    },
+    {
+      "similarity": 0.8805,
+      "a": "experiments/skill-suggestion/src/gatecheck.ts:29-56",
+      "b": "experiments/skill-suggestion/src/suggest.ts:92-120",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 28
+    },
+    {
+      "similarity": 0.8795000000000001,
+      "a": "experiments/escalation/src/summarise.ts:19-47",
+      "b": "experiments/eslint-plugin-jev/experiment/metrics.mjs:95-123",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 29
+    },
+    {
+      "similarity": 0.8791,
+      "a": "experiments/chess/src/players.ts:234-264",
+      "b": "experiments/escalation/src/chess.ts:160-177",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 18
+    },
+    {
+      "similarity": 0.8772,
+      "a": "experiments/review/src/run.ts:458-488",
+      "b": "experiments/skill-select/src/run.ts:751-790",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 31
+    },
+    {
+      "similarity": 0.8756,
+      "a": "experiments/eslint-oracle/src/metrics.ts:97-114",
+      "b": "experiments/eslint-plugin-jev/src/jev.mjs:142-155",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 14
+    },
+    {
+      "similarity": 0.8739,
+      "a": "experiments/repair/src/run.ts:475-509",
+      "b": "experiments/skill-select/src/run.ts:751-790",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 35
+    },
+    {
+      "similarity": 0.8729,
+      "a": "experiments/eslint-oracle/src/rules.ts:60-79",
+      "b": "experiments/eslint-plugin-jev/src/rules.mjs:120-163",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 20
+    },
+    {
+      "similarity": 0.8647,
+      "a": "experiments/review/src/run.ts:405-456",
+      "b": "experiments/skill-pick/src/run.ts:740-790",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 51
+    },
+    {
+      "similarity": 0.8647,
+      "a": "experiments/eslint-plugin-jev/src/rules.mjs:120-163",
+      "b": "experiments/skill-pick/src/pick.ts:107-149",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 43
+    },
+    {
+      "similarity": 0.8645,
+      "a": "experiments/eslint-plugin-jev/experiment/corpus/lru.js:31-39",
+      "b": "experiments/task-filter/src/arms.ts:54-70",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 9
+    },
+    {
+      "similarity": 0.8640000000000001,
+      "a": "experiments/eslint-plugin-jev/experiment/run-criteria.mjs:227-239",
+      "b": "experiments/skill-select/src/rules.ts:53-78",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 13
+    },
+    {
+      "similarity": 0.8639,
+      "a": "experiments/review/src/dupes.ts:98-106",
+      "b": "experiments/task-filter/src/arms.ts:54-70",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 9
+    },
+    {
+      "similarity": 0.8629000000000001,
+      "a": "experiments/skill-pick/src/run.ts:740-790",
+      "b": "experiments/skill-select/src/run.ts:711-747",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 37
+    },
+    {
+      "similarity": 0.862,
+      "a": "experiments/eslint-plugin-jev/experiment/corpus/lru.js:31-39",
+      "b": "experiments/skill-pick/src/run.ts:247-256",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 9
+    },
+    {
+      "similarity": 0.8586,
+      "a": "experiments/orchestration/src/run.ts:514-548",
+      "b": "experiments/review/src/run.ts:458-488",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 31
+    },
+    {
+      "similarity": 0.8567,
+      "a": "experiments/skill-pick/src/run.ts:370-393",
+      "b": "experiments/skill-suggestion/src/run.ts:93-144",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 24
+    },
+    {
+      "similarity": 0.8561,
+      "a": "experiments/skill-pick/src/run.ts:337-368",
+      "b": "experiments/skill-pick/src/run.ts:484-546",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 32
+    },
+    {
+      "similarity": 0.8547,
+      "a": "experiments/skill-select/src/catalog.ts:157-186",
+      "b": "experiments/skill-select/src/rules.ts:53-78",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 26
+    },
+    {
+      "similarity": 0.8547,
+      "a": "experiments/skill-select/src/catalog.ts:157-186",
+      "b": "experiments/task-filter/src/gitdiff.ts:24-43",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 20
+    },
+    {
+      "similarity": 0.8528,
+      "a": "experiments/escalation/src/shell.ts:151-164",
+      "b": "experiments/skill-select/src/catalog.ts:157-186",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 14
+    },
+    {
+      "similarity": 0.8515,
+      "a": "experiments/escalation/src/shell.ts:170-194",
+      "b": "experiments/skill-pick/src/run.ts:247-256",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 10
+    },
+    {
+      "similarity": 0.8514,
+      "a": "experiments/escalation/src/shell.ts:151-164",
+      "b": "experiments/eslint-plugin-jev/experiment/run-criteria.mjs:227-239",
+      "identical": false,
+      "alphaEquivalent": false,
+      "lines": 13
+    }
+  ]
+}

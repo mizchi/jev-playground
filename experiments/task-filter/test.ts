@@ -14,6 +14,7 @@ import { CATCHES, failingTasks, unwinnable } from "./src/oracle.js";
 import { SCENARIOS, WITH_DEFECT } from "./src/scenarios.js";
 import { caught, globsOnly, plan, planAll, planFromScores, planPruned, staticAffected } from "./src/select.js";
 import { ARMS, questionsFor, stateFor } from "./src/arms.js";
+import { CALIBRATION, impliedCutoff, planLeastLoss, probability } from "./src/cost.js";
 
 let pass = 0;
 let fail = 0;
@@ -273,6 +274,93 @@ check("the oracle never reaches Jev", () => {
         ok(!sent.includes(`"${g}"`), `${s.id}: ${name}'s hidden scope ${g} travelled`);
       }
     }
+  }
+});
+
+// ---------------------------------------------------------------- cost rule
+
+check("the implied cutoff rises with the recipe's cost", () => {
+  const cheap = impliedCutoff(0.5, 600);
+  const dear = impliedCutoff(320, 600);
+  ok(cheap < dear, `cheap ${cheap.toFixed(2)} needs less than dear ${dear.toFixed(2)}`);
+  eq(impliedCutoff(1200, 600), Number.POSITIVE_INFINITY, "a recipe dearer than the penalty never runs");
+  eq(impliedCutoff(0.001, 600), 0, "a recipe cheap enough runs on no evidence");
+});
+
+check("the loss rule is monotone in the penalty", () => {
+  const scores = Object.fromEntries(graph.goals().map((t) => [t.name, 1.0]));
+  let previous = -1;
+  for (const penalty of [1, 10, 60, 600, 6000]) {
+    const serial = planLeastLoss(graph, scores, penalty).serial;
+    ok(serial >= previous - 1e-9, `penalty ${penalty}: ${serial} after ${previous}`);
+    previous = serial;
+  }
+});
+
+check("the loss rule runs nothing when a miss is cheaper than the checks", () => {
+  const scores = Object.fromEntries(graph.goals().map((t) => [t.name, 0.2]));
+  eq(planLeastLoss(graph, scores, 0.001).selected, [], "nothing is worth its seconds");
+});
+
+check("a high score on one goal drags in its prerequisites and nothing else", () => {
+  const scores = Object.fromEntries(graph.goals().map((t) => [t.name, 0]));
+  const one = graph.goals().find((t) => t.deps.length > 0)!;
+  scores[one.name] = 3;
+  const chosen = planLeastLoss(graph, scores, 600);
+  ok(chosen.selected.includes(one.name), `${one.name} selected`);
+  for (const dep of one.deps) ok(chosen.run.includes(dep), `${dep} pulled in by the closure`);
+});
+
+check("the bitmask selection agrees with the obvious implementation", () => {
+  // The fast version indexes tasks and goals separately and ORs closures into
+  // bitmasks; the obvious version just walks sets. They have to agree, and
+  // once they did not: the loss was reading a task-indexed array with a goal
+  // index, which changed the objective without failing anything. docs/19's
+  // "two implementations found the rounding bug", scaled down to one function.
+  const goals = graph.goals().map((t) => t.name);
+  const scores = Object.fromEntries(goals.map((n, i) => [n, ((i * 7) % 13) / 4]));
+  const naive = (penalty: number): number => {
+    const p = Object.fromEntries(goals.map((n) => [n, probability(scores[n])]));
+    const loss = (selected: string[]): number => {
+      const run = graph.closure(selected);
+      let inside = 1;
+      for (const n of run) inside *= 1 - (p[n] ?? 0);
+      let outside = 1;
+      for (const n of goals) if (!run.has(n)) outside *= 1 - (p[n] ?? 0);
+      return graph.serialCost(run) + penalty * inside * (1 - outside);
+    };
+    let best = loss([]);
+    for (let mask = 1; mask < 1 << goals.length; mask += 1) {
+      const set = goals.filter((_, i) => (mask >> i) & 1);
+      best = Math.min(best, loss(set));
+    }
+    return best;
+  };
+  const mine = (penalty: number): number => {
+    const p = Object.fromEntries(goals.map((n) => [n, probability(scores[n])]));
+    const chosen = planLeastLoss(graph, scores, penalty);
+    const run = new Set(chosen.run);
+    let inside = 1;
+    for (const n of run) inside *= 1 - (p[n] ?? 0);
+    let outside = 1;
+    for (const n of goals) if (!run.has(n)) outside *= 1 - (p[n] ?? 0);
+    return graph.serialCost(run) + penalty * inside * (1 - outside);
+  };
+  for (const penalty of [60, 600]) {
+    const a = mine(penalty);
+    const b = naive(penalty);
+    ok(Math.abs(a - b) < 1e-9, `penalty ${penalty}: ${a.toFixed(4)} against the optimum ${b.toFixed(4)}`);
+  }
+});
+
+check("the shipped calibration is a probability, and monotone", () => {
+  ok(CALIBRATION.a > 0, "higher score, higher probability");
+  let previous = -1;
+  for (const s of [0, 0.5, 1, 1.5, 2, 2.5, 3]) {
+    const p = probability(s);
+    ok(p > previous, `p(${s}) = ${p.toFixed(3)} rises`);
+    ok(p >= 0 && p <= 1, "inside [0,1]");
+    previous = p;
   }
 });
 

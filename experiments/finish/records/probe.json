@@ -1,0 +1,1980 @@
+{
+  "note": "One judgment per component per task, with NO agent running. Answers the question that has to come before the sweep: does the component have anything to decide on this corpus. The model router is asked twice -- about the prompt alone, which is shared verbatim by 53 tasks, and about the prompt plus the task's real `node --test` output.",
+  "rows": [
+    {
+      "task": "accumulate",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: counts\nnot ok 1 - counts\n  ---\n  duration_ms: 2.821458\n  type: 'test'\n  location: '/tmp/jev-probe-accumulate-KHaDgi/test/accumulate.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      {\n    +   a: NaN,\n    +   b: NaN\n    -   a: 2,\n    -   b: 1\n      }\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    a: 2\n    b: 1\n  actual:\n    a: NaN\n    b: NaN\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-accumulate-KHaDgi/test/ac",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 334
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.82,
+        "confidence": 0.64,
+        "reason": "rounded/no-change",
+        "ms": 356
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 176
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.37,
+        "ms": 305
+      }
+    },
+    {
+      "task": "andor",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: a value\nok 1 - a value\n  ---\n  duration_ms: 0.769171\n  type: 'test'\n  ...\n# Subtest: null\nnot ok 2 - null\n  ---\n  duration_ms: 0.895078\n  type: 'test'\n  location: '/tmp/jev-probe-andor-GdnWI5/test/andor.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    true !== false\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: false\n  actual: true\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-andor-GdnWI5/test/andor.test.js:5:29)\n    Test.runInAsyncScope (node:as",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 121
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.59,
+        "confidence": 0.29,
+        "reason": "rounded/no-change",
+        "ms": 172
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 179
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.39,
+        "ms": 283
+      }
+    },
+    {
+      "task": "append",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: returns the new array\nnot ok 1 - returns the new array\n  ---\n  duration_ms: 3.429879\n  type: 'test'\n  location: '/tmp/jev-probe-append-I5BTNb/test/append.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n    + 2\n    - [\n    -   1,\n    -   2\n    - ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 1\n    1: 2\n  actual: 2\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-append-I5BTNb/test/append.test.js:4:46)\n    Test.run",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 128
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.25,
+        "confidence": 0.63,
+        "reason": "rounded",
+        "ms": 139
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 216
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.38,
+        "ms": 257
+      }
+    },
+    {
+      "task": "await",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: awaits\nnot ok 1 - awaits\n  ---\n  duration_ms: 2.261182\n  type: 'test'\n  location: '/tmp/jev-probe-await-Stz6vD/test/await.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    undefined !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-await-Stz6vD/test/await.test.js:4:37)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:2",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 151
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.92,
+        "confidence": 0.67,
+        "reason": "rounded/no-change",
+        "ms": 123
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 175
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies",
+          "modern-javascript-patterns"
+        ],
+        "considered": 58,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 243
+      }
+    },
+    {
+      "task": "bounds",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: slice is exclusive\nnot ok 1 - slice is exclusive\n  ---\n  duration_ms: 3.340665\n  type: 'test'\n  location: '/tmp/jev-probe-bounds-oQQzmK/test/bounds.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n        2,\n    -   3\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 2\n    1: 3\n  actual:\n    0: 2\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-bounds-oQQzmK/test/bounds.test.js:4:43)\n    Test.runInAsync",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 175
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.44,
+        "confidence": 0.33,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 250
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 154
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 250
+      }
+    },
+    {
+      "task": "clamp",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: clamps above\nnot ok 1 - clamps above\n  ---\n  duration_ms: 2.118264\n  type: 'test'\n  location: '/tmp/jev-probe-clamp-PnXL6X/test/clamp.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    9 !== 5\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 5\n  actual: 9\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-clamp-PnXL6X/test/clamp.test.js:4:37)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.st",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 149
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.25,
+        "confidence": 0.62,
+        "reason": "rounded",
+        "ms": 113
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.81,
+        "ms": 132
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.35,
+        "ms": 342
+      }
+    },
+    {
+      "task": "dedup",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: keeps the first of each\nnot ok 1 - keeps the first of each\n  ---\n  duration_ms: 2.968655\n  type: 'test'\n  location: '/tmp/jev-probe-dedup-CCMEdP/test/dedup.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n        {\n          id: 1\n        },\n    -   {\n    -     id: 2\n    -   }\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0:\n      id: 1\n    1:\n      id: 2\n  actual:\n    0:\n      id: 1\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<ano",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 135
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.57,
+        "confidence": 0.33,
+        "reason": "rounded/no-change",
+        "ms": 142
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 189
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 254
+      }
+    },
+    {
+      "task": "equals",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: string zero\nok 1 - string zero\n  ---\n  duration_ms: 0.958685\n  type: 'test'\n  ...\n# Subtest: number zero is not the string\nnot ok 2 - number zero is not the string\n  ---\n  duration_ms: 0.881554\n  type: 'test'\n  location: '/tmp/jev-probe-equals-IOyJ97/test/equals.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    true !== false\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: false\n  actual: true\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-equals-IOyJ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 184
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.42,
+        "confidence": 0.37,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 111
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 165
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.35,
+        "ms": 242
+      }
+    },
+    {
+      "task": "guard",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: trims\nok 1 - trims\n  ---\n  duration_ms: 0.821452\n  type: 'test'\n  ...\n# Subtest: missing name\nnot ok 2 - missing name\n  ---\n  duration_ms: 0.32828\n  type: 'test'\n  location: '/tmp/jev-probe-guard-oQlXlV/test/guard.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: \"Cannot read properties of undefined (reading 'trim')\"\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    nameOf (file:///tmp/jev-probe-guard-oQlXlV/src/guard.js:2:20)\n    TestContext.<anonymous> (file:///tmp/jev-probe-guard-oQlXlV/test/guard.test.js:5:43)\n    Test.runInAsyncScope (node:async",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 127
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.18,
+        "confidence": 0.73,
+        "reason": "rounded",
+        "ms": 127
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 164
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.33,
+        "ms": 228
+      }
+    },
+    {
+      "task": "lastindex",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: last\nnot ok 1 - last\n  ---\n  duration_ms: 1.494251\n  type: 'test'\n  location: '/tmp/jev-probe-lastindex-nb6uDG/test/lastindex.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    undefined !== 3\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 3\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-lastindex-nb6uDG/test/lastindex.test.js:4:29)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.start ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 128
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.63,
+        "confidence": 0.37,
+        "reason": "rounded/no-change",
+        "ms": 110
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 189
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.4,
+        "ms": 241
+      }
+    },
+    {
+      "task": "missing-return",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: doubles\nnot ok 1 - doubles\n  ---\n  duration_ms: 1.495661\n  type: 'test'\n  location: '/tmp/jev-probe-missing-return-h07P0B/test/missing-return.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    undefined !== 8\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 8\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-missing-return-h07P0B/test/missing-return.test.js:4:32)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/tes",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 249
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.36,
+        "confidence": 0.45,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 133
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 141
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.35,
+        "ms": 264
+      }
+    },
+    {
+      "task": "negate",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: empty\nnot ok 1 - empty\n  ---\n  duration_ms: 1.445634\n  type: 'test'\n  location: '/tmp/jev-probe-negate-b1pV1Q/test/negate.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-negate-b1pV1Q/test/negate.test.js:4:30)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Tes",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 149
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.45,
+        "confidence": 0.33,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 228
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 164
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.39,
+        "ms": 229
+      }
+    },
+    {
+      "task": "normalise",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: normalises by the max\nnot ok 1 - normalises by the max\n  ---\n  duration_ms: 2.754746\n  type: 'test'\n  location: '/tmp/jev-probe-normalise-6poWZ8/test/normalise.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    -   0.25,\n        0.5,\n        1,\n    +   2\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 0.25\n    1: 0.5\n    2: 1\n  actual:\n    0: 0.5\n    1: 1\n    2: 2\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 118
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.22,
+        "confidence": 0.67,
+        "reason": "rounded",
+        "ms": 176
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 129
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.38,
+        "ms": 237
+      }
+    },
+    {
+      "task": "sort",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: ascending\nnot ok 1 - ascending\n  ---\n  duration_ms: 3.272636\n  type: 'test'\n  location: '/tmp/jev-probe-sort-W08RpG/test/sort.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    +   3,\n    +   2,\n        1,\n    -   2,\n    -   3\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 1\n    1: 2\n    2: 3\n  actual:\n    0: 3\n    1: 2\n    2: 1\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-sort-W08RpG/test/sort",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 125
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.28,
+        "confidence": 0.59,
+        "reason": "rounded",
+        "ms": 129
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 131
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.33,
+        "ms": 248
+      }
+    },
+    {
+      "task": "sum",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: sums\nnot ok 1 - sums\n  ---\n  duration_ms: 1.487055\n  type: 'test'\n  location: '/tmp/jev-probe-sum-EuqM6S/test/sum.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    3 !== 6\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 6\n  actual: 3\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-sum-EuqM6S/test/sum.test.js:4:29)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.start (node:internal/test_",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 146
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.63,
+        "confidence": 0.41,
+        "reason": "rounded/no-change",
+        "ms": 130
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 200
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 332
+      }
+    },
+    {
+      "task": "swap",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: inside\nnot ok 1 - inside\n  ---\n  duration_ms: 1.416273\n  type: 'test'\n  location: '/tmp/jev-probe-swap-d99IKB/test/swap.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-swap-d99IKB/test/swap.test.js:4:31)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.star",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 160
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.7,
+        "confidence": 0.45,
+        "reason": "rounded/no-change",
+        "ms": 114
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 121
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 246
+      }
+    },
+    {
+      "task": "truthy",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: uses the value\nok 1 - uses the value\n  ---\n  duration_ms: 0.8158\n  type: 'test'\n  ...\n# Subtest: zero is a value\nnot ok 2 - zero is a value\n  ---\n  duration_ms: 0.803024\n  type: 'test'\n  location: '/tmp/jev-probe-truthy-vGj51D/test/truthy.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    9 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 9\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-truthy-vGj51D/test/truthy.test.js:5:40)\n    Test.",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 112
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.35,
+        "confidence": 0.47,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 161
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 196
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.37,
+        "ms": 305
+      }
+    },
+    {
+      "task": "two-bugs-b",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: title\nnot ok 1 - title\n  ---\n  duration_ms: 1.623083\n  type: 'test'\n  location: '/tmp/jev-probe-two-bugs-b-9POexg/test/two-bugs-b.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    + actual - expected\n    \n    + 'Aada Llovelace'\n    - 'Ada Lovelace'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'Ada Lovelace'\n  actual: 'Aada Llovelace'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-two-bugs-b-9POexg/test/two-bugs-b.test.js:4:30)\n    Test.runInAsyncScope (",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 169
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.68,
+        "confidence": 0.48,
+        "reason": "rounded/no-change",
+        "ms": 138
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 146
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.34,
+        "ms": 247
+      }
+    },
+    {
+      "task": "two-bugs-c",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: first page\nnot ok 1 - first page\n  ---\n  duration_ms: 2.808825\n  type: 'test'\n  location: '/tmp/jev-probe-two-bugs-c-lKpdKD/test/two-bugs-c.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n        1,\n    -   2\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 1\n    1: 2\n  actual:\n    0: 1\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-two-bugs-c-lKpdKD/test/two-bugs-c.test.js:4:35)\n    Test.runInAsync",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 180
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.95,
+        "confidence": 0.75,
+        "reason": "rounded/no-change",
+        "ms": 222
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 164
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.38,
+        "ms": 255
+      }
+    },
+    {
+      "task": "two-bugs-d",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: row\nnot ok 1 - row\n  ---\n  duration_ms: 2.040274\n  type: 'test'\n  location: '/tmp/jev-probe-two-bugs-d-K2KNRp/test/two-bugs-d.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    '\"a\";\"b\"' !== 'a,b'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'a,b'\n  actual: '\"a\";\"b\"'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-two-bugs-d-K2KNRp/test/two-bugs-d.test.js:4:28)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 126
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.49,
+        "confidence": 0.26,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 151
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 121
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.39,
+        "ms": 250
+      }
+    },
+    {
+      "task": "two-bugs-e",
+      "corpus": "easy",
+      "failure": "TAP version 13\n# Subtest: count\nnot ok 1 - count\n  ---\n  duration_ms: 1.41113\n  type: 'test'\n  location: '/tmp/jev-probe-two-bugs-e-5VAD9W/test/two-bugs-e.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    6 !== 3\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 3\n  actual: 6\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-two-bugs-e-5VAD9W/test/two-bugs-e.test.js:4:30)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Te",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 136
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 1.06,
+        "confidence": 0.76,
+        "reason": "rounded/no-change",
+        "ms": 127
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 119
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.38,
+        "ms": 277
+      }
+    },
+    {
+      "task": "andor-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: a value\nok 1 - a value\n  ---\n  duration_ms: 0.751922\n  type: 'test'\n  ...\n# Subtest: null\nok 2 - null\n  ---\n  duration_ms: 0.175507\n  type: 'test'\n  ...\n# Subtest: undefined\nok 3 - undefined\n  ---\n  duration_ms: 0.107019\n  type: 'test'\n  ...\n# Subtest: present\nok 4 - present\n  ---\n  duration_ms: 0.12754\n  type: 'test'\n  ...\n# Subtest: all\nnot ok 5 - all\n  ---\n  duration_ms: 0.867705\n  type: 'test'\n  location: '/tmp/jev-probe-andor-k2-0TyBmM/test/andor.test.js:8:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    true !== ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 174
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.58,
+        "confidence": 0.31,
+        "reason": "rounded/no-change",
+        "ms": 127
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 106
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 301
+      }
+    },
+    {
+      "task": "andor-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: a value\nok 1 - a value\n  ---\n  duration_ms: 0.904345\n  type: 'test'\n  ...\n# Subtest: null\nnot ok 2 - null\n  ---\n  duration_ms: 0.91817\n  type: 'test'\n  location: '/tmp/jev-probe-andor-k3-Z9XHn5/test/andor.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    true !== false\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: false\n  actual: true\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-andor-k3-Z9XHn5/test/andor.test.js:5:29)\n    Test.runInAsyncScope (no",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 151
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.59,
+        "confidence": 0.31,
+        "reason": "rounded/no-change",
+        "ms": 157
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 169
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.39,
+        "ms": 284
+      }
+    },
+    {
+      "task": "append-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: returns the new array\nnot ok 1 - returns the new array\n  ---\n  duration_ms: 1.046628\n  type: 'test'\n  location: '/tmp/jev-probe-append-k2-xKOjw3/test/append.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.concat is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    withItem (file:///tmp/jev-probe-append-k2-xKOjw3/src/append.js:2:13)\n    TestContext.<anonymous> (file:///tmp/jev-probe-append-k2-xKOjw3/test/append.test.js:4:56)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 140
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.25,
+        "confidence": 0.63,
+        "reason": "rounded",
+        "ms": 150
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 237
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.35,
+        "ms": 263
+      }
+    },
+    {
+      "task": "append-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: returns the new array\nnot ok 1 - returns the new array\n  ---\n  duration_ms: 0.866224\n  type: 'test'\n  location: '/tmp/jev-probe-append-k3-nV6s0c/test/append.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.concat is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    withItem (file:///tmp/jev-probe-append-k3-nV6s0c/src/append.js:2:13)\n    TestContext.<anonymous> (file:///tmp/jev-probe-append-k3-nV6s0c/test/append.test.js:4:56)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.04,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 176
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.46,
+        "confidence": 0.3,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 138
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 159
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 329
+      }
+    },
+    {
+      "task": "await-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: awaits\nnot ok 1 - awaits\n  ---\n  duration_ms: 2.174435\n  type: 'test'\n  location: '/tmp/jev-probe-await-k2-0hrvUe/test/await.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-await-k2-0hrvUe/test/await.test.js:4:37)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 130
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.92,
+        "confidence": 0.69,
+        "reason": "rounded/no-change",
+        "ms": 123
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.78,
+        "ms": 166
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 249
+      }
+    },
+    {
+      "task": "await-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: awaits\nnot ok 1 - awaits\n  ---\n  duration_ms: 2.191398\n  type: 'test'\n  location: '/tmp/jev-probe-await-k3-IOWePh/test/await.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-await-k3-IOWePh/test/await.test.js:4:37)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 148
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.93,
+        "confidence": 0.64,
+        "reason": "rounded/no-change",
+        "ms": 231
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.81,
+        "ms": 187
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.4,
+        "ms": 231
+      }
+    },
+    {
+      "task": "bounds-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: slice is exclusive\nnot ok 1 - slice is exclusive\n  ---\n  duration_ms: 0.906557\n  type: 'test'\n  location: '/tmp/jev-probe-bounds-k2-aUJULW/test/bounds.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.slice is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    slice (file:///tmp/jev-probe-bounds-k2-aUJULW/src/bounds.js:2:13)\n    TestContext.<anonymous> (file:///tmp/jev-probe-bounds-k2-aUJULW/test/bounds.test.js:4:53)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.st",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 152
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.61,
+        "confidence": 0.36,
+        "reason": "rounded/no-change",
+        "ms": 184
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.78,
+        "ms": 136
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 338
+      }
+    },
+    {
+      "task": "bounds-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: slice is exclusive\nnot ok 1 - slice is exclusive\n  ---\n  duration_ms: 1.113255\n  type: 'test'\n  location: '/tmp/jev-probe-bounds-k3-fpuomq/test/bounds.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.slice is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    slice (file:///tmp/jev-probe-bounds-k3-fpuomq/src/bounds.js:2:13)\n    TestContext.<anonymous> (file:///tmp/jev-probe-bounds-k3-fpuomq/test/bounds.test.js:4:53)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.st",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.92,
+        "reason": "rounded/no-change",
+        "ms": 166
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.72,
+        "confidence": 0.47,
+        "reason": "rounded/no-change",
+        "ms": 237
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 200
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.34,
+        "ms": 276
+      }
+    },
+    {
+      "task": "clamp-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: clamps above\nok 1 - clamps above\n  ---\n  duration_ms: 0.726927\n  type: 'test'\n  ...\n# Subtest: clamps below\nok 2 - clamps below\n  ---\n  duration_ms: 0.190024\n  type: 'test'\n  ...\n# Subtest: passes through\nok 3 - passes through\n  ---\n  duration_ms: 0.105686\n  type: 'test'\n  ...\n# Subtest: all\nnot ok 4 - all\n  ---\n  duration_ms: 0.284881\n  type: 'test'\n  location: '/tmp/jev-probe-clamp-k2-RxLMM4/test/clamp.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.map is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    clampAll (file:///tmp",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 128
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.17,
+        "confidence": 0.74,
+        "reason": "rounded",
+        "ms": 201
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 417
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.34,
+        "ms": 267
+      }
+    },
+    {
+      "task": "clamp-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: clamps above\nok 1 - clamps above\n  ---\n  duration_ms: 0.784348\n  type: 'test'\n  ...\n# Subtest: clamps below\nok 2 - clamps below\n  ---\n  duration_ms: 0.182324\n  type: 'test'\n  ...\n# Subtest: passes through\nok 3 - passes through\n  ---\n  duration_ms: 0.106008\n  type: 'test'\n  ...\n# Subtest: all\nnot ok 4 - all\n  ---\n  duration_ms: 0.178978\n  type: 'test'\n  location: '/tmp/jev-probe-clamp-k3-E5bA1B/test/clamp.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: 'xs.map is not a function'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    clampAll (file:///tmp",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 134
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.47,
+        "confidence": 0.29,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 124
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 144
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 395
+      }
+    },
+    {
+      "task": "dedup-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: keeps the first of each\nnot ok 1 - keeps the first of each\n  ---\n  duration_ms: 0.96239\n  type: 'test'\n  location: '/tmp/jev-probe-dedup-k2-TMduuD/test/dedup.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: 'xs is not iterable'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    dedupeBy (file:///tmp/jev-probe-dedup-k2-TMduuD/src/dedup.js:4:19)\n    TestContext.<anonymous> (file:///tmp/jev-probe-dedup-k2-TMduuD/test/dedup.test.js:6:20)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.star",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.88,
+        "reason": "rounded/no-change",
+        "ms": 178
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.44,
+        "confidence": 0.34,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 161
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 210
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.39,
+        "ms": 277
+      }
+    },
+    {
+      "task": "dedup-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: keeps the first of each\nnot ok 1 - keeps the first of each\n  ---\n  duration_ms: 0.838057\n  type: 'test'\n  location: '/tmp/jev-probe-dedup-k3-imnoYf/test/dedup.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: 'xs is not iterable'\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    dedupeBy (file:///tmp/jev-probe-dedup-k3-imnoYf/src/dedup.js:4:19)\n    TestContext.<anonymous> (file:///tmp/jev-probe-dedup-k3-imnoYf/test/dedup.test.js:6:20)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.sta",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 152
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.37,
+        "confidence": 0.44,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 196
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 155
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.4,
+        "ms": 231
+      }
+    },
+    {
+      "task": "equals-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: string zero\nok 1 - string zero\n  ---\n  duration_ms: 0.7615\n  type: 'test'\n  ...\n# Subtest: number zero is not the string\nok 2 - number zero is not the string\n  ---\n  duration_ms: 0.177697\n  type: 'test'\n  ...\n# Subtest: other\nok 3 - other\n  ---\n  duration_ms: 0.174794\n  type: 'test'\n  ...\n# Subtest: blank\nok 4 - blank\n  ---\n  duration_ms: 0.12828\n  type: 'test'\n  ...\n# Subtest: kind\nnot ok 5 - kind\n  ---\n  duration_ms: 0.859541\n  type: 'test'\n  location: '/tmp/jev-probe-equals-k2-J0YLO7/test/equals.test.js:8:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 259
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.77,
+        "confidence": 0.54,
+        "reason": "rounded/no-change",
+        "ms": 151
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.81,
+        "ms": 135
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.34,
+        "ms": 238
+      }
+    },
+    {
+      "task": "equals-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: string zero\nok 1 - string zero\n  ---\n  duration_ms: 0.773812\n  type: 'test'\n  ...\n# Subtest: number zero is not the string\nok 2 - number zero is not the string\n  ---\n  duration_ms: 0.22552\n  type: 'test'\n  ...\n# Subtest: other\nok 3 - other\n  ---\n  duration_ms: 0.114468\n  type: 'test'\n  ...\n# Subtest: blank\nok 4 - blank\n  ---\n  duration_ms: 0.115139\n  type: 'test'\n  ...\n# Subtest: kind\nnot ok 5 - kind\n  ---\n  duration_ms: 0.856808\n  type: 'test'\n  location: '/tmp/jev-probe-equals-k3-JdFCgn/test/equals.test.js:8:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expect",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 234
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.77,
+        "confidence": 0.56,
+        "reason": "rounded/no-change",
+        "ms": 164
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 122
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 244
+      }
+    },
+    {
+      "task": "guard-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: trims\nok 1 - trims\n  ---\n  duration_ms: 0.820307\n  type: 'test'\n  ...\n# Subtest: missing name\nok 2 - missing name\n  ---\n  duration_ms: 0.130998\n  type: 'test'\n  ...\n# Subtest: email\nok 3 - email\n  ---\n  duration_ms: 0.122929\n  type: 'test'\n  ...\n# Subtest: initials\nnot ok 4 - initials\n  ---\n  duration_ms: 0.872547\n  type: 'test'\n  location: '/tmp/jev-probe-guard-k2-PKHolp/test/guard.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== 'AL'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.92,
+        "reason": "rounded/no-change",
+        "ms": 140
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.54,
+        "confidence": 0.29,
+        "reason": "rounded/no-change",
+        "ms": 198
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 116
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.37,
+        "ms": 286
+      }
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: trims\nok 1 - trims\n  ---\n  duration_ms: 1.05792\n  type: 'test'\n  ...\n# Subtest: missing name\nok 2 - missing name\n  ---\n  duration_ms: 0.20114\n  type: 'test'\n  ...\n# Subtest: email\nok 3 - email\n  ---\n  duration_ms: 0.185231\n  type: 'test'\n  ...\n# Subtest: initials\nnot ok 4 - initials\n  ---\n  duration_ms: 1.132597\n  type: 'test'\n  location: '/tmp/jev-probe-guard-k3-BpLbz2/test/guard.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== 'AL'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 208
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.66,
+        "confidence": 0.45,
+        "reason": "rounded/no-change",
+        "ms": 157
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.81,
+        "ms": 194
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.37,
+        "ms": 246
+      }
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: last\nok 1 - last\n  ---\n  duration_ms: 0.813061\n  type: 'test'\n  ...\n# Subtest: one\nok 2 - one\n  ---\n  duration_ms: 0.13981\n  type: 'test'\n  ...\n# Subtest: first\nok 3 - first\n  ---\n  duration_ms: 0.113754\n  type: 'test'\n  ...\n# Subtest: penultimate\nnot ok 4 - penultimate\n  ---\n  duration_ms: 0.796442\n  type: 'test'\n  location: '/tmp/jev-probe-lastindex-k2-IXG65l/test/lastindex.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 174
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.64,
+        "confidence": 0.43,
+        "reason": "rounded/no-change",
+        "ms": 132
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.78,
+        "ms": 211
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 227
+      }
+    },
+    {
+      "task": "lastindex-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: last\nok 1 - last\n  ---\n  duration_ms: 0.94999\n  type: 'test'\n  ...\n# Subtest: one\nok 2 - one\n  ---\n  duration_ms: 0.136736\n  type: 'test'\n  ...\n# Subtest: first\nok 3 - first\n  ---\n  duration_ms: 0.121881\n  type: 'test'\n  ...\n# Subtest: penultimate\nnot ok 4 - penultimate\n  ---\n  duration_ms: 0.781614\n  type: 'test'\n  location: '/tmp/jev-probe-lastindex-k3-xR2Ro0/test/lastindex.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 148
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.67,
+        "confidence": 0.47,
+        "reason": "rounded/no-change",
+        "ms": 162
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 123
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 236
+      }
+    },
+    {
+      "task": "missing-return-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: doubles\nok 1 - doubles\n  ---\n  duration_ms: 0.807636\n  type: 'test'\n  ...\n# Subtest: zero\nok 2 - zero\n  ---\n  duration_ms: 0.131678\n  type: 'test'\n  ...\n# Subtest: triples\nok 3 - triples\n  ---\n  duration_ms: 0.12388\n  type: 'test'\n  ...\n# Subtest: scale\nnot ok 4 - scale\n  ---\n  duration_ms: 2.741736\n  type: 'test'\n  location: '/tmp/jev-probe-missing-return-k2-Q7GTgC/test/missing-return.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n    + false\n    - [\n    -   3,\n    -   6\n    - ]\n  ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 168
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.44,
+        "confidence": 0.34,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 123
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 163
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.34,
+        "ms": 245
+      }
+    },
+    {
+      "task": "missing-return-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: doubles\nnot ok 1 - doubles\n  ---\n  duration_ms: 2.09114\n  type: 'test'\n  location: '/tmp/jev-probe-missing-return-k3-pMpkJx/test/missing-return.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== 8\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 8\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-missing-return-k3-pMpkJx/test/missing-return.test.js:4:32)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:interna",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 138
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.7,
+        "confidence": 0.46,
+        "reason": "rounded/no-change",
+        "ms": 167
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 199
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 472
+      }
+    },
+    {
+      "task": "negate-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: empty\nok 1 - empty\n  ---\n  duration_ms: 0.821965\n  type: 'test'\n  ...\n# Subtest: not empty\nok 2 - not empty\n  ---\n  duration_ms: 0.140656\n  type: 'test'\n  ...\n# Subtest: full\nok 3 - full\n  ---\n  duration_ms: 0.117449\n  type: 'test'\n  ...\n# Subtest: first or\nnot ok 4 - first or\n  ---\n  duration_ms: 0.801057\n  type: 'test'\n  location: '/tmp/jev-probe-negate-k2-S2a0iS/test/negate.test.js:7:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== 9\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 9\n  act",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 121
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.63,
+        "confidence": 0.34,
+        "reason": "rounded/no-change",
+        "ms": 123
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 157
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 296
+      }
+    },
+    {
+      "task": "negate-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: empty\nnot ok 1 - empty\n  ---\n  duration_ms: 2.446117\n  type: 'test'\n  location: '/tmp/jev-probe-negate-k3-eFoX9n/test/negate.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-negate-k3-eFoX9n/test/negate.test.js:4:30)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 159
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.53,
+        "confidence": 0.21,
+        "reason": "rounded/no-change",
+        "ms": 199
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 149
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.38,
+        "ms": 257
+      }
+    },
+    {
+      "task": "normalise-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: normalises by the max\nnot ok 1 - normalises by the max\n  ---\n  duration_ms: 2.814256\n  type: 'test'\n  location: '/tmp/jev-probe-normalise-k2-oH3r6q/test/normalise.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    -   0.25,\n    -   0.5,\n        1,\n    +   2,\n    +   4\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 0.25\n    1: 0.5\n    2: 1\n  actual:\n    0: 1\n    1: 2\n    2: 4\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymou",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.01,
+        "confidence": 0.92,
+        "reason": "rounded/no-change",
+        "ms": 218
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.51,
+        "confidence": 0.23,
+        "reason": "rounded/no-change",
+        "ms": 174
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 130
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 246
+      }
+    },
+    {
+      "task": "normalise-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: normalises by the max\nnot ok 1 - normalises by the max\n  ---\n  duration_ms: 2.815673\n  type: 'test'\n  location: '/tmp/jev-probe-normalise-k3-8EqIec/test/normalise.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    -   0.25,\n    -   0.5,\n        1,\n    +   2,\n    +   4\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: 0.25\n    1: 0.5\n    2: 1\n  actual:\n    0: 1\n    1: 2\n    2: 4\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymou",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 162
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.55,
+        "confidence": 0.29,
+        "reason": "rounded/no-change",
+        "ms": 122
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 269
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.35,
+        "ms": 330
+      }
+    },
+    {
+      "task": "sort-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: ascending\nok 1 - ascending\n  ---\n  duration_ms: 1.855383\n  type: 'test'\n  ...\n# Subtest: descending\nok 2 - descending\n  ---\n  duration_ms: 0.184623\n  type: 'test'\n  ...\n# Subtest: by length\nnot ok 3 - by length\n  ---\n  duration_ms: 1.232124\n  type: 'test'\n  location: '/tmp/jev-probe-sort-k2-QZ7Np7/test/sort.test.js:6:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    +   'abc',\n        'a',\n    -   'abc'\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.03,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 225
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.7,
+        "confidence": 0.5,
+        "reason": "rounded/no-change",
+        "ms": 101
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 136
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.32,
+        "ms": 286
+      }
+    },
+    {
+      "task": "sort-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: ascending\nok 1 - ascending\n  ---\n  duration_ms: 2.940802\n  type: 'test'\n  ...\n# Subtest: descending\nok 2 - descending\n  ---\n  duration_ms: 0.205178\n  type: 'test'\n  ...\n# Subtest: by length\nnot ok 3 - by length\n  ---\n  duration_ms: 1.318215\n  type: 'test'\n  location: '/tmp/jev-probe-sort-k3-zKdVRB/test/sort.test.js:6:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      [\n    +   'abc',\n        'a',\n    -   'abc'\n      ]\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    0: ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 146
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.74,
+        "confidence": 0.55,
+        "reason": "rounded/no-change",
+        "ms": 185
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 129
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.32,
+        "ms": 254
+      }
+    },
+    {
+      "task": "sum-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: sums\nok 1 - sums\n  ---\n  duration_ms: 0.788341\n  type: 'test'\n  ...\n# Subtest: empty\nok 2 - empty\n  ---\n  duration_ms: 0.229699\n  type: 'test'\n  ...\n# Subtest: one\nok 3 - one\n  ---\n  duration_ms: 0.110298\n  type: 'test'\n  ...\n# Subtest: mean\nok 4 - mean\n  ---\n  duration_ms: 0.11232\n  type: 'test'\n  ...\n# Subtest: running\nnot ok 5 - running\n  ---\n  duration_ms: 1.957138\n  type: 'test'\n  location: '/tmp/jev-probe-sum-k2-gjfC4k/test/sum.test.js:8:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n  ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 149
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.47,
+        "confidence": 0.3,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 184
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 168
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.33,
+        "ms": 249
+      }
+    },
+    {
+      "task": "sum-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: sums\nok 1 - sums\n  ---\n  duration_ms: 0.870294\n  type: 'test'\n  ...\n# Subtest: empty\nok 2 - empty\n  ---\n  duration_ms: 0.190064\n  type: 'test'\n  ...\n# Subtest: one\nok 3 - one\n  ---\n  duration_ms: 0.16872\n  type: 'test'\n  ...\n# Subtest: mean\nok 4 - mean\n  ---\n  duration_ms: 0.131714\n  type: 'test'\n  ...\n# Subtest: running\nnot ok 5 - running\n  ---\n  duration_ms: 2.151241\n  type: 'test'\n  location: '/tmp/jev-probe-sum-k3-AVCMHJ/test/sum.test.js:8:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n  ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.9,
+        "reason": "rounded/no-change",
+        "ms": 188
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.43,
+        "confidence": 0.36,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 221
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 131
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.34,
+        "ms": 267
+      }
+    },
+    {
+      "task": "swap-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: inside\nnot ok 1 - inside\n  ---\n  duration_ms: 1.775747\n  type: 'test'\n  location: '/tmp/jev-probe-swap-k2-Becebs/test/swap.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-swap-k2-Becebs/test/swap.test.js:4:31)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Tes",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 147
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.62,
+        "confidence": 0.35,
+        "reason": "rounded/no-change",
+        "ms": 150
+      },
+      "gate": {
+        "gate": 0.14,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 133
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.36,
+        "ms": 277
+      }
+    },
+    {
+      "task": "swap-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: inside\nnot ok 1 - inside\n  ---\n  duration_ms: 1.394415\n  type: 'test'\n  location: '/tmp/jev-probe-swap-k3-N423ni/test/swap.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-swap-k3-N423ni/test/swap.test.js:4:31)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Tes",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.89,
+        "reason": "rounded/no-change",
+        "ms": 134
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.77,
+        "confidence": 0.48,
+        "reason": "rounded/no-change",
+        "ms": 158
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 170
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.37,
+        "ms": 368
+      }
+    },
+    {
+      "task": "truthy-k2",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: uses the value\nnot ok 1 - uses the value\n  ---\n  duration_ms: 2.329481\n  type: 'test'\n  location: '/tmp/jev-probe-truthy-k2-TMBEgm/test/truthy.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    9 !== 5\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 5\n  actual: 9\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-truthy-k2-TMBEgm/test/truthy.test.js:4:39)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:2",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.88,
+        "reason": "rounded/no-change",
+        "ms": 163
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.59,
+        "confidence": 0.31,
+        "reason": "rounded/no-change",
+        "ms": 187
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.8,
+        "ms": 134
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.4,
+        "ms": 235
+      }
+    },
+    {
+      "task": "truthy-k3",
+      "corpus": "hard",
+      "failure": "TAP version 13\n# Subtest: uses the value\nnot ok 1 - uses the value\n  ---\n  duration_ms: 1.363743\n  type: 'test'\n  location: '/tmp/jev-probe-truthy-k3-I2Werc/test/truthy.test.js:4:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    9 !== 5\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 5\n  actual: 9\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-truthy-k3-I2Werc/test/truthy.test.js:4:39)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:2",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.02,
+        "confidence": 0.91,
+        "reason": "rounded/no-change",
+        "ms": 116
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.68,
+        "confidence": 0.4,
+        "reason": "rounded/no-change",
+        "ms": 164
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.79,
+        "ms": 169
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.37,
+        "ms": 257
+      }
+    },
+    {
+      "task": "git-dirty",
+      "corpus": "boundary",
+      "failure": "TAP version 13\n# Subtest: pairs parse\nok 1 - pairs parse\n  ---\n  duration_ms: 1.920386\n  type: 'test'\n  ...\n# Subtest: values may contain =\nnot ok 2 - values may contain =\n  ---\n  duration_ms: 1.176388\n  type: 'test'\n  location: '/tmp/jev-probe-git-dirty-0nQ7Fk/test/parse.test.js:9:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      {\n    +   q: 'a'\n    -   q: 'a=b'\n      }\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    q: 'a=b'\n  actual:\n    q: 'a'\n  operator: 'deepStrictEqual'\n  stack: |-\n   ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.14,
+        "confidence": 0.74,
+        "reason": "rounded/no-change",
+        "ms": 177
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.48,
+        "confidence": 0.28,
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 136
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.75,
+        "ms": 123
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 366
+      }
+    },
+    {
+      "task": "shadowed-dep",
+      "corpus": "boundary",
+      "failure": "TAP version 13\n# Subtest: summary computes real statistics\nnot ok 1 - summary computes real statistics\n  ---\n  duration_ms: 2.844616\n  type: 'test'\n  location: '/tmp/jev-probe-shadowed-dep-JNo68Y/test/stats.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      {\n    +   mean: 0,\n    +   median: 0\n    -   mean: 2.5,\n    -   median: 2.5\n      }\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n    mean: 2.5\n    median: 2.5\n  actual:\n    mean: 0\n    median: 0\n  operator: 'deepStrictEqual'\n  stack",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.11,
+        "confidence": 0.79,
+        "reason": "rounded/no-change",
+        "ms": 139
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.55,
+        "confidence": 0.32,
+        "reason": "rounded/no-change",
+        "ms": 183
+      },
+      "gate": {
+        "gate": 0.16,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.75,
+        "ms": 154
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.35,
+        "ms": 210
+      }
+    },
+    {
+      "task": "stale-cache",
+      "corpus": "boundary",
+      "failure": "TAP version 13\n# Subtest: the rates are the current ones\nnot ok 1 - the rates are the current ones\n  ---\n  duration_ms: 1.606712\n  type: 'test'\n  location: '/tmp/jev-probe-stale-cache-C4Ta4m/test/rates.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    110 !== 157\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 157\n  actual: 110\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-stale-cache-C4Ta4m/test/rates.test.js:6:10)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.13,
+        "confidence": 0.76,
+        "reason": "rounded/no-change",
+        "ms": 175
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 0.7,
+        "confidence": 0.5,
+        "reason": "rounded/no-change",
+        "ms": 138
+      },
+      "gate": {
+        "gate": 0.16,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.73,
+        "ms": 205
+      },
+      "skills": {
+        "loaded": [
+          "debugging-strategies"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.38,
+        "ms": 263
+      }
+    },
+    {
+      "task": "stale-lock",
+      "corpus": "boundary",
+      "failure": "TAP version 13\n# Subtest: the queue drains\nnot ok 1 - the queue drains\n  ---\n  duration_ms: 0.75924\n  type: 'test'\n  location: '/tmp/jev-probe-stale-lock-1QFoiY/test/queue.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: 'another drain is in progress'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    drain (file:///tmp/jev-probe-stale-lock-1QFoiY/src/queue.js:13:31)\n    TestContext.<anonymous> (file:///tmp/jev-probe-stale-lock-1QFoiY/test/queue.test.js:6:20)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.start (node:internal/tes",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.11,
+        "confidence": 0.79,
+        "reason": "rounded/no-change",
+        "ms": 143
+      },
+      "onFailure": {
+        "tier": "sonnet",
+        "score": 1.09,
+        "confidence": 0.42,
+        "reason": "rounded/no-change",
+        "ms": 144
+      },
+      "gate": {
+        "gate": 0.15,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.75,
+        "ms": 129
+      },
+      "skills": {
+        "loaded": [
+          "systematic-debugging"
+        ],
+        "considered": 59,
+        "reason": "judged",
+        "noneApply": 0.39,
+        "ms": 254
+      }
+    },
+    {
+      "task": "wrong-generated",
+      "corpus": "boundary",
+      "failure": "TAP version 13\n# Subtest: the generated table is correct\nnot ok 1 - the generated table is correct\n  ---\n  duration_ms: 1.281155\n  type: 'test'\n  location: '/tmp/jev-probe-wrong-generated-iDf3zI/test/squares.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    20 !== 25\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 25\n  actual: 20\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/jev-probe-wrong-generated-iDf3zI/test/squares.test.js:6:42)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n ",
+      "onPrompt": {
+        "tier": "sonnet",
+        "score": 1.12,
+        "confidence": 0.77,
+        "reason": "rounded/no-change",
+        "ms": 231
+      },
+      "onFailure": {
+        "tier": "haiku",
+        "score": 0.33,
+        "confidence": 0.5,
+        "reason": "rounded",
+        "ms": 130
+      },
+      "gate": {
+        "gate": 0.17,
+        "split": false,
+        "shape": "single",
+        "staySingle": 0.75,
+        "ms": 169
+      },
+      "skills": {
+        "loaded": [],
+        "considered": 60,
+        "reason": "nothing-over-cutoff",
+        "noneApply": 0.36,
+        "ms": 270
+      }
+    }
+  ]
+}

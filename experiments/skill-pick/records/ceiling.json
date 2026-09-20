@@ -1,0 +1,72 @@
+[
+  {
+    "questions": 120,
+    "form": "full",
+    "ok": true,
+    "inputTokens": 32025,
+    "detail": ""
+  },
+  {
+    "questions": 200,
+    "form": "full",
+    "ok": true,
+    "inputTokens": 51034,
+    "detail": ""
+  },
+  {
+    "questions": 240,
+    "form": "full",
+    "ok": true,
+    "inputTokens": 60590,
+    "detail": ""
+  },
+  {
+    "questions": 260,
+    "form": "full",
+    "ok": true,
+    "inputTokens": 65151,
+    "detail": ""
+  },
+  {
+    "questions": 280,
+    "form": "full",
+    "ok": false,
+    "inputTokens": 0,
+    "detail": "HTTP 400: {\"detail\":{\"error_type\":\"max_tokens_exceeded\"}}"
+  },
+  {
+    "questions": 300,
+    "form": "full",
+    "ok": false,
+    "inputTokens": 0,
+    "detail": "HTTP 400: {\"detail\":{\"error_type\":\"max_tokens_exceeded\"}}"
+  },
+  {
+    "questions": 461,
+    "form": "full",
+    "ok": false,
+    "inputTokens": 0,
+    "detail": "HTTP 400: {\"detail\":{\"error_type\":\"max_tokens_exceeded\"}}"
+  },
+  {
+    "questions": 461,
+    "form": "terse",
+    "ok": true,
+    "inputTokens": 54284,
+    "detail": ""
+  },
+  {
+    "questions": 520,
+    "form": "terse",
+    "ok": true,
+    "inputTokens": 62965,
+    "detail": ""
+  },
+  {
+    "questions": 560,
+    "form": "terse",
+    "ok": false,
+    "inputTokens": 0,
+    "detail": "HTTP 400: {\"detail\":{\"error_type\":\"max_tokens_exceeded\"}}"
+  }
+]

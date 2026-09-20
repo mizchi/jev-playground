@@ -1,0 +1,3 @@
+A half-written duplicate in a NESTED node_modules shadows the working copy at
+the project root. Two legitimate fixes: remove the nested duplicate, or point
+the import at the top-level copy explicitly.

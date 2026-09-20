@@ -1,0 +1,16 @@
+{
+  "name": "jev-agent-eval",
+  "private": true,
+  "type": "module",
+  "description": "Does the hermes extension actually run inside pi, and what does a turn cost? (docs/38)",
+  "scripts": {
+    "run": "tsx src/run.ts",
+    "demo": "tsx src/report.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

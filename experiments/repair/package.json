@@ -1,0 +1,17 @@
+{
+  "name": "jev-repair",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A repair loop where the patches are generated in code and Jev only orders them (docs/32-repair.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "truth": "tsx src/truth.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

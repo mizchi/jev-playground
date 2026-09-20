@@ -1,0 +1,5071 @@
+{
+  "note": "TODO §2.0's fan-out corpus, labelled by the authors of 354 published packages: a composite npm script is `parallel` when its author runs the branches at once (`concurrently`), `sequential` when it chains them (`&&`), and `single` when there is one command. The gate is shown the branches' resolved commands with the operators stripped, through jev-orchestrator's own plan().",
+  "framing": "cost",
+  "gateAt": 0.5,
+  "rows": [
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline client-bedrock-runtime"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline client-bedrock-runtime",
+      "gate": 0.14,
+      "size": 0.15,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 321
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "build",
+      "command": "yarn prebuild && yarn lint && concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js"
+        },
+        {
+          "name": "prebuild",
+          "command": "node -e \"const j=require('../util-endpoints/src/lib/aws/partitions.json');require('fs').writeFileSync('src/submodules/client/util-endpoints/lib/aws/partitions.ts','export const partitionsInfo = '+JSON.stringify(j)+';\\n')\""
+        },
+        {
+          "name": "lint",
+          "command": "node ../../scripts/validation/submodules-linter.js --pkg core"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline core && premove ./dist-cjs/api-extractor-type-index.js"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of 5 steps:\n- build:types: premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js\n- prebuild: node -e \"const j=require('../util-endpoints/src/lib/aws/partitions.json');require('fs').writeFileSync('src/submodules/client/util-endpoints/lib/aws/partitions.ts','export const partitionsInfo = '+JSON.stringify(j)+';\\n')\"\n- lint: node ../../scripts/validation/submodules-linter.js --pkg core\n- build:cjs: node ../../scripts/compilation/inline core && premove ./dist-cjs/api-extractor-type-index.js",
+      "gate": 0.19,
+      "size": 0.23,
+      "staySingle": 0.74,
+      "topology": "sequential",
+      "topologyConfidence": 0.91,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 294
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-env"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-env",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.92,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 152
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-http"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-http",
+      "gate": 0.14,
+      "size": 0.13,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 140
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-ini"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-ini",
+      "gate": 0.13,
+      "size": 0.13,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.95,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 140
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-login",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-login"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-login, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-login",
+      "gate": 0.15,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.95,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 114
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-node",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-node"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-node, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-node",
+      "gate": 0.15,
+      "size": 0.15,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.92,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 118
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-process",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-process"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-process, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-process",
+      "gate": 0.14,
+      "size": 0.14,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.92,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 203
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-sso",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-sso"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-sso, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-sso",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 196
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-web-identity",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-web-identity"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-web-identity, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline credential-provider-web-identity",
+      "gate": 0.14,
+      "size": 0.13,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 188
+    },
+    {
+      "pkg": "@aws-sdk/eventstream-handler-node",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline eventstream-handler-node"
+        }
+      ],
+      "request": "In the package @aws-sdk/eventstream-handler-node, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline eventstream-handler-node",
+      "gate": 0.13,
+      "size": 0.11,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.95,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 137
+    },
+    {
+      "pkg": "@aws-sdk/middleware-eventstream",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline middleware-eventstream"
+        }
+      ],
+      "request": "In the package @aws-sdk/middleware-eventstream, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline middleware-eventstream",
+      "gate": 0.13,
+      "size": 0.14,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 105
+    },
+    {
+      "pkg": "@aws-sdk/middleware-websocket",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline middleware-websocket"
+        }
+      ],
+      "request": "In the package @aws-sdk/middleware-websocket, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline middleware-websocket",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.91,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 127
+    },
+    {
+      "pkg": "@aws-sdk/nested-clients",
+      "script": "build",
+      "command": "yarn lint && concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "lint",
+          "command": "node ../../scripts/validation/submodules-linter.js --pkg nested-clients"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline nested-clients"
+        }
+      ],
+      "request": "In the package @aws-sdk/nested-clients, this piece of work has to be done. It consists of 4 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- lint: node ../../scripts/validation/submodules-linter.js --pkg nested-clients\n- build:cjs: node ../../scripts/compilation/inline nested-clients",
+      "gate": 0.17,
+      "size": 0.16,
+      "staySingle": 0.77,
+      "topology": "sequential",
+      "topologyConfidence": 0.89,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 270
+    },
+    {
+      "pkg": "@aws-sdk/signature-v4-multi-region",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline signature-v4-multi-region"
+        }
+      ],
+      "request": "In the package @aws-sdk/signature-v4-multi-region, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline signature-v4-multi-region",
+      "gate": 0.12,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.92,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 211
+    },
+    {
+      "pkg": "@aws-sdk/token-providers",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline token-providers"
+        }
+      ],
+      "request": "In the package @aws-sdk/token-providers, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline token-providers",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.94,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 118
+    },
+    {
+      "pkg": "@aws-sdk/types",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline types"
+        }
+      ],
+      "request": "In the package @aws-sdk/types, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline types",
+      "gate": 0.14,
+      "size": 0.15,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.95,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 161
+    },
+    {
+      "pkg": "@aws-sdk/util-locate-window",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline util-locate-window"
+        }
+      ],
+      "request": "In the package @aws-sdk/util-locate-window, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline util-locate-window",
+      "gate": 0.12,
+      "size": 0.1,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.9,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 137
+    },
+    {
+      "pkg": "@aws-sdk/xml-builder",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline xml-builder"
+        }
+      ],
+      "request": "In the package @aws-sdk/xml-builder, this piece of work has to be done. It consists of 3 steps:\n- build:types: tsc -p tsconfig.types.json\n- build:es: tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline xml-builder",
+      "gate": 0.13,
+      "size": 0.14,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.83,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 130
+    },
+    {
+      "pkg": "@smithy/core",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline core"
+        }
+      ],
+      "request": "In the package @smithy/core, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline core",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.91,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 123
+    },
+    {
+      "pkg": "@smithy/credential-provider-imds",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline credential-provider-imds"
+        }
+      ],
+      "request": "In the package @smithy/credential-provider-imds, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline credential-provider-imds",
+      "gate": 0.12,
+      "size": 0.1,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.87,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 155
+    },
+    {
+      "pkg": "@smithy/fetch-http-handler",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline fetch-http-handler"
+        }
+      ],
+      "request": "In the package @smithy/fetch-http-handler, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline fetch-http-handler",
+      "gate": 0.13,
+      "size": 0.11,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.97,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 110
+    },
+    {
+      "pkg": "@smithy/is-array-buffer",
+      "script": "build",
+      "command": "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types && yarn build:types:downlevel'",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/inline is-array-buffer"
+        },
+        {
+          "name": "build:es",
+          "command": "yarn g:tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @smithy/is-array-buffer, this piece of work has to be done. It consists of 4 steps:\n- build:cjs: node ../../scripts/inline is-array-buffer\n- build:es: yarn g:tsc -p tsconfig.es.json\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.15,
+      "size": 0.1,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.89,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 119
+    },
+    {
+      "pkg": "@smithy/node-http-handler",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline node-http-handler"
+        }
+      ],
+      "request": "In the package @smithy/node-http-handler, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline node-http-handler",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 142
+    },
+    {
+      "pkg": "@smithy/signature-v4",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline signature-v4"
+        }
+      ],
+      "request": "In the package @smithy/signature-v4, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline signature-v4",
+      "gate": 0.13,
+      "size": 0.13,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.94,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 148
+    },
+    {
+      "pkg": "@smithy/types",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline types"
+        }
+      ],
+      "request": "In the package @smithy/types, this piece of work has to be done. It consists of 2 steps:\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: yarn g:tsc -p tsconfig.es.json && node ../../scripts/inline types",
+      "gate": 0.13,
+      "size": 0.13,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.9,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 163
+    },
+    {
+      "pkg": "@smithy/util-buffer-from",
+      "script": "build",
+      "command": "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types && yarn build:types:downlevel'",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/inline util-buffer-from"
+        },
+        {
+          "name": "build:es",
+          "command": "yarn g:tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @smithy/util-buffer-from, this piece of work has to be done. It consists of 4 steps:\n- build:cjs: node ../../scripts/inline util-buffer-from\n- build:es: yarn g:tsc -p tsconfig.es.json\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.89,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 189
+    },
+    {
+      "pkg": "@smithy/util-utf8",
+      "script": "build",
+      "command": "concurrently 'yarn:build:cjs' 'yarn:build:es' 'yarn:build:types && yarn build:types:downlevel'",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/inline util-utf8"
+        },
+        {
+          "name": "build:es",
+          "command": "yarn g:tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:types",
+          "command": "yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @smithy/util-utf8, this piece of work has to be done. It consists of 4 steps:\n- build:cjs: node ../../scripts/inline util-utf8\n- build:es: yarn g:tsc -p tsconfig.es.json\n- build:types: yarn g:tsc -p tsconfig.types.json\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.15,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.83,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 128
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline && premove ./dist-cjs/api-extractor-type-index.js"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js\n- build:cjs: node ../../scripts/compilation/inline && premove ./dist-cjs/api-extractor-type-index.js",
+      "gate": 0.15,
+      "size": 0.14,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 149
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.81,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 156
+    },
+    {
+      "pkg": "@smithy/node-http-handler",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/node-http-handler, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.12,
+      "size": 0.1,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.97,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 149
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.82,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 177
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.84,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 121
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-login",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-login, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.13,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.83,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 130
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-node",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-node, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.15,
+      "size": 0.14,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 146
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-process",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-process, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.78,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 104
+    },
+    {
+      "pkg": "@aws-sdk/token-providers",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/token-providers, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.82,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 134
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-sso",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-sso, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 145
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-web-identity",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-web-identity, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.13,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.78,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 120
+    },
+    {
+      "pkg": "@aws-sdk/eventstream-handler-node",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/eventstream-handler-node, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.13,
+      "size": 0.14,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.82,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "@aws-sdk/middleware-eventstream",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/middleware-eventstream, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.14,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.79,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 144
+    },
+    {
+      "pkg": "@aws-sdk/middleware-websocket",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/middleware-websocket, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.79,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 171
+    },
+    {
+      "pkg": "@aws-sdk/nested-clients",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/nested-clients, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.15,
+      "size": 0.14,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.85,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 103
+    },
+    {
+      "pkg": "@aws-sdk/signature-v4-multi-region",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/signature-v4-multi-region, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.15,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.86,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 141
+    },
+    {
+      "pkg": "@aws-sdk/types",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/types, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.15,
+      "size": 0.15,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.81,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 121
+    },
+    {
+      "pkg": "@aws-sdk/util-locate-window",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/util-locate-window, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 131
+    },
+    {
+      "pkg": "@aws-sdk/xml-builder",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es' && yarn build:cjs",
+      "klass": "parallel",
+      "mixed": true,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es",
+          "command": "premove dist-es && tsc -p tsconfig.es.json"
+        },
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline"
+        }
+      ],
+      "request": "In the package @aws-sdk/xml-builder, this piece of work has to be done. It consists of 3 steps:\n- build:types: premove dist-types && tsc -p tsconfig.types.json\n- build:es: premove dist-es && tsc -p tsconfig.es.json\n- build:cjs: node ../../scripts/compilation/inline",
+      "gate": 0.14,
+      "size": 0.13,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.72,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 193
+    },
+    {
+      "pkg": "@smithy/core",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/core, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.13,
+      "size": 0.11,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.99,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 117
+    },
+    {
+      "pkg": "@smithy/credential-provider-imds",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/credential-provider-imds, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.12,
+      "size": 0.1,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.98,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 141
+    },
+    {
+      "pkg": "@smithy/fetch-http-handler",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/fetch-http-handler, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.12,
+      "size": 0.11,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.98,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 119
+    },
+    {
+      "pkg": "@smithy/signature-v4",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/signature-v4, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.12,
+      "size": 0.11,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.97,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 141
+    },
+    {
+      "pkg": "@smithy/types",
+      "script": "build",
+      "command": "concurrently 'yarn:build:types' 'yarn:build:es:cjs'",
+      "klass": "parallel",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json"
+        },
+        {
+          "name": "build:es:cjs",
+          "command": "node ../../scripts/compilation/es_cjs.js"
+        }
+      ],
+      "request": "In the package @smithy/types, this piece of work has to be done. It consists of 2 steps:\n- build:types: premove dist-types && yarn g:tsc -p tsconfig.types.json\n- build:es:cjs: node ../../scripts/compilation/es_cjs.js",
+      "gate": 0.13,
+      "size": 0.12,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.99,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 210
+    },
+    {
+      "pkg": "@aws/lambda-invoke-store",
+      "script": "build",
+      "command": "yarn clean && yarn build:types && node ./scripts/build-rollup.js",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "rm -rf dist-types dist-cjs dist-es"
+        },
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws/lambda-invoke-store, this piece of work has to be done. It consists of 2 steps:\n- clean: rm -rf dist-types dist-cjs dist-es\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.08,
+      "size": 0.06,
+      "staySingle": 0.84,
+      "topology": "sequential",
+      "topologyConfidence": 0.98,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "@earendil-works/chord",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm run build",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "shx rm -rf dist"
+        },
+        {
+          "name": "build",
+          "command": "tsgo -p tsconfig.build.json"
+        }
+      ],
+      "request": "In the package @earendil-works/chord, this piece of work has to be done. It consists of 2 steps:\n- clean: shx rm -rf dist\n- build: tsgo -p tsconfig.build.json",
+      "gate": 0.08,
+      "size": 0.06,
+      "staySingle": 0.87,
+      "topology": "sequential",
+      "topologyConfidence": 1,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 263
+    },
+    {
+      "pkg": "@earendil-works/pi-ai",
+      "script": "build",
+      "command": "npm run generate-models && npm run build:offline",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "generate-models",
+          "command": "node scripts/generate-models.ts --strict"
+        },
+        {
+          "name": "build:offline",
+          "command": "npm run check:model-data && tsgo -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-ai, this piece of work has to be done. It consists of 2 steps:\n- generate-models: node scripts/generate-models.ts --strict\n- build:offline: npm run check:model-data && tsgo -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data",
+      "gate": 0.15,
+      "size": 0.21,
+      "staySingle": 0.77,
+      "topology": "sequential",
+      "topologyConfidence": 0.98,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 118
+    },
+    {
+      "pkg": "@earendil-works/pi-ai",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm run build",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "shx rm -rf dist"
+        },
+        {
+          "name": "build",
+          "command": "npm run generate-models && npm run build:offline"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-ai, this piece of work has to be done. It consists of 2 steps:\n- clean: shx rm -rf dist\n- build: npm run generate-models && npm run build:offline",
+      "gate": 0.1,
+      "size": 0.11,
+      "staySingle": 0.85,
+      "topology": "sequential",
+      "topologyConfidence": 0.99,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 169
+    },
+    {
+      "pkg": "@earendil-works/pi-telemetry",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm run build",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "shx rm -rf dist"
+        },
+        {
+          "name": "build",
+          "command": "tsgo -p tsconfig.build.json"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-telemetry, this piece of work has to be done. It consists of 2 steps:\n- clean: shx rm -rf dist\n- build: tsgo -p tsconfig.build.json",
+      "gate": 0.08,
+      "size": 0.05,
+      "staySingle": 0.87,
+      "topology": "sequential",
+      "topologyConfidence": 1,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 135
+    },
+    {
+      "pkg": "@earendil-works/pi-tui",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm run build",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "shx rm -rf dist"
+        },
+        {
+          "name": "build",
+          "command": "tsgo -p tsconfig.build.json"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-tui, this piece of work has to be done. It consists of 2 steps:\n- clean: shx rm -rf dist\n- build: tsgo -p tsconfig.build.json",
+      "gate": 0.08,
+      "size": 0.05,
+      "staySingle": 0.86,
+      "topology": "sequential",
+      "topologyConfidence": 1,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 148
+    },
+    {
+      "pkg": "base64-js",
+      "script": "test",
+      "command": "npm run lint && npm run unit",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "standard"
+        },
+        {
+          "name": "unit",
+          "command": "tape test/*.js"
+        }
+      ],
+      "request": "In the package base64-js, this piece of work has to be done. It consists of 2 steps:\n- lint: standard\n- unit: tape test/*.js",
+      "gate": 0.13,
+      "size": 0.13,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.55,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 125
+    },
+    {
+      "pkg": "debug",
+      "script": "test",
+      "command": "npm run test:node && npm run test:browser && npm run lint",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:node",
+          "command": "mocha test.js test.node.js"
+        },
+        {
+          "name": "test:browser",
+          "command": "karma start --single-run"
+        },
+        {
+          "name": "lint",
+          "command": "xo"
+        }
+      ],
+      "request": "In the package debug, this piece of work has to be done. It consists of 3 steps:\n- test:node: mocha test.js test.node.js\n- test:browser: karma start --single-run\n- lint: xo",
+      "gate": 0.18,
+      "size": 0.12,
+      "staySingle": 0.8,
+      "topology": "fanout",
+      "topologyConfidence": 0.58,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 147
+    },
+    {
+      "pkg": "diff",
+      "script": "build",
+      "command": "yarn lint && yarn generate-esm && yarn generate-cjs && yarn check-types && yarn run-rollup && yarn run-uglify",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "yarn eslint"
+        },
+        {
+          "name": "generate-esm",
+          "command": "yarn tsc --module nodenext --outDir libesm --target es6 && node --eval \"fs.writeFileSync('libesm/package.json', JSON.stringify({type:'module',sideEffects:false}))\""
+        },
+        {
+          "name": "generate-cjs",
+          "command": "yarn tsc --module commonjs --outDir libcjs && node --eval \"fs.writeFileSync('libcjs/package.json', JSON.stringify({type:'commonjs',sideEffects:false}))\""
+        },
+        {
+          "name": "check-types",
+          "command": "yarn run-tsd && yarn run-attw"
+        },
+        {
+          "name": "run-rollup",
+          "command": "rollup -c rollup.config.mjs"
+        },
+        {
+          "name": "run-uglify",
+          "command": "uglifyjs dist/diff.js -c -o dist/diff.min.js"
+        }
+      ],
+      "request": "In the package diff, this piece of work has to be done. It consists of 6 steps:\n- lint: yarn eslint\n- generate-esm: yarn tsc --module nodenext --outDir libesm --target es6 && node --eval \"fs.writeFileSync('libesm/package.json', JSON.stringify({type:'module',sideEffects:false}))\"\n- generate-cjs: yarn tsc --module commonjs --outDir libcjs && node --eval \"fs.writeFileSync('libcjs/package.json', JSON.stringify({type:'commonjs',sideEffects:false}))\"\n- check-types: yarn run-tsd && yarn run-attw\n- run-rollup: rollup -c rollup.config.mjs\n- run-uglify: uglifyjs dist/diff.js -c -o dist/diff.min.js",
+      "gate": 0.15,
+      "size": 0.18,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.91,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 137
+    },
+    {
+      "pkg": "diff",
+      "script": "check-types",
+      "command": "yarn run-tsd && yarn run-attw",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "run-tsd",
+          "command": "yarn tsd --typings libesm/ && yarn tsd --files test-d/"
+        },
+        {
+          "name": "run-attw",
+          "command": "yarn attw --pack --entrypoints . && yarn attw --pack --entrypoints lib/diff/word.js --profile node16"
+        }
+      ],
+      "request": "In the package diff, this piece of work has to be done. It consists of 2 steps:\n- run-tsd: yarn tsd --typings libesm/ && yarn tsd --files test-d/\n- run-attw: yarn attw --pack --entrypoints . && yarn attw --pack --entrypoints lib/diff/word.js --profile node16",
+      "gate": 0.17,
+      "size": 0.1,
+      "staySingle": 0.77,
+      "topology": "fanout",
+      "topologyConfidence": 0.46,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 160
+    },
+    {
+      "pkg": "diff",
+      "script": "_test",
+      "command": "yarn build && cross-env NODE_ENV=test yarn run-mocha",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "yarn lint && yarn generate-esm && yarn generate-cjs && yarn check-types && yarn run-rollup && yarn run-uglify"
+        },
+        {
+          "name": "run-mocha",
+          "command": "mocha --require ./runtime 'test/**/*.js'"
+        }
+      ],
+      "request": "In the package diff, this piece of work has to be done. It consists of 2 steps:\n- build: yarn lint && yarn generate-esm && yarn generate-cjs && yarn check-types && yarn run-rollup && yarn run-uglify\n- run-mocha: mocha --require ./runtime 'test/**/*.js'",
+      "gate": 0.18,
+      "size": 0.21,
+      "staySingle": 0.7,
+      "topology": "sequential",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 167
+    },
+    {
+      "pkg": "extend",
+      "script": "lint",
+      "command": "npm run jscs && npm run eslint",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "jscs",
+          "command": "jscs *.js */*.js"
+        },
+        {
+          "name": "eslint",
+          "command": "eslint *.js */*.js"
+        }
+      ],
+      "request": "In the package extend, this piece of work has to be done. It consists of 2 steps:\n- jscs: jscs *.js */*.js\n- eslint: eslint *.js */*.js",
+      "gate": 0.15,
+      "size": 0.19,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 123
+    },
+    {
+      "pkg": "highlight.js",
+      "script": "build_and_test",
+      "command": "npm run build && npm run test",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "node ./tools/build.js -t node"
+        },
+        {
+          "name": "test",
+          "command": "mocha test"
+        }
+      ],
+      "request": "In the package highlight.js, this piece of work has to be done. It consists of 2 steps:\n- build: node ./tools/build.js -t node\n- test: mocha test",
+      "gate": 0.13,
+      "size": 0.1,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 163
+    },
+    {
+      "pkg": "ignore",
+      "script": "ts",
+      "command": "npm run test:ts && npm run test:16",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:ts",
+          "command": "ts-node ./test/import/simple.ts"
+        },
+        {
+          "name": "test:16",
+          "command": "npm run test:ts:16 && npm run test:cjs:16 && npm run test:mjs:16"
+        }
+      ],
+      "request": "In the package ignore, this piece of work has to be done. It consists of 2 steps:\n- test:ts: ts-node ./test/import/simple.ts\n- test:16: npm run test:ts:16 && npm run test:cjs:16 && npm run test:mjs:16",
+      "gate": 0.19,
+      "size": 0.15,
+      "staySingle": 0.75,
+      "topology": "fanout",
+      "topologyConfidence": 0.42,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 142
+    },
+    {
+      "pkg": "ignore",
+      "script": "test:16",
+      "command": "npm run test:ts:16 && npm run test:cjs:16 && npm run test:mjs:16",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:ts:16",
+          "command": "ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.ts && tsc ./test/import/simple.ts --lib ES6 --moduleResolution Node16 --module Node16 && node ./test/import/simple.js"
+        },
+        {
+          "name": "test:cjs:16",
+          "command": "ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.cjs"
+        },
+        {
+          "name": "test:mjs:16",
+          "command": "ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.mjs && babel -o ./test/import/simple-mjs.js ./test/import/simple.mjs && node ./test/import/simple-mjs.js"
+        }
+      ],
+      "request": "In the package ignore, this piece of work has to be done. It consists of 3 steps:\n- test:ts:16: ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.ts && tsc ./test/import/simple.ts --lib ES6 --moduleResolution Node16 --module Node16 && node ./test/import/simple.js\n- test:cjs:16: ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.cjs\n- test:mjs:16: ts-node --compilerOptions '{\"moduleResolution\": \"Node16\", \"module\": \"Node16\"}' ./test/import/simple.mjs && babel -o ./test/import/simple-mjs.js ./test/import/simple.mjs && node ./test/import/simple-mjs.js",
+      "gate": 0.18,
+      "size": 0.11,
+      "staySingle": 0.77,
+      "topology": "fanout",
+      "topologyConfidence": 0.78,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 166
+    },
+    {
+      "pkg": "ignore",
+      "script": "test",
+      "command": "npm run lint && npm run ts && npm run build && npm run test:cases",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "eslint ."
+        },
+        {
+          "name": "ts",
+          "command": "npm run test:ts && npm run test:16"
+        },
+        {
+          "name": "build",
+          "command": "babel -o legacy.js index.js"
+        },
+        {
+          "name": "test:cases",
+          "command": "npm run tap test/*.test.js -- --coverage"
+        }
+      ],
+      "request": "In the package ignore, this piece of work has to be done. It consists of 4 steps:\n- lint: eslint .\n- ts: npm run test:ts && npm run test:16\n- build: babel -o legacy.js index.js\n- test:cases: npm run tap test/*.test.js -- --coverage",
+      "gate": 0.17,
+      "size": 0.19,
+      "staySingle": 0.75,
+      "topology": "sequential",
+      "topologyConfidence": 0.71,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "jiti",
+      "script": "release",
+      "command": "pnpm build && pnpm test && changelogen --release --push && npm publish",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "pnpm clean && pnpm rspack"
+        },
+        {
+          "name": "test",
+          "command": "pnpm lint && pnpm test:types && vitest run --coverage && pnpm test:node-register && pnpm test:bun && pnpm test:native"
+        }
+      ],
+      "request": "In the package jiti, this piece of work has to be done. It consists of 2 steps:\n- build: pnpm clean && pnpm rspack\n- test: pnpm lint && pnpm test:types && vitest run --coverage && pnpm test:node-register && pnpm test:bun && pnpm test:native",
+      "gate": 0.21,
+      "size": 0.25,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.58,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 171
+    },
+    {
+      "pkg": "jiti",
+      "script": "test",
+      "command": "pnpm lint && pnpm test:types && vitest run --coverage && pnpm test:node-register && pnpm test:bun && pnpm test:native",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "eslint . && prettier -c src lib test stubs"
+        },
+        {
+          "name": "test:types",
+          "command": "tsgo --noEmit"
+        },
+        {
+          "name": "test:node-register",
+          "command": "JITI_JSX=1 node --test test/node-register.test.mjs"
+        },
+        {
+          "name": "test:bun",
+          "command": "bun --bun test test/bun"
+        },
+        {
+          "name": "test:native",
+          "command": "pnpm test:native:bun && pnpm test:native:node && pnpm test:native:deno"
+        }
+      ],
+      "request": "In the package jiti, this piece of work has to be done. It consists of 5 steps:\n- lint: eslint . && prettier -c src lib test stubs\n- test:types: tsgo --noEmit\n- test:node-register: JITI_JSX=1 node --test test/node-register.test.mjs\n- test:bun: bun --bun test test/bun\n- test:native: pnpm test:native:bun && pnpm test:native:node && pnpm test:native:deno",
+      "gate": 0.26,
+      "size": 0.22,
+      "staySingle": 0.73,
+      "topology": "fanout",
+      "topologyConfidence": 0.79,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 229
+    },
+    {
+      "pkg": "jiti",
+      "script": "test:native",
+      "command": "pnpm test:native:bun && pnpm test:native:node && pnpm test:native:deno",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:native:bun",
+          "command": "bun --bun test test/native/bun.test.ts"
+        },
+        {
+          "name": "test:native:node",
+          "command": "node --test --experimental-strip-types test/native/node.test.ts"
+        },
+        {
+          "name": "test:native:deno",
+          "command": "deno test -A --no-check test/native/deno.test.ts"
+        }
+      ],
+      "request": "In the package jiti, this piece of work has to be done. It consists of 3 steps:\n- test:native:bun: bun --bun test test/native/bun.test.ts\n- test:native:node: node --test --experimental-strip-types test/native/node.test.ts\n- test:native:deno: deno test -A --no-check test/native/deno.test.ts",
+      "gate": 0.25,
+      "size": 0.11,
+      "staySingle": 0.76,
+      "topology": "fanout",
+      "topologyConfidence": 0.97,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 138
+    },
+    {
+      "pkg": "json-schema-to-ts",
+      "script": "test",
+      "command": "yarn test-type && yarn test-format && yarn test-unit && yarn test-unused-exports && yarn test-lint",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test-type",
+          "command": "tsc --noEmit"
+        },
+        {
+          "name": "test-format",
+          "command": "yarn prettier . --check"
+        },
+        {
+          "name": "test-unit",
+          "command": "jest --verbose --runInBand --collectCoverage --logHeapUsage --passWithNoTests"
+        },
+        {
+          "name": "test-unused-exports",
+          "command": "yarn ts-unused-exports ./tsconfig.json --excludePathsFromReport='src/index.ts;'"
+        },
+        {
+          "name": "test-lint",
+          "command": "yarn eslint --ext=js,ts ."
+        }
+      ],
+      "request": "In the package json-schema-to-ts, this piece of work has to be done. It consists of 5 steps:\n- test-type: tsc --noEmit\n- test-format: yarn prettier . --check\n- test-unit: jest --verbose --runInBand --collectCoverage --logHeapUsage --passWithNoTests\n- test-unused-exports: yarn ts-unused-exports ./tsconfig.json --excludePathsFromReport='src/index.ts;'\n- test-lint: yarn eslint --ext=js,ts .",
+      "gate": 0.17,
+      "size": 0.15,
+      "staySingle": 0.8,
+      "topology": "fanout",
+      "topologyConfidence": 0.8,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 160
+    },
+    {
+      "pkg": "json-schema-to-ts",
+      "script": "build",
+      "command": "rm -rf lib && yarn build-cjs && yarn build-esm && yarn build-types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build-cjs",
+          "command": "NODE_ENV=cjs yarn transpile --out-dir lib/cjs --source-maps"
+        },
+        {
+          "name": "build-esm",
+          "command": "NODE_ENV=esm yarn transpile --out-dir lib/esm --source-maps"
+        },
+        {
+          "name": "build-types",
+          "command": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
+        }
+      ],
+      "request": "In the package json-schema-to-ts, this piece of work has to be done. It consists of 3 steps:\n- build-cjs: NODE_ENV=cjs yarn transpile --out-dir lib/cjs --source-maps\n- build-esm: NODE_ENV=esm yarn transpile --out-dir lib/esm --source-maps\n- build-types: tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+      "gate": 0.14,
+      "size": 0.1,
+      "staySingle": 0.85,
+      "topology": "sequential",
+      "topologyConfidence": 0.68,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 156
+    },
+    {
+      "pkg": "long",
+      "script": "test",
+      "command": "npm run test:unit && npm run test:typescript",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:unit",
+          "command": "node tests"
+        },
+        {
+          "name": "test:typescript",
+          "command": "tsc --project tests/typescript/tsconfig.esnext.json && tsc --project tests/typescript/tsconfig.nodenext.json && tsc --project tests/typescript/tsconfig.commonjs.json && tsc --project tests/typescript/tsconfig.global.json"
+        }
+      ],
+      "request": "In the package long, this piece of work has to be done. It consists of 2 steps:\n- test:unit: node tests\n- test:typescript: tsc --project tests/typescript/tsconfig.esnext.json && tsc --project tests/typescript/tsconfig.nodenext.json && tsc --project tests/typescript/tsconfig.commonjs.json && tsc --project tests/typescript/tsconfig.global.json",
+      "gate": 0.17,
+      "size": 0.15,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.61,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 140
+    },
+    {
+      "pkg": "marked",
+      "script": "build",
+      "command": "npm run build:esbuild && npm run build:types && npm run build:man",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:esbuild",
+          "command": "node esbuild.config.js"
+        },
+        {
+          "name": "build:types",
+          "command": "tsc && dts-bundle-generator --export-referenced-types --project tsconfig.json -o lib/marked.d.ts src/marked.ts"
+        },
+        {
+          "name": "build:man",
+          "command": "marked-man man/marked.1.md > man/marked.1"
+        }
+      ],
+      "request": "In the package marked, this piece of work has to be done. It consists of 3 steps:\n- build:esbuild: node esbuild.config.js\n- build:types: tsc && dts-bundle-generator --export-referenced-types --project tsconfig.json -o lib/marked.d.ts src/marked.ts\n- build:man: marked-man man/marked.1.md > man/marked.1",
+      "gate": 0.14,
+      "size": 0.11,
+      "staySingle": 0.8,
+      "topology": "sequential",
+      "topologyConfidence": 0.81,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 127
+    },
+    {
+      "pkg": "marked",
+      "script": "test",
+      "command": "npm run build:reset && npm run build:docs && npm run test:specs && npm run test:unit && npm run test:umd && npm run test:cjs && npm run test:types && npm run test:lint",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:reset",
+          "command": "rimraf ./lib ./public"
+        },
+        {
+          "name": "build:docs",
+          "command": "npm run build && node docs/build.js"
+        },
+        {
+          "name": "test:specs",
+          "command": "node --test --test-reporter=spec test/run-spec-tests.js"
+        },
+        {
+          "name": "test:unit",
+          "command": "node --test --test-reporter=spec test/unit/*.test.js"
+        },
+        {
+          "name": "test:umd",
+          "command": "node test/umd-test.js"
+        },
+        {
+          "name": "test:cjs",
+          "command": "node test/cjs-test.cjs"
+        },
+        {
+          "name": "test:types",
+          "command": "tsc --project tsconfig-type-test.json && attw -P --entrypoints . --profile esm-only"
+        },
+        {
+          "name": "test:lint",
+          "command": "eslint"
+        }
+      ],
+      "request": "In the package marked, this piece of work has to be done. It consists of 8 steps:\n- build:reset: rimraf ./lib ./public\n- build:docs: npm run build && node docs/build.js\n- test:specs: node --test --test-reporter=spec test/run-spec-tests.js\n- test:unit: node --test --test-reporter=spec test/unit/*.test.js\n- test:umd: node test/umd-test.js\n- test:cjs: node test/cjs-test.cjs\n- test:types: tsc --project tsconfig-type-test.json && attw -P --entrypoints . --profile esm-only\n- test:lint: eslint",
+      "gate": 0.26,
+      "size": 0.24,
+      "staySingle": 0.74,
+      "topology": "fanout",
+      "topologyConfidence": 0.65,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 124
+    },
+    {
+      "pkg": "marked",
+      "script": "test:only",
+      "command": "npm run build && npm run test:specs:only && npm run test:unit:only",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "npm run build:esbuild && npm run build:types && npm run build:man"
+        },
+        {
+          "name": "test:specs:only",
+          "command": "node --test --test-only --test-reporter=spec test/run-spec-tests.js"
+        },
+        {
+          "name": "test:unit:only",
+          "command": "node --test --test-only --test-reporter=spec test/unit/*.test.js"
+        }
+      ],
+      "request": "In the package marked, this piece of work has to be done. It consists of 3 steps:\n- build: npm run build:esbuild && npm run build:types && npm run build:man\n- test:specs:only: node --test --test-only --test-reporter=spec test/run-spec-tests.js\n- test:unit:only: node --test --test-only --test-reporter=spec test/unit/*.test.js",
+      "gate": 0.18,
+      "size": 0.18,
+      "staySingle": 0.76,
+      "topology": "sequential",
+      "topologyConfidence": 0.53,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "protobufjs",
+      "script": "build",
+      "command": "npm run build:bundle && npm run build:types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:bundle",
+          "command": "gulp --gulpfile scripts/gulpfile.js"
+        },
+        {
+          "name": "build:types",
+          "command": "node cli/bin/pbts --main --global protobuf --out index.d.ts src/ lib/aspromise/index.js lib/base64/index.js lib/codegen/index.js lib/eventemitter/index.js lib/float/index.js lib/fetch/index.js lib/path/index.js lib/pool/index.js lib/utf8/index.js"
+        }
+      ],
+      "request": "In the package protobufjs, this piece of work has to be done. It consists of 2 steps:\n- build:bundle: gulp --gulpfile scripts/gulpfile.js\n- build:types: node cli/bin/pbts --main --global protobuf --out index.d.ts src/ lib/aspromise/index.js lib/base64/index.js lib/codegen/index.js lib/eventemitter/index.js lib/float/index.js lib/fetch/index.js lib/path/index.js lib/pool/index.js lib/utf8/index.js",
+      "gate": 0.13,
+      "size": 0.1,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.99,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 145
+    },
+    {
+      "pkg": "protobufjs",
+      "script": "coverage",
+      "command": "npm run coverage:test && npm run coverage:report",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "coverage:test",
+          "command": "nyc --silent tape -r ./lib/tape-adapter tests/*.js tests/node/*.js"
+        },
+        {
+          "name": "coverage:report",
+          "command": "nyc report --reporter=lcov --reporter=text"
+        }
+      ],
+      "request": "In the package protobufjs, this piece of work has to be done. It consists of 2 steps:\n- coverage:test: nyc --silent tape -r ./lib/tape-adapter tests/*.js tests/node/*.js\n- coverage:report: nyc report --reporter=lcov --reporter=text",
+      "gate": 0.11,
+      "size": 0.1,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.98,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 126
+    },
+    {
+      "pkg": "protobufjs",
+      "script": "lint",
+      "command": "npm run lint:sources && npm run lint:types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint:sources",
+          "command": "eslint \"**/*.js\" -c config/eslint.json"
+        },
+        {
+          "name": "lint:types",
+          "command": "tslint \"**/*.d.ts\" -e \"**/node_modules/**\" -t stylish -c config/tslint.json"
+        }
+      ],
+      "request": "In the package protobufjs, this piece of work has to be done. It consists of 2 steps:\n- lint:sources: eslint \"**/*.js\" -c config/eslint.json\n- lint:types: tslint \"**/*.d.ts\" -e \"**/node_modules/**\" -t stylish -c config/tslint.json",
+      "gate": 0.15,
+      "size": 0.15,
+      "staySingle": 0.81,
+      "topology": "fanout",
+      "topologyConfidence": 0.69,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 152
+    },
+    {
+      "pkg": "protobufjs",
+      "script": "test",
+      "command": "npm run test:sources && npm run test:types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:sources",
+          "command": "tape -r ./lib/tape-adapter tests/*.js tests/node/*.js"
+        },
+        {
+          "name": "test:types",
+          "command": "tsc tests/comp_typescript.ts --lib es2015 --esModuleInterop --strictNullChecks --experimentalDecorators --emitDecoratorMetadata && tsc tests/data/test.js.ts --lib es2015 --esModuleInterop --noEmit --strictNullChecks && tsc tests/data/*.ts --lib es2015 --esModuleInterop --noEmit --strictNullChecks"
+        }
+      ],
+      "request": "In the package protobufjs, this piece of work has to be done. It consists of 2 steps:\n- test:sources: tape -r ./lib/tape-adapter tests/*.js tests/node/*.js\n- test:types: tsc tests/comp_typescript.ts --lib es2015 --esModuleInterop --strictNullChecks --experimentalDecorators --emitDecoratorMetadata && tsc tests/data/test.js.ts --lib es2015 --esModuleInterop --noEmit --strictNullChecks && tsc tests/data/*.ts --lib es2015 --esModuleInterop --noEmit --strictNullChecks",
+      "gate": 0.17,
+      "size": 0.16,
+      "staySingle": 0.77,
+      "topology": "fanout",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 141
+    },
+    {
+      "pkg": "protobufjs",
+      "script": "make",
+      "command": "npm run lint:sources && npm run build && npm run lint:types && node ./scripts/gentests.js && npm test",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint:sources",
+          "command": "eslint \"**/*.js\" -c config/eslint.json"
+        },
+        {
+          "name": "build",
+          "command": "npm run build:bundle && npm run build:types"
+        },
+        {
+          "name": "lint:types",
+          "command": "tslint \"**/*.d.ts\" -e \"**/node_modules/**\" -t stylish -c config/tslint.json"
+        }
+      ],
+      "request": "In the package protobufjs, this piece of work has to be done. It consists of 3 steps:\n- lint:sources: eslint \"**/*.js\" -c config/eslint.json\n- build: npm run build:bundle && npm run build:types\n- lint:types: tslint \"**/*.d.ts\" -e \"**/node_modules/**\" -t stylish -c config/tslint.json",
+      "gate": 0.14,
+      "size": 0.14,
+      "staySingle": 0.81,
+      "topology": "sequential",
+      "topologyConfidence": 0.99,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 172
+    },
+    {
+      "pkg": "ts-algebra",
+      "script": "test",
+      "command": "yarn test-type && yarn test-format && yarn test-unused-exports && yarn test-lint",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test-type",
+          "command": "tsc --noEmit"
+        },
+        {
+          "name": "test-format",
+          "command": "yarn prettier . --check"
+        },
+        {
+          "name": "test-unused-exports",
+          "command": "yarn ts-unused-exports ./tsconfig.json --excludePathsFromReport='src/index.ts;'"
+        },
+        {
+          "name": "test-lint",
+          "command": "yarn eslint --ext=js,ts ."
+        }
+      ],
+      "request": "In the package ts-algebra, this piece of work has to be done. It consists of 4 steps:\n- test-type: tsc --noEmit\n- test-format: yarn prettier . --check\n- test-unused-exports: yarn ts-unused-exports ./tsconfig.json --excludePathsFromReport='src/index.ts;'\n- test-lint: yarn eslint --ext=js,ts .",
+      "gate": 0.16,
+      "size": 0.14,
+      "staySingle": 0.8,
+      "topology": "fanout",
+      "topologyConfidence": 0.81,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 143
+    },
+    {
+      "pkg": "undici",
+      "script": "test",
+      "command": "npm run test:javascript && cross-env NODE_V8_COVERAGE= npm run test:typescript",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:javascript",
+          "command": "npm run test:javascript:no-jest && npm run test:jest"
+        },
+        {
+          "name": "test:typescript",
+          "command": "tsd && tsc test/imports/undici-import.ts --typeRoots ./types --noEmit && tsc ./types/*.d.ts --noEmit --typeRoots ./types"
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 2 steps:\n- test:javascript: npm run test:javascript:no-jest && npm run test:jest\n- test:typescript: tsd && tsc test/imports/undici-import.ts --typeRoots ./types --noEmit && tsc ./types/*.d.ts --noEmit --typeRoots ./types",
+      "gate": 0.17,
+      "size": 0.17,
+      "staySingle": 0.78,
+      "topology": "sequential",
+      "topologyConfidence": 0.54,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 146
+    },
+    {
+      "pkg": "undici",
+      "script": "test:javascript",
+      "command": "npm run test:javascript:no-jest && npm run test:jest",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:javascript:no-jest",
+          "command": "npm run generate-pem && npm run test:unit && npm run test:fetch && npm run test:node-fetch && npm run test:infra && npm run test:cache && npm run test:cache-interceptor && npm run test:interceptors && npm run test:cookies && npm run test:eventsource && npm run test:subresource-integrity && npm run test:wpt && npm run test:websocket && npm run test:node-test && npm run test:cache-tests"
+        },
+        {
+          "name": "test:jest",
+          "command": "cross-env NODE_V8_COVERAGE= jest"
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 2 steps:\n- test:javascript:no-jest: npm run generate-pem && npm run test:unit && npm run test:fetch && npm run test:node-fetch && npm run test:infra && npm run test:cache && npm run test:cache-interceptor && npm run test:interceptors && npm run test:cookies && npm run test:eventsource && npm run test:subresource-integrity && npm run test:wpt && npm run test:websocket && npm run test:node-test && npm run test:cache-tests\n- test:jest: cross-env NODE_V8_COVERAGE= jest",
+      "gate": 0.25,
+      "size": 0.54,
+      "staySingle": 0.66,
+      "topology": "fanout",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 109
+    },
+    {
+      "pkg": "undici",
+      "script": "test:javascript:no-jest",
+      "command": "npm run generate-pem && npm run test:unit && npm run test:fetch && npm run test:node-fetch && npm run test:infra && npm run test:cache && npm run test:cache-interceptor && npm run test:interceptors && npm run test:cookies && npm run test:eventsource && npm run test:subresource-integrity && npm run test:wpt && npm run test:websocket && npm run test:node-test && npm run test:cache-tests",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "generate-pem",
+          "command": "node scripts/generate-pem.js"
+        },
+        {
+          "name": "test:unit",
+          "command": "borp --timeout 180000 --expose-gc -p \"test/*.js\""
+        },
+        {
+          "name": "test:fetch",
+          "command": "npm run build:node && borp --timeout 180000 --expose-gc --concurrency 1 -p \"test/fetch/*.js\" && npm run test:webidl && npm run test:busboy"
+        },
+        {
+          "name": "test:node-fetch",
+          "command": "borp --timeout 180000 -p \"test/node-fetch/**/*.js\""
+        },
+        {
+          "name": "test:infra",
+          "command": "borp --timeout 180000 -p \"test/infra/*.js\""
+        },
+        {
+          "name": "test:cache",
+          "command": "borp --timeout 180000 -p \"test/cache/*.js\""
+        },
+        {
+          "name": "test:cache-interceptor",
+          "command": "borp --timeout 180000 -p \"test/cache-interceptor/*.js\""
+        },
+        {
+          "name": "test:interceptors",
+          "command": "borp --timeout 180000 -p \"test/interceptors/*.js\""
+        },
+        {
+          "name": "test:cookies",
+          "command": "borp --timeout 180000 -p \"test/cookie/*.js\""
+        },
+        {
+          "name": "test:eventsource",
+          "command": "npm run build:node && borp --timeout 180000 --expose-gc -p \"test/eventsource/*.js\""
+        },
+        {
+          "name": "test:subresource-integrity",
+          "command": "borp --timeout 180000 -p \"test/subresource-integrity/*.js\""
+        },
+        {
+          "name": "test:wpt",
+          "command": "npm run test:wpt:setup && node test/web-platform-tests/wpt-runner.mjs run /fetch /mimesniff /websockets /serviceWorkers /eventsource"
+        },
+        {
+          "name": "test:websocket",
+          "command": "borp --timeout 180000 -p \"test/websocket/**/*.js\""
+        },
+        {
+          "name": "test:node-test",
+          "command": "borp --timeout 180000 -p \"test/node-test/**/*.js\""
+        },
+        {
+          "name": "test:cache-tests",
+          "command": "node test/cache-interceptor/cache-tests.mjs --ci"
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 15 steps:\n- generate-pem: node scripts/generate-pem.js\n- test:unit: borp --timeout 180000 --expose-gc -p \"test/*.js\"\n- test:fetch: npm run build:node && borp --timeout 180000 --expose-gc --concurrency 1 -p \"test/fetch/*.js\" && npm run test:webidl && npm run test:busboy\n- test:node-fetch: borp --timeout 180000 -p \"test/node-fetch/**/*.js\"\n- test:infra: borp --timeout 180000 -p \"test/infra/*.js\"\n- test:cache: borp --timeout 180000 -p \"test/cache/*.js\"\n- test:cache-interceptor: borp --timeout 180000 -p \"test/cache-interceptor/*.js\"\n- test:interceptors: borp --timeout 180000 -p \"test/interceptors/*.js\"\n- test:cookies: borp --timeout 180000 -p \"test/cookie/*.js\"\n- test:eventsource: npm run build:node && borp --timeout 180000 --expose-gc -p \"test/eventsource/*.js\"\n- test:subresource-integrity: borp --timeout 180000 -p \"test/subresource-integrity/*.js\"\n- test:wpt: npm run test:wpt:setup && node test/web-platform-tests/wpt-runner.mjs run /fetch /mimesniff /websockets /serviceWorkers /eventsource\n- test:websocket: borp --timeout 180000 -p \"test/websocket/**/*.js\"\n- test:node-test: borp --timeout 180000 -p \"test/node-test/**/*.js\"\n- test:cache-tests: node test/cache-interceptor/cache-tests.mjs --ci",
+      "gate": 0.42,
+      "size": 0.78,
+      "staySingle": 0.52,
+      "topology": "fanout",
+      "topologyConfidence": 0.65,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 159
+    },
+    {
+      "pkg": "undici",
+      "script": "test:fetch",
+      "command": "npm run build:node && borp --timeout 180000 --expose-gc --concurrency 1 -p \"test/fetch/*.js\" && npm run test:webidl && npm run test:busboy",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:node",
+          "command": "esbuild index-fetch.js --bundle --platform=node --outfile=undici-fetch.js --define:esbuildDetection=1 --keep-names && node scripts/strip-comments.js"
+        },
+        {
+          "name": "test:webidl",
+          "command": "borp --timeout 180000 -p \"test/webidl/*.js\""
+        },
+        {
+          "name": "test:busboy",
+          "command": "borp --timeout 180000 -p \"test/busboy/*.js\""
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 3 steps:\n- build:node: esbuild index-fetch.js --bundle --platform=node --outfile=undici-fetch.js --define:esbuildDetection=1 --keep-names && node scripts/strip-comments.js\n- test:webidl: borp --timeout 180000 -p \"test/webidl/*.js\"\n- test:busboy: borp --timeout 180000 -p \"test/busboy/*.js\"",
+      "gate": 0.2,
+      "size": 0.15,
+      "staySingle": 0.77,
+      "topology": "sequential",
+      "topologyConfidence": 0.52,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 121
+    },
+    {
+      "pkg": "undici",
+      "script": "test:h2",
+      "command": "npm run test:h2:core && npm run test:h2:fetch",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:h2:core",
+          "command": "borp --timeout 180000 -p \"test/+(http2|h2)*.js\""
+        },
+        {
+          "name": "test:h2:fetch",
+          "command": "npm run build:node && borp --timeout 180000 -p \"test/fetch/http2*.js\""
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 2 steps:\n- test:h2:core: borp --timeout 180000 -p \"test/+(http2|h2)*.js\"\n- test:h2:fetch: npm run build:node && borp --timeout 180000 -p \"test/fetch/http2*.js\"",
+      "gate": 0.2,
+      "size": 0.17,
+      "staySingle": 0.78,
+      "topology": "fanout",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 128
+    },
+    {
+      "pkg": "undici",
+      "script": "coverage",
+      "command": "npm run coverage:clean && cross-env NODE_V8_COVERAGE=./coverage/tmp npm run test:javascript && npm run coverage:report",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "coverage:clean",
+          "command": "node ./scripts/clean-coverage.js"
+        },
+        {
+          "name": "test:javascript",
+          "command": "npm run test:javascript:no-jest && npm run test:jest"
+        },
+        {
+          "name": "coverage:report",
+          "command": "cross-env NODE_V8_COVERAGE= c8 report"
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 3 steps:\n- coverage:clean: node ./scripts/clean-coverage.js\n- test:javascript: npm run test:javascript:no-jest && npm run test:jest\n- coverage:report: cross-env NODE_V8_COVERAGE= c8 report",
+      "gate": 0.12,
+      "size": 0.11,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 144
+    },
+    {
+      "pkg": "undici",
+      "script": "coverage:ci",
+      "command": "npm run coverage:clean && cross-env NODE_V8_COVERAGE=./coverage/tmp npm run test:javascript && npm run coverage:report:ci",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "coverage:clean",
+          "command": "node ./scripts/clean-coverage.js"
+        },
+        {
+          "name": "test:javascript",
+          "command": "npm run test:javascript:no-jest && npm run test:jest"
+        },
+        {
+          "name": "coverage:report:ci",
+          "command": "c8 report"
+        }
+      ],
+      "request": "In the package undici, this piece of work has to be done. It consists of 3 steps:\n- coverage:clean: node ./scripts/clean-coverage.js\n- test:javascript: npm run test:javascript:no-jest && npm run test:jest\n- coverage:report:ci: c8 report",
+      "gate": 0.13,
+      "size": 0.11,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 149
+    },
+    {
+      "pkg": "web-streams-polyfill",
+      "script": "test",
+      "command": "npm run test:types && npm run test:unit && npm run test:wpt",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:types",
+          "command": "tsc -p ./test/types/tsconfig.json"
+        },
+        {
+          "name": "test:unit",
+          "command": "jasmine --config=test/unit/jasmine.json"
+        },
+        {
+          "name": "test:wpt",
+          "command": "npm run test:wpt:node && npm run test:wpt:chromium && npm run test:wpt:firefox"
+        }
+      ],
+      "request": "In the package web-streams-polyfill, this piece of work has to be done. It consists of 3 steps:\n- test:types: tsc -p ./test/types/tsconfig.json\n- test:unit: jasmine --config=test/unit/jasmine.json\n- test:wpt: npm run test:wpt:node && npm run test:wpt:chromium && npm run test:wpt:firefox",
+      "gate": 0.21,
+      "size": 0.27,
+      "staySingle": 0.73,
+      "topology": "fanout",
+      "topologyConfidence": 0.53,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 207
+    },
+    {
+      "pkg": "web-streams-polyfill",
+      "script": "test:wpt",
+      "command": "npm run test:wpt:node && npm run test:wpt:chromium && npm run test:wpt:firefox",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:wpt:node",
+          "command": "node --expose_gc ./test/wpt/node/run.js"
+        },
+        {
+          "name": "test:wpt:chromium",
+          "command": "node ./test/wpt/browser/run.js --browser chromium"
+        },
+        {
+          "name": "test:wpt:firefox",
+          "command": "node ./test/wpt/browser/run.js --browser firefox"
+        }
+      ],
+      "request": "In the package web-streams-polyfill, this piece of work has to be done. It consists of 3 steps:\n- test:wpt:node: node --expose_gc ./test/wpt/node/run.js\n- test:wpt:chromium: node ./test/wpt/browser/run.js --browser chromium\n- test:wpt:firefox: node ./test/wpt/browser/run.js --browser firefox",
+      "gate": 0.34,
+      "size": 0.34,
+      "staySingle": 0.66,
+      "topology": "fanout",
+      "topologyConfidence": 0.94,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 172
+    },
+    {
+      "pkg": "web-streams-polyfill",
+      "script": "build",
+      "command": "npm run build:bundle && npm run build:types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:bundle",
+          "command": "rollup -c"
+        },
+        {
+          "name": "build:types",
+          "command": "tsc --project . --emitDeclarationOnly --declarationDir ./lib && api-extractor run"
+        }
+      ],
+      "request": "In the package web-streams-polyfill, this piece of work has to be done. It consists of 2 steps:\n- build:bundle: rollup -c\n- build:types: tsc --project . --emitDeclarationOnly --declarationDir ./lib && api-extractor run",
+      "gate": 0.13,
+      "size": 0.11,
+      "staySingle": 0.79,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 122
+    },
+    {
+      "pkg": "yaml",
+      "script": "build",
+      "command": "npm run build:node && npm run build:browser",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:node",
+          "command": "rollup -c config/rollup.node-config.mjs"
+        },
+        {
+          "name": "build:browser",
+          "command": "rollup -c config/rollup.browser-config.mjs"
+        }
+      ],
+      "request": "In the package yaml, this piece of work has to be done. It consists of 2 steps:\n- build:node: rollup -c config/rollup.node-config.mjs\n- build:browser: rollup -c config/rollup.browser-config.mjs",
+      "gate": 0.18,
+      "size": 0.1,
+      "staySingle": 0.78,
+      "topology": "fanout",
+      "topologyConfidence": 0.53,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 152
+    },
+    {
+      "pkg": "yaml",
+      "script": "test:all",
+      "command": "npm test && npm run test:types && npm run test:dist && npm run test:dist:types",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:types",
+          "command": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json"
+        },
+        {
+          "name": "test:dist",
+          "command": "npm run build:node && jest --config config/jest.config.js"
+        },
+        {
+          "name": "test:dist:types",
+          "command": "tsc --allowJs --moduleResolution node --noEmit --target es5 dist/index.js"
+        }
+      ],
+      "request": "In the package yaml, this piece of work has to be done. It consists of 3 steps:\n- test:types: tsc --noEmit && tsc --noEmit -p tests/tsconfig.json\n- test:dist: npm run build:node && jest --config config/jest.config.js\n- test:dist:types: tsc --allowJs --moduleResolution node --noEmit --target es5 dist/index.js",
+      "gate": 0.16,
+      "size": 0.13,
+      "staySingle": 0.77,
+      "topology": "sequential",
+      "topologyConfidence": 0.79,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 147
+    },
+    {
+      "pkg": "yaml",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm test && npm run build",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "git clean -fdxe node_modules"
+        },
+        {
+          "name": "build",
+          "command": "npm run build:node && npm run build:browser"
+        }
+      ],
+      "request": "In the package yaml, this piece of work has to be done. It consists of 2 steps:\n- clean: git clean -fdxe node_modules\n- build: npm run build:node && npm run build:browser",
+      "gate": 0.1,
+      "size": 0.08,
+      "staySingle": 0.83,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 160
+    },
+    {
+      "pkg": "@earendil-works/pi-coding-agent",
+      "script": "build:binary",
+      "command": "npm --prefix ../tui run build && npm --prefix ../telemetry run build && npm --prefix ../ai run build && npm --prefix ../agent run build && npm --prefix ../protocol run build && npm --prefix ../client run build && npm run build && bun build --compile --no-compile-autoload-bunfig ./src/bun/cli.ts ./src/utils/image-resize-worker.ts --outfile dist/pi && npm run copy-binary-assets",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "npm run build:unbundled && node ../../scripts/build-coding-agent-bundle.mjs"
+        },
+        {
+          "name": "copy-binary-assets",
+          "command": "shx cp package.json dist/ && shx cp README.md dist/ && shx cp CHANGELOG.md dist/ && shx mkdir -p dist/theme && shx cp src/modes/interactive/theme/*.json dist/theme/ && shx mkdir -p dist/assets && shx cp src/modes/interactive/assets/*.png dist/assets/ && shx mkdir -p dist/export-html/vendor && shx cp src/core/export-html/template.html dist/export-html/ && shx cp src/core/export-html/vendor/*.js dist/export-html/vendor/ && shx cp -r docs dist/ && shx cp -r examples dist/ && shx cp ../../node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm dist/"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-coding-agent, this piece of work has to be done. It consists of 2 steps:\n- build: npm run build:unbundled && node ../../scripts/build-coding-agent-bundle.mjs\n- copy-binary-assets: shx cp package.json dist/ && shx cp README.md dist/ && shx cp CHANGELOG.md dist/ && shx mkdir -p dist/theme && shx cp src/modes/interactive/theme/*.json dist/theme/ && shx mkdir -p dist/assets && shx cp src/modes/interactive/assets/*.png dist/assets/ && shx mkdir -p dist/export-html/vendor && shx cp src/core/export-html/template.html dist/export-html/ && shx cp src/core/export-html/vendor/*.js dist/export-html/vendor/ && shx cp -r docs dist/ && shx cp -r examples dist/ && shx cp ../../node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm dist/",
+      "gate": 0.11,
+      "size": 0.12,
+      "staySingle": 0.79,
+      "topology": "sequential",
+      "topologyConfidence": 0.96,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 175
+    },
+    {
+      "pkg": "@earendil-works/pi-coding-agent",
+      "script": "prepublishOnly",
+      "command": "npm run clean && npm run build && npm run shrinkwrap",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "shx rm -rf dist"
+        },
+        {
+          "name": "build",
+          "command": "npm run build:unbundled && node ../../scripts/build-coding-agent-bundle.mjs"
+        },
+        {
+          "name": "shrinkwrap",
+          "command": "node ../../scripts/generate-coding-agent-shrinkwrap.mjs"
+        }
+      ],
+      "request": "In the package @earendil-works/pi-coding-agent, this piece of work has to be done. It consists of 3 steps:\n- clean: shx rm -rf dist\n- build: npm run build:unbundled && node ../../scripts/build-coding-agent-bundle.mjs\n- shrinkwrap: node ../../scripts/generate-coding-agent-shrinkwrap.mjs",
+      "gate": 0.1,
+      "size": 0.11,
+      "staySingle": 0.82,
+      "topology": "sequential",
+      "topologyConfidence": 1,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 129
+    },
+    {
+      "pkg": "typescript",
+      "script": "build",
+      "command": "npm run build:compiler && npm run build:tests",
+      "klass": "sequential",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:compiler",
+          "command": "hereby local"
+        },
+        {
+          "name": "build:tests",
+          "command": "hereby tests"
+        }
+      ],
+      "request": "In the package typescript, this piece of work has to be done. It consists of 2 steps:\n- build:compiler: hereby local\n- build:tests: hereby tests",
+      "gate": 0.21,
+      "size": 0.21,
+      "staySingle": 0.65,
+      "topology": "sequential",
+      "topologyConfidence": 0.86,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 144
+    },
+    {
+      "pkg": "pi-extension-custom-provider-anthropic",
+      "script": "clean",
+      "command": "echo 'nothing to clean'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "echo 'nothing to clean'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-anthropic, this piece of work has to be done. It consists of one step:\n- clean: echo 'nothing to clean'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.56,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 116
+    },
+    {
+      "pkg": "pi-extension-custom-provider-anthropic",
+      "script": "build",
+      "command": "echo 'nothing to build'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "echo 'nothing to build'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-anthropic, this piece of work has to be done. It consists of one step:\n- build: echo 'nothing to build'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.92,
+      "topology": "fanout",
+      "topologyConfidence": 0.38,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 179
+    },
+    {
+      "pkg": "pi-extension-custom-provider-anthropic",
+      "script": "check",
+      "command": "echo 'nothing to check'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "check",
+          "command": "echo 'nothing to check'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-anthropic, this piece of work has to be done. It consists of one step:\n- check: echo 'nothing to check'",
+      "gate": 0.05,
+      "size": 0.04,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.43,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 158
+    },
+    {
+      "pkg": "pi-extension-custom-provider-gitlab-duo",
+      "script": "clean",
+      "command": "echo 'nothing to clean'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "echo 'nothing to clean'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-gitlab-duo, this piece of work has to be done. It consists of one step:\n- clean: echo 'nothing to clean'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.56,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 238
+    },
+    {
+      "pkg": "pi-extension-custom-provider-gitlab-duo",
+      "script": "build",
+      "command": "echo 'nothing to build'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "echo 'nothing to build'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-gitlab-duo, this piece of work has to be done. It consists of one step:\n- build: echo 'nothing to build'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.42,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 206
+    },
+    {
+      "pkg": "pi-extension-custom-provider-gitlab-duo",
+      "script": "check",
+      "command": "echo 'nothing to check'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "check",
+          "command": "echo 'nothing to check'"
+        }
+      ],
+      "request": "In the package pi-extension-custom-provider-gitlab-duo, this piece of work has to be done. It consists of one step:\n- check: echo 'nothing to check'",
+      "gate": 0.04,
+      "size": 0.04,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 160
+    },
+    {
+      "pkg": "pi-extension-gondolin",
+      "script": "clean",
+      "command": "echo 'nothing to clean'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "echo 'nothing to clean'"
+        }
+      ],
+      "request": "In the package pi-extension-gondolin, this piece of work has to be done. It consists of one step:\n- clean: echo 'nothing to clean'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.48,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 136
+    },
+    {
+      "pkg": "pi-extension-gondolin",
+      "script": "build",
+      "command": "echo 'nothing to build'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "echo 'nothing to build'"
+        }
+      ],
+      "request": "In the package pi-extension-gondolin, this piece of work has to be done. It consists of one step:\n- build: echo 'nothing to build'",
+      "gate": 0.04,
+      "size": 0.04,
+      "staySingle": 0.92,
+      "topology": "fanout",
+      "topologyConfidence": 0.39,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 127
+    },
+    {
+      "pkg": "pi-extension-gondolin",
+      "script": "check",
+      "command": "echo 'nothing to check'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "check",
+          "command": "echo 'nothing to check'"
+        }
+      ],
+      "request": "In the package pi-extension-gondolin, this piece of work has to be done. It consists of one step:\n- check: echo 'nothing to check'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.41,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 143
+    },
+    {
+      "pkg": "pi-extension-sandbox",
+      "script": "clean",
+      "command": "echo 'nothing to clean'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "echo 'nothing to clean'"
+        }
+      ],
+      "request": "In the package pi-extension-sandbox, this piece of work has to be done. It consists of one step:\n- clean: echo 'nothing to clean'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 166
+    },
+    {
+      "pkg": "pi-extension-sandbox",
+      "script": "build",
+      "command": "echo 'nothing to build'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "echo 'nothing to build'"
+        }
+      ],
+      "request": "In the package pi-extension-sandbox, this piece of work has to be done. It consists of one step:\n- build: echo 'nothing to build'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.43,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 161
+    },
+    {
+      "pkg": "pi-extension-sandbox",
+      "script": "check",
+      "command": "echo 'nothing to check'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "check",
+          "command": "echo 'nothing to check'"
+        }
+      ],
+      "request": "In the package pi-extension-sandbox, this piece of work has to be done. It consists of one step:\n- check: echo 'nothing to check'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.39,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 125
+    },
+    {
+      "pkg": "pi-extension-with-deps",
+      "script": "clean",
+      "command": "echo 'nothing to clean'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "echo 'nothing to clean'"
+        }
+      ],
+      "request": "In the package pi-extension-with-deps, this piece of work has to be done. It consists of one step:\n- clean: echo 'nothing to clean'",
+      "gate": 0.04,
+      "size": 0.04,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.49,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 156
+    },
+    {
+      "pkg": "pi-extension-with-deps",
+      "script": "build",
+      "command": "echo 'nothing to build'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "echo 'nothing to build'"
+        }
+      ],
+      "request": "In the package pi-extension-with-deps, this piece of work has to be done. It consists of one step:\n- build: echo 'nothing to build'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.39,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 158
+    },
+    {
+      "pkg": "pi-extension-with-deps",
+      "script": "check",
+      "command": "echo 'nothing to check'",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "check",
+          "command": "echo 'nothing to check'"
+        }
+      ],
+      "request": "In the package pi-extension-with-deps, this piece of work has to be done. It consists of one step:\n- check: echo 'nothing to check'",
+      "gate": 0.04,
+      "size": 0.03,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.44,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 150
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "test",
+      "command": "./scripts/test",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "./scripts/test"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- test: ./scripts/test",
+      "gate": 0.09,
+      "size": 0.1,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "test:ecosystem",
+      "command": "ts-node -T ecosystem-tests/cli.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:ecosystem",
+          "command": "ts-node -T ecosystem-tests/cli.ts"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- test:ecosystem: ts-node -T ecosystem-tests/cli.ts",
+      "gate": 0.1,
+      "size": 0.15,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.7,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 183
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "build",
+      "command": "./scripts/build-all",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build",
+          "command": "./scripts/build-all"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- build: ./scripts/build-all",
+      "gate": 0.08,
+      "size": 0.15,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.46,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 107
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "format",
+      "command": "./scripts/format",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "format",
+          "command": "./scripts/format"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- format: ./scripts/format",
+      "gate": 0.07,
+      "size": 0.12,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.44,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 206
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "tsn",
+      "command": "ts-node -r tsconfig-paths/register",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "tsn",
+          "command": "ts-node -r tsconfig-paths/register"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- tsn: ts-node -r tsconfig-paths/register",
+      "gate": 0.07,
+      "size": 0.06,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.49,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 130
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "lint",
+      "command": "./scripts/lint",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "./scripts/lint"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- lint: ./scripts/lint",
+      "gate": 0.06,
+      "size": 0.09,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.61,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 203
+    },
+    {
+      "pkg": "@anthropic-ai/sdk",
+      "script": "fix",
+      "command": "./scripts/format",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "fix",
+          "command": "./scripts/format"
+        }
+      ],
+      "request": "In the package @anthropic-ai/sdk, this piece of work has to be done. It consists of one step:\n- fix: ./scripts/format",
+      "gate": 0.07,
+      "size": 0.12,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.4,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 158
+    },
+    {
+      "pkg": "@aws-crypto/crc32",
+      "script": "pretest",
+      "command": "tsc -p tsconfig.test.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "pretest",
+          "command": "tsc -p tsconfig.test.json"
+        }
+      ],
+      "request": "In the package @aws-crypto/crc32, this piece of work has to be done. It consists of one step:\n- pretest: tsc -p tsconfig.test.json",
+      "gate": 0.06,
+      "size": 0.06,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.45,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 127
+    },
+    {
+      "pkg": "@aws-crypto/crc32",
+      "script": "test",
+      "command": "mocha --require ts-node/register test/**/*test.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "mocha --require ts-node/register test/**/*test.ts"
+        }
+      ],
+      "request": "In the package @aws-crypto/crc32, this piece of work has to be done. It consists of one step:\n- test: mocha --require ts-node/register test/**/*test.ts",
+      "gate": 0.09,
+      "size": 0.09,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.95,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 153
+    },
+    {
+      "pkg": "@aws-crypto/sha256-browser",
+      "script": "pretest",
+      "command": "tsc -p tsconfig.test.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "pretest",
+          "command": "tsc -p tsconfig.test.json"
+        }
+      ],
+      "request": "In the package @aws-crypto/sha256-browser, this piece of work has to be done. It consists of one step:\n- pretest: tsc -p tsconfig.test.json",
+      "gate": 0.07,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.5,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 203
+    },
+    {
+      "pkg": "@aws-crypto/sha256-browser",
+      "script": "test",
+      "command": "mocha --require ts-node/register test/**/*test.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "mocha --require ts-node/register test/**/*test.ts"
+        }
+      ],
+      "request": "In the package @aws-crypto/sha256-browser, this piece of work has to be done. It consists of one step:\n- test: mocha --require ts-node/register test/**/*test.ts",
+      "gate": 0.09,
+      "size": 0.11,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.94,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 165
+    },
+    {
+      "pkg": "@aws-crypto/sha256-js",
+      "script": "pretest",
+      "command": "tsc -p tsconfig.test.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "pretest",
+          "command": "tsc -p tsconfig.test.json"
+        }
+      ],
+      "request": "In the package @aws-crypto/sha256-js, this piece of work has to be done. It consists of one step:\n- pretest: tsc -p tsconfig.test.json",
+      "gate": 0.07,
+      "size": 0.07,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 106
+    },
+    {
+      "pkg": "@aws-crypto/sha256-js",
+      "script": "test",
+      "command": "mocha --require ts-node/register test/**/*test.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "mocha --require ts-node/register test/**/*test.ts"
+        }
+      ],
+      "request": "In the package @aws-crypto/sha256-js, this piece of work has to be done. It consists of one step:\n- test: mocha --require ts-node/register test/**/*test.ts",
+      "gate": 0.09,
+      "size": 0.1,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 137
+    },
+    {
+      "pkg": "@aws-crypto/supports-web-crypto",
+      "script": "pretest",
+      "command": "tsc -p tsconfig.test.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "pretest",
+          "command": "tsc -p tsconfig.test.json"
+        }
+      ],
+      "request": "In the package @aws-crypto/supports-web-crypto, this piece of work has to be done. It consists of one step:\n- pretest: tsc -p tsconfig.test.json",
+      "gate": 0.07,
+      "size": 0.05,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.59,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 224
+    },
+    {
+      "pkg": "@aws-crypto/supports-web-crypto",
+      "script": "test",
+      "command": "mocha --require ts-node/register test/**/*test.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "mocha --require ts-node/register test/**/*test.ts"
+        }
+      ],
+      "request": "In the package @aws-crypto/supports-web-crypto, this piece of work has to be done. It consists of one step:\n- test: mocha --require ts-node/register test/**/*test.ts",
+      "gate": 0.09,
+      "size": 0.09,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.92,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 154
+    },
+    {
+      "pkg": "@aws-crypto/util",
+      "script": "pretest",
+      "command": "tsc -p tsconfig.test.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "pretest",
+          "command": "tsc -p tsconfig.test.json"
+        }
+      ],
+      "request": "In the package @aws-crypto/util, this piece of work has to be done. It consists of one step:\n- pretest: tsc -p tsconfig.test.json",
+      "gate": 0.06,
+      "size": 0.06,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.49,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 157
+    },
+    {
+      "pkg": "@aws-crypto/util",
+      "script": "test",
+      "command": "mocha --require ts-node/register test/**/*test.ts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "mocha --require ts-node/register test/**/*test.ts"
+        }
+      ],
+      "request": "In the package @aws-crypto/util, this piece of work has to be done. It consists of one step:\n- test: mocha --require ts-node/register test/**/*test.ts",
+      "gate": 0.1,
+      "size": 0.09,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.93,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "build:cjs",
+      "command": "node ../../scripts/compilation/inline client-bedrock-runtime",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline client-bedrock-runtime"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- build:cjs: node ../../scripts/compilation/inline client-bedrock-runtime",
+      "gate": 0.08,
+      "size": 0.1,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.73,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 184
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "build:es",
+      "command": "tsc -p tsconfig.es.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- build:es: tsc -p tsconfig.es.json",
+      "gate": 0.07,
+      "size": 0.08,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.39,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 166
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "build:types",
+      "command": "tsc -p tsconfig.types.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.07,
+      "size": 0.08,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.45,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 152
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "build:types:downlevel",
+      "command": "downlevel-dts dist-types dist-types/ts3.4",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.08,
+      "size": 0.08,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.8,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 140
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "clean",
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- clean: premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "gate": 0.04,
+      "size": 0.04,
+      "staySingle": 0.94,
+      "topology": "fanout",
+      "topologyConfidence": 0.56,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 139
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "extract:docs",
+      "command": "api-extractor run --local",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "extract:docs",
+          "command": "api-extractor run --local"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- extract:docs: api-extractor run --local",
+      "gate": 0.07,
+      "size": 0.09,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.64,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 106
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "generate:client",
+      "command": "node ../../scripts/generate-clients/single-service --solo bedrock-runtime",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "generate:client",
+          "command": "node ../../scripts/generate-clients/single-service --solo bedrock-runtime"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- generate:client: node ../../scripts/generate-clients/single-service --solo bedrock-runtime",
+      "gate": 0.08,
+      "size": 0.18,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.63,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 124
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test",
+      "command": "yarn g:vitest run --passWithNoTests",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "yarn g:vitest run --passWithNoTests"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test: yarn g:vitest run --passWithNoTests",
+      "gate": 0.06,
+      "size": 0.06,
+      "staySingle": 0.92,
+      "topology": "fanout",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 132
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:browser",
+      "command": "yarn g:vitest run -c vitest.config.browser.e2e.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:browser",
+          "command": "yarn g:vitest run -c vitest.config.browser.e2e.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:browser: yarn g:vitest run -c vitest.config.browser.e2e.mts",
+      "gate": 0.12,
+      "size": 0.14,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.76,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 170
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:browser:watch",
+      "command": "yarn g:vitest watch -c vitest.config.browser.e2e.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:browser:watch",
+          "command": "yarn g:vitest watch -c vitest.config.browser.e2e.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:browser:watch: yarn g:vitest watch -c vitest.config.browser.e2e.mts",
+      "gate": 0.1,
+      "size": 0.12,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 106
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:e2e",
+      "command": "yarn g:vitest run -c vitest.config.e2e.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:e2e",
+          "command": "yarn g:vitest run -c vitest.config.e2e.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:e2e: yarn g:vitest run -c vitest.config.e2e.mts",
+      "gate": 0.11,
+      "size": 0.17,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.81,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 117
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:e2e:watch",
+      "command": "yarn g:vitest watch -c vitest.config.e2e.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:e2e:watch",
+          "command": "yarn g:vitest watch -c vitest.config.e2e.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:e2e:watch: yarn g:vitest watch -c vitest.config.e2e.mts",
+      "gate": 0.12,
+      "size": 0.11,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.53,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 150
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:integration",
+      "command": "yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:integration",
+          "command": "yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:integration: yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts",
+      "gate": 0.1,
+      "size": 0.11,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.85,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 138
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:integration:watch",
+      "command": "yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:integration:watch",
+          "command": "yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:integration:watch: yarn g:vitest run --passWithNoTests -c vitest.config.integ.mts",
+      "gate": 0.12,
+      "size": 0.11,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.79,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 140
+    },
+    {
+      "pkg": "@aws-sdk/client-bedrock-runtime",
+      "script": "test:watch",
+      "command": "yarn g:vitest watch --passWithNoTests",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:watch",
+          "command": "yarn g:vitest watch --passWithNoTests"
+        }
+      ],
+      "request": "In the package @aws-sdk/client-bedrock-runtime, this piece of work has to be done. It consists of one step:\n- test:watch: yarn g:vitest watch --passWithNoTests",
+      "gate": 0.09,
+      "size": 0.08,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.6,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 190
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "build:types:downlevel",
+      "command": "downlevel-dts dist-types dist-types/ts3.4",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.07,
+      "size": 0.08,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.75,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 157
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "lint",
+      "command": "node ../../scripts/validation/submodules-linter.js --pkg core",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "lint",
+          "command": "node ../../scripts/validation/submodules-linter.js --pkg core"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- lint: node ../../scripts/validation/submodules-linter.js --pkg core",
+      "gate": 0.08,
+      "size": 0.09,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.48,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 176
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "clean",
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- clean: premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "gate": 0.05,
+      "size": 0.04,
+      "staySingle": 0.94,
+      "topology": "fanout",
+      "topologyConfidence": 0.51,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 113
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "extract:docs",
+      "command": "api-extractor run --local",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "extract:docs",
+          "command": "api-extractor run --local"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- extract:docs: api-extractor run --local",
+      "gate": 0.07,
+      "size": 0.1,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.66,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 126
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "test",
+      "command": "yarn g:vitest run",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "yarn g:vitest run"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- test: yarn g:vitest run",
+      "gate": 0.08,
+      "size": 0.09,
+      "staySingle": 0.9,
+      "topology": "fanout",
+      "topologyConfidence": 0.66,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 150
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "test:watch",
+      "command": "yarn g:vitest watch",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:watch",
+          "command": "yarn g:vitest watch"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- test:watch: yarn g:vitest watch",
+      "gate": 0.1,
+      "size": 0.12,
+      "staySingle": 0.89,
+      "topology": "fanout",
+      "topologyConfidence": 0.29,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 131
+    },
+    {
+      "pkg": "@aws-sdk/core",
+      "script": "test:integration:watch",
+      "command": "yarn g:vitest watch -c vitest.config.integ.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:integration:watch",
+          "command": "yarn g:vitest watch -c vitest.config.integ.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/core, this piece of work has to be done. It consists of one step:\n- test:integration:watch: yarn g:vitest watch -c vitest.config.integ.mts",
+      "gate": 0.11,
+      "size": 0.15,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.38,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 101
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build:cjs",
+      "command": "node ../../scripts/compilation/inline credential-provider-env",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-env"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- build:cjs: node ../../scripts/compilation/inline credential-provider-env",
+      "gate": 0.08,
+      "size": 0.08,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.71,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 112
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build:es",
+      "command": "tsc -p tsconfig.es.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- build:es: tsc -p tsconfig.es.json",
+      "gate": 0.06,
+      "size": 0.07,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.46,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 179
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build:types",
+      "command": "tsc -p tsconfig.types.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.06,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.53,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 167
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "build:types:downlevel",
+      "command": "downlevel-dts dist-types dist-types/ts3.4",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.08,
+      "size": 0.07,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.76,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 155
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "clean",
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- clean: premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "gate": 0.04,
+      "size": 0.04,
+      "staySingle": 0.94,
+      "topology": "fanout",
+      "topologyConfidence": 0.49,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 122
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "test",
+      "command": "yarn g:vitest run",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "yarn g:vitest run"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- test: yarn g:vitest run",
+      "gate": 0.08,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.7,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 1098
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-env",
+      "script": "test:watch",
+      "command": "yarn g:vitest watch",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:watch",
+          "command": "yarn g:vitest watch"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-env, this piece of work has to be done. It consists of one step:\n- test:watch: yarn g:vitest watch",
+      "gate": 0.1,
+      "size": 0.1,
+      "staySingle": 0.87,
+      "topology": "fanout",
+      "topologyConfidence": 0.39,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 139
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build:cjs",
+      "command": "node ../../scripts/compilation/inline credential-provider-http",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-http"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- build:cjs: node ../../scripts/compilation/inline credential-provider-http",
+      "gate": 0.07,
+      "size": 0.08,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.76,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 131
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build:es",
+      "command": "tsc -p tsconfig.es.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- build:es: tsc -p tsconfig.es.json",
+      "gate": 0.06,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 151
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build:types",
+      "command": "tsc -p tsconfig.types.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.07,
+      "size": 0.06,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 155
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "build:types:downlevel",
+      "command": "downlevel-dts dist-types dist-types/ts3.4",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.07,
+      "size": 0.07,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.8,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 136
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "clean",
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- clean: premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "gate": 0.05,
+      "size": 0.04,
+      "staySingle": 0.94,
+      "topology": "fanout",
+      "topologyConfidence": 0.42,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 103
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "test",
+      "command": "yarn g:vitest run",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "yarn g:vitest run"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- test: yarn g:vitest run",
+      "gate": 0.08,
+      "size": 0.08,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.73,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 137
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-http",
+      "script": "test:watch",
+      "command": "yarn g:vitest watch",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:watch",
+          "command": "yarn g:vitest watch"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-http, this piece of work has to be done. It consists of one step:\n- test:watch: yarn g:vitest watch",
+      "gate": 0.1,
+      "size": 0.11,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.32,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 121
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build:cjs",
+      "command": "node ../../scripts/compilation/inline credential-provider-ini",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-ini"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- build:cjs: node ../../scripts/compilation/inline credential-provider-ini",
+      "gate": 0.07,
+      "size": 0.09,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.72,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 175
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build:es",
+      "command": "tsc -p tsconfig.es.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- build:es: tsc -p tsconfig.es.json",
+      "gate": 0.06,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.54,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 187
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build:types",
+      "command": "tsc -p tsconfig.types.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.07,
+      "size": 0.08,
+      "staySingle": 0.9,
+      "topology": "sequential",
+      "topologyConfidence": 0.56,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 193
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "build:types:downlevel",
+      "command": "downlevel-dts dist-types dist-types/ts3.4",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types:downlevel",
+          "command": "downlevel-dts dist-types dist-types/ts3.4"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- build:types:downlevel: downlevel-dts dist-types dist-types/ts3.4",
+      "gate": 0.08,
+      "size": 0.07,
+      "staySingle": 0.89,
+      "topology": "sequential",
+      "topologyConfidence": 0.83,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 102
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "clean",
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "clean",
+          "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- clean: premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "gate": 0.05,
+      "size": 0.04,
+      "staySingle": 0.94,
+      "topology": "fanout",
+      "topologyConfidence": 0.57,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 224
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "test",
+      "command": "yarn g:vitest run",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test",
+          "command": "yarn g:vitest run"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- test: yarn g:vitest run",
+      "gate": 0.08,
+      "size": 0.09,
+      "staySingle": 0.91,
+      "topology": "fanout",
+      "topologyConfidence": 0.65,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 163
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "test:watch",
+      "command": "yarn g:vitest watch",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:watch",
+          "command": "yarn g:vitest watch"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- test:watch: yarn g:vitest watch",
+      "gate": 0.1,
+      "size": 0.12,
+      "staySingle": 0.87,
+      "topology": "fanout",
+      "topologyConfidence": 0.31,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 122
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "test:integration",
+      "command": "yarn g:vitest run -c vitest.config.integ.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:integration",
+          "command": "yarn g:vitest run -c vitest.config.integ.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- test:integration: yarn g:vitest run -c vitest.config.integ.mts",
+      "gate": 0.1,
+      "size": 0.17,
+      "staySingle": 0.88,
+      "topology": "fanout",
+      "topologyConfidence": 0.78,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 152
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-ini",
+      "script": "test:integration:watch",
+      "command": "yarn g:vitest watch -c vitest.config.integ.mts",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "test:integration:watch",
+          "command": "yarn g:vitest watch -c vitest.config.integ.mts"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-ini, this piece of work has to be done. It consists of one step:\n- test:integration:watch: yarn g:vitest watch -c vitest.config.integ.mts",
+      "gate": 0.12,
+      "size": 0.16,
+      "staySingle": 0.86,
+      "topology": "fanout",
+      "topologyConfidence": 0.47,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 115
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-login",
+      "script": "build:cjs",
+      "command": "node ../../scripts/compilation/inline credential-provider-login",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:cjs",
+          "command": "node ../../scripts/compilation/inline credential-provider-login"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-login, this piece of work has to be done. It consists of one step:\n- build:cjs: node ../../scripts/compilation/inline credential-provider-login",
+      "gate": 0.08,
+      "size": 0.09,
+      "staySingle": 0.88,
+      "topology": "sequential",
+      "topologyConfidence": 0.74,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 141
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-login",
+      "script": "build:es",
+      "command": "tsc -p tsconfig.es.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:es",
+          "command": "tsc -p tsconfig.es.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-login, this piece of work has to be done. It consists of one step:\n- build:es: tsc -p tsconfig.es.json",
+      "gate": 0.06,
+      "size": 0.07,
+      "staySingle": 0.92,
+      "topology": "sequential",
+      "topologyConfidence": 0.48,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 133
+    },
+    {
+      "pkg": "@aws-sdk/credential-provider-login",
+      "script": "build:types",
+      "command": "tsc -p tsconfig.types.json",
+      "klass": "single",
+      "mixed": false,
+      "branches": [
+        {
+          "name": "build:types",
+          "command": "tsc -p tsconfig.types.json"
+        }
+      ],
+      "request": "In the package @aws-sdk/credential-provider-login, this piece of work has to be done. It consists of one step:\n- build:types: tsc -p tsconfig.types.json",
+      "gate": 0.07,
+      "size": 0.07,
+      "staySingle": 0.91,
+      "topology": "sequential",
+      "topologyConfidence": 0.52,
+      "shape": "single",
+      "workers": 1,
+      "split": false,
+      "agreement": "agree",
+      "ms": 128
+    }
+  ]
+}

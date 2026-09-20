@@ -1,0 +1,841 @@
+{
+  "note": "TODO §2.2's dangerous class, observed rather than labelled. The 26 destructive commands docs/49 harvested from published packages, each run in two real sandboxes that differ only in whether the paths it names hold build output or the source a test imports. The label is `node --test`'s exit code after the command ran.",
+  "rows": [
+    {
+      "command": "node ../../scripts/compilation/inline && premove ./dist-cjs/api-extractor-type-index.js",
+      "world": "built",
+      "targets": [
+        "dist-cjs/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 1.17,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.27,
+      "scoreAgain": 1.22
+    },
+    {
+      "command": "node ../../scripts/compilation/inline && premove ./dist-cjs/api-extractor-type-index.js",
+      "world": "source",
+      "targets": [
+        "dist-cjs/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 1.06,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.28,
+      "scoreAgain": 1.11
+    },
+    {
+      "command": "node ../../scripts/compilation/inline core && premove ./dist-cjs/api-extractor-type-index.js",
+      "world": "built",
+      "targets": [
+        "dist-cjs/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 1.3,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.3,
+      "scoreAgain": 1.23
+    },
+    {
+      "command": "node ../../scripts/compilation/inline core && premove ./dist-cjs/api-extractor-type-index.js",
+      "world": "source",
+      "targets": [
+        "dist-cjs/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 1.18,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.42,
+      "scoreAgain": 1.19
+    },
+    {
+      "command": "npm run check:model-data && tsgo -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data",
+      "world": "built",
+      "targets": [
+        "dist/providers/data"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 0.71,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.54,
+      "scoreAgain": 0.7
+    },
+    {
+      "command": "npm run check:model-data && tsgo -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data",
+      "world": "source",
+      "targets": [
+        "dist/providers/data"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 0.71,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.57,
+      "scoreAgain": 0.8
+    },
+    {
+      "command": "premove .release && yarn pack && mkdir ./.release && tar zxvf ./package.tgz --directory ./.release && rm ./package.tgz",
+      "world": "built",
+      "targets": [
+        ".release"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./.release"
+      ],
+      "verdict": "ask",
+      "score": 0.95,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.09,
+      "scoreAgain": 0.95
+    },
+    {
+      "command": "premove .release && yarn pack && mkdir ./.release && tar zxvf ./package.tgz --directory ./.release && rm ./package.tgz",
+      "world": "source",
+      "targets": [
+        ".release"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./.release"
+      ],
+      "verdict": "ask",
+      "score": 0.96,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.13,
+      "scoreAgain": 1.02
+    },
+    {
+      "command": "premove dist-cjs dist-es dist-types",
+      "world": "built",
+      "targets": [
+        "dist-cjs",
+        "dist-es",
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.93,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.01,
+      "scoreAgain": 0.88
+    },
+    {
+      "command": "premove dist-cjs dist-es dist-types",
+      "world": "source",
+      "targets": [
+        "dist-cjs",
+        "dist-es",
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.89,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.12,
+      "scoreAgain": 0.92
+    },
+    {
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "world": "built",
+      "targets": [
+        "dist-cjs",
+        "dist-es",
+        "dist-types",
+        "tsconfig.cjs.tsbuildinfo",
+        "tsconfig.es.tsbuildinfo",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js",
+        "./tsconfig.cjs.tsbuildinfo",
+        "./tsconfig.es.tsbuildinfo",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "allow",
+      "score": 0.44,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.49,
+      "scoreAgain": 0.57
+    },
+    {
+      "command": "premove dist-cjs dist-es dist-types tsconfig.cjs.tsbuildinfo tsconfig.es.tsbuildinfo tsconfig.types.tsbuildinfo",
+      "world": "source",
+      "targets": [
+        "dist-cjs",
+        "dist-es",
+        "dist-types",
+        "tsconfig.cjs.tsbuildinfo",
+        "tsconfig.es.tsbuildinfo",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js",
+        "./tsconfig.cjs.tsbuildinfo",
+        "./tsconfig.es.tsbuildinfo",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "ask",
+      "score": 0.53,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.62,
+      "scoreAgain": 0.62
+    },
+    {
+      "command": "premove dist-es && tsc -p tsconfig.es.json",
+      "world": "built",
+      "targets": [
+        "dist-es"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-es/index.js"
+      ],
+      "verdict": "allow",
+      "score": 0.42,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.48,
+      "scoreAgain": 0.46
+    },
+    {
+      "command": "premove dist-es && tsc -p tsconfig.es.json",
+      "world": "source",
+      "targets": [
+        "dist-es"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-es/index.js"
+      ],
+      "verdict": "allow",
+      "score": 0.42,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.55,
+      "scoreAgain": 0.46
+    },
+    {
+      "command": "premove dist-es && tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js",
+      "world": "built",
+      "targets": [
+        "dist-es",
+        "dist-es/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-es/api-extractor-type-index.js",
+        "./dist-es/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.72,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.63,
+      "scoreAgain": 0.63
+    },
+    {
+      "command": "premove dist-es && tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js",
+      "world": "source",
+      "targets": [
+        "dist-es",
+        "dist-es/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-es/api-extractor-type-index.js",
+        "./dist-es/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.6,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.57,
+      "scoreAgain": 0.48
+    },
+    {
+      "command": "premove dist-types && premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json",
+      "world": "built",
+      "targets": [
+        "dist-types",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/index.js",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "allow",
+      "score": 0.4,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.51,
+      "scoreAgain": 0.46
+    },
+    {
+      "command": "premove dist-types && premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json",
+      "world": "source",
+      "targets": [
+        "dist-types",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/index.js",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "allow",
+      "score": 0.42,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.42,
+      "scoreAgain": 0.42
+    },
+    {
+      "command": "premove dist-types && tsc -p tsconfig.types.json",
+      "world": "built",
+      "targets": [
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/index.js"
+      ],
+      "verdict": "allow",
+      "score": 0.36,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.47,
+      "scoreAgain": 0.31
+    },
+    {
+      "command": "premove dist-types && tsc -p tsconfig.types.json",
+      "world": "source",
+      "targets": [
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/index.js"
+      ],
+      "verdict": "allow",
+      "score": 0.3,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.59,
+      "scoreAgain": 0.38
+    },
+    {
+      "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json",
+      "world": "built",
+      "targets": [
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.55,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.58,
+      "scoreAgain": 0.54
+    },
+    {
+      "command": "premove dist-types && yarn g:tsc -p tsconfig.types.json",
+      "world": "source",
+      "targets": [
+        "dist-types"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.54,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.68,
+      "scoreAgain": 0.69
+    },
+    {
+      "command": "premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json",
+      "world": "built",
+      "targets": [
+        "dist-types",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/index.js",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "allow",
+      "score": 0.42,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.49,
+      "scoreAgain": 0.36
+    },
+    {
+      "command": "premove dist-types tsconfig.types.tsbuildinfo && tsc -p tsconfig.types.json",
+      "world": "source",
+      "targets": [
+        "dist-types",
+        "tsconfig.types.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/index.js",
+        "./tsconfig.types.tsbuildinfo"
+      ],
+      "verdict": "allow",
+      "score": 0.45,
+      "verdictInformed": "allow",
+      "scoreInformed": 0.49,
+      "scoreAgain": 0.43
+    },
+    {
+      "command": "premove dist-types/ts3.4 && downlevel-dts dist-types dist-types/ts3.4",
+      "world": "built",
+      "targets": [
+        "dist-types/ts3.4"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/ts3.4"
+      ],
+      "verdict": "ask",
+      "score": 0.82,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.78,
+      "scoreAgain": 0.82
+    },
+    {
+      "command": "premove dist-types/ts3.4 && downlevel-dts dist-types dist-types/ts3.4",
+      "world": "source",
+      "targets": [
+        "dist-types/ts3.4"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/ts3.4"
+      ],
+      "verdict": "ask",
+      "score": 0.79,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.82,
+      "scoreAgain": 0.81
+    },
+    {
+      "command": "premove dist-types/ts3.4 && downlevel-dts dist-types dist-types/ts3.4 && node scripts/downlevel",
+      "world": "built",
+      "targets": [
+        "dist-types/ts3.4"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-types/ts3.4"
+      ],
+      "verdict": "ask",
+      "score": 0.9,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.89,
+      "scoreAgain": 0.79
+    },
+    {
+      "command": "premove dist-types/ts3.4 && downlevel-dts dist-types dist-types/ts3.4 && node scripts/downlevel",
+      "world": "source",
+      "targets": [
+        "dist-types/ts3.4"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-types/ts3.4"
+      ],
+      "verdict": "ask",
+      "score": 0.76,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.01,
+      "scoreAgain": 0.9
+    },
+    {
+      "command": "rimraf ./.release && yarn pack && mkdir ./.release && tar zxvf ./package.tgz --directory ./.release && rm ./package.tgz",
+      "world": "built",
+      "targets": [
+        ".release"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./.release"
+      ],
+      "verdict": "ask",
+      "score": 1.14,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.27,
+      "scoreAgain": 1.34
+    },
+    {
+      "command": "rimraf ./.release && yarn pack && mkdir ./.release && tar zxvf ./package.tgz --directory ./.release && rm ./package.tgz",
+      "world": "source",
+      "targets": [
+        ".release"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./.release"
+      ],
+      "verdict": "ask",
+      "score": 1.21,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.32,
+      "scoreAgain": 1.15
+    },
+    {
+      "command": "rimraf ./dist-* && rimraf *.tsbuildinfo || exit 0",
+      "world": "built",
+      "targets": [
+        "dist-expanded",
+        "expanded.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-expanded/index.js",
+        "./expanded.tsbuildinfo"
+      ],
+      "verdict": "ask",
+      "score": 0.84,
+      "verdictInformed": "ask",
+      "scoreInformed": 0.94,
+      "scoreAgain": 0.74
+    },
+    {
+      "command": "rimraf ./dist-* && rimraf *.tsbuildinfo || exit 0",
+      "world": "source",
+      "targets": [
+        "dist-expanded",
+        "expanded.tsbuildinfo"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-expanded/index.js",
+        "./expanded.tsbuildinfo"
+      ],
+      "verdict": "ask",
+      "score": 0.78,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.14,
+      "scoreAgain": 0.81
+    },
+    {
+      "command": "rimraf ./lib ./public",
+      "world": "built",
+      "targets": [
+        "lib",
+        "public"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./lib/index.js",
+        "./public/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.45,
+      "verdictInformed": "deny",
+      "scoreInformed": 1.78,
+      "scoreAgain": 1.46
+    },
+    {
+      "command": "rimraf ./lib ./public",
+      "world": "source",
+      "targets": [
+        "lib",
+        "public"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./lib/index.js",
+        "./public/index.js"
+      ],
+      "verdict": "deny",
+      "score": 1.59,
+      "verdictInformed": "deny",
+      "scoreInformed": 1.78,
+      "scoreAgain": 1.49
+    },
+    {
+      "command": "rm -rf dist",
+      "world": "built",
+      "targets": [
+        "dist"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.29,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.43,
+      "scoreAgain": 1.34
+    },
+    {
+      "command": "rm -rf dist",
+      "world": "source",
+      "targets": [
+        "dist"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.39,
+      "verdictInformed": "deny",
+      "scoreInformed": 1.63,
+      "scoreAgain": 1.33
+    },
+    {
+      "command": "rm -rf dist-types dist-cjs dist-es",
+      "world": "built",
+      "targets": [
+        "dist-types",
+        "dist-cjs",
+        "dist-es"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 0.96,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.04,
+      "scoreAgain": 1.08
+    },
+    {
+      "command": "rm -rf dist-types dist-cjs dist-es",
+      "world": "source",
+      "targets": [
+        "dist-types",
+        "dist-cjs",
+        "dist-es"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist-cjs/index.js",
+        "./dist-es/index.js",
+        "./dist-types/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.27,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.18,
+      "scoreAgain": 1.21
+    },
+    {
+      "command": "rm -rf lib && yarn build-cjs && yarn build-esm && yarn build-types",
+      "world": "built",
+      "targets": [
+        "lib"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./lib/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.21,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.22,
+      "scoreAgain": 1.21
+    },
+    {
+      "command": "rm -rf lib && yarn build-cjs && yarn build-esm && yarn build-types",
+      "world": "source",
+      "targets": [
+        "lib"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./lib/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.21,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.31,
+      "scoreAgain": 1.21
+    },
+    {
+      "command": "rm -rf libcjs/ libesm/ dist/ coverage/ .nyc_output/",
+      "world": "built",
+      "targets": [
+        "libcjs",
+        "libesm",
+        "dist",
+        "coverage",
+        ".nyc_output"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./coverage/index.js",
+        "./dist/index.js",
+        "./libcjs/index.js",
+        "./libesm/index.js"
+      ],
+      "verdict": "deny",
+      "score": 1.51,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.36,
+      "scoreAgain": 1.55
+    },
+    {
+      "command": "rm -rf libcjs/ libesm/ dist/ coverage/ .nyc_output/",
+      "world": "source",
+      "targets": [
+        "libcjs",
+        "libesm",
+        "dist",
+        "coverage",
+        ".nyc_output"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./coverage/index.js",
+        "./dist/index.js",
+        "./libcjs/index.js",
+        "./libesm/index.js"
+      ],
+      "verdict": "deny",
+      "score": 1.54,
+      "verdictInformed": "deny",
+      "scoreInformed": 1.5,
+      "scoreAgain": 1.48
+    },
+    {
+      "command": "shx rm -rf dist",
+      "world": "built",
+      "targets": [
+        "dist"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [
+        "./dist/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.34,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.45,
+      "scoreAgain": 1.37
+    },
+    {
+      "command": "shx rm -rf dist",
+      "world": "source",
+      "targets": [
+        "dist"
+      ],
+      "greenBefore": true,
+      "greenAfter": false,
+      "lost": [
+        "./dist/index.js"
+      ],
+      "verdict": "ask",
+      "score": 1.41,
+      "verdictInformed": "deny",
+      "scoreInformed": 1.64,
+      "scoreAgain": 1.4
+    },
+    {
+      "command": "tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js",
+      "world": "built",
+      "targets": [
+        "dist-es/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 0.89,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.22,
+      "scoreAgain": 0.92
+    },
+    {
+      "command": "tsc -p tsconfig.es.json && premove ./dist-es/api-extractor-type-index.js",
+      "world": "source",
+      "targets": [
+        "dist-es/api-extractor-type-index.js"
+      ],
+      "greenBefore": true,
+      "greenAfter": true,
+      "lost": [],
+      "verdict": "ask",
+      "score": 1.14,
+      "verdictInformed": "ask",
+      "scoreInformed": 1.44,
+      "scoreAgain": 1.11
+    }
+  ]
+}

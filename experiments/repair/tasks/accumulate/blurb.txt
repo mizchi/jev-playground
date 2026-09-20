@@ -1,0 +1,1 @@
+counts reads an absent key and produces NaN

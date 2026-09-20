@@ -1,0 +1,4524 @@
+{
+  "similarityBin": "/root/.cargo/bin/similarity-ts",
+  "tasks": [
+    {
+      "id": "andor",
+      "green": "export function usable(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function present(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function allUsable(xs) {\n  return xs.every((v) => usable(v));\n}\n\nexport function firstUsable(xs) {\n  for (const v of xs) if (usable(v)) return v;\n  return null;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "append",
+      "green": "export function withItem(xs, x) {\n  return xs.concat(x);\n}\n\nexport function withoutItem(xs, x) {\n  return xs.filter((v) => v !== x);\n}\n\nexport function unique(xs) {\n  return [...new Set(xs)];\n}\n\nexport function head(xs, n) {\n  return xs.slice(0, n);\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "await",
+      "green": "export async function total(load) {\n  const xs = await load();\n  return xs.length;\n}\n\nexport async function firstOf(load) {\n  const xs = await load();\n  return xs[0];\n}\n\nexport async function totalAll(loaders) {\n  let acc = 0;\n  for (const load of loaders) acc += await total(load);\n  return acc;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "bounds",
+      "green": "export function slice(xs, from, to) {\n  return xs.slice(from, to);\n}\n\nexport function firstN(xs, n) {\n  return xs.slice(0, n);\n}\n\nexport function lastN(xs, n) {\n  return xs.slice(xs.length - n);\n}\n\nexport function window(xs, at, width) {\n  return slice(xs, at, at + width);\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "clamp",
+      "green": "const DEFAULT_LO = 0;\nconst DEFAULT_HI = 100;\n\nexport function clamp(v, lo = DEFAULT_LO, hi = DEFAULT_HI) {\n  if (v < lo) return lo;\n  if (v > hi) return hi;\n  return v;\n}\n\nexport function clampAll(xs, lo, hi) {\n  return xs.map((v) => clamp(v, lo, hi));\n}\n\nexport function inRange(v, lo, hi) {\n  return v >= lo && v <= hi;\n}\n\nexport function spread(xs) {\n  if (xs.length === 0) return 0;\n  let lo = xs[0];\n  let hi = xs[0];\n  for (const v of xs) {\n    if (v < lo) lo = v;\n    if (v > hi) hi = v;\n  }\n  return hi - lo;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "dedup",
+      "green": "export function dedupeBy(xs, key) {\n  const seen = new Set();\n  const out = [];\n  for (const x of xs) {\n    if (!(seen.has(key(x)))) out.push(x);\n    seen.add(key(x));\n  }\n  return out;\n}\n\nexport function groupBy(xs, key) {\n  const out = {};\n  for (const x of xs) {\n    const k = key(x);\n    out[k] = out[k] ?? [];\n    out[k].push(x);\n  }\n  return out;\n}\n\nexport function countBy(xs, key) {\n  const g = groupBy(xs, key);\n  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "equals",
+      "green": "export function isZero(v) {\n  return v === \"0\";\n}\n\nexport function isBlank(s) {\n  return typeof s === \"string\" && s.trim().length === 0;\n}\n\nexport function sameKind(a, b) {\n  return typeof a === typeof b;\n}\n\nexport function countMatching(xs, target) {\n  let n = 0;\n  for (const x of xs) if (x === target) n += 1;\n  return n;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "guard",
+      "green": "export function nameOf(user) {\n  return (user.name ?? \"\").trim();\n}\n\nexport function emailOf(user) {\n  return (user.email ?? \"\").toLowerCase();\n}\n\nexport function initials(user) {\n  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);\n  return parts.map((p) => p[0].toUpperCase()).join(\"\");\n}\n\nexport function describe(user) {\n  const name = nameOf(user);\n  return name.length > 0 ? name : \"anonymous\";\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "lastindex",
+      "green": "export function last(xs) {\n  return xs[xs.length - 1];\n}\n\nexport function first(xs) {\n  return xs[0];\n}\n\nexport function penultimate(xs) {\n  return xs[xs.length - 2];\n}\n\nexport function rotate(xs) {\n  if (xs.length === 0) return [];\n  return [last(xs), ...xs.slice(0, xs.length - 1)];\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "missing-return",
+      "green": "export function double(v) {\n  return v * 2;\n}\n\nexport function triple(v) {\n  return v * 3;\n}\n\nexport function scaleAll(xs, by) {\n  return xs.map((v) => v * by);\n}\n\nexport function sumOfDoubles(xs) {\n  return xs.reduce((acc, v) => acc + double(v), 0);\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "negate",
+      "green": "export function isEmpty(xs) {\n  return !(xs.length > 0);\n}\n\nexport function isFull(xs, cap) {\n  return xs.length >= cap;\n}\n\nexport function firstOr(xs, fallback) {\n  return isEmpty(xs) ? fallback : xs[0];\n}\n\nexport function countNonEmpty(groups) {\n  return groups.filter((g) => !isEmpty(g)).length;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "normalise",
+      "green": "export function normalise(xs) {\n  const hi = maxOf(xs);\n  if (hi == 0) return xs;\n  return xs.map((v) => v / hi);\n}\n\nfunction maxOf(xs) {\n  let best = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];\n  return best;\n}\n\nexport function scaleTo(xs, target) {\n  return normalise(xs).map((v) => v * target);\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "sort",
+      "green": "export function ascending(xs) {\n  return [...xs].sort((a, b) => a - b);\n}\n\nexport function descending(xs) {\n  return [...xs].sort((a, b) => b - a);\n}\n\nexport function byLength(xs) {\n  return [...xs].sort((a, b) => a.length - b.length);\n}\n\nexport function median(xs) {\n  if (xs.length === 0) return 0;\n  const s = ascending(xs);\n  return s[Math.floor(s.length / 2)];\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "sum",
+      "green": "export function sum(xs) {\n  let total = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];\n  return total;\n}\n\nexport function mean(xs) {\n  if (xs.length === 0) return 0;\n  return sum(xs) / xs.length;\n}\n\nexport function runningTotal(xs) {\n  const out = [];\n  let acc = 0;\n  for (const v of xs) {\n    acc += v;\n    out.push(acc);\n  }\n  return out;\n}\n\nexport function maxOf(xs) {\n  let best = -Infinity;\n  for (const v of xs) if (v > best) best = v;\n  return best;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "swap",
+      "green": "export function between(v, lo, hi) {\n  return inRange(lo, hi, v);\n}\n\nfunction inRange(low, high, value) {\n  return value >= low && value <= high;\n}\n\nexport function outside(v, lo, hi) {\n  return !between(v, lo, hi);\n}\n\nexport function overlaps(aLo, aHi, bLo, bHi) {\n  return aLo <= bHi && bLo <= aHi;\n}\n",
+      "baselineGreen": true
+    },
+    {
+      "id": "truthy",
+      "green": "export function orDefault(v, fallback) {\n  return v ?? fallback;\n}\n\nexport function orDefaultStrict(v, fallback) {\n  return v ?? fallback;\n}\n\nexport function pickFirst(xs, fallback) {\n  return xs.length > 0 ? xs[0] : fallback;\n}\n\nexport function countTruthy(xs) {\n  return xs.filter((v) => Boolean(v)).length;\n}\n",
+      "baselineGreen": true
+    }
+  ],
+  "subjects": [
+    {
+      "id": "andor/2:0",
+      "task": "andor",
+      "line": 2,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !=== null && v !== undefined;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 7,
+        "fileBranchCoverage": 0.9,
+        "rule": "loose-to-strict",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/2:1",
+      "task": "andor",
+      "line": 2,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !== null && v !=== undefined;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 7,
+        "fileBranchCoverage": 0.9,
+        "rule": "loose-to-strict",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/2:2",
+      "task": "andor",
+      "line": 2,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !== null || v !== undefined;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 7,
+        "fileBranchCoverage": 0.9,
+        "rule": "and-to-or",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/2:3",
+      "task": "andor",
+      "line": 2,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return !(v !== null && v !== undefined);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 7,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/6:4",
+      "task": "andor",
+      "line": 6,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !=== null && v !== undefined;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "loose-to-strict",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/6:5",
+      "task": "andor",
+      "line": 6,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !== null && v !=== undefined;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "loose-to-strict",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/6:6",
+      "task": "andor",
+      "line": 6,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return v !== null || v !== undefined;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "and-to-or",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/6:7",
+      "task": "andor",
+      "line": 6,
+      "before": "  return v !== null && v !== undefined;",
+      "after": "  return !(v !== null && v !== undefined);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/10:8",
+      "task": "andor",
+      "line": 10,
+      "before": "  return xs.every((v) => usable(v));",
+      "after": "  return xs.every((v) =>= usable(v));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/10:9",
+      "task": "andor",
+      "line": 10,
+      "before": "  return xs.every((v) => usable(v));",
+      "after": "  return !(xs.every((v) => usable(v)));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:10",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (!(usable(v))) return v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-if",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:11",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  return !(v);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:12",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (usable(v)) return for;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "swap-returned-name",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:13",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (usable(v)) return const;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "swap-returned-name",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:14",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (usable(v)) return of;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "swap-returned-name",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:15",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (usable(v)) return xs;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "swap-returned-name",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/14:16",
+      "task": "andor",
+      "line": 14,
+      "before": "  for (const v of xs) if (usable(v)) return v;",
+      "after": "  for (const v of xs) if (usable(v)) return usable;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "swap-returned-name",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "andor/15:17",
+      "task": "andor",
+      "line": 15,
+      "before": "  return null;",
+      "after": "  return !(null);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 0,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/1:0",
+      "task": "append",
+      "line": 1,
+      "before": "export function withItem(xs, x) {",
+      "after": "export function withItem(x, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/2:1",
+      "task": "append",
+      "line": 2,
+      "before": "  return xs.concat(x);",
+      "after": "  return xs.push(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "concat-to-push",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/2:2",
+      "task": "append",
+      "line": 2,
+      "before": "  return xs.concat(x);",
+      "after": "  return !(xs.concat(x));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/5:3",
+      "task": "append",
+      "line": 5,
+      "before": "export function withoutItem(xs, x) {",
+      "after": "export function withoutItem(x, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/6:4",
+      "task": "append",
+      "line": 6,
+      "before": "  return xs.filter((v) => v !== x);",
+      "after": "  return xs.filter((v) => v !=== x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/6:5",
+      "task": "append",
+      "line": 6,
+      "before": "  return xs.filter((v) => v !== x);",
+      "after": "  return xs.filter((v) =>= v !== x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/6:6",
+      "task": "append",
+      "line": 6,
+      "before": "  return xs.filter((v) => v !== x);",
+      "after": "  return !(xs.filter((v) => v !== x));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/10:7",
+      "task": "append",
+      "line": 10,
+      "before": "  return [...new Set(xs)];",
+      "after": "  return !([...new Set(xs)]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/13:8",
+      "task": "append",
+      "line": 13,
+      "before": "export function head(xs, n) {",
+      "after": "export function head(n, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/14:9",
+      "task": "append",
+      "line": 14,
+      "before": "  return xs.slice(0, n);",
+      "after": "  return !(xs.slice(0, n));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "append/14:10",
+      "task": "append",
+      "line": 14,
+      "before": "  return xs.slice(0, n);",
+      "after": "  return xs.slice(n, 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "await/3:0",
+      "task": "await",
+      "line": 3,
+      "before": "  return xs.length;",
+      "after": "  return xs.length - 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "await/3:1",
+      "task": "await",
+      "line": 3,
+      "before": "  return xs.length;",
+      "after": "  return !(xs.length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "await/8:2",
+      "task": "await",
+      "line": 8,
+      "before": "  return xs[0];",
+      "after": "  return !(xs[0]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "await/14:3",
+      "task": "await",
+      "line": 14,
+      "before": "  return acc;",
+      "after": "  return !(acc);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/1:0",
+      "task": "bounds",
+      "line": 1,
+      "before": "export function slice(xs, from, to) {",
+      "after": "export function slice(from, xs, to) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 2,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/2:1",
+      "task": "bounds",
+      "line": 2,
+      "before": "  return xs.slice(from, to);",
+      "after": "  return !(xs.slice(from, to));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/2:2",
+      "task": "bounds",
+      "line": 2,
+      "before": "  return xs.slice(from, to);",
+      "after": "  return xs.slice(to, from);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/5:3",
+      "task": "bounds",
+      "line": 5,
+      "before": "export function firstN(xs, n) {",
+      "after": "export function firstN(n, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/6:4",
+      "task": "bounds",
+      "line": 6,
+      "before": "  return xs.slice(0, n);",
+      "after": "  return !(xs.slice(0, n));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/6:5",
+      "task": "bounds",
+      "line": 6,
+      "before": "  return xs.slice(0, n);",
+      "after": "  return xs.slice(n, 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/9:6",
+      "task": "bounds",
+      "line": 9,
+      "before": "export function lastN(xs, n) {",
+      "after": "export function lastN(n, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/10:7",
+      "task": "bounds",
+      "line": 10,
+      "before": "  return xs.slice(xs.length - n);",
+      "after": "  return xs.slice(xs.length - 1 - n);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/10:8",
+      "task": "bounds",
+      "line": 10,
+      "before": "  return xs.slice(xs.length - n);",
+      "after": "  return xs.slice(xs.length + n);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "flip-operator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/10:9",
+      "task": "bounds",
+      "line": 10,
+      "before": "  return xs.slice(xs.length - n);",
+      "after": "  return !(xs.slice(xs.length - n));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/13:10",
+      "task": "bounds",
+      "line": 13,
+      "before": "export function window(xs, at, width) {",
+      "after": "export function window(at, xs, width) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/14:11",
+      "task": "bounds",
+      "line": 14,
+      "before": "  return slice(xs, at, at + width);",
+      "after": "  return slice(xs, at, at - width);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "flip-operator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/14:12",
+      "task": "bounds",
+      "line": 14,
+      "before": "  return slice(xs, at, at + width);",
+      "after": "  return !(slice(xs, at, at + width));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "bounds/14:13",
+      "task": "bounds",
+      "line": 14,
+      "before": "  return slice(xs, at, at + width);",
+      "after": "  return slice(at, xs, at + width);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/4:0",
+      "task": "clamp",
+      "line": 4,
+      "before": "export function clamp(v, lo = DEFAULT_LO, hi = DEFAULT_HI) {",
+      "after": "export function clamp(lo = DEFAULT_LO, v, hi = DEFAULT_HI) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/5:1",
+      "task": "clamp",
+      "line": 5,
+      "before": "  if (v < lo) return lo;",
+      "after": "  if (v <= lo) return lo;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/5:2",
+      "task": "clamp",
+      "line": 5,
+      "before": "  if (v < lo) return lo;",
+      "after": "  if (!(v < lo)) return lo;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/5:3",
+      "task": "clamp",
+      "line": 5,
+      "before": "  if (v < lo) return lo;",
+      "after": "  return !(lo);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/5:4",
+      "task": "clamp",
+      "line": 5,
+      "before": "  if (v < lo) return lo;",
+      "after": "  if (v < lo) return v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-returned-name",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/6:5",
+      "task": "clamp",
+      "line": 6,
+      "before": "  if (v > hi) return hi;",
+      "after": "  if (v >= hi) return hi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/6:6",
+      "task": "clamp",
+      "line": 6,
+      "before": "  if (v > hi) return hi;",
+      "after": "  if (!(v > hi)) return hi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/6:7",
+      "task": "clamp",
+      "line": 6,
+      "before": "  if (v > hi) return hi;",
+      "after": "  return !(hi);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/6:8",
+      "task": "clamp",
+      "line": 6,
+      "before": "  if (v > hi) return hi;",
+      "after": "  if (v > hi) return v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 6,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-returned-name",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/7:9",
+      "task": "clamp",
+      "line": 7,
+      "before": "  return v;",
+      "after": "  return !(v);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/10:10",
+      "task": "clamp",
+      "line": 10,
+      "before": "export function clampAll(xs, lo, hi) {",
+      "after": "export function clampAll(lo, xs, hi) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/11:11",
+      "task": "clamp",
+      "line": 11,
+      "before": "  return xs.map((v) => clamp(v, lo, hi));",
+      "after": "  return xs.map((v) =>= clamp(v, lo, hi));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/11:12",
+      "task": "clamp",
+      "line": 11,
+      "before": "  return xs.map((v) => clamp(v, lo, hi));",
+      "after": "  return !(xs.map((v) => clamp(v, lo, hi)));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/11:13",
+      "task": "clamp",
+      "line": 11,
+      "before": "  return xs.map((v) => clamp(v, lo, hi));",
+      "after": "  return xs.map((v) => clamp(lo, v, hi));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/14:14",
+      "task": "clamp",
+      "line": 14,
+      "before": "export function inRange(v, lo, hi) {",
+      "after": "export function inRange(lo, v, hi) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/15:15",
+      "task": "clamp",
+      "line": 15,
+      "before": "  return v >= lo && v <= hi;",
+      "after": "  return v >= lo && v < hi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/15:16",
+      "task": "clamp",
+      "line": 15,
+      "before": "  return v >= lo && v <= hi;",
+      "after": "  return v > lo && v <= hi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/15:17",
+      "task": "clamp",
+      "line": 15,
+      "before": "  return v >= lo && v <= hi;",
+      "after": "  return v >= lo || v <= hi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "and-to-or",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/15:18",
+      "task": "clamp",
+      "line": 15,
+      "before": "  return v >= lo && v <= hi;",
+      "after": "  return !(v >= lo && v <= hi);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/15:19",
+      "task": "clamp",
+      "line": 15,
+      "before": "  return v >= lo && v <= hi;",
+      "after": "  return lo >= v && v <= hi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/19:20",
+      "task": "clamp",
+      "line": 19,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length ==== 0) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/19:21",
+      "task": "clamp",
+      "line": 19,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length == 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/19:22",
+      "task": "clamp",
+      "line": 19,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length - 1 === 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/19:23",
+      "task": "clamp",
+      "line": 19,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (!(xs.length === 0)) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/19:24",
+      "task": "clamp",
+      "line": 19,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  return !(0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/23:25",
+      "task": "clamp",
+      "line": 23,
+      "before": "    if (v < lo) lo = v;",
+      "after": "    if (v <= lo) lo = v;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/23:26",
+      "task": "clamp",
+      "line": 23,
+      "before": "    if (v < lo) lo = v;",
+      "after": "    if (!(v < lo)) lo = v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/24:27",
+      "task": "clamp",
+      "line": 24,
+      "before": "    if (v > hi) hi = v;",
+      "after": "    if (v >= hi) hi = v;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/24:28",
+      "task": "clamp",
+      "line": 24,
+      "before": "    if (v > hi) hi = v;",
+      "after": "    if (!(v > hi)) hi = v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/26:29",
+      "task": "clamp",
+      "line": 26,
+      "before": "  return hi - lo;",
+      "after": "  return hi + lo;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "flip-operator",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/26:30",
+      "task": "clamp",
+      "line": 26,
+      "before": "  return hi - lo;",
+      "after": "  return !(hi - lo);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "clamp/26:31",
+      "task": "clamp",
+      "line": 26,
+      "before": "  return hi - lo;",
+      "after": "  return lo - hi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8461538461538461,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 10,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/1:0",
+      "task": "dedup",
+      "line": 1,
+      "before": "export function dedupeBy(xs, key) {",
+      "after": "export function dedupeBy(key, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/5:1",
+      "task": "dedup",
+      "line": 5,
+      "before": "    if (!(seen.has(key(x)))) out.push(x);",
+      "after": "    if (!(seen.has(key(x)))) out.concat(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "push-to-concat",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/5:2",
+      "task": "dedup",
+      "line": 5,
+      "before": "    if (!(seen.has(key(x)))) out.push(x);",
+      "after": "    if ((seen.has(key(x)))) out.push(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/6:3",
+      "task": "dedup",
+      "line": 6,
+      "before": "    seen.add(key(x));",
+      "after": "    return seen.add(key(x));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-return",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/8:4",
+      "task": "dedup",
+      "line": 8,
+      "before": "  return out;",
+      "after": "  return !(out);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/11:5",
+      "task": "dedup",
+      "line": 11,
+      "before": "export function groupBy(xs, key) {",
+      "after": "export function groupBy(key, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/14:6",
+      "task": "dedup",
+      "line": 14,
+      "before": "    const k = key(x);",
+      "after": "    const k = await key(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-await",
+        "testOverlap": 1,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/15:7",
+      "task": "dedup",
+      "line": 15,
+      "before": "    out[k] = out[k] ?? [];",
+      "after": "    out[k] = out[k] || [];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "nullish-to-or",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/15:8",
+      "task": "dedup",
+      "line": 15,
+      "before": "    out[k] = out[k] ?? [];",
+      "after": "    return out[k] = out[k] ?? [];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-return",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/16:9",
+      "task": "dedup",
+      "line": 16,
+      "before": "    out[k].push(x);",
+      "after": "    out[k].concat(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "push-to-concat",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/16:10",
+      "task": "dedup",
+      "line": 16,
+      "before": "    out[k].push(x);",
+      "after": "    return out[k].push(x);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-return",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/18:11",
+      "task": "dedup",
+      "line": 18,
+      "before": "  return out;",
+      "after": "  return !(out);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/21:12",
+      "task": "dedup",
+      "line": 21,
+      "before": "export function countBy(xs, key) {",
+      "after": "export function countBy(key, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/22:13",
+      "task": "dedup",
+      "line": 22,
+      "before": "  const g = groupBy(xs, key);",
+      "after": "  const g = await groupBy(xs, key);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "add-await",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/22:14",
+      "task": "dedup",
+      "line": 22,
+      "before": "  const g = groupBy(xs, key);",
+      "after": "  const g = groupBy(key, xs);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/23:15",
+      "task": "dedup",
+      "line": 23,
+      "before": "  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));",
+      "after": "  return Object.fromEntries(Object.entries(g).map(([k, v]) =>= [k, v.length]));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/23:16",
+      "task": "dedup",
+      "line": 23,
+      "before": "  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));",
+      "after": "  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length - 1]));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "dedup/23:17",
+      "task": "dedup",
+      "line": 23,
+      "before": "  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));",
+      "after": "  return !(Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length])));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/2:0",
+      "task": "equals",
+      "line": 2,
+      "before": "  return v === \"0\";",
+      "after": "  return v ==== \"0\";",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/2:1",
+      "task": "equals",
+      "line": 2,
+      "before": "  return v === \"0\";",
+      "after": "  return v == \"0\";",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/2:2",
+      "task": "equals",
+      "line": 2,
+      "before": "  return v === \"0\";",
+      "after": "  return !(v === \"0\");",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:3",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s ==== \"string\" && s.trim().length === 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:4",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s === \"string\" && s.trim().length ==== 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:5",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s == \"string\" && s.trim().length === 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "strict-to-loose",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:6",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s === \"string\" && s.trim().length == 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "strict-to-loose",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:7",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s === \"string\" || s.trim().length === 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "and-to-or",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:8",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return typeof s === \"string\" && s.trim().length - 1 === 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/6:9",
+      "task": "equals",
+      "line": 6,
+      "before": "  return typeof s === \"string\" && s.trim().length === 0;",
+      "after": "  return !(typeof s === \"string\" && s.trim().length === 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/9:10",
+      "task": "equals",
+      "line": 9,
+      "before": "export function sameKind(a, b) {",
+      "after": "export function sameKind(b, a) {",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/10:11",
+      "task": "equals",
+      "line": 10,
+      "before": "  return typeof a === typeof b;",
+      "after": "  return typeof a ==== typeof b;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/10:12",
+      "task": "equals",
+      "line": 10,
+      "before": "  return typeof a === typeof b;",
+      "after": "  return typeof a == typeof b;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/10:13",
+      "task": "equals",
+      "line": 10,
+      "before": "  return typeof a === typeof b;",
+      "after": "  return !(typeof a === typeof b);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/13:14",
+      "task": "equals",
+      "line": 13,
+      "before": "export function countMatching(xs, target) {",
+      "after": "export function countMatching(target, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/15:15",
+      "task": "equals",
+      "line": 15,
+      "before": "  for (const x of xs) if (x === target) n += 1;",
+      "after": "  for (const x of xs) if (x ==== target) n += 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/15:16",
+      "task": "equals",
+      "line": 15,
+      "before": "  for (const x of xs) if (x === target) n += 1;",
+      "after": "  for (const x of xs) if (x == target) n += 1;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/15:17",
+      "task": "equals",
+      "line": 15,
+      "before": "  for (const x of xs) if (x === target) n += 1;",
+      "after": "  for (const x of xs) if (!(x === target)) n += 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "equals/16:18",
+      "task": "equals",
+      "line": 16,
+      "before": "  return n;",
+      "after": "  return !(n);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/2:0",
+      "task": "guard",
+      "line": 2,
+      "before": "  return (user.name ?? \"\").trim();",
+      "after": "  return (user.name || \"\").trim();",
+      "safe": true,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.8,
+        "rule": "nullish-to-or",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/2:1",
+      "task": "guard",
+      "line": 2,
+      "before": "  return (user.name ?? \"\").trim();",
+      "after": "  return !((user.name ?? \"\").trim());",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.8,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/6:2",
+      "task": "guard",
+      "line": 6,
+      "before": "  return (user.email ?? \"\").toLowerCase();",
+      "after": "  return (user.email || \"\").toLowerCase();",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "nullish-to-or",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/6:3",
+      "task": "guard",
+      "line": 6,
+      "before": "  return (user.email ?? \"\").toLowerCase();",
+      "after": "  return !((user.email ?? \"\").toLowerCase());",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/10:4",
+      "task": "guard",
+      "line": 10,
+      "before": "  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);",
+      "after": "  const parts = nameOf(user).split(\" \").filter((p) =>= p.length > 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/10:5",
+      "task": "guard",
+      "line": 10,
+      "before": "  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);",
+      "after": "  const parts = nameOf(user).split(\" \").filter((p) => p.length >= 0);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/10:6",
+      "task": "guard",
+      "line": 10,
+      "before": "  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);",
+      "after": "  const parts = nameOf(user).split(\" \").filter((p) => p.length - 1 > 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/10:7",
+      "task": "guard",
+      "line": 10,
+      "before": "  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);",
+      "after": "  const parts = await nameOf(user).split(\" \").filter((p) => p.length > 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "add-await",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/11:8",
+      "task": "guard",
+      "line": 11,
+      "before": "  return parts.map((p) => p[0].toUpperCase()).join(\"\");",
+      "after": "  return parts.map((p) =>= p[0].toUpperCase()).join(\"\");",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/11:9",
+      "task": "guard",
+      "line": 11,
+      "before": "  return parts.map((p) => p[0].toUpperCase()).join(\"\");",
+      "after": "  return !(parts.map((p) => p[0].toUpperCase()).join(\"\"));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/15:10",
+      "task": "guard",
+      "line": 15,
+      "before": "  const name = nameOf(user);",
+      "after": "  const name = await nameOf(user);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "add-await",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/16:11",
+      "task": "guard",
+      "line": 16,
+      "before": "  return name.length > 0 ? name : \"anonymous\";",
+      "after": "  return name.length >= 0 ? name : \"anonymous\";",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "loosen-bound",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/16:12",
+      "task": "guard",
+      "line": 16,
+      "before": "  return name.length > 0 ? name : \"anonymous\";",
+      "after": "  return name.length - 1 > 0 ? name : \"anonymous\";",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "add-minus-one",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/16:13",
+      "task": "guard",
+      "line": 16,
+      "before": "  return name.length > 0 ? name : \"anonymous\";",
+      "after": "  return !(name.length > 0 ? name : \"anonymous\");",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "guard/16:14",
+      "task": "guard",
+      "line": 16,
+      "before": "  return name.length > 0 ? name : \"anonymous\";",
+      "after": "  return 0 > name.length ? name : \"anonymous\";",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8,
+        "rule": "swap-operands",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/2:0",
+      "task": "lastindex",
+      "line": 2,
+      "before": "  return xs[xs.length - 1];",
+      "after": "  return xs[xs.length];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "drop-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/2:1",
+      "task": "lastindex",
+      "line": 2,
+      "before": "  return xs[xs.length - 1];",
+      "after": "  return xs[xs.length - 1 - 1];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/2:2",
+      "task": "lastindex",
+      "line": 2,
+      "before": "  return xs[xs.length - 1];",
+      "after": "  return xs[xs.length + 1];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "flip-offset",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/2:3",
+      "task": "lastindex",
+      "line": 2,
+      "before": "  return xs[xs.length - 1];",
+      "after": "  return !(xs[xs.length - 1]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/2:4",
+      "task": "lastindex",
+      "line": 2,
+      "before": "  return xs[xs.length - 1];",
+      "after": "  return 1] - xs[xs.length;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/6:5",
+      "task": "lastindex",
+      "line": 6,
+      "before": "  return xs[0];",
+      "after": "  return !(xs[0]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/10:6",
+      "task": "lastindex",
+      "line": 10,
+      "before": "  return xs[xs.length - 2];",
+      "after": "  return xs[xs.length - 1 - 2];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/10:7",
+      "task": "lastindex",
+      "line": 10,
+      "before": "  return xs[xs.length - 2];",
+      "after": "  return xs[xs.length + 2];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "flip-operator",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/10:8",
+      "task": "lastindex",
+      "line": 10,
+      "before": "  return xs[xs.length - 2];",
+      "after": "  return !(xs[xs.length - 2]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/10:9",
+      "task": "lastindex",
+      "line": 10,
+      "before": "  return xs[xs.length - 2];",
+      "after": "  return 2] - xs[xs.length;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/14:10",
+      "task": "lastindex",
+      "line": 14,
+      "before": "  if (xs.length === 0) return [];",
+      "after": "  if (xs.length ==== 0) return [];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/14:11",
+      "task": "lastindex",
+      "line": 14,
+      "before": "  if (xs.length === 0) return [];",
+      "after": "  if (xs.length == 0) return [];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/14:12",
+      "task": "lastindex",
+      "line": 14,
+      "before": "  if (xs.length === 0) return [];",
+      "after": "  if (xs.length - 1 === 0) return [];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/14:13",
+      "task": "lastindex",
+      "line": 14,
+      "before": "  if (xs.length === 0) return [];",
+      "after": "  if (!(xs.length === 0)) return [];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/14:14",
+      "task": "lastindex",
+      "line": 14,
+      "before": "  if (xs.length === 0) return [];",
+      "after": "  return !([]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/15:15",
+      "task": "lastindex",
+      "line": 15,
+      "before": "  return [last(xs), ...xs.slice(0, xs.length - 1)];",
+      "after": "  return [last(xs), ...xs.slice(0, xs.length)];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "drop-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/15:16",
+      "task": "lastindex",
+      "line": 15,
+      "before": "  return [last(xs), ...xs.slice(0, xs.length - 1)];",
+      "after": "  return [last(xs), ...xs.slice(0, xs.length - 1 - 1)];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/15:17",
+      "task": "lastindex",
+      "line": 15,
+      "before": "  return [last(xs), ...xs.slice(0, xs.length - 1)];",
+      "after": "  return [last(xs), ...xs.slice(0, xs.length + 1)];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "flip-offset",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/15:18",
+      "task": "lastindex",
+      "line": 15,
+      "before": "  return [last(xs), ...xs.slice(0, xs.length - 1)];",
+      "after": "  return !([last(xs), ...xs.slice(0, xs.length - 1)]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "lastindex/15:19",
+      "task": "lastindex",
+      "line": 15,
+      "before": "  return [last(xs), ...xs.slice(0, xs.length - 1)];",
+      "after": "  return [last(xs), ...xs.slice(xs.length - 1, 0)];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8333333333333334,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/2:0",
+      "task": "missing-return",
+      "line": 2,
+      "before": "  return v * 2;",
+      "after": "  return !(v * 2);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/6:1",
+      "task": "missing-return",
+      "line": 6,
+      "before": "  return v * 3;",
+      "after": "  return !(v * 3);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/9:2",
+      "task": "missing-return",
+      "line": 9,
+      "before": "export function scaleAll(xs, by) {",
+      "after": "export function scaleAll(by, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/10:3",
+      "task": "missing-return",
+      "line": 10,
+      "before": "  return xs.map((v) => v * by);",
+      "after": "  return xs.map((v) =>= v * by);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/10:4",
+      "task": "missing-return",
+      "line": 10,
+      "before": "  return xs.map((v) => v * by);",
+      "after": "  return !(xs.map((v) => v * by));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/14:5",
+      "task": "missing-return",
+      "line": 14,
+      "before": "  return xs.reduce((acc, v) => acc + double(v), 0);",
+      "after": "  return xs.reduce((acc, v) =>= acc + double(v), 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/14:6",
+      "task": "missing-return",
+      "line": 14,
+      "before": "  return xs.reduce((acc, v) => acc + double(v), 0);",
+      "after": "  return xs.reduce((acc, v) => acc - double(v), 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "flip-operator",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "missing-return/14:7",
+      "task": "missing-return",
+      "line": 14,
+      "before": "  return xs.reduce((acc, v) => acc + double(v), 0);",
+      "after": "  return !(xs.reduce((acc, v) => acc + double(v), 0));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/2:0",
+      "task": "negate",
+      "line": 2,
+      "before": "  return !(xs.length > 0);",
+      "after": "  return !(xs.length >= 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 5,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/2:1",
+      "task": "negate",
+      "line": 2,
+      "before": "  return !(xs.length > 0);",
+      "after": "  return !(xs.length - 1 > 0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 5,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/2:2",
+      "task": "negate",
+      "line": 2,
+      "before": "  return !(xs.length > 0);",
+      "after": "  return !(!(xs.length > 0));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 5,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/5:3",
+      "task": "negate",
+      "line": 5,
+      "before": "export function isFull(xs, cap) {",
+      "after": "export function isFull(cap, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/6:4",
+      "task": "negate",
+      "line": 6,
+      "before": "  return xs.length >= cap;",
+      "after": "  return xs.length > cap;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/6:5",
+      "task": "negate",
+      "line": 6,
+      "before": "  return xs.length >= cap;",
+      "after": "  return xs.length - 1 >= cap;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/6:6",
+      "task": "negate",
+      "line": 6,
+      "before": "  return xs.length >= cap;",
+      "after": "  return !(xs.length >= cap);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/6:7",
+      "task": "negate",
+      "line": 6,
+      "before": "  return xs.length >= cap;",
+      "after": "  return cap >= xs.length;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/9:8",
+      "task": "negate",
+      "line": 9,
+      "before": "export function firstOr(xs, fallback) {",
+      "after": "export function firstOr(fallback, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/10:9",
+      "task": "negate",
+      "line": 10,
+      "before": "  return isEmpty(xs) ? fallback : xs[0];",
+      "after": "  return !(isEmpty(xs) ? fallback : xs[0]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/14:10",
+      "task": "negate",
+      "line": 14,
+      "before": "  return groups.filter((g) => !isEmpty(g)).length;",
+      "after": "  return groups.filter((g) =>= !isEmpty(g)).length;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/14:11",
+      "task": "negate",
+      "line": 14,
+      "before": "  return groups.filter((g) => !isEmpty(g)).length;",
+      "after": "  return groups.filter((g) => !isEmpty(g)).length - 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "negate/14:12",
+      "task": "negate",
+      "line": 14,
+      "before": "  return groups.filter((g) => !isEmpty(g)).length;",
+      "after": "  return !(groups.filter((g) => !isEmpty(g)).length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8571428571428571,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/2:0",
+      "task": "normalise",
+      "line": 2,
+      "before": "  const hi = maxOf(xs);",
+      "after": "  const hi = await maxOf(xs);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-await",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/3:1",
+      "task": "normalise",
+      "line": 3,
+      "before": "  if (hi == 0) return xs;",
+      "after": "  if (hi === 0) return xs;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/3:2",
+      "task": "normalise",
+      "line": 3,
+      "before": "  if (hi == 0) return xs;",
+      "after": "  if (!(hi == 0)) return xs;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/3:3",
+      "task": "normalise",
+      "line": 3,
+      "before": "  if (hi == 0) return xs;",
+      "after": "  return !(xs);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/3:4",
+      "task": "normalise",
+      "line": 3,
+      "before": "  if (hi == 0) return xs;",
+      "after": "  if (hi == 0) return hi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "swap-returned-name",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/4:5",
+      "task": "normalise",
+      "line": 4,
+      "before": "  return xs.map((v) => v / hi);",
+      "after": "  return xs.map((v) =>= v / hi);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/4:6",
+      "task": "normalise",
+      "line": 4,
+      "before": "  return xs.map((v) => v / hi);",
+      "after": "  return !(xs.map((v) => v / hi));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:7",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i < xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:8",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] >= best) best = xs[i];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:9",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i <= xs.length; i += 1) if (xs[i] > best) best = xs[i];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "drop-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:10",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i <= xs.length - 1 - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:11",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i <= xs.length + 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "flip-offset",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/9:12",
+      "task": "normalise",
+      "line": 9,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];",
+      "after": "  for (let i = 0; i <= xs.length - 1; i += 1) if (!(xs[i] > best)) best = xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/10:13",
+      "task": "normalise",
+      "line": 10,
+      "before": "  return best;",
+      "after": "  return !(best);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/13:14",
+      "task": "normalise",
+      "line": 13,
+      "before": "export function scaleTo(xs, target) {",
+      "after": "export function scaleTo(target, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/14:15",
+      "task": "normalise",
+      "line": 14,
+      "before": "  return normalise(xs).map((v) => v * target);",
+      "after": "  return normalise(xs).map((v) =>= v * target);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "normalise/14:16",
+      "task": "normalise",
+      "line": 14,
+      "before": "  return normalise(xs).map((v) => v * target);",
+      "after": "  return !(normalise(xs).map((v) => v * target));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/2:0",
+      "task": "sort",
+      "line": 2,
+      "before": "  return [...xs].sort((a, b) => a - b);",
+      "after": "  return [...xs].sort((a, b) =>= a - b);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/2:1",
+      "task": "sort",
+      "line": 2,
+      "before": "  return [...xs].sort((a, b) => a - b);",
+      "after": "  return [...xs].sort((a, b) => a + b);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "flip-operator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/2:2",
+      "task": "sort",
+      "line": 2,
+      "before": "  return [...xs].sort((a, b) => a - b);",
+      "after": "  return !([...xs].sort((a, b) => a - b));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/2:3",
+      "task": "sort",
+      "line": 2,
+      "before": "  return [...xs].sort((a, b) => a - b);",
+      "after": "  return [...xs].sort((a, b) => b - a);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "flip-comparator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/6:4",
+      "task": "sort",
+      "line": 6,
+      "before": "  return [...xs].sort((a, b) => b - a);",
+      "after": "  return [...xs].sort((a, b) =>= b - a);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "loosen-bound",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/6:5",
+      "task": "sort",
+      "line": 6,
+      "before": "  return [...xs].sort((a, b) => b - a);",
+      "after": "  return [...xs].sort((a, b) => b + a);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "flip-operator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/6:6",
+      "task": "sort",
+      "line": 6,
+      "before": "  return [...xs].sort((a, b) => b - a);",
+      "after": "  return !([...xs].sort((a, b) => b - a));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/6:7",
+      "task": "sort",
+      "line": 6,
+      "before": "  return [...xs].sort((a, b) => b - a);",
+      "after": "  return [...xs].sort((a, b) => a - b);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "flip-comparator",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/10:8",
+      "task": "sort",
+      "line": 10,
+      "before": "  return [...xs].sort((a, b) => a.length - b.length);",
+      "after": "  return [...xs].sort((a, b) =>= a.length - b.length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "loosen-bound",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/10:9",
+      "task": "sort",
+      "line": 10,
+      "before": "  return [...xs].sort((a, b) => a.length - b.length);",
+      "after": "  return [...xs].sort((a, b) => a.length - 1 - b.length);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "add-minus-one",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/10:10",
+      "task": "sort",
+      "line": 10,
+      "before": "  return [...xs].sort((a, b) => a.length - b.length);",
+      "after": "  return [...xs].sort((a, b) => a.length - b.length - 1);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "add-minus-one",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/10:11",
+      "task": "sort",
+      "line": 10,
+      "before": "  return [...xs].sort((a, b) => a.length - b.length);",
+      "after": "  return [...xs].sort((a, b) => a.length + b.length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "flip-operator",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/10:12",
+      "task": "sort",
+      "line": 10,
+      "before": "  return [...xs].sort((a, b) => a.length - b.length);",
+      "after": "  return !([...xs].sort((a, b) => a.length - b.length));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-return",
+        "testOverlap": 2,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/14:13",
+      "task": "sort",
+      "line": 14,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length ==== 0) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "loose-to-strict",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/14:14",
+      "task": "sort",
+      "line": 14,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length == 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "strict-to-loose",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/14:15",
+      "task": "sort",
+      "line": 14,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length - 1 === 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/14:16",
+      "task": "sort",
+      "line": 14,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (!(xs.length === 0)) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-if",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/14:17",
+      "task": "sort",
+      "line": 14,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  return !(0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/15:18",
+      "task": "sort",
+      "line": 15,
+      "before": "  const s = ascending(xs);",
+      "after": "  const s = await ascending(xs);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "add-await",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/16:19",
+      "task": "sort",
+      "line": 16,
+      "before": "  return s[Math.floor(s.length / 2)];",
+      "after": "  return s[Math.floor(s.length - 1 / 2)];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sort/16:20",
+      "task": "sort",
+      "line": 16,
+      "before": "  return s[Math.floor(s.length / 2)];",
+      "after": "  return !(s[Math.floor(s.length / 2)]);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.8888888888888888,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/3:0",
+      "task": "sum",
+      "line": 3,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];",
+      "after": "  for (let i = 0; i < xs.length - 1; i += 1) total += xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.9,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/3:1",
+      "task": "sum",
+      "line": 3,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];",
+      "after": "  for (let i = 0; i <= xs.length; i += 1) total += xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.9,
+        "rule": "drop-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/3:2",
+      "task": "sum",
+      "line": 3,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];",
+      "after": "  for (let i = 0; i <= xs.length - 1 - 1; i += 1) total += xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.9,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/3:3",
+      "task": "sum",
+      "line": 3,
+      "before": "  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];",
+      "after": "  for (let i = 0; i <= xs.length + 1; i += 1) total += xs[i];",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.9,
+        "rule": "flip-offset",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/4:4",
+      "task": "sum",
+      "line": 4,
+      "before": "  return total;",
+      "after": "  return !(total);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 4,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/8:5",
+      "task": "sum",
+      "line": 8,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length ==== 0) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "loose-to-strict",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/8:6",
+      "task": "sum",
+      "line": 8,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length == 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "strict-to-loose",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/8:7",
+      "task": "sum",
+      "line": 8,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (xs.length - 1 === 0) return 0;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/8:8",
+      "task": "sum",
+      "line": 8,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  if (!(xs.length === 0)) return 0;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/8:9",
+      "task": "sum",
+      "line": 8,
+      "before": "  if (xs.length === 0) return 0;",
+      "after": "  return !(0);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/9:10",
+      "task": "sum",
+      "line": 9,
+      "before": "  return sum(xs) / xs.length;",
+      "after": "  return sum(xs) / xs.length - 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "add-minus-one",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/9:11",
+      "task": "sum",
+      "line": 9,
+      "before": "  return sum(xs) / xs.length;",
+      "after": "  return !(sum(xs) / xs.length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 4,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/16:12",
+      "task": "sum",
+      "line": 16,
+      "before": "    acc += v;",
+      "after": "    return acc += v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.9,
+        "rule": "add-return",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/17:13",
+      "task": "sum",
+      "line": 17,
+      "before": "    out.push(acc);",
+      "after": "    out.concat(acc);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.9,
+        "rule": "push-to-concat",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/17:14",
+      "task": "sum",
+      "line": 17,
+      "before": "    out.push(acc);",
+      "after": "    return out.push(acc);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 0.9,
+        "rule": "add-return",
+        "testOverlap": 0,
+        "depth": 2,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/19:15",
+      "task": "sum",
+      "line": 19,
+      "before": "  return out;",
+      "after": "  return !(out);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 9,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/24:16",
+      "task": "sum",
+      "line": 24,
+      "before": "  for (const v of xs) if (v > best) best = v;",
+      "after": "  for (const v of xs) if (v >= best) best = v;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/24:17",
+      "task": "sum",
+      "line": 24,
+      "before": "  for (const v of xs) if (v > best) best = v;",
+      "after": "  for (const v of xs) if (!(v > best)) best = v;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-if",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "sum/25:18",
+      "task": "sum",
+      "line": 25,
+      "before": "  return best;",
+      "after": "  return !(best);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.9,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 5,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/1:0",
+      "task": "swap",
+      "line": 1,
+      "before": "export function between(v, lo, hi) {",
+      "after": "export function between(lo, v, hi) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/2:1",
+      "task": "swap",
+      "line": 2,
+      "before": "  return inRange(lo, hi, v);",
+      "after": "  return !(inRange(lo, hi, v));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/2:2",
+      "task": "swap",
+      "line": 2,
+      "before": "  return inRange(lo, hi, v);",
+      "after": "  return inRange(hi, lo, v);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/5:3",
+      "task": "swap",
+      "line": 5,
+      "before": "function inRange(low, high, value) {",
+      "after": "function inRange(high, low, value) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 0,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/6:4",
+      "task": "swap",
+      "line": 6,
+      "before": "  return value >= low && value <= high;",
+      "after": "  return value >= low && value < high;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/6:5",
+      "task": "swap",
+      "line": 6,
+      "before": "  return value >= low && value <= high;",
+      "after": "  return value > low && value <= high;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/6:6",
+      "task": "swap",
+      "line": 6,
+      "before": "  return value >= low && value <= high;",
+      "after": "  return value >= low || value <= high;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "and-to-or",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/6:7",
+      "task": "swap",
+      "line": 6,
+      "before": "  return value >= low && value <= high;",
+      "after": "  return !(value >= low && value <= high);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/6:8",
+      "task": "swap",
+      "line": 6,
+      "before": "  return value >= low && value <= high;",
+      "after": "  return low >= value && value <= high;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 1,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/9:9",
+      "task": "swap",
+      "line": 9,
+      "before": "export function outside(v, lo, hi) {",
+      "after": "export function outside(lo, v, hi) {",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/10:10",
+      "task": "swap",
+      "line": 10,
+      "before": "  return !between(v, lo, hi);",
+      "after": "  return !(!between(v, lo, hi));",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/10:11",
+      "task": "swap",
+      "line": 10,
+      "before": "  return !between(v, lo, hi);",
+      "after": "  return !between(lo, v, hi);",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/13:12",
+      "task": "swap",
+      "line": 13,
+      "before": "export function overlaps(aLo, aHi, bLo, bHi) {",
+      "after": "export function overlaps(aHi, aLo, bLo, bHi) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 1,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/14:13",
+      "task": "swap",
+      "line": 14,
+      "before": "  return aLo <= bHi && bLo <= aHi;",
+      "after": "  return aLo < bHi && bLo <= aHi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/14:14",
+      "task": "swap",
+      "line": 14,
+      "before": "  return aLo <= bHi && bLo <= aHi;",
+      "after": "  return aLo <= bHi && bLo < aHi;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "tighten-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/14:15",
+      "task": "swap",
+      "line": 14,
+      "before": "  return aLo <= bHi && bLo <= aHi;",
+      "after": "  return aLo <= bHi || bLo <= aHi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "and-to-or",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/14:16",
+      "task": "swap",
+      "line": 14,
+      "before": "  return aLo <= bHi && bLo <= aHi;",
+      "after": "  return !(aLo <= bHi && bLo <= aHi);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "swap/14:17",
+      "task": "swap",
+      "line": 14,
+      "before": "  return aLo <= bHi && bLo <= aHi;",
+      "after": "  return bHi <= aLo && bLo <= aHi;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 2,
+        "fileBranchCoverage": 1,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/1:0",
+      "task": "truthy",
+      "line": 1,
+      "before": "export function orDefault(v, fallback) {",
+      "after": "export function orDefault(fallback, v) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/2:1",
+      "task": "truthy",
+      "line": 2,
+      "before": "  return v ?? fallback;",
+      "after": "  return v || fallback;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "nullish-to-or",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/2:2",
+      "task": "truthy",
+      "line": 2,
+      "before": "  return v ?? fallback;",
+      "after": "  return !(v ?? fallback);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 3,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/5:3",
+      "task": "truthy",
+      "line": 5,
+      "before": "export function orDefaultStrict(v, fallback) {",
+      "after": "export function orDefaultStrict(fallback, v) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/6:4",
+      "task": "truthy",
+      "line": 6,
+      "before": "  return v ?? fallback;",
+      "after": "  return v || fallback;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "nullish-to-or",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/6:5",
+      "task": "truthy",
+      "line": 6,
+      "before": "  return v ?? fallback;",
+      "after": "  return !(v ?? fallback);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/9:6",
+      "task": "truthy",
+      "line": 9,
+      "before": "export function pickFirst(xs, fallback) {",
+      "after": "export function pickFirst(fallback, xs) {",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "swap-args",
+        "testOverlap": 1,
+        "depth": 0,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/10:7",
+      "task": "truthy",
+      "line": 10,
+      "before": "  return xs.length > 0 ? xs[0] : fallback;",
+      "after": "  return xs.length >= 0 ? xs[0] : fallback;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/10:8",
+      "task": "truthy",
+      "line": 10,
+      "before": "  return xs.length > 0 ? xs[0] : fallback;",
+      "after": "  return xs.length - 1 > 0 ? xs[0] : fallback;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/10:9",
+      "task": "truthy",
+      "line": 10,
+      "before": "  return xs.length > 0 ? xs[0] : fallback;",
+      "after": "  return !(xs.length > 0 ? xs[0] : fallback);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/10:10",
+      "task": "truthy",
+      "line": 10,
+      "before": "  return xs.length > 0 ? xs[0] : fallback;",
+      "after": "  return 0 > xs.length ? xs[0] : fallback;",
+      "safe": true,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "swap-operands",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/14:11",
+      "task": "truthy",
+      "line": 14,
+      "before": "  return xs.filter((v) => Boolean(v)).length;",
+      "after": "  return xs.filter((v) =>= Boolean(v)).length;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "loosen-bound",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/14:12",
+      "task": "truthy",
+      "line": 14,
+      "before": "  return xs.filter((v) => Boolean(v)).length;",
+      "after": "  return xs.filter((v) => Boolean(v)).length - 1;",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "add-minus-one",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    },
+    {
+      "id": "truthy/14:13",
+      "task": "truthy",
+      "line": 14,
+      "before": "  return xs.filter((v) => Boolean(v)).length;",
+      "after": "  return !(xs.filter((v) => Boolean(v)).length);",
+      "safe": false,
+      "metrics": {
+        "lineHits": 1,
+        "fileBranchCoverage": 0.7777777777777778,
+        "rule": "negate-return",
+        "testOverlap": 0,
+        "depth": 1,
+        "fnLines": 3,
+        "duplicatePairs": 0
+      }
+    }
+  ]
+}

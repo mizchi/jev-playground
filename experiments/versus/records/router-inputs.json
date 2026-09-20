@@ -1,0 +1,320 @@
+[
+ {
+  "task": "accumulate",
+  "corpus": "easy",
+  "baseline": "failing test: counts\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: most common\nexpected: 'b'\nactual: 'a'\noperator: 'strictEqual'",
+  "source": "export function counts(xs) {\n  const out = {};\n  for (const x of xs) out[x] = out[x] + 1;\n  return out;\n}\n\nexport function keysOf(obj) {\n  return Object.keys(obj).sort();\n}\n\nexport function totalOf(obj) {\n  return Object.values(obj).reduce((a, b) => a + b, 0);\n}\n\nexport function mostCommon(xs) {\n  const c = counts(xs);\n  return keysOf(c).sort((a, b) => c[b] - c[a])[0];\n}\n"
+ },
+ {
+  "task": "andor",
+  "corpus": "easy",
+  "baseline": "failing test: null\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'\nfailing test: undefined\nfailing test: all\nfailing test: first\nexpected: 2\nactual: ~",
+  "source": "export function usable(v) {\n  return v !== null || v !== undefined;\n}\n\nexport function present(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function allUsable(xs) {\n  return xs.every((v) => usable(v));\n}\n\nexport function firstUsable(xs) {\n  for (const v of xs) if (usable(v)) return v;\n  return null;\n}\n"
+ },
+ {
+  "task": "andor-k2",
+  "corpus": "hard",
+  "baseline": "failing test: all\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'\nfailing test: first\nexpected: 2\nactual: ~",
+  "source": "export function usable(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function present(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function allUsable(xs) {\n  return !(xs.every((v) => usable(v)));\n}\n\nexport function firstUsable(xs) {\n  for (const v of xs) if (!(usable(v))) return v;\n  return null;\n}\n"
+ },
+ {
+  "task": "andor-k3",
+  "corpus": "hard",
+  "baseline": "failing test: null\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'\nfailing test: undefined\nfailing test: first\nexpected: 2\nactual: ~",
+  "source": "export function usable(v) {\n  return v !== null || v !== undefined;\n}\n\nexport function present(v) {\n  return v !== null && v !== undefined;\n}\n\nexport function allUsable(xs) {\n  return !(xs.every((v) => usable(v)));\n}\n\nexport function firstUsable(xs) {\n  for (const v of xs) if (!(usable(v))) return v;\n  return null;\n}\n"
+ },
+ {
+  "task": "append",
+  "corpus": "easy",
+  "baseline": "failing test: returns the new array\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: 2\noperator: 'deepStrictEqual'\nfailing test: does not mutate\nactual:",
+  "source": "export function withItem(xs, x) {\n  return xs.push(x);\n}\n\nexport function withoutItem(xs, x) {\n  return xs.filter((v) => v !== x);\n}\n\nexport function unique(xs) {\n  return [...new Set(xs)];\n}\n\nexport function head(xs, n) {\n  return xs.slice(0, n);\n}\n"
+ },
+ {
+  "task": "append-k2",
+  "corpus": "hard",
+  "baseline": "failing test: returns the new array\nerror: 'xs.concat is not a function'\ncode: 'ERR_TEST_FAILURE'\nfailing test: does not mutate\nfailing test: unique\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: false\noperator: 'deepStrictEqual'",
+  "source": "export function withItem(x, xs) {\n  return xs.concat(x);\n}\n\nexport function withoutItem(xs, x) {\n  return xs.filter((v) => v !== x);\n}\n\nexport function unique(xs) {\n  return !([...new Set(xs)]);\n}\n\nexport function head(xs, n) {\n  return xs.slice(0, n);\n}\n"
+ },
+ {
+  "task": "append-k3",
+  "corpus": "hard",
+  "baseline": "failing test: returns the new array\nerror: 'xs.concat is not a function'\ncode: 'ERR_TEST_FAILURE'\nfailing test: does not mutate\nfailing test: unique\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: false\noperator: 'deepStrictEqual'\nfailing test: head",
+  "source": "export function withItem(x, xs) {\n  return xs.concat(x);\n}\n\nexport function withoutItem(xs, x) {\n  return xs.filter((v) => v !== x);\n}\n\nexport function unique(xs) {\n  return !([...new Set(xs)]);\n}\n\nexport function head(n, xs) {\n  return xs.slice(0, n);\n}\n"
+ },
+ {
+  "task": "await",
+  "corpus": "easy",
+  "baseline": "failing test: awaits\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\noperator: 'strictEqual'\nfailing test: all\nexpected: 3\nactual: NaN",
+  "source": "export async function total(load) {\n  const xs = load();\n  return xs.length;\n}\n\nexport async function firstOf(load) {\n  const xs = await load();\n  return xs[0];\n}\n\nexport async function totalAll(loaders) {\n  let acc = 0;\n  for (const load of loaders) acc += await total(load);\n  return acc;\n}\n"
+ },
+ {
+  "task": "await-k2",
+  "corpus": "hard",
+  "baseline": "failing test: awaits\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: all\nexpected: 3\nactual: false",
+  "source": "export async function total(load) {\n  const xs = await load();\n  return xs.length - 1;\n}\n\nexport async function firstOf(load) {\n  const xs = await load();\n  return xs[0];\n}\n\nexport async function totalAll(loaders) {\n  let acc = 0;\n  for (const load of loaders) acc += await total(load);\n  return !(acc);\n}\n"
+ },
+ {
+  "task": "await-k3",
+  "corpus": "hard",
+  "baseline": "failing test: awaits\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: first\nexpected: 7\nactual: false\nfailing test: all\nexpected: 3",
+  "source": "export async function total(load) {\n  const xs = await load();\n  return xs.length - 1;\n}\n\nexport async function firstOf(load) {\n  const xs = await load();\n  return !(xs[0]);\n}\n\nexport async function totalAll(loaders) {\n  let acc = 0;\n  for (const load of loaders) acc += await total(load);\n  return !(acc);\n}\n"
+ },
+ {
+  "task": "bounds",
+  "corpus": "easy",
+  "baseline": "failing test: slice is exclusive\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: window",
+  "source": "export function slice(xs, from, to) {\n  return xs.slice(from, to - 1);\n}\n\nexport function firstN(xs, n) {\n  return xs.slice(0, n);\n}\n\nexport function lastN(xs, n) {\n  return xs.slice(xs.length - n);\n}\n\nexport function window(xs, at, width) {\n  return slice(xs, at, at + width);\n}\n"
+ },
+ {
+  "task": "bounds-k2",
+  "corpus": "hard",
+  "baseline": "failing test: slice is exclusive\nerror: 'xs.slice is not a function'\ncode: 'ERR_TEST_FAILURE'\nfailing test: last\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: window",
+  "source": "export function slice(from, xs, to) {\n  return xs.slice(from, to);\n}\n\nexport function firstN(xs, n) {\n  return xs.slice(0, n);\n}\n\nexport function lastN(xs, n) {\n  return xs.slice(xs.length - 1 - n);\n}\n\nexport function window(xs, at, width) {\n  return slice(xs, at, at + width);\n}\n"
+ },
+ {
+  "task": "bounds-k3",
+  "corpus": "hard",
+  "baseline": "failing test: slice is exclusive\nerror: 'xs.slice is not a function'\ncode: 'ERR_TEST_FAILURE'\nfailing test: last\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: window",
+  "source": "export function slice(from, xs, to) {\n  return xs.slice(from, to);\n}\n\nexport function firstN(xs, n) {\n  return xs.slice(0, n);\n}\n\nexport function lastN(xs, n) {\n  return xs.slice(xs.length - 1 - n);\n}\n\nexport function window(at, xs, width) {\n  return slice(xs, at, at + width);\n}\n"
+ },
+ {
+  "task": "clamp",
+  "corpus": "easy",
+  "baseline": "failing test: clamps above\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 5\nactual: 9\noperator: 'strictEqual'\nfailing test: all\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "const DEFAULT_LO = 0;\nconst DEFAULT_HI = 100;\n\nexport function clamp(v, lo = DEFAULT_LO, hi = DEFAULT_HI) {\n  if (v < lo) return lo;\n  if (v > hi) return v;\n  return v;\n}\n\nexport function clampAll(xs, lo, hi) {\n  return xs.map((v) => clamp(v, lo, hi));\n}\n\nexport function inRange(v, lo, hi) {\n  return v >= lo && v <= hi;\n}\n\nexport function spread(xs) {\n  if (xs.length === 0) return 0;\n  let lo = xs[0];\n  let hi = xs[0];\n  for (const v of xs) {\n    if (v < lo) lo = v;\n    if (v > hi) hi = v;\n  }\n  return hi - lo;\n}\n"
+ },
+ {
+  "task": "clamp-k2",
+  "corpus": "hard",
+  "baseline": "failing test: all\nerror: 'xs.map is not a function'\ncode: 'ERR_TEST_FAILURE'",
+  "source": "const DEFAULT_LO = 0;\nconst DEFAULT_HI = 100;\n\nexport function clamp(v, lo = DEFAULT_LO, hi = DEFAULT_HI) {\n  if (v < lo) return lo;\n  if (v > hi) return hi;\n  return v;\n}\n\nexport function clampAll(lo, xs, hi) {\n  return !(xs.map((v) => clamp(v, lo, hi)));\n}\n\nexport function inRange(v, lo, hi) {\n  return v >= lo && v <= hi;\n}\n\nexport function spread(xs) {\n  if (xs.length === 0) return 0;\n  let lo = xs[0];\n  let hi = xs[0];\n  for (const v of xs) {\n    if (v < lo) lo = v;\n    if (v > hi) hi = v;\n  }\n  return hi - lo;\n}\n"
+ },
+ {
+  "task": "clamp-k3",
+  "corpus": "hard",
+  "baseline": "failing test: all\nerror: 'xs.map is not a function'\ncode: 'ERR_TEST_FAILURE'\nfailing test: range\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'",
+  "source": "const DEFAULT_LO = 0;\nconst DEFAULT_HI = 100;\n\nexport function clamp(v, lo = DEFAULT_LO, hi = DEFAULT_HI) {\n  if (v < lo) return lo;\n  if (v > hi) return hi;\n  return v;\n}\n\nexport function clampAll(lo, xs, hi) {\n  return !(xs.map((v) => clamp(v, lo, hi)));\n}\n\nexport function inRange(lo, v, hi) {\n  return v >= lo && v <= hi;\n}\n\nexport function spread(xs) {\n  if (xs.length === 0) return 0;\n  let lo = xs[0];\n  let hi = xs[0];\n  for (const v of xs) {\n    if (v < lo) lo = v;\n    if (v > hi) hi = v;\n  }\n  return hi - lo;\n}\n"
+ },
+ {
+  "task": "dedup",
+  "corpus": "easy",
+  "baseline": "failing test: keeps the first of each\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "export function dedupeBy(xs, key) {\n  const seen = new Set();\n  const out = [];\n  for (const x of xs) {\n    if (seen.has(key(x))) out.push(x);\n    seen.add(key(x));\n  }\n  return out;\n}\n\nexport function groupBy(xs, key) {\n  const out = {};\n  for (const x of xs) {\n    const k = key(x);\n    out[k] = out[k] ?? [];\n    out[k].push(x);\n  }\n  return out;\n}\n\nexport function countBy(xs, key) {\n  const g = groupBy(xs, key);\n  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));\n}\n"
+ },
+ {
+  "task": "dedup-k2",
+  "corpus": "hard",
+  "baseline": "failing test: keeps the first of each\nerror: 'xs is not iterable'\ncode: 'ERR_TEST_FAILURE'\nfailing test: group\nfailing test: count",
+  "source": "export function dedupeBy(key, xs) {\n  const seen = new Set();\n  const out = [];\n  for (const x of xs) {\n    if (!(seen.has(key(x)))) out.push(x);\n    seen.add(key(x));\n  }\n  return out;\n}\n\nexport function groupBy(key, xs) {\n  const out = {};\n  for (const x of xs) {\n    const k = key(x);\n    out[k] = out[k] ?? [];\n    out[k].push(x);\n  }\n  return out;\n}\n\nexport function countBy(xs, key) {\n  const g = groupBy(xs, key);\n  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));\n}\n"
+ },
+ {
+  "task": "dedup-k3",
+  "corpus": "hard",
+  "baseline": "failing test: keeps the first of each\nerror: 'xs is not iterable'\ncode: 'ERR_TEST_FAILURE'\nfailing test: group\nfailing test: count",
+  "source": "export function dedupeBy(key, xs) {\n  const seen = new Set();\n  const out = [];\n  for (const x of xs) {\n    if (!(seen.has(key(x)))) out.push(x);\n    seen.add(key(x));\n  }\n  return out;\n}\n\nexport function groupBy(key, xs) {\n  const out = {};\n  for (const x of xs) {\n    const k = key(x);\n    return out[k] = out[k] ?? [];\n    out[k].push(x);\n  }\n  return out;\n}\n\nexport function countBy(xs, key) {\n  const g = groupBy(xs, key);\n  return Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.length]));\n}\n"
+ },
+ {
+  "task": "equals",
+  "corpus": "easy",
+  "baseline": "failing test: number zero is not the string\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'",
+  "source": "export function isZero(v) {\n  return v == \"0\";\n}\n\nexport function isBlank(s) {\n  return typeof s === \"string\" && s.trim().length === 0;\n}\n\nexport function sameKind(a, b) {\n  return typeof a === typeof b;\n}\n\nexport function countMatching(xs, target) {\n  let n = 0;\n  for (const x of xs) if (x === target) n += 1;\n  return n;\n}\n"
+ },
+ {
+  "task": "equals-k2",
+  "corpus": "hard",
+  "baseline": "failing test: kind\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: count\nerror: 'xs is not iterable'\ncode: 'ERR_TEST_FAILURE'",
+  "source": "export function isZero(v) {\n  return v === \"0\";\n}\n\nexport function isBlank(s) {\n  return typeof s === \"string\" && s.trim().length === 0;\n}\n\nexport function sameKind(a, b) {\n  return !(typeof a === typeof b);\n}\n\nexport function countMatching(target, xs) {\n  let n = 0;\n  for (const x of xs) if (x === target) n += 1;\n  return n;\n}\n"
+ },
+ {
+  "task": "equals-k3",
+  "corpus": "hard",
+  "baseline": "failing test: kind\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: count\nerror: 'xs is not iterable'\ncode: 'ERR_TEST_FAILURE'",
+  "source": "export function isZero(v) {\n  return v === \"0\";\n}\n\nexport function isBlank(s) {\n  return typeof s === \"string\" && s.trim().length === 0;\n}\n\nexport function sameKind(a, b) {\n  return !(typeof a === typeof b);\n}\n\nexport function countMatching(target, xs) {\n  let n = 0;\n  for (const x of xs) if (!(x === target)) n += 1;\n  return n;\n}\n"
+ },
+ {
+  "task": "guard",
+  "corpus": "easy",
+  "baseline": "failing test: missing name\nerror: \"Cannot read properties of undefined (reading 'trim')\"\ncode: 'ERR_TEST_FAILURE'\nfailing test: describe falls back",
+  "source": "export function nameOf(user) {\n  return user.name.trim();\n}\n\nexport function emailOf(user) {\n  return (user.email ?? \"\").toLowerCase();\n}\n\nexport function initials(user) {\n  const parts = nameOf(user).split(\" \").filter((p) => p.length > 0);\n  return parts.map((p) => p[0].toUpperCase()).join(\"\");\n}\n\nexport function describe(user) {\n  const name = nameOf(user);\n  return name.length > 0 ? name : \"anonymous\";\n}\n"
+ },
+ {
+  "task": "guard-k2",
+  "corpus": "hard",
+  "baseline": "failing test: initials\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'AL'\nactual: false\noperator: 'strictEqual'",
+  "source": "export function nameOf(user) {\n  return (user.name ?? \"\").trim();\n}\n\nexport function emailOf(user) {\n  return (user.email ?? \"\").toLowerCase();\n}\n\nexport function initials(user) {\n  const parts = nameOf(user).split(\" \").filter((p) => p.length - 1 > 0);\n  return !(parts.map((p) => p[0].toUpperCase()).join(\"\"));\n}\n\nexport function describe(user) {\n  const name = nameOf(user);\n  return name.length > 0 ? name : \"anonymous\";\n}\n"
+ },
+ {
+  "task": "guard-k3",
+  "corpus": "hard",
+  "baseline": "failing test: initials\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'AL'\nactual: false\noperator: 'strictEqual'\nfailing test: describe falls back\nexpected: 'anonymous'\nactual: ''",
+  "source": "export function nameOf(user) {\n  return (user.name ?? \"\").trim();\n}\n\nexport function emailOf(user) {\n  return (user.email ?? \"\").toLowerCase();\n}\n\nexport function initials(user) {\n  const parts = nameOf(user).split(\" \").filter((p) => p.length - 1 > 0);\n  return !(parts.map((p) => p[0].toUpperCase()).join(\"\"));\n}\n\nexport function describe(user) {\n  const name = nameOf(user);\n  return name.length >= 0 ? name : \"anonymous\";\n}\n"
+ },
+ {
+  "task": "lastindex",
+  "corpus": "easy",
+  "baseline": "failing test: last\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 3\noperator: 'strictEqual'\nfailing test: one\nexpected: 9\nfailing test: rotate\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "export function last(xs) {\n  return xs[xs.length];\n}\n\nexport function first(xs) {\n  return xs[0];\n}\n\nexport function penultimate(xs) {\n  return xs[xs.length - 2];\n}\n\nexport function rotate(xs) {\n  if (xs.length === 0) return [];\n  return [last(xs), ...xs.slice(0, xs.length - 1)];\n}\n"
+ },
+ {
+  "task": "lastindex-k2",
+  "corpus": "hard",
+  "baseline": "failing test: penultimate\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: rotate\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "export function last(xs) {\n  return xs[xs.length - 1];\n}\n\nexport function first(xs) {\n  return xs[0];\n}\n\nexport function penultimate(xs) {\n  return xs[xs.length - 1 - 2];\n}\n\nexport function rotate(xs) {\n  if (!(xs.length === 0)) return [];\n  return [last(xs), ...xs.slice(0, xs.length - 1)];\n}\n"
+ },
+ {
+  "task": "lastindex-k3",
+  "corpus": "hard",
+  "baseline": "failing test: penultimate\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: rotate\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "export function last(xs) {\n  return xs[xs.length - 1];\n}\n\nexport function first(xs) {\n  return xs[0];\n}\n\nexport function penultimate(xs) {\n  return xs[xs.length - 1 - 2];\n}\n\nexport function rotate(xs) {\n  if (!(xs.length === 0)) return [];\n  return [last(xs), ...xs.slice(0, xs.length)];\n}\n"
+ },
+ {
+  "task": "missing-return",
+  "corpus": "easy",
+  "baseline": "failing test: doubles\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 8\noperator: 'strictEqual'\nfailing test: zero\nexpected: 0\nfailing test: sum of doubles\nexpected: 6\nactual: NaN",
+  "source": "export function double(v) {\n  v * 2;\n}\n\nexport function triple(v) {\n  return v * 3;\n}\n\nexport function scaleAll(xs, by) {\n  return xs.map((v) => v * by);\n}\n\nexport function sumOfDoubles(xs) {\n  return xs.reduce((acc, v) => acc + double(v), 0);\n}\n"
+ },
+ {
+  "task": "missing-return-k2",
+  "corpus": "hard",
+  "baseline": "failing test: scale\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: false\noperator: 'deepStrictEqual'\nfailing test: sum of doubles\nexpected: 6\nactual: -6\noperator: 'strictEqual'",
+  "source": "export function double(v) {\n  return v * 2;\n}\n\nexport function triple(v) {\n  return v * 3;\n}\n\nexport function scaleAll(xs, by) {\n  return !(xs.map((v) => v * by));\n}\n\nexport function sumOfDoubles(xs) {\n  return xs.reduce((acc, v) => acc - double(v), 0);\n}\n"
+ },
+ {
+  "task": "missing-return-k3",
+  "corpus": "hard",
+  "baseline": "failing test: doubles\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 8\nactual: false\noperator: 'strictEqual'\nfailing test: zero\nexpected: 0\nactual: true\nfailing test: scale\nexpected:\noperator: 'deepStrictEqual'",
+  "source": "export function double(v) {\n  return !(v * 2);\n}\n\nexport function triple(v) {\n  return v * 3;\n}\n\nexport function scaleAll(xs, by) {\n  return !(xs.map((v) => v * by));\n}\n\nexport function sumOfDoubles(xs) {\n  return xs.reduce((acc, v) => acc - double(v), 0);\n}\n"
+ },
+ {
+  "task": "negate",
+  "corpus": "easy",
+  "baseline": "failing test: empty\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: not empty\nexpected: false\nactual: true\nfailing test: first or\nexpected: 9",
+  "source": "export function isEmpty(xs) {\n  return xs.length > 0;\n}\n\nexport function isFull(xs, cap) {\n  return xs.length >= cap;\n}\n\nexport function firstOr(xs, fallback) {\n  return isEmpty(xs) ? fallback : xs[0];\n}\n\nexport function countNonEmpty(groups) {\n  return groups.filter((g) => !isEmpty(g)).length;\n}\n"
+ },
+ {
+  "task": "negate-k2",
+  "corpus": "hard",
+  "baseline": "failing test: first or\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 9\nactual: false\noperator: 'strictEqual'\nfailing test: count\nexpected: 1\nactual: 0",
+  "source": "export function isEmpty(xs) {\n  return !(xs.length > 0);\n}\n\nexport function isFull(xs, cap) {\n  return xs.length >= cap;\n}\n\nexport function firstOr(xs, fallback) {\n  return !(isEmpty(xs) ? fallback : xs[0]);\n}\n\nexport function countNonEmpty(groups) {\n  return groups.filter((g) => !isEmpty(g)).length - 1;\n}\n"
+ },
+ {
+  "task": "negate-k3",
+  "corpus": "hard",
+  "baseline": "failing test: empty\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: first or\nexpected: 9\nactual: true",
+  "source": "export function isEmpty(xs) {\n  return !(xs.length >= 0);\n}\n\nexport function isFull(xs, cap) {\n  return xs.length >= cap;\n}\n\nexport function firstOr(xs, fallback) {\n  return !(isEmpty(xs) ? fallback : xs[0]);\n}\n\nexport function countNonEmpty(groups) {\n  return groups.filter((g) => !isEmpty(g)).length - 1;\n}\n"
+ },
+ {
+  "task": "normalise",
+  "corpus": "easy",
+  "baseline": "failing test: normalises by the max\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: scales",
+  "source": "export function normalise(xs) {\n  const hi = maxOf(xs);\n  if (hi == 0) return xs;\n  return xs.map((v) => v / hi);\n}\n\nfunction maxOf(xs) {\n  let best = 0;\n  for (let i = 0; i < xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];\n  return best;\n}\n\nexport function scaleTo(xs, target) {\n  return normalise(xs).map((v) => v * target);\n}\n"
+ },
+ {
+  "task": "normalise-k2",
+  "corpus": "hard",
+  "baseline": "failing test: normalises by the max\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: scales\nerror: 'xs.map is not a function'\ncode: 'ERR_TEST_FAILURE'",
+  "source": "export function normalise(xs) {\n  const hi = maxOf(xs);\n  if (hi == 0) return xs;\n  return xs.map((v) => v / hi);\n}\n\nfunction maxOf(xs) {\n  let best = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];\n  return !(best);\n}\n\nexport function scaleTo(target, xs) {\n  return normalise(xs).map((v) => v * target);\n}\n"
+ },
+ {
+  "task": "normalise-k3",
+  "corpus": "hard",
+  "baseline": "failing test: normalises by the max\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: scales\nerror: 'xs.map is not a function'\ncode: 'ERR_TEST_FAILURE'",
+  "source": "export function normalise(xs) {\n  const hi = maxOf(xs);\n  if (hi == 0) return xs;\n  return xs.map((v) => v / hi);\n}\n\nfunction maxOf(xs) {\n  let best = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) if (xs[i] > best) best = xs[i];\n  return !(best);\n}\n\nexport function scaleTo(target, xs) {\n  return !(normalise(xs).map((v) => v * target));\n}\n"
+ },
+ {
+  "task": "sort",
+  "corpus": "easy",
+  "baseline": "failing test: ascending\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+  "source": "export function ascending(xs) {\n  return [...xs].sort((a, b) => b - a);\n}\n\nexport function descending(xs) {\n  return [...xs].sort((a, b) => b - a);\n}\n\nexport function byLength(xs) {\n  return [...xs].sort((a, b) => a.length - b.length);\n}\n\nexport function median(xs) {\n  if (xs.length === 0) return 0;\n  const s = ascending(xs);\n  return s[Math.floor(s.length / 2)];\n}\n"
+ },
+ {
+  "task": "sort-k2",
+  "corpus": "hard",
+  "baseline": "failing test: by length\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: median\nexpected: 3\nactual: 0\noperator: 'strictEqual'",
+  "source": "export function ascending(xs) {\n  return [...xs].sort((a, b) => a - b);\n}\n\nexport function descending(xs) {\n  return [...xs].sort((a, b) => b - a);\n}\n\nexport function byLength(xs) {\n  return [...xs].sort((a, b) => a.length + b.length);\n}\n\nexport function median(xs) {\n  if (!(xs.length === 0)) return 0;\n  const s = ascending(xs);\n  return s[Math.floor(s.length / 2)];\n}\n"
+ },
+ {
+  "task": "sort-k3",
+  "corpus": "hard",
+  "baseline": "failing test: by length\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: median\nexpected: 3\nactual: 0\noperator: 'strictEqual'",
+  "source": "export function ascending(xs) {\n  return [...xs].sort((a, b) => a - b);\n}\n\nexport function descending(xs) {\n  return [...xs].sort((a, b) => b - a);\n}\n\nexport function byLength(xs) {\n  return [...xs].sort((a, b) => a.length + b.length);\n}\n\nexport function median(xs) {\n  if (!(xs.length === 0)) return 0;\n  const s = ascending(xs);\n  return s[Math.floor(s.length - 1 / 2)];\n}\n"
+ },
+ {
+  "task": "sum",
+  "corpus": "easy",
+  "baseline": "failing test: sums\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 6\nactual: 3\noperator: 'strictEqual'\nfailing test: one\nexpected: 7\nactual: 0\nfailing test: mean\nexpected: 3\nactual: 1",
+  "source": "export function sum(xs) {\n  let total = 0;\n  for (let i = 0; i < xs.length - 1; i += 1) total += xs[i];\n  return total;\n}\n\nexport function mean(xs) {\n  if (xs.length === 0) return 0;\n  return sum(xs) / xs.length;\n}\n\nexport function runningTotal(xs) {\n  const out = [];\n  let acc = 0;\n  for (const v of xs) {\n    acc += v;\n    out.push(acc);\n  }\n  return out;\n}\n\nexport function maxOf(xs) {\n  let best = -Infinity;\n  for (const v of xs) if (v > best) best = v;\n  return best;\n}\n"
+ },
+ {
+  "task": "sum-k2",
+  "corpus": "hard",
+  "baseline": "failing test: running\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: 1\noperator: 'deepStrictEqual'",
+  "source": "export function sum(xs) {\n  let total = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];\n  return total;\n}\n\nexport function mean(xs) {\n  if (xs.length === 0) return 0;\n  return sum(xs) / xs.length;\n}\n\nexport function runningTotal(xs) {\n  const out = [];\n  let acc = 0;\n  for (const v of xs) {\n    return acc += v;\n    out.concat(acc);\n  }\n  return out;\n}\n\nexport function maxOf(xs) {\n  let best = -Infinity;\n  for (const v of xs) if (v > best) best = v;\n  return best;\n}\n"
+ },
+ {
+  "task": "sum-k3",
+  "corpus": "hard",
+  "baseline": "failing test: running\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: 1\noperator: 'deepStrictEqual'",
+  "source": "export function sum(xs) {\n  let total = 0;\n  for (let i = 0; i <= xs.length - 1; i += 1) total += xs[i];\n  return total;\n}\n\nexport function mean(xs) {\n  if (xs.length === 0) return 0;\n  return sum(xs) / xs.length;\n}\n\nexport function runningTotal(xs) {\n  const out = [];\n  let acc = 0;\n  for (const v of xs) {\n    return acc += v;\n    out.concat(acc);\n  }\n  return !(out);\n}\n\nexport function maxOf(xs) {\n  let best = -Infinity;\n  for (const v of xs) if (v > best) best = v;\n  return best;\n}\n"
+ },
+ {
+  "task": "swap",
+  "corpus": "easy",
+  "baseline": "failing test: inside\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'",
+  "source": "export function between(v, lo, hi) {\n  return inRange(hi, lo, v);\n}\n\nfunction inRange(low, high, value) {\n  return value >= low && value <= high;\n}\n\nexport function outside(v, lo, hi) {\n  return !between(v, lo, hi);\n}\n\nexport function overlaps(aLo, aHi, bLo, bHi) {\n  return aLo <= bHi && bLo <= aHi;\n}\n"
+ },
+ {
+  "task": "swap-k2",
+  "corpus": "hard",
+  "baseline": "failing test: inside\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: negation",
+  "source": "export function between(lo, v, hi) {\n  return inRange(lo, hi, v);\n}\n\nfunction inRange(low, high, value) {\n  return value >= low && value <= high;\n}\n\nexport function outside(v, lo, hi) {\n  return !(!between(v, lo, hi));\n}\n\nexport function overlaps(aLo, aHi, bLo, bHi) {\n  return aLo <= bHi && bLo <= aHi;\n}\n"
+ },
+ {
+  "task": "swap-k3",
+  "corpus": "hard",
+  "baseline": "failing test: inside\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: negation\nfailing test: overlaps",
+  "source": "export function between(lo, v, hi) {\n  return inRange(lo, hi, v);\n}\n\nfunction inRange(low, high, value) {\n  return value >= low && value <= high;\n}\n\nexport function outside(v, lo, hi) {\n  return !(!between(v, lo, hi));\n}\n\nexport function overlaps(aHi, aLo, bLo, bHi) {\n  return aLo <= bHi && bLo <= aHi;\n}\n"
+ },
+ {
+  "task": "truthy",
+  "corpus": "easy",
+  "baseline": "failing test: zero is a value\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 0\nactual: 9\noperator: 'strictEqual'",
+  "source": "export function orDefault(v, fallback) {\n  return v || fallback;\n}\n\nexport function orDefaultStrict(v, fallback) {\n  return v ?? fallback;\n}\n\nexport function pickFirst(xs, fallback) {\n  return xs.length > 0 ? xs[0] : fallback;\n}\n\nexport function countTruthy(xs) {\n  return xs.filter((v) => Boolean(v)).length;\n}\n"
+ },
+ {
+  "task": "truthy-k2",
+  "corpus": "hard",
+  "baseline": "failing test: uses the value\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 5\nactual: 9\noperator: 'strictEqual'\nfailing test: zero is a value\nexpected: 0\nfailing test: pick\nexpected: 9",
+  "source": "export function orDefault(fallback, v) {\n  return v ?? fallback;\n}\n\nexport function orDefaultStrict(v, fallback) {\n  return v ?? fallback;\n}\n\nexport function pickFirst(xs, fallback) {\n  return xs.length >= 0 ? xs[0] : fallback;\n}\n\nexport function countTruthy(xs) {\n  return xs.filter((v) => Boolean(v)).length;\n}\n"
+ },
+ {
+  "task": "truthy-k3",
+  "corpus": "hard",
+  "baseline": "failing test: uses the value\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 5\nactual: 9\noperator: 'strictEqual'\nfailing test: zero is a value\nexpected: 0\nfailing test: pick\nexpected: 9\nfailing test: truthy\nexpected: 1",
+  "source": "export function orDefault(fallback, v) {\n  return v ?? fallback;\n}\n\nexport function orDefaultStrict(v, fallback) {\n  return v ?? fallback;\n}\n\nexport function pickFirst(xs, fallback) {\n  return xs.length >= 0 ? xs[0] : fallback;\n}\n\nexport function countTruthy(xs) {\n  return xs.filter((v) => Boolean(v)).length - 1;\n}\n"
+ },
+ {
+  "task": "two-bugs-b",
+  "corpus": "easy",
+  "baseline": "failing test: title\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'Ada Lovelace'\nactual: 'Aada Llovelace'\noperator: 'strictEqual'\nfailing test: words\nexpected: 3\nactual: 2",
+  "source": "export function titleCase(s) {\n  return s.split(\" \").map((w) => w[0].toUpperCase() + w.slice(0)).join(\" \");\n}\n\nexport function initialsOf(s) {\n  return s.split(\" \").map((w) => w[0]).join(\".\");\n}\n\nexport function wordCount(s) {\n  return s.split(\" \").length - 1;\n}\n"
+ },
+ {
+  "task": "two-bugs-c",
+  "corpus": "easy",
+  "baseline": "failing test: first page\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: second page\nfailing test: page count rounds up\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: page of",
+  "source": "export function paginate(xs, page, size) {\n  const start = page * size;\n  return xs.slice(start, start + size - 1);\n}\n\nexport function pageCount(xs, size) {\n  return Math.floor(xs.length / size);\n}\n\nexport function pageOf(xs, index, size) {\n  return Math.floor(index / size);\n}\n"
+ },
+ {
+  "task": "two-bugs-d",
+  "corpus": "easy",
+  "baseline": "failing test: row\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'a,b'\nactual: '\"a\";\"b\"'\noperator: 'strictEqual'\nfailing test: table\nexpected: |-\nactual: |-",
+  "source": "export function csvRow(values) {\n  return values.map((v) => quote(v)).join(\";\");\n}\n\nfunction quote(v) {\n  return `\"${v}\"`;\n}\n\nexport function csv(rows) {\n  return rows.map((r) => csvRow(r)).join(\"\\n\");\n}\n"
+ },
+ {
+  "task": "two-bugs-e",
+  "corpus": "easy",
+  "baseline": "failing test: count\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 3\nactual: 6\noperator: 'strictEqual'\nfailing test: backoff doubles\nexpected: 800\nactual: 300\nfailing test: retry under the cap\nexpected: true\nactual: false",
+  "source": "export function retryCount(attempt) {\n  return attempt * 2;\n}\n\nexport function backoffMs(attempt) {\n  return 100 * attempt;\n}\n\nexport function shouldRetry(attempt, max) {\n  return attempt > max;\n}\n"
+ }
+]

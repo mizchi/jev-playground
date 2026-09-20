@@ -9,3 +9,13 @@ hooks/out-*.log
 hooks/out-*.jsonl
 .claude/jev-gate.json
 experiments/*/.jev-quality*.json
+packages/node_modules/
+packages/*/node_modules/
+
+# docs/38's harness writes these: the skills it hands pi, and pi's own caches.
+experiments/agent/skills/
+
+# The keyless `--worlds` runs (docs/50, docs/51) write here rather than over
+# the scored record, so their null answers never replace the numbers the
+# reports are made from.
+experiments/*/records/*-worlds.json

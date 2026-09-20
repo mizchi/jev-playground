@@ -1,0 +1,2 @@
+An uncommitted experiment broke the parser. The committed version is correct.
+Two legitimate fixes: discard the working-tree change, or repair it by hand.
