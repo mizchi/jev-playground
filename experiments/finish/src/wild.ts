@@ -120,14 +120,21 @@ export interface Row {
 export interface Record_ {
   note: string;
   repos: { repo: string; rev: string }[];
+  /**
+   * What the clones were actually at, read from the clone trees the runs
+   * copied from. `rev` above is what docs/30's roster pinned; these two are
+   * not the same claim and the report compares them rather than assuming.
+   */
+  heads?: { repo: string; head: string | null }[];
   rows: Row[];
 }
 
 const NOTE =
   "§2.1 candidate 1: real agent traffic in repositories I did not build. The repos are " +
-  "docs/30's roster at pinned revisions; the tasks are `- [ ]` and `- [x]` items their own " +
-  "authors wrote in the repositories' markdown. The shipped gate runs in --dry-run so it " +
-  "records a verdict for every Bash command without changing what the agent does.";
+  "docs/30's roster -- `rev` is the revision that roster pinned, `heads` is what the shallow " +
+  "clone actually had, and they are not assumed equal. The tasks are `- [ ]` and `- [x]` " +
+  "items their own authors wrote in the repositories' markdown. The shipped gate runs in " +
+  "--dry-run so it records a verdict for every Bash command without changing what the agent does.";
 
 // ------------------------------------------------------------------ the corpus
 
@@ -142,12 +149,18 @@ const dirFor = (repo: string): string => resolve(CLONES, repo.replace("/", "-"))
 /**
  * Clone the roster, shallow, at whatever the default branch is now.
  *
- * NOT at the roster's pinned revision, and that is a real limitation rather
- * than an oversight: a `--depth 1` clone cannot check out an arbitrary old
- * commit, and a full clone of all nine is gigabytes in a container with a
- * fixed disk allowance. So the pinned rev is recorded as *what docs/30 saw*
- * and the actual `HEAD` is recorded per row as what the agent saw. When they
- * differ, the task text is still the author's -- it is just a later version of
+ * NOT NECESSARILY at the roster's pinned revision, and that is a real
+ * limitation rather than an oversight: a `--depth 1` clone cannot check out an
+ * arbitrary old commit, and a full clone of all nine is gigabytes in a
+ * container with a fixed disk allowance.
+ *
+ * So there are two different facts and the record keeps both: `rev` is *what
+ * docs/30's roster pinned*, and `heads` is *what the clone actually had*.
+ * Whether they agree is measured by `headMatch` and reported, not assumed --
+ * I first wrote this limitation as "the task text is the author's current
+ * version", and then reading the clones showed **the two repositories that
+ * produced every task were at the pinned revision exactly.** When they do
+ * differ the task text is still the author's; it is just a later version of
  * their file.
  */
 export function clone(): { repo: string; rev: string; head: string | null }[] {
@@ -164,6 +177,40 @@ export function clone(): { repo: string; rev: string; head: string | null }[] {
     }
     const head = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" });
     return { repo, rev, head: (head.stdout ?? "").trim() || null };
+  });
+}
+
+/**
+ * What the clone trees are at NOW, without cloning anything.
+ *
+ * Separate from `clone()` because it must be safe to call after a sweep: the
+ * clone directories are the trees every run copied from, and `clone()` never
+ * re-clones a directory that exists, so reading `HEAD` here yields the
+ * revision the agent actually saw. Absent clones read `null` rather than
+ * being silently dropped, so a missing tree cannot look like a match.
+ */
+export function heads(): { repo: string; head: string | null }[] {
+  return roster().map(({ repo }) => {
+    const dir = dirFor(repo);
+    if (!existsSync(resolve(dir, ".git"))) return { repo, head: null };
+    const out = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" });
+    return { repo, head: out.status === 0 ? (out.stdout ?? "").trim() || null : null };
+  });
+}
+
+/**
+ * Did the clone sit at the revision the roster pinned? Measured per repo.
+ *
+ * `unknown` is its own answer: no recorded head means the question was not
+ * asked, which is not the same as a mismatch.
+ */
+export function headMatch(
+  rec: Pick<Record_, "repos" | "heads">,
+): { repo: string; rev: string; head: string | null; same: boolean | null }[] {
+  const byRepo = new Map((rec.heads ?? []).map((h) => [h.repo, h.head]));
+  return rec.repos.map(({ repo, rev }) => {
+    const head = byRepo.get(repo) ?? null;
+    return { repo, rev, head, same: head === null ? null : head === rev };
   });
 }
 
@@ -562,6 +609,44 @@ function trafficSection(rec: Record_): void {
           "it is never counted as jev's.\n"
         : "None, this time.\n"),
   );
+  // WHAT THEY REACHED FOR, derived. I first wrote this table by hand from a
+  // summary and got it wrong -- two of the five were called a toolchain
+  // install when one of them was the container's proxy CA bundle. So the
+  // buckets are computed from the command text and a test asserts every
+  // fenced command lands in one.
+  const byPrefix = new Map<string, number>();
+  for (const c of rows.flatMap((r) => r.calls).filter((c) => c.by === "fence")) {
+    for (const p of fencePrefixes(c.command ?? "")) byPrefix.set(p, (byPrefix.get(p) ?? 0) + 1);
+  }
+  if (byPrefix.size > 0) {
+    console.log("\n| commands | naming |");
+    console.log("| --- | --- |");
+    for (const [p, n] of [...byPrefix].sort((a, b) => b[1] - a[1])) {
+      console.log(`| ${n} | \`${p}\`${FENCE_WHAT[p] === undefined ? "" : ` -- ${FENCE_WHAT[p]}`} |`);
+    }
+    console.log("");
+  }
+}
+
+/** What each protected prefix turned out to be, for the ones this sweep hit. */
+const FENCE_WHAT: Record<string, string> = {
+  "/root/.claude": "**the agent's own session transcript**",
+  "/root/.ccr": "the container's proxy CA bundle",
+  "/root/.moon": "a toolchain it installed into `$HOME`",
+};
+
+/**
+ * The `/home` and `/root` prefixes a command names, first two segments.
+ *
+ * Deliberately not a hand-written classifier: it reads the paths out of the
+ * command text so the report's table is a measurement. A command naming two
+ * different prefixes counts under both, which is why the table's counts can
+ * exceed the number of fenced commands -- the total is printed separately.
+ */
+export function fencePrefixes(command: string): string[] {
+  const out = new Set<string>();
+  for (const m of command.matchAll(/\/(?:home|root)\/[\w.@+-]+/g)) out.add(m[0]);
+  return [...out];
 }
 
 function gateSection(rec: Record_): void {
@@ -694,10 +779,9 @@ function limits(rec: Record_): void {
       "- **`- [ ]` is my decision about what counts as a task.** The author wrote the line; treating " +
       "an unchecked checkbox as a work item is mine, and so is the 24-character floor that drops " +
       "three-word bullets. `--tasks` prints every line that survived so the cut is inspectable.\n" +
-      "- **The clones are at today's `HEAD`, not at the roster's pinned revision.** A `--depth 1` " +
-      "clone cannot check out an old commit and full clones of nine repositories do not fit the " +
-      "disk allowance here. So the task text is the author's current version; the pinned rev is " +
-      "recorded as what docs/30 saw, and the row records what the agent saw.\n" +
+      `- **The clones are shallow, so they are at today's \`HEAD\` rather than at the roster's ` +
+      `pinned revision by construction** -- a \`--depth 1\` clone cannot check out an old commit, ` +
+      `and full clones of nine repositories do not fit the disk allowance here. ${headLine(rec)}\n` +
       "- **The prompt wrapper is mine**, and deliberately thin: where they are, that the line came " +
       "from the repository's own notes, stay put. **It says nothing about tests or about finishing**, " +
       "because a prompt that said \"make the tests pass\" would be me choosing the commands again.\n" +
@@ -717,8 +801,35 @@ function limits(rec: Record_): void {
 
 // ------------------------------------------------------------------------ main
 
+/**
+ * Whether the shallow clones happened to sit at the pinned revisions.
+ *
+ * Derived, because the assumption went the other way: this limit used to read
+ * "the task text is the author's current version", and the clones say
+ * otherwise for the repositories that matter.
+ */
+function headLine(rec: Record_): string {
+  const m = headMatch(rec);
+  const known = m.filter((x) => x.same !== null);
+  if (known.length === 0) return "No head was recorded, so whether they agree is unmeasured here.";
+  const same = known.filter((x) => x.same);
+  const ran = new Set(rec.rows.map((r) => r.repo));
+  const sweptSame = [...ran].filter((r) => m.find((x) => x.repo === r)?.same === true);
+  return (
+    `Measured rather than assumed: **${same.length} of ${known.length}** clones were at the pinned ` +
+    `revision anyway` +
+    (ran.size > 0
+      ? `, **including ${sweptSame.length} of the ${ran.size} that produced any task**` +
+        (sweptSame.length === ran.size
+          ? " -- so every task text here is checkable at the rev docs/30 pinned."
+          : ", so the rest carry a later version of the author's file."
+        )
+      : ".")
+  );
+}
+
 function load(): Record_ {
-  if (!existsSync(PATH_)) return { note: NOTE, repos: roster(), rows: [] };
+  if (!existsSync(PATH_)) return { note: NOTE, repos: roster(), rows: [], heads: heads() };
   return JSON.parse(readFileSync(PATH_, "utf8")) as Record_;
 }
 
@@ -747,6 +858,59 @@ async function main(): Promise<void> {
     tasksSection();
     return;
   }
+  /**
+   * `--heads`: record what the clones are at, into a record already swept.
+   *
+   * Needed because the first sweep did not save this, and the clone trees --
+   * which every run copied from, and which `clone()` never re-clones -- are
+   * still on disk, so the revision the agent saw is still readable. It
+   * touches nothing but `heads`, so it cannot rewrite a measured row.
+   */
+  if (argv.includes("--heads")) {
+    const rec = load();
+    const at = heads();
+    for (const h of headMatch({ repos: rec.repos, heads: at })) {
+      console.log(
+        `  ${h.same === null ? "none" : h.same ? "same" : "DIFF"} ${h.repo.padEnd(44)} ` +
+          `head=${h.head?.slice(0, 10) ?? "—"} pinned=${h.rev.slice(0, 10)}`,
+      );
+    }
+    if (existsSync(PATH_)) {
+      writeFileSync(PATH_, `${JSON.stringify({ ...rec, note: NOTE, heads: at }, null, 2)}\n`);
+      console.log(`\n  wrote heads for ${at.length} repos into ${basename(PATH_)} (rows untouched)\n`);
+    }
+    return;
+  }
+  /**
+   * `--fence`: every fenced command in its place in the run.
+   *
+   * Because the interesting thing about the fence's five denials is not the
+   * count, it is what the agent did NEXT. One denial here was a `curl` that
+   * wrote an installer to a file for inspection; three commands later the
+   * agent piped the same URL straight into `bash`, which is the command the
+   * gate denied. The ledger records calls and not their results, so the order
+   * is a measurement and the causation is a reading -- printing the
+   * neighbours is what lets a reader tell those apart.
+   */
+  if (argv.includes("--fence")) {
+    for (const row of load().rows) {
+      const cs = row.calls;
+      for (const [i, c] of cs.entries()) {
+        if (c.by !== "fence") continue;
+        console.log(`\n${row.repo} ${row.file}:${row.line} -- ${row.task.slice(0, 56)}`);
+        console.log(`  named: ${fencePrefixes(c.command ?? "").join(" ") || "(none)"}`);
+        for (let j = Math.max(0, i - 2); j <= Math.min(cs.length - 1, i + 3); j++) {
+          const n = cs[j];
+          console.log(
+            `  ${j === i ? ">>" : "  "} ${(n.by ?? "-").padEnd(5)} ${(n.decision ?? "-").padEnd(9)} ` +
+              `${(n.command ?? n.path ?? "").replace(/\s+/g, " ").slice(0, 96)}`,
+          );
+        }
+      }
+    }
+    console.log("");
+    return;
+  }
   if (argv.includes("--report")) {
     report(load());
     return;
@@ -767,10 +931,11 @@ async function main(): Promise<void> {
   const done_ = new Set(had.map(key));
   const all = corpus().filter((t) => (only ? t.state === only : true));
   const tasks = all.filter((t) => !done_.has(key(t))).slice(0, limit);
+  const at = heads();
   if (all.length === 0) throw new Error("no tasks -- run `--repos` first to clone");
   if (tasks.length === 0) {
     console.log(`\n  all ${all.length} tasks are already in the record; nothing to do.\n`);
-    report({ note: NOTE, repos: roster(), rows: had });
+    report({ note: NOTE, repos: roster(), heads: at, rows: had });
     return;
   }
   process.stderr.write(
@@ -784,13 +949,16 @@ async function main(): Promise<void> {
       `${t.state.padEnd(4)} ${String(row.calls.length).padStart(3)} calls ` +
         `${String(row.calls.filter((c) => c.tool === "Bash").length).padStart(3)} bash ` +
         `${String(row.gate.filter((g) => g.verdict === "ask" || g.verdict === "deny").length).padStart(2)} spoke ` +
-        `${String(row.fenced).padStart(2)} fenced ${String(row.calls.filter((c) => c.tool === "Task").length).padStart(2)} task ` +
+        `${String(row.fenced).padStart(2)} fenced ${String(row.calls.filter((c) => DELEGATION.has(c.tool)).length).padStart(2)} task ` +
         `${(row.ms / 1000).toFixed(0)}s ${basename(t.repo)} ${t.text.slice(0, 40)}\n`,
     );
     mkdirSync(RECORDS, { recursive: true });
-    writeFileSync(PATH_, `${JSON.stringify({ note: NOTE, repos: roster(), rows }, null, 2)}\n`);
+    writeFileSync(
+      PATH_,
+      `${JSON.stringify({ note: NOTE, repos: roster(), heads: at, rows }, null, 2)}\n`,
+    );
   }
-  report({ note: NOTE, repos: roster(), rows });
+  report({ note: NOTE, repos: roster(), heads: at, rows });
 }
 
 if (process.argv[1]?.endsWith("wild.ts")) await main();
