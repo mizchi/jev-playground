@@ -112,6 +112,8 @@ export interface Row {
   fenced: number;
   ms: number;
   exit: number | null;
+  /** Set when cleanup could not remove the run directory. */
+  leaked?: string;
   error?: string;
 }
 
@@ -394,7 +396,27 @@ async function run(t: Task): Promise<Row> {
     );
   } finally {
     row.ms = Date.now() - started;
-    rmSync(dir, { recursive: true, force: true });
+    /**
+     * CLEANUP MUST NOT BE ABLE TO END THE SWEEP, and it did.
+     *
+     * Run 9 was `mizchi/similarity`, a Rust repository, and the agent ran
+     * `cargo build` -- leaving 2.3 GB under `target/debug/deps`. `rmSync` then
+     * threw `ENOTEMPTY`, because something was still writing into the tree
+     * while rimraf walked it (a build process outliving `claude -p`), and the
+     * throw propagated out of the loop and killed the run after 8 rows.
+     *
+     * `force: true` does not cover this: it suppresses "missing", not "busy".
+     * So the directory is left behind rather than taking the corpus with it,
+     * and the row records that it leaked. **The per-run record write is the
+     * only reason the first 8 survived**, which is the argument for writing
+     * after every row rather than at the end.
+     */
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 });
+    } catch (err) {
+      row.leaked = dir;
+      row.error = `${row.error ?? ""} cleanup: ${String(err).slice(0, 120)}`.trim();
+    }
   }
   return row;
 }
@@ -731,11 +753,30 @@ async function main(): Promise<void> {
   }
   const only = argv.includes("--state") ? argv[argv.indexOf("--state") + 1] : null;
   const limit = argv.includes("--limit") ? Number.parseInt(argv[argv.indexOf("--limit") + 1], 10) : Infinity;
-  const tasks = corpus()
-    .filter((t) => (only ? t.state === only : true))
-    .slice(0, limit);
-  if (tasks.length === 0) throw new Error("no tasks -- run `--repos` first to clone");
-  const rows: Row[] = [];
+  /**
+   * RESUME, because a sweep that cannot resume loses everything to one bug.
+   *
+   * The first run of this file died in cleanup after 8 of 15 tasks (see
+   * `run`'s `finally`). Re-running from scratch would have re-spent eight
+   * agent runs to get back to where it already was, so a task already in the
+   * record is skipped by its provenance -- repo, file and line, which is the
+   * identity the author's line actually has.
+   */
+  const had = existsSync(PATH_) ? load().rows : [];
+  const key = (r: { repo: string; file: string; line: number }): string => `${r.repo}\u0000${r.file}\u0000${r.line}`;
+  const done_ = new Set(had.map(key));
+  const all = corpus().filter((t) => (only ? t.state === only : true));
+  const tasks = all.filter((t) => !done_.has(key(t))).slice(0, limit);
+  if (all.length === 0) throw new Error("no tasks -- run `--repos` first to clone");
+  if (tasks.length === 0) {
+    console.log(`\n  all ${all.length} tasks are already in the record; nothing to do.\n`);
+    report({ note: NOTE, repos: roster(), rows: had });
+    return;
+  }
+  process.stderr.write(
+    `  ${had.length} already recorded, ${tasks.length} to run (of ${all.length} matching)\n`,
+  );
+  const rows: Row[] = [...had];
   for (const t of tasks) {
     const row = await run(t);
     rows.push(row);
