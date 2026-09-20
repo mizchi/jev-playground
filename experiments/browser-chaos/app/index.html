@@ -557,19 +557,32 @@ for (const dead of ["#/settings", "#/about", "#/help", "#/faq", "#/blog", "#/con
 }
 
 function render() {
-  // `?bug=slow` delays every render by 400ms and must still paint.
+  // `?bug=slow` delays every render by 400ms. It must still paint, and
+  // it must paint exactly ONCE per interaction. Two earlier versions got
+  // this wrong and each failure looked like a result rather than a bug:
   //
-  // The first version cleared the flag BEFORE re-calling render(), so the
-  // deferred call re-entered this guard and deferred again — forever. The
-  // first screen never painted at all, and `#view` stayed empty. It went
-  // unnoticed because every walker here reaches its first control through
-  // a hash hop, and a hashchange calls render() a second time while the
-  // flag is still set, which falls through and paints. So the defect was
-  // invisible to anything that did not act on the landing screen.
-  // Clearing it after the real render is what makes it a delay.
-  if (BUG === "slow" && !render.deferred) {
-    render.deferred = true;
-    setTimeout(() => { render(); render.deferred = false; }, 400);
+  //  1. `inFlight = false` before the re-call, so the deferred render
+  //     re-entered the guard and deferred again, forever. Nothing ever
+  //     painted; `#view` stayed empty. Invisible to every walker here,
+  //     because they all reach their first control through a hash hop and
+  //     a hashchange calls render() a second time while the flag is set,
+  //     which falls through and paints. Only a spec acting on the LANDING
+  //     screen saw it, and then it read as brittleness in the spec.
+  //  2. Clearing the flag after the re-call fixed the blank screen but
+  //     painted twice per interaction — once via that fall-through and
+  //     once at 400ms. `render()` replaces innerHTML, so the second paint
+  //     detached the button Playwright had already resolved, the click
+  //     landed on a node with no listener, and the screen never advanced.
+  //     That read as a flaky generated spec (4 of 5 trials).
+  //
+  // Coalescing is what the flag has to do: any call during the delay
+  // resets the timer, and the one call that fires paints.
+  if (BUG === "slow" && !render.painting) {
+    clearTimeout(render.timer);
+    render.timer = setTimeout(() => {
+      render.painting = true;
+      try { render(); } finally { render.painting = false; }
+    }, 400);
     return;
   }
   const hash = location.hash || "#/home";
