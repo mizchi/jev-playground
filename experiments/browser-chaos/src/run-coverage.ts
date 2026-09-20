@@ -61,6 +61,68 @@ function goalWithUncovered(uncovered: ReadonlySet<string>): string {
   );
 }
 
+/**
+ * `goal-fact`: the names in the goal sentence with the LAST sentence of
+ * `goalWithUncovered` removed — so the goal carries the fact but never
+ * says to act on it.
+ *
+ * Together with `state-instr` this fills in the off-diagonal of a 2x2
+ * that §4 only ran the diagonal of. `listed-camel` is (state, no
+ * instruction) and `in-goal` is (goal, instruction), so those two differ
+ * in *both* factors at once and cannot separate them. §5 explains the
+ * gap by competition with the goal, which is a claim about the
+ * instruction; the obvious rival is that the goal sentence is simply
+ * read more carefully than a state array, which is a claim about place.
+ */
+function goalFactOnly(uncovered: ReadonlySet<string>): string {
+  const names = camelOnly(uncovered);
+  if (names.length === 0) return GOAL;
+  return (
+    `${GOAL} Specifically, this app has behaviour that has never run yet. ` +
+    `Its own function names for it are: ${names.join(", ")}.`
+  );
+}
+
+/**
+ * `state-instr`: the instruction in the goal, the names left in the
+ * state. The model has to do the join itself, which is the same join
+ * `mapped` does in code.
+ */
+// A function, not a const: `GOAL` is declared below these helpers, so a
+// top-level template literal reading it hits the temporal dead zone.
+function goalInstrOnly(): string {
+  return (
+    `${GOAL} Some of this app's behaviour has never run yet; the state field ` +
+    `\`code_not_yet_executed\` lists its own function names for it. Find the ` +
+    `control on some screen whose label matches one of those names and use it.`
+  );
+}
+
+function goalFor(arm: string, uncovered: ReadonlySet<string>): string {
+  if (arm === "in-goal") return goalWithUncovered(uncovered);
+  if (arm === "goal-fact") return goalFactOnly(uncovered);
+  if (arm === "state-instr") return goalInstrOnly();
+  return GOAL;
+}
+
+const ALL_ARMS = [
+  "blind", "listed", "listed-camel", "mapped", "in-goal",
+  "goal-fact", "state-instr",
+] as const;
+
+/** `--arms listed-camel,in-goal,...` to re-run a subset. */
+function selectedArms(): readonly string[] {
+  const i = process.argv.indexOf("--arms");
+  if (i === -1) return ALL_ARMS;
+  const want = new Set((process.argv[i + 1] ?? "").split(",").filter(Boolean));
+  const picked = ALL_ARMS.filter((a) => want.has(a));
+  if (picked.length === 0) {
+    console.error(`no arm matched; expected some of ${ALL_ARMS.join(", ")}`);
+    process.exit(1);
+  }
+  return picked;
+}
+
 /** The four functions `?branches=1` wires up. */
 const BRANCHES = ["applyPromoCode", "compareSelected", "subscribeToNewsletter", "addGiftWrap"];
 const ALL_STATES = [
@@ -110,7 +172,7 @@ async function main() {
 
   const arms: ArmRow[] = [];
   try {
-    for (const arm of ["blind", "listed", "listed-camel", "mapped", "in-goal"] as const) {
+    for (const arm of selectedArms()) {
       const jev = new Jev();
       const rows: RunResult[] = [];
       const hit: string[][] = [];
@@ -142,7 +204,10 @@ async function main() {
           steps: STEPS,
           policy: { name: arm, minConfidence: 0, mode: "none" },
           jev,
-          goal: arm === "in-goal" ? () => goalWithUncovered(lastUncovered) : GOAL,
+          goal:
+            arm === "in-goal" || arm === "goal-fact"
+              ? () => goalFor(arm, lastUncovered)
+              : goalFor(arm, new Set<string>()),
           goalState: "#/confirm",
           flow: ["#/cart", "#/checkout-1", "#/checkout-2", "#/checkout-3", "#/confirm"],
           seed: 2000 + s,
@@ -160,10 +225,12 @@ async function main() {
                   if (arm === "listed") {
                     return { code_not_yet_executed: [...uncovered].sort() };
                   }
-                  if (arm === "listed-camel") {
+                  if (arm === "listed-camel" || arm === "state-instr") {
                     // The same names `in-goal` names, in the same order,
                     // still as data beside the goal. This is the arm that
                     // separates WHERE the fact sits from WHICH facts.
+                    // `state-instr` sends the identical field and differs
+                    // only in that its goal says to act on it.
                     return { code_not_yet_executed: camelOnly(uncovered) };
                   }
                   return {};
@@ -215,15 +282,20 @@ async function main() {
     for (const r of body) console.log(line(r));
     console.log("");
 
-    const blind = arms.find((a) => a.arm === "blind")!;
+    // `--arms` can exclude blind, so there may be no baseline to
+    // compare tokens against; print the absolute number in that case
+    // rather than crashing after the table has already been printed.
+    const blind = arms.find((a) => a.arm === "blind");
     const perSeed = (a: ArmRow) => a.hit.map((h) => h.length).reduce((x, y) => x + y, 0);
     for (const a of arms) {
       console.log(
-        `  ${a.arm.padEnd(7)} branches ${perSeed(a)}/${SEEDS * 4}` +
-          (a === blind
-            ? ""
-            : `   tokens vs blind ${(((a.tokens - blind.tokens) / blind.tokens) * 100).toFixed(1)}%` +
-              `   annotations fired ${a.notes.reduce((x, y) => x + y, 0)}`),
+        `  ${a.arm.padEnd(13)} branches ${perSeed(a)}/${SEEDS * 4}` +
+          (!blind
+            ? `   tokens ${a.tokens}   annotations fired ${a.notes.reduce((x, y) => x + y, 0)}`
+            : a === blind
+              ? ""
+              : `   tokens vs blind ${(((a.tokens - blind.tokens) / blind.tokens) * 100).toFixed(1)}%` +
+                `   annotations fired ${a.notes.reduce((x, y) => x + y, 0)}`),
       );
     }
     console.log("");

@@ -39,7 +39,24 @@ import { serve } from "./serve.mjs";
 const GOAL =
   "Buy a Widget: put one in the cart, work through every checkout step, and place the order.";
 const VERBOSE = process.argv.includes("--verbose");
-const OUT = join(import.meta.dirname, "..", "generated");
+const OUT_ROOT = join(import.meta.dirname, "..", "generated");
+
+/**
+ * `--repeat N` regenerates from scratch N times and grades each.
+ *
+ * With one trial this measures two artifacts, not two methods: docs/04
+ * put the spread of agent-written artifacts at 10/24-23/24 for one
+ * prompt, so a single generation cannot tell "post-conditions catch the
+ * order bug" from "this generation happened to". Default stays 1 so the
+ * original single-trial invocation reproduces.
+ */
+function numArg(name: string, fallback: number): number {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return fallback;
+  const n = Number.parseInt(process.argv[i + 1] ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+const REPEAT = numArg("repeat", 1);
 const execFileAsync = promisify(execFile);
 /** Playwright colours its reporter output; strip it before matching. */
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*[A-Za-z]`, "g");
@@ -95,11 +112,12 @@ async function readState(
 async function runSpec(
   file: string,
   appUrl: string,
+  config: string,
 ): Promise<{ passed: boolean; firstFailure?: string }> {
   try {
     await execFileAsync(
       "npx",
-      ["playwright", "test", "--config", join(OUT, "playwright.config.ts"), file],
+      ["playwright", "test", "--config", config, file],
       {
         cwd: join(import.meta.dirname, ".."),
         env: { ...process.env, APP_URL: appUrl },
@@ -118,16 +136,28 @@ async function runSpec(
   }
 }
 
-async function main() {
-  const { server, url } = (await serve(0)) as { server: { close(): void }; url: string };
-  const exe = process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox"],
-    ...(existsSync(exe) ? { executablePath: exe } : {}),
-  });
+interface TrialResult {
+  /** spec name -> caught / missed / brittle / falsePos */
+  scores: Record<string, { caught: number; missed: number; brittle: number; falsePos: boolean }>;
+  /** Which real bugs each spec caught, for reporting stability. */
+  caughtBugs: Record<string, string[]>;
+  keptAssertions: number;
+  usefulSteps: number;
+  reachedGoal: boolean;
+  calls: number;
+  tokens: number;
+}
 
-  try {
+const SEED_BASE = 7;
+
+async function trial(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  url: string,
+  exe: string,
+  OUT: string,
+  trialIndex: number,
+): Promise<TrialResult> {
+  {
     // ---- 1. explore, recording enough to write a file afterwards -------
     const jev = new Jev();
     const ctx = await browser.newContext();
@@ -152,7 +182,7 @@ async function main() {
       goal: GOAL,
       goalState: "#/confirm",
       flow: ["#/cart", "#/checkout-1", "#/checkout-2", "#/checkout-3", "#/confirm"],
-      seed: 7,
+      seed: SEED_BASE + trialIndex,
       trace: VERBOSE ? (l) => console.log(`    ${l}`) : undefined,
       afterStep: async (row) => {
         const after = await readState(page);
@@ -172,7 +202,14 @@ async function main() {
     if (!run.reachedGoal) {
       console.log("  the explorer did not reach the goal; nothing to generate");
       process.exitCode = 1;
-      return;
+      // Report it as a trial rather than aborting the sweep: "the
+      // explorer sometimes does not arrive" is itself a result about
+      // generation stability, and swallowing it would flatter the method.
+      return {
+        scores: {}, caughtBugs: {}, keptAssertions: 0,
+        usefulSteps: 0, reachedGoal: false,
+        calls: jev.calls, tokens: jev.inputTokens,
+      };
     }
     // Only the steps that did something belong in a test. A step that
     // changed nothing is exploration, not a reproduction.
@@ -246,9 +283,10 @@ export default defineConfig({
     const grid: Record<string, Record<string, boolean>> = {};
     for (const spec of specs) {
       grid[spec.name] = {};
-      grid[spec.name]!["(clean)"] = (await runSpec(spec.file, url)).passed;
+      const cfg = join(OUT, "playwright.config.ts");
+      grid[spec.name]!["(clean)"] = (await runSpec(spec.file, url, cfg)).passed;
       for (const m of MUTATIONS) {
-        const r = await runSpec(spec.file, `${url}?bug=${m.bug}`);
+        const r = await runSpec(spec.file, `${url}?bug=${m.bug}`, cfg);
         grid[spec.name]![m.bug] = r.passed;
         if (VERBOSE && !r.passed) console.log(`    ${spec.name}/${m.bug}: ${r.firstFailure}`);
       }
@@ -280,10 +318,105 @@ export default defineConfig({
         `$${((jev.inputTokens / 1e6) * 0.042).toFixed(5)}`,
     );
     console.log("");
+
+    const scores: TrialResult["scores"] = {};
+    const caughtBugs: TrialResult["caughtBugs"] = {};
+    for (const spec of specs) {
+      const row = grid[spec.name]!;
+      scores[spec.name] = {
+        caught: MUTATIONS.filter((m) => m.isBug && row[m.bug] === false).length,
+        missed: MUTATIONS.filter((m) => m.isBug && row[m.bug] === true).length,
+        brittle: MUTATIONS.filter((m) => !m.isBug && row[m.bug] === false).length,
+        falsePos: row["(clean)"] === false,
+      };
+      caughtBugs[spec.name] = MUTATIONS.filter((m) => m.isBug && row[m.bug] === false).map((m) => m.bug);
+    }
+    return {
+      scores,
+      caughtBugs,
+      keptAssertions: kept.reduce((n, k) => n + k.length, 0),
+      usefulSteps: useful.length,
+      reachedGoal: run.reachedGoal,
+      calls: jev.calls,
+      tokens: jev.inputTokens,
+    };
+  }
+}
+
+async function main() {
+  const { server, url } = (await serve(0)) as { server: { close(): void }; url: string };
+  const exe = process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox"],
+    ...(existsSync(exe) ? { executablePath: exe } : {}),
+  });
+
+  const trials: TrialResult[] = [];
+  try {
+    for (let i = 0; i < REPEAT; i += 1) {
+      // Each trial writes its own specs so a later one cannot be graded
+      // against an earlier one's files.
+      const out = REPEAT === 1 ? OUT_ROOT : join(OUT_ROOT, `trial-${i + 1}`);
+      if (REPEAT > 1) {
+        console.log("");
+        console.log("#".repeat(100));
+        console.log(`  TRIAL ${i + 1} of ${REPEAT}`);
+        console.log("#".repeat(100));
+      }
+      trials.push(await trial(browser, url, exe, out, i));
+    }
   } finally {
     await browser.close();
     server.close();
   }
+
+  if (REPEAT === 1) return;
+
+  // ---- 5. across trials -------------------------------------------------
+  console.log("");
+  console.log("=".repeat(100));
+  console.log(`  ACROSS ${REPEAT} INDEPENDENT GENERATIONS — is the 1 -> 2 difference the method or the artifact?`);
+  console.log("=".repeat(100));
+  console.log("");
+  const names = Object.keys(trials[0]!.scores);
+  const w = Math.max(9, ...names.map((n) => n.length));
+  console.log(`  ${"spec".padEnd(w)}  caught per trial        mean   min  max  brittle  false-pos`);
+  console.log(`  ${"-".repeat(w)}  ${"-".repeat(22)}  -----  ---  ---  -------  ---------`);
+  for (const n of names) {
+    const c = trials.map((t) => t.scores[n]!.caught);
+    const mean = c.reduce((x, y) => x + y, 0) / c.length;
+    console.log(
+      `  ${n.padEnd(w)}  ${c.join(", ").padEnd(22)}  ${mean.toFixed(2).padStart(5)}  ` +
+        `${String(Math.min(...c)).padStart(3)}  ${String(Math.max(...c)).padStart(3)}  ` +
+        `${String(trials.reduce((s, t) => s + t.scores[n]!.brittle, 0)).padStart(7)}  ` +
+        `${String(trials.filter((t) => t.scores[n]!.falsePos).length).padStart(9)}`,
+    );
+  }
+  console.log("");
+  for (const n of names) {
+    const sets = trials.map((t) => t.caughtBugs[n]!.join("+") || "(none)");
+    console.log(`  ${n.padEnd(w)} caught: ${sets.join("  |  ")}`);
+  }
+  console.log("");
+  const paired = trials.filter((t) => t.scores["asserted"] && t.scores["replay"]);
+  const wins = paired.filter((t) => t.scores["asserted"]!.caught > t.scores["replay"]!.caught).length;
+  const ties = paired.filter((t) => t.scores["asserted"]!.caught === t.scores["replay"]!.caught).length;
+  console.log(
+    `  asserted > replay in ${wins}/${paired.length} trials, tied in ${ties}, ` +
+      `worse in ${paired.length - wins - ties}`,
+  );
+  console.log(
+    `  steps ${trials.map((t) => t.usefulSteps).join(",")}   ` +
+      `assertions kept ${trials.map((t) => t.keptAssertions).join(",")}   ` +
+      `reached goal ${trials.filter((t) => t.reachedGoal).length}/${REPEAT}`,
+  );
+  const tok = trials.reduce((s, t) => s + t.tokens, 0);
+  console.log(
+    `  total: ${trials.reduce((s, t) => s + t.calls, 0)} calls, ${tok} input tokens, ` +
+      `$${((tok / 1e6) * 0.042).toFixed(5)}`,
+  );
+  console.log("");
 }
 
 main().catch((err) => {
