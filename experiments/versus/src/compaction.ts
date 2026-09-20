@@ -64,7 +64,7 @@ interface Fact {
   entryId: string;
 }
 
-interface Transcript {
+export interface Transcript {
   id: string;
   entries: Entry[];
   facts: Fact[];
@@ -206,7 +206,13 @@ const save = (r: Record_): void => {
  */
 const WINDOW = 160;
 
-function judge(t: Transcript, surviving: string): Omit<Row, "transcript" | "arm" | "tokensAfter" | "budget" | "ms"> {
+/**
+ * EXPORTED, because `experiments/compact/src/precompact.ts` scores the host
+ * summariser's output with the same window check. Reimplementing it there
+ * would make the two reports' "facts kept" mean different things while
+ * printing the same words -- the error `replicate.ts` exists to avoid.
+ */
+export function judge(t: Transcript, surviving: string): Omit<Row, "transcript" | "arm" | "tokensAfter" | "budget" | "ms"> {
   let kept = 0;
   let invented = 0;
   let absent = 0;
