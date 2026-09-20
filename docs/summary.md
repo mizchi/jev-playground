@@ -46,7 +46,7 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | **カバレッジ誘導** | 未実行の関数名を渡す。**state の配列 vs ゴール文** | 同じ名前集合で分岐 **3/12 → 11/12** | [26](26-coverage-guidance.md) |
 | **1 文 → テスト生成** | 生成してミューテーションで採点 | 捕まえたバグ **1 → 2**。初期状態由来の候補は 0.00 で落ちる | [27](27-nl-test-generation.md) |
 | **性能改善の自動化** | 計測 → 診断 → **適用 → 再計測** | 注記 1 行で推薦の実測価値が **188ms → 1,664ms** | [28](28-perf-automation.md) |
-| **投機的 fan-out** | 操作別 target を 1 リクエストで同時に聞く | 操作確定前と確定後の判断が**全実行で同一**(TV 0.000)、リクエスト半分 | [29](29-speculative-fanout.md) |
+| **投機的 fan-out** | 操作別 target を 1 リクエストで同時に聞く | 操作確定前と確定後の判断が**全実行で同一**(本番 12/12 で TV 0.000)、リクエスト半分 | [29](29-speculative-fanout.md) |
 | **重ねたときの ablation** | フルスタックから 1 つずつ抜く + 転用候補 5 つを実装 | **足し算ではなく崖**。採用 2・却下 3 | [30](30-browser-accuracy.md) |
 
 上流([chaosbringer](https://github.com/mizchi/chaosbringer))に 3 本入った。

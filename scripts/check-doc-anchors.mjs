@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Every `docs/NN-*.md#anchor` link has to point at a heading that exists.
+ * Every `*.md#anchor` link in the docs has to point at a heading that exists.
  *
  * These reports cross-reference each other constantly, and a section that
  * gets renamed takes every link to it down silently — GitHub serves the
@@ -9,8 +9,8 @@
  * "`step.url` does not move with the hash" section of itself that had
  * never existed, because the fact only ever lived in a code comment.
  *
- * Two things this has to know, and without either it reports dozens of
- * false alarms rather than staying quiet — which is the better failure
+ * Four things this has to know, and without any of them it reports dozens
+ * of false alarms rather than staying quiet — which is the better failure
  * direction, but still has to be fixed before the silence means anything:
  *
  * - `00-api-notes.md` labels its sections with explicit
@@ -20,14 +20,26 @@
  * - Link syntax inside a code span or a fenced block is documentation,
  *   not a link. docs/30's findings block quotes the very pattern this
  *   script matches, and the first version reported it as broken.
+ * - Link targets resolve relative to the linking file, so the same report
+ *   is `25-...md` from inside docs/ and `docs/25-...md` from the root.
+ *
+ * Three widenings so far, each one finding links that had never been
+ * checked at all. The pattern started as `](NN-name.md#...)`: it required
+ * a filename, so same-file `](#...)` links were invisible (two were
+ * broken), and it required that filename to start with a digit, so links
+ * to `practice.md` and `README.md` were invisible too. The root
+ * `README.md` was not scanned at all. **A silent checker and a clean
+ * checkout look identical** — the count printed at the end is the only
+ * thing that distinguishes them, which is why it is printed on success.
  *
  * No dependencies, no network. `just check-doc-anchors`.
  */
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DOCS = join(dirname(fileURLToPath(import.meta.url)), "..", "docs");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const DOCS = join(ROOT, "docs");
 
 /**
  * GitHub's heading slug: lower-case, drop everything that is not a letter,
@@ -72,29 +84,46 @@ function withoutCode(text) {
 }
 
 const cache = new Map();
-function anchorsFor(file) {
-  if (!cache.has(file)) {
+/** `abs` is an absolute path; null means the file does not exist. */
+function anchorsFor(abs) {
+  if (!cache.has(abs)) {
     try {
-      cache.set(file, anchorsOf(readFileSync(join(DOCS, file), "utf8")));
+      cache.set(abs, anchorsOf(readFileSync(abs, "utf8")));
     } catch {
-      cache.set(file, null); // missing file
+      cache.set(abs, null); // missing file
     }
   }
-  return cache.get(file);
+  return cache.get(abs);
 }
+
+/**
+ * The root README links into docs/ and is linked to from inside it, so it
+ * has to be scanned under the same rules. Its links resolve against the
+ * repository root rather than docs/, hence the per-file base directory.
+ */
+const files = [
+  join(ROOT, "README.md"),
+  ...readdirSync(DOCS)
+    .filter((f) => f.endsWith(".md"))
+    .sort()
+    .map((f) => join(DOCS, f)),
+];
 
 let checked = 0;
 const broken = [];
-for (const md of readdirSync(DOCS).filter((f) => f.endsWith(".md")).sort()) {
-  const text = withoutCode(readFileSync(join(DOCS, md), "utf8"));
-  // Only intra-docs links carrying an anchor. A bare `](12-comeback.md)`
-  // cannot rot the same way, and external URLs are not ours to verify.
-  for (const m of text.matchAll(/\]\((\d[\w.-]*\.md)#([^)]+)\)/g)) {
+for (const abs of files) {
+  const name = relative(ROOT, abs);
+  const base = dirname(abs);
+  const text = withoutCode(readFileSync(abs, "utf8"));
+  // Any markdown target carrying an anchor. `[^):#]` keeps this off
+  // `https://` URLs, whose anchors are not ours to verify, and a bare
+  // `](12-comeback.md)` cannot rot the same way so it is left alone.
+  for (const m of text.matchAll(/\]\(([^):#]+\.md)#([^)]+)\)/g)) {
     const [, target, anchor] = m;
     checked += 1;
-    const anchors = anchorsFor(target);
-    if (anchors === null) broken.push(`${md} -> ${target} (no such file)`);
-    else if (!anchors.has(anchor)) broken.push(`${md} -> ${target}#${anchor}`);
+    const anchors = anchorsFor(join(base, target));
+    if (anchors === null) broken.push(`${name} -> ${target} (no such file)`);
+    else if (!anchors.has(anchor)) broken.push(`${name} -> ${target}#${anchor}`);
   }
   // Same-file anchors, `](#section)`. These were invisible to the check
   // above, whose pattern requires a filename before the `#` — and two
@@ -104,12 +133,12 @@ for (const md of readdirSync(DOCS).filter((f) => f.endsWith(".md")).sort()) {
   for (const m of text.matchAll(/\]\(#([^)]+)\)/g)) {
     const [, anchor] = m;
     checked += 1;
-    if (!anchorsFor(md).has(anchor)) broken.push(`${md} -> #${anchor} (same file)`);
+    if (!anchorsFor(abs).has(anchor)) broken.push(`${name} -> #${anchor} (same file)`);
   }
 }
 
 for (const b of broken) console.error(`  broken  ${b}`);
 console.log(
-  `  ${checked} anchored links across docs/, ${broken.length} broken`,
+  `  ${checked} anchored links across ${files.length} files, ${broken.length} broken`,
 );
 process.exit(broken.length === 0 ? 0 : 1);

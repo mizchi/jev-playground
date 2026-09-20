@@ -55,7 +55,7 @@ node hooks/test-gate.mjs                                       # 18: hook を実
 node jevlang-js/bin/jevlang.mjs examples/milk.jev               # 19: jevlang(JS 版)
 moon run --target native cmd/jevlang -- examples/milk.jev       # 19: jevlang(MoonBit 版)
 scripts/jevlang-conformance.sh                                 # 19: 2 実装の一致(API 不要)
-node scripts/check-doc-anchors.mjs                             # docs 内の #anchor 切れ(API 不要)
+node scripts/check-doc-anchors.mjs                             # docs/ と 根の README の #anchor 切れ(API 不要)
 node hooks/test-gate.mjs --policy-logic                        # 18/19: .jev ポリシーの規則(API 不要)
 moon run --target native cmd/jevdsl -- --bundled               # 20: match できるラッパー
 cd experiments/eslint-plugin-jev && npm i && npm test           # 21: ESLint プラグイン(API 不要)
