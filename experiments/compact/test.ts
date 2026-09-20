@@ -20,6 +20,7 @@ import type { Transcript } from "./src/corpus.js";
 import type { Record_ } from "./src/run.js";
 import { ARMS, oracleInstructions } from "./src/precompact.js";
 import { keepOrderFree, keepOrderDigits, rankOfFact } from "./src/relevance.js";
+import { SUPERLATIVE, answerGroup, commandGroups, isComparison } from "./src/aggregate.js";
 
 let pass = 0;
 let fail = 0;
@@ -415,6 +416,63 @@ check("the digits ordering really does separate on digits and nothing else", () 
     else ok(!seenWithout, `${id} has a digit but sorts after an entry without one`);
   }
   ok(order.some(has) && order.some((id) => !has(id)), "the corpus must contain both kinds or the arm is vacuous");
+});
+
+
+// --------------------------------------------- TODO §1.7's three-stage split
+//
+// docs/47's whole §1 rests on the superlative predicate being a property of
+// the REQUEST. If it ever saw the answer, the split would be circular and the
+// report's main claim would be void.
+
+check("the goal-type predicate reads the goal and nothing else", () => {
+  // Exercised on the answers themselves: none of them may match, or the
+  // predicate would be partly reading what it is used to predict.
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  for (const t of ts) {
+    for (const f of t.facts) {
+      ok(!SUPERLATIVE.test(f.text), `the predicate matches the planted answer "${f.text}", so it is circular`);
+    }
+  }
+  // And it must actually split, or §1's table is one class.
+  const yes = ts.filter((t) => isComparison(t.entries.find((e) => e.role === "user")?.text ?? "")).length;
+  ok(yes > 0 && yes < ts.length, `the predicate put ${yes}/${ts.length} on one side, so it separates nothing`);
+});
+
+check("the goal-type predicate is stable under case and word boundaries", () => {
+  ok(isComparison("which is the LONGEST"), "must be case-insensitive");
+  ok(isComparison("tell me the most-referenced one"), "must match inside a hyphenated word");
+  ok(!isComparison("read the almost-final draft"), "`almost` must not match `most`");
+  ok(!isComparison("list the leastwise options"), "`leastwise` must not match `least`");
+  ok(!isComparison("what is the dropAt default"), "a plain goal must not match");
+});
+
+check("every transcript's answer sits in exactly one command group", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  for (const t of ts) {
+    const g = answerGroup(t);
+    ok(g !== null, `${t.id}: the answer is in no command group, so §3 has no label for it`);
+    const groups = commandGroups(t);
+    const holding = [...groups.entries()].filter(([, es]) =>
+      es.some((e) => t.facts.some((f) => f.entryId === e.id)),
+    );
+    eq(holding.length, 1, `${t.id}: the answer is in ${holding.length} groups, so the label is ambiguous: `);
+    ok((groups.get(g as string) ?? []).length > 0, `${t.id}: the answer's group is empty`);
+  }
+});
+
+check("command grouping covers every labelled tool entry, once", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  for (const t of ts) {
+    const want = t.entries.filter((e) => e.role === "tool" && e.label).length;
+    const got = [...commandGroups(t).values()].reduce((n, es) => n + es.length, 0);
+    eq(got, want, `${t.id}: grouping lost or duplicated entries: `);
+    const ids = [...commandGroups(t).values()].flatMap((es) => es.map((e) => e.id));
+    eq(new Set(ids).size, ids.length, `${t.id}: an entry is in two groups: `);
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
