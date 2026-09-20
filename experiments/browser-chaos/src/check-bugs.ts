@@ -247,6 +247,34 @@ async function main() {
     );
     await ctx.close();
 
+    // ---- every mutation has to paint the LANDING screen ---------------
+    //
+    // The gap that hid a real defect for two reports. Every walker here
+    // reaches its first control through a hash hop, and a hashchange
+    // rendered a second time, which papered over `?bug=slow` never
+    // painting at all: `#view` stayed empty forever. It only surfaced
+    // once a generated spec started from the landing screen (the
+    // `buynow` route), and then it read as brittleness in the spec
+    // rather than as a broken fixture.
+    console.log("");
+    console.log("  every mutation paints the landing screen (no hash hop first)");
+    for (const bug of ["", "cart", "order", "gate", "label", "slow", "express"]) {
+      const c = await browser.newContext();
+      const p = await c.newPage();
+      const q = [bug ? `bug=${bug}` : "", "routes=1"].filter(Boolean).join("&");
+      await p.goto(`${url}?${q}`, { waitUntil: "domcontentloaded" });
+      // Generously past the 400ms `slow` delay.
+      await p.waitForTimeout(1500);
+      const painted = Number(
+        await p.evaluate("document.getElementById('view').innerHTML.length"),
+      );
+      const h1 = String(
+        await p.evaluate("(document.querySelector('#view h1')||{}).textContent || ''"),
+      );
+      check(painted > 0 && h1.length > 0, `${bug || "clean"}: landing screen painted`, `#view=${painted} h1="${h1}"`);
+      await c.close();
+    }
+
     // ---- ?routes=1: four route families, and a route-specific bug ------
     console.log("");
     console.log("  ?routes=1 — more than one path to the goal (docs/27 §4.6)");

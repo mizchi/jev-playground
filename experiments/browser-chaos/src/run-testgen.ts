@@ -36,8 +36,20 @@ import {
 // @ts-expect-error - plain .mjs helper
 import { serve } from "./serve.mjs";
 
-const GOAL =
-  "Buy a Widget: put one in the cart, work through every checkout step, and place the order.";
+/**
+ * The original goal names a route: "work through every checkout step"
+ * describes the 3-step path and not the express page. On `?routes=1`
+ * that turns a board with four routes into a goal with one, so
+ * `--neutral-goal` drops exactly that clause and changes nothing else.
+ *
+ * Reporting "the route did not vary" without varying this would be the
+ * same error this report was corrected for: concluding about a factor
+ * that was never moved.
+ */
+const NEUTRAL_GOAL = process.argv.includes("--neutral-goal");
+const GOAL = NEUTRAL_GOAL
+  ? "Buy a Widget: put one in the cart and place the order."
+  : "Buy a Widget: put one in the cart, work through every checkout step, and place the order.";
 const VERBOSE = process.argv.includes("--verbose");
 const OUT_ROOT = join(import.meta.dirname, "..", "generated");
 
