@@ -19,3 +19,13 @@ experiments/agent/skills/
 # the scored record, so their null answers never replace the numbers the
 # reports are made from.
 experiments/*/records/*-worlds.json
+
+# TEMPORARY, and it must come back out. The docs/55 sweep rewrites this record
+# after every run, so tracking it mid-sweep means a stale commit every few
+# minutes. Untracked until the sweep finishes, then this block is DELETED and
+# the completed record is committed with the report.
+#
+# Committed records are how this programme stays replayable without an API key
+# (every docs/ recipe reads one), so a records file left ignored is a broken
+# promise, not a tidy repository.
+experiments/finish/records/wild.json
