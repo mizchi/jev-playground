@@ -11,3 +11,8 @@ hooks/out-*.jsonl
 experiments/*/.jev-quality*.json
 # Playwright run artifacts from the generated specs (docs/27).
 experiments/*/test-results/
+# Per-trial output from `run-testgen.ts --repeat N` (docs/27). Regenerable,
+# and committing whichever trials happen to exist mid-sweep is worse than
+# committing none. The single-trial output above it stays tracked as the
+# example docs/27 quotes.
+experiments/*/generated/trial-*/
