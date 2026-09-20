@@ -24,6 +24,21 @@
  * against `records/corpus.json`'s planted facts, with the same window check
  * docs/42 §1.2 used (imported, not reimplemented -- see `judge`).
  *
+ * AND ON THE WAY OUT, ONLY ONE OF THEM CAN CHANGE ANYTHING. TODO §1.5's first
+ * candidate was to splice measured values back into the finished summary
+ * through `PostCompact`, and asked for a wire check before anything was built.
+ * Read off the same binary, the two executors return different shapes:
+ *
+ *   PreCompact   -> { newCustomInstructions: <the hook's stdout> }
+ *   PostCompact  -> { userDisplayMessage: "PostCompact [cmd] completed: ..." }
+ *
+ * So `PostCompact` is an OBSERVER: its stdout becomes a line shown to the
+ * person, and the summary it was handed is already committed. **The splice is
+ * impossible**, and the only channel into the summary is `PreCompact`'s stdout
+ * becoming the instructions -- which is what the `oracle` arm below uses, and
+ * why "pass the values in the instructions" is the only surviving candidate
+ * rather than the second-best one.
+ *
  * And compaction can be driven headlessly, which was the other thing in doubt:
  * `claude -p "/compact" --resume <session-id>` fires both hooks with
  * `trigger: "manual"`. That "manual" is a real limit and §3 says so: the
@@ -64,10 +79,51 @@ export const KEEP_FACTS =
   "and command output. Prefer dropping narrative to dropping a number. If a " +
   "tool printed a figure that answers the user's question, quote it.";
 
+/**
+ * The `oracle` arm's instructions: THIS transcript's measured values, verbatim.
+ *
+ * TODO §1.5 asks whether a cheap judgment in front of the summariser -- "does
+ * this entry contain a measured value?" -- would be worth building, and lists
+ * "pass the values in `custom_instructions`" as candidate 2 while noting it is
+ * "**ほぼ同語反復**" (nearly tautological): hand over the facts, see whether the
+ * facts survive.
+ *
+ * THE TAUTOLOGY IS THE POINT, because it makes this an UPPER BOUND rather than
+ * a result. Whatever a classifier could ever supply, it cannot beat being
+ * handed the exact answer strings. So:
+ *
+ *   oracle does not beat `plain`  ->  the seam does not control the output, and
+ *                                     no classifier in front of it can help.
+ *                                     The design is dead without building it.
+ *   oracle reaches the ceiling    ->  the design is viable, and the remaining
+ *                                     question is jev's accuracy at picking the
+ *                                     strings -- which needs a fact corpus
+ *                                     bigger than nine (§1.5 candidate 3).
+ *
+ * This arm is NOT a jev measurement and must never be quoted as one. It is the
+ * measurement that says whether a jev measurement here is worth taking, which
+ * is docs/24 §2's order (cheap probe before expensive sweep) applied to a
+ * design instead of to an arm -- the same move that saved docs/44 §1.3 an hour.
+ */
+export function oracleInstructions(t: Transcript): string {
+  const list = t.facts.map((f) => `"${f.text}"`).join(", ");
+  return (
+    "Your summary must contain these exact strings verbatim, each next to what it " +
+    `measures: ${list}. They are the measured values this conversation established; ` +
+    "reproduce them character for character rather than paraphrasing or rounding them."
+  );
+}
+
 export interface Arm {
   name: string;
   /** Passed after `/compact`. Empty means the host's default summariser prompt. */
   instructions: string;
+  /**
+   * Per-transcript instructions, when the arm's text depends on the corpus
+   * entry. Overrides `instructions` for that run. Only `oracle` uses it, and
+   * `--seams` prints what actually reached the host either way.
+   */
+  build?: (t: Transcript) => string;
 }
 
 export const ARMS: Arm[] = [
@@ -89,6 +145,8 @@ export const ARMS: Arm[] = [
    * say so with a number.
    */
   { name: "plainagain", instructions: "" },
+  /** The upper bound. See `oracleInstructions`. [TODO §1.5] */
+  { name: "oracle", instructions: "", build: oracleInstructions },
 ];
 
 export interface Row {
@@ -262,10 +320,11 @@ function compact(t: Transcript, arm: Arm, root: string): Captured {
   installHooks(cwd, logPath);
   const sessionId = randomUUID();
   const transcript = seed(t, cwd, sessionId);
+  const instructions = arm.build ? arm.build(t) : arm.instructions;
   const started = Date.now();
   const out = spawnSync(
     "claude",
-    ["-p", arm.instructions ? `/compact ${arm.instructions}` : "/compact", "--resume", sessionId, "--model", MODEL],
+    ["-p", instructions ? `/compact ${instructions}` : "/compact", "--resume", sessionId, "--model", MODEL],
     {
       cwd,
       encoding: "utf8",
@@ -316,6 +375,27 @@ function transcripts(): Transcript[] {
 
 const pct = (x: number, n: number): string => (n === 0 ? "—" : `${((100 * x) / n).toFixed(0)}%`);
 
+/**
+ * Exact two-sided sign test on the discordant pairs.
+ *
+ * Here to keep a saturated arm honest: `oracle` lands on 9/9, which reads as
+ * decisive until the pair count is next to it. Three discordant pairs cannot
+ * produce a two-sided p below 0.25, so the arm's value is that it saturates,
+ * not that it separates.
+ */
+function signTest(less: number, more: number): number {
+  const n = less + more;
+  if (n === 0) return 1;
+  const choose = (k: number): number => {
+    let r = 1;
+    for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1);
+    return r;
+  };
+  let tail = 0;
+  for (let i = 0; i <= Math.min(less, more); i++) tail += choose(i);
+  return Math.min(1, (2 * tail) / 2 ** n);
+}
+
 function show(rec: Record_): void {
   console.log("\n# Does rewriting the summariser's instructions keep more facts?\n");
   console.log(
@@ -335,7 +415,7 @@ function show(rec: Record_): void {
     const facts = g.reduce((n, r) => n + r.facts, 0);
     const saw = g.filter((r) => (r.sawInstructions ?? "").length > 0).length;
     console.log(
-      `| \`${arm.name}\` | ${arm.instructions ? `**${saw}/${g.length}**` : `n/a (none sent)`} | ` +
+      `| \`${arm.name}\` | ${arm.instructions || arm.build ? `**${saw}/${g.length}**` : `n/a (none sent)`} | ` +
         `**${pct(kept, facts)}** (${kept}/${facts}) | ${g.reduce((n, r) => n + r.invented, 0)} | ` +
         `${g.reduce((n, r) => n + r.absent, 0)} | ${med(g.map((r) => r.summaryChars))} chars | ` +
         `${med(g.map((r) => r.ms))} |`,
@@ -410,6 +490,128 @@ function show(rec: Record_): void {
             "reading. It is still 8 transcripts.") +
       "\n",
     );
+  }
+
+  // ---------------------------------------------------- TODO §1.5's oracle
+  const oracleRows = byArm("oracle");
+  if (oracleRows.length > 0) {
+    const plainRows = byArm("plain");
+    const againRows = byArm("plainagain");
+    const sum = (rs: Row[], k: "kept" | "facts" | "invented"): number => rs.reduce((n, r) => n + r[k], 0);
+    console.log("\n## Is a judgment in front of the summariser worth building? [TODO §1.5]\n");
+    console.log(
+      "**This section's arm is an UPPER BOUND, not a jev result.** `oracle` hands the summariser this " +
+        "transcript's measured values as exact strings and tells it to reproduce them character for " +
+        "character. No classifier can do better than being given the answer, so if the ceiling is not " +
+        "above the floor there is nothing to build -- and the design is refuted without writing the " +
+        "component. TODO §1.5 called this candidate \"nearly tautological\"; the tautology is what makes " +
+        "it a bound.\n",
+    );
+    console.log("| arm | what reached the summariser | facts kept | invented |");
+    console.log("| --- | --- | --- | --- |");
+    for (const [name, rs] of [
+      ["plain", plainRows],
+      ["plainagain", againRows],
+      ["instructed", byArm("instructed")],
+      ["oracle", oracleRows],
+    ] as const) {
+      if (rs.length === 0) continue;
+      const what =
+        name === "oracle"
+          ? "**the exact strings**"
+          : name === "instructed"
+            ? "a general rule"
+            : "nothing (host default)";
+      console.log(
+        `| \`${name}\` | ${what} | **${pct(sum(rs, "kept"), sum(rs, "facts"))}** ` +
+          `(${sum(rs, "kept")}/${sum(rs, "facts")}) | ${sum(rs, "invented")} |`,
+      );
+    }
+    const op = transcripts()
+      .map((t) => {
+        const a = plainRows.find((r) => r.transcript === t.id);
+        const b = oracleRows.find((r) => r.transcript === t.id);
+        return a && b ? { id: t.id, plain: a, oracle: b } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    const up = op.filter((x) => x.oracle.kept > x.plain.kept).length;
+    const down = op.filter((x) => x.oracle.kept < x.plain.kept).length;
+    const drawMoved = transcripts().filter((t) => {
+      const a = plainRows.find((r) => r.transcript === t.id);
+      const b = againRows.find((r) => r.transcript === t.id);
+      return a && b && a.kept !== b.kept;
+    }).length;
+    const ceiling = sum(oracleRows, "kept") === sum(oracleRows, "facts");
+    // THE EXACT SIGN TEST GOES NEXT TO THE CEILING, not underneath it. A
+    // saturated arm invites being read as a strong result; on three discordant
+    // pairs the test cannot clear 0.05 no matter which way they fall, and
+    // saying so here is cheaper than a reader discovering it.
+    const discordant = up + down;
+    const signP = signTest(up, down);
+    console.log(
+      `\nPaired against \`plain\` on ${op.length} transcripts: **${up} better, ${down} worse, ` +
+        `${op.length - up - down} the same**, against a measured draw of ${drawMoved}/${againRows.length} ` +
+        `from \`plainagain\`. Exact sign test on the ${discordant} discordant pair` +
+        `${discordant === 1 ? "" : "s"}: **p = ${signP.toFixed(3)}** -- which cannot reach 0.05 at this n ` +
+        `whichever way they fall, so read the next paragraph as a mechanism result and not as a ` +
+        `separation.\n`,
+    );
+    if (ceiling) {
+      console.log(
+        `> **The oracle reaches the ceiling: ${sum(oracleRows, "kept")}/${sum(oracleRows, "facts")} facts, ` +
+          `${sum(oracleRows, "invented")} invented**, recovering every fact \`plain\` dropped. So the seam ` +
+          "does control the output -- **a specific list of strings gets obeyed where §2's general rule did " +
+          "not**, and that difference is the finding: `custom_instructions` is not a suggestion channel " +
+          "when what it carries is literal. **And it is the only channel there is** -- TODO §1.5's first " +
+          "candidate was to splice the values into the finished summary via `PostCompact`, and the hook " +
+          "executors say that cannot work: `PreCompact` returns `newCustomInstructions` built from the " +
+          "hook's stdout, while `PostCompact` returns only `userDisplayMessage`, a line shown to the " +
+          "person after the summary is already committed. **One read of the binary retired candidate 1 " +
+          "for nothing**, which is the same move that found this seam in the first place. " +
+          "**The design is viable, and what is unmeasured is now " +
+          "precisely jev's accuracy at picking the strings**, which needs the bigger fact corpus " +
+          "TODO §1.5 named as candidate 3. The honest state of §1.5: **mechanism confirmed at the " +
+          "ceiling, component unmeasured, and the ceiling is what a classifier would be competing " +
+          "against rather than something it could exceed.**\n",
+      );
+    } else if (up > down && up > drawMoved) {
+      console.log(
+        `> **The oracle beats \`plain\` by more than the draw** (${up} transcripts against a draw of ` +
+          `${drawMoved}), without reaching the ceiling. So the seam has partial control: handing over the ` +
+          `exact strings helps and is still not sufficient. **A classifier could capture at most this ` +
+          `much** -- ${pct(sum(oracleRows, "kept"), sum(oracleRows, "facts"))} against ` +
+          `${pct(sum(plainRows, "kept"), sum(plainRows, "facts"))} -- so the question becomes whether that ` +
+          `gap is worth a component, on a corpus of ${sum(oracleRows, "facts")} facts.\n`,
+      );
+    } else {
+      console.log(
+        `> **The oracle does not clear the draw** (${up} better, ${down} worse, against a draw of ` +
+          `${drawMoved}/${againRows.length}). **This refutes the design rather than the component:** the ` +
+          "summariser was handed the exact answer strings and told to copy them, and fact survival did not " +
+          "move outside its own variation. A classifier in front of this seam cannot supply anything " +
+          "stronger than the answer itself, so **there is nothing worth building here** -- and that is " +
+          "settled for the price of eight compactions instead of a component plus a labelled corpus.\n",
+      );
+    }
+    const missed = oracleRows.filter((r) => r.kept < r.facts);
+    if (missed.length > 0) {
+      console.log("| transcript | facts | oracle kept | `plain` kept | the string it was handed |");
+      console.log("| --- | --- | --- | --- | --- |");
+      for (const r of missed) {
+        const t = transcripts().find((x) => x.id === r.transcript);
+        const pl = plainRows.find((x) => x.transcript === r.transcript);
+        console.log(
+          `| \`${r.transcript}\` | ${r.facts} | **${r.kept}** | ${pl?.kept ?? "—"} | ` +
+            `${(t?.facts ?? []).map((f) => `\`${f.text}\``).join(", ")} |`,
+        );
+      }
+      console.log(
+        `\n**${missed.length} transcript${missed.length === 1 ? "" : "s"} dropped a value it was handed ` +
+          "verbatim with an instruction to copy it.** That is the strongest available evidence about the " +
+          "seam: `custom_instructions` reaches the summariser (the column above proves it), and the " +
+          "summariser still decides what the summary is about.\n",
+      );
+    }
   }
 
   const failed = rec.rows.filter((r) => r.error);
@@ -545,8 +747,15 @@ function seams(): void {
       const needles = [...new Set(toolText.match(/jev-[a-z-]+/g) ?? [])];
       if (needles.length === 0) throw new Error("no identifiers to look for -- the check would be vacuous");
       const found = needles.filter((n) => got.summary.includes(n));
+      // REPORT WHAT THE HOOK SAW, not what the arm intended to send. The first
+      // version keyed this off `arm.instructions`, which is empty for `oracle`
+      // (its text comes from `build`), so the table printed "none sent" on the
+      // same line where the log printed 241 characters. Two columns of the same
+      // output disagreeing is the cheapest possible version of the bug this
+      // whole check exists to catch.
+      const sawChars = (got.sawInstructions ?? "").length;
       rows.push(
-        `| \`${arm.name}\` | ${arm.instructions ? `**${(got.sawInstructions ?? "").length} chars**` : "none sent"} | ` +
+        `| \`${arm.name}\` | ${sawChars > 0 ? `**${sawChars} chars**` : "none sent"} | ` +
           `${got.summary.length} | **${found.length}/${needles.length}** | ${got.ms} |`,
       );
       console.log(
@@ -605,13 +814,29 @@ async function main(): Promise<void> {
     return;
   }
   const only = argv.includes("--limit") ? Number(argv[argv.indexOf("--limit") + 1]) : 999;
+  /**
+   * `--arm <name>` runs one arm and MERGES it into the existing record.
+   *
+   * Added for TODO §1.5's `oracle`: the other three arms are already recorded
+   * and re-running them would replace 24 measured rows with a fresh draw of
+   * the same thing, which is exactly the variance §5.2 spent an arm measuring.
+   * Rows for the named arm are replaced; every other row is kept verbatim.
+   */
+  const armFlag = argv.includes("--arm") ? argv[argv.indexOf("--arm") + 1] : null;
+  const arms = armFlag ? ARMS.filter((a) => a.name === armFlag) : ARMS;
+  if (arms.length === 0) throw new Error(`no arm named ${armFlag} -- have ${ARMS.map((a) => a.name).join(", ")}`);
   const root = resolve("/tmp", `jev-precompact-${Date.now()}`);
   mkdirSync(root, { recursive: true });
+  const kept: Row[] =
+    armFlag && existsSync(PATH)
+      ? (JSON.parse(readFileSync(PATH, "utf8")) as Record_).rows.filter((r) => r.arm !== armFlag)
+      : [];
+  if (armFlag) process.stderr.write(`merging into ${kept.length} existing rows, replacing arm \`${armFlag}\`\n`);
   const rows: Row[] = [];
   const all = transcripts().slice(0, only);
   try {
     for (const t of all) {
-      for (const arm of ARMS) {
+      for (const arm of arms) {
         const got = compact(t, arm, root);
         const scored = judge(t, got.summary);
         rows.push({
@@ -638,13 +863,13 @@ async function main(): Promise<void> {
             `${got.summary.length} chars  ${got.ms} ms${got.error ? `  ERR ${got.error.slice(0, 60)}` : ""}\n`,
         );
         mkdirSync(RECORDS, { recursive: true });
-        writeFileSync(PATH, `${JSON.stringify({ note: NOTE, rows }, null, 2)}\n`);
+        writeFileSync(PATH, `${JSON.stringify({ note: NOTE, rows: [...kept, ...rows] }, null, 2)}\n`);
       }
     }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  show({ note: NOTE, rows });
+  show({ note: NOTE, rows: [...kept, ...rows] });
 }
 
 if (process.argv[1]?.endsWith("precompact.ts")) await main();
