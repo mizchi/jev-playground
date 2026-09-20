@@ -13,7 +13,7 @@
  *   the gate under test has nothing to gate, which is how docs/36's labels were
  *   made and is not what this measures.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -21,6 +21,7 @@ import { ARMS } from "./src/run.js";
 import { tasks, testsPass, type Run } from "./src/world.js";
 import { bashWritesUnderTest } from "./src/audit.js";
 import { at, load, signTest, SHIPPED } from "./src/floor.js";
+import { distinct, harvest } from "./src/scripts.js";
 
 let pass = 0;
 let fail = 0;
@@ -664,6 +665,64 @@ check("the cost label is derived from runs that actually happened", () => {
     rows.every((r) => r.confidence >= 0 && r.confidence <= 1),
     "a confidence outside [0,1] would make the floor sweep meaningless",
   );
+});
+
+
+// ------------------------------------------ TODO §2.1's not-written-by-me corpus
+//
+// The entire value of docs/49 is provenance: the commands come from published
+// packages, not from me. Three things would quietly destroy that.
+
+check("every harvested command comes from a node_modules package.json", () => {
+  const entries = harvest();
+  ok(entries.length > 100, `only ${entries.length} entries harvested, so the walk is not finding the tree`);
+  for (const e of entries) {
+    ok(e.dir.includes("node_modules"), `${e.pkg}: ${e.dir} is not under a node_modules`);
+    ok(existsSync(resolve(e.dir, "package.json")), `${e.dir} has no package.json`);
+    ok(e.command.trim().length > 0, `${e.pkg}/${e.script}: empty command`);
+  }
+  // AND NOTHING OF MINE. The repo's own packages and experiments have scripts
+  // too; if the walk picked them up the corpus would be partly mine, which is
+  // the one thing TODO §2.1 is about.
+  const mine = entries.filter((e) => /jev-(core|guard|compact|hermes|model-router|skill-router|orchestrator)$/.test(e.pkg));
+  eq(mine.length, 0, `${mine.map((m) => m.pkg).join(", ")} are this repo's own packages: `);
+});
+
+check("the cwd asked about is the package that ships the command, not just some real directory", () => {
+  /**
+   * docs/44 §4.5b: three harnesses in one day told a judgment it was somewhere
+   * it was not.
+   *
+   * EXISTENCE IS NOT ENOUGH, and the first version of this test only checked
+   * that. Replacing every `dir` with `/home/user/jev-playground` -- the exact
+   * fabrication docs/43 §4.4 made -- left it passing, because the repo root is
+   * a real directory. So the check is that the directory's own `package.json`
+   * declares the command being asked about.
+   */
+  for (const r of distinct(harvest())) {
+    ok(existsSync(r.dir), `${r.command.slice(0, 30)}: ${r.dir} does not exist`);
+    ok(statSync(r.dir).isDirectory(), `${r.dir} is not a directory`);
+    const pj = resolve(r.dir, "package.json");
+    ok(existsSync(pj), `${r.dir} has no package.json`);
+    const scripts = (JSON.parse(readFileSync(pj, "utf8")).scripts ?? {}) as Record<string, string>;
+    ok(
+      Object.values(scripts).some((v) => v.trim() === r.command),
+      `${r.dir} does not ship \`${r.command.slice(0, 40)}\`, so the cwd is fabricated`,
+    );
+  }
+});
+
+check("deduplication keeps every distinct command exactly once, and counts the copies", () => {
+  const entries = harvest();
+  const rows = distinct(entries);
+  eq(new Set(rows.map((r) => r.command)).size, rows.length, "a command appears in two rows: ");
+  eq(new Set(entries.map((e) => e.command)).size, rows.length, "dedup lost or invented a command: ");
+  eq(
+    rows.reduce((n, r) => n + r.copies, 0),
+    entries.length,
+    "the copy counts do not add up to the entry count: ",
+  );
+  for (const r of rows) ok(r.scripts.length > 0, `${r.command.slice(0, 30)}: no script name recorded`);
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
