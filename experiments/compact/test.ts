@@ -19,6 +19,7 @@ import { shortenBy } from "./src/shorten.js";
 import type { Transcript } from "./src/corpus.js";
 import type { Record_ } from "./src/run.js";
 import { ARMS, oracleInstructions } from "./src/precompact.js";
+import { keepOrderFree, keepOrderDigits, rankOfFact } from "./src/relevance.js";
 
 let pass = 0;
 let fail = 0;
@@ -346,6 +347,74 @@ check("the general-rule arm names nothing from the corpus", () => {
       ok(!rule.includes(f.text), `KEEP_FACTS leaks the fact "${f.text}" from ${t.id}`);
     }
   }
+});
+
+
+// ------------------------------------------------- TODO §1.6's relevance table
+//
+// Two bugs happened while writing docs/46 §2 and both produced a plausible
+// table rather than a crash, so both are pinned here.
+
+check("the free orderings are given the goal they rank against", () => {
+  // `rankBy("overlap")` finds the goal with `entries.find(e => e.role ===
+  // "user")` and falls back to `largest` when there is none. The first version
+  // of the report passed only the judged candidate set -- which excludes the
+  // pinned goal turn -- so `overlap` silently BECAME `largest` and the two
+  // rows came out byte-identical. The check is that they do not.
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  let differed = 0;
+  for (const t of ts) {
+    // THE GOAL TURN IS WHAT THE REAL CANDIDATE SET EXCLUDES -- it is pinned,
+    // along with the recent tail. A first version of this test dropped the
+    // tail and KEPT the goal, so `overlap` still found it, the fallback never
+    // fired, and the test passed with the bug reintroduced. Excluding the goal
+    // is the whole point.
+    const candidates = new Set(t.entries.filter((e) => e.label !== "goal").slice(0, -6).map((e) => e.id));
+    ok(!candidates.has("goal"), "the goal must be outside the candidate set or this test is vacuous");
+    const o = keepOrderFree("overlap", t.entries as never, candidates).join(",");
+    const l = keepOrderFree("largest", t.entries as never, candidates).join(",");
+    if (o !== l) differed += 1;
+  }
+  ok(differed > 0, "`overlap` and `largest` agree on every transcript, so `overlap` is not seeing the goal");
+});
+
+check("the free orderings cover exactly the candidate set, once each", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  for (const t of ts) {
+    const candidates = new Set(t.entries.filter((e) => e.label !== "goal").slice(0, -6).map((e) => e.id));
+    for (const kind of ["overlap", "oldest", "largest", "stale"] as const) {
+      const got = keepOrderFree(kind, t.entries as never, candidates);
+      eq(got.length, candidates.size, `${t.id}/${kind} ranked the wrong number of entries: `);
+      eq(new Set(got).size, got.length, `${t.id}/${kind} ranked an entry twice: `);
+      ok(got.every((id) => candidates.has(id)), `${t.id}/${kind} ranked an entry outside the candidate set`);
+    }
+  }
+});
+
+check("rankOfFact is 1-based and reports a missing entry as NaN, not as last", () => {
+  // Returning `order.length` for a missing entry would let an arm that cannot
+  // see the fact at all score like an arm that ranked it worst, which is a
+  // different claim.
+  eq(rankOfFact(["a", "b", "c"], new Set(["a"]))[0], 1, "first place is rank 1: ");
+  eq(rankOfFact(["a", "b", "c"], new Set(["c"]))[0], 3, "last of three is rank 3: ");
+  ok(Number.isNaN(rankOfFact(["a", "b"], new Set(["z"]))[0]), "a missing entry must be NaN");
+});
+
+check("the digits ordering really does separate on digits and nothing else", () => {
+  const corpus = resolve(import.meta.dirname, "records/corpus.json");
+  const ts = (JSON.parse(readFileSync(corpus, "utf8")) as { transcripts: Transcript[] }).transcripts;
+  const t = ts[0];
+  const candidates = new Set(t.entries.map((e) => e.id));
+  const order = keepOrderDigits(t.entries as never, candidates);
+  const has = (id: string): boolean => /\d/.test(t.entries.find((e) => e.id === id)?.text ?? "");
+  let seenWithout = false;
+  for (const id of order) {
+    if (!has(id)) seenWithout = true;
+    else ok(!seenWithout, `${id} has a digit but sorts after an entry without one`);
+  }
+  ok(order.some(has) && order.some((id) => !has(id)), "the corpus must contain both kinds or the arm is vacuous");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
