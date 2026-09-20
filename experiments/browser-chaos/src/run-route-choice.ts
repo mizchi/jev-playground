@@ -72,6 +72,28 @@ const CONDITIONS: Condition[] = [
   { name: "express-only", query: "", instructions: PICK_SHIPPED, withhold: ["checkout"] },
 ];
 
+/**
+ * `--decompose`: why does `express-first` make the 3-step path MORE
+ * likely (0.690 -> 0.888)? (docs/27 §4.8)
+ *
+ * Because "express-first" is not one factor. `data-probe-idx` is stamped
+ * in document order, so `?exfirst=1` moves two things at once:
+ *
+ *   numbering    express takes the lower index, so it also comes first
+ *                in the criteria map the model is sent
+ *   screen text  `#view` innerText lists Express before Proceed
+ *
+ * §4.7 called that "position" and it is really both. This loads BOTH
+ * page variants, then sends the candidate map from one and the screen
+ * text from the other — a 2x2 that separates them.
+ *
+ * The cost, stated because it is real: in the two mixed arms the
+ * candidate map and the screen text disagree about the order, which is
+ * a page no browser would produce. That is what decomposing costs here;
+ * the endpoints are the genuine pages.
+ */
+const DECOMPOSE = process.argv.includes("--decompose");
+
 function numArg(name: string, fallback: number): number {
   const i = process.argv.indexOf(`--${name}`);
   if (i === -1) return fallback;
@@ -97,6 +119,240 @@ async function toCart(page: Page, base: string): Promise<void> {
   await page.waitForTimeout(400);
 }
 
+/**
+ * `--label-position`: the 2x2 of label x position, scored BY LABEL.
+ *
+ * §4.8's decomposition shows both channels of "express-first" push the
+ * same way, but not what the push attaches to. If rendering second is
+ * worth about +0.14 to whatever sits there, then the string "Proceed to
+ * checkout" should gain when it is second — on either button. If instead
+ * the effect follows the route, swapping the labels should reverse it.
+ *
+ * Four real pages, no mixing, and the mass is read by label rather than
+ * by id, which is the only way to see which the effect tracks.
+ */
+const LABEL_POSITION = process.argv.includes("--label-position");
+
+async function labelPosition(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  url: string,
+): Promise<void> {
+  const jev = new Jev();
+  console.log("");
+  console.log("=".repeat(100));
+  console.log(`  LABEL x POSITION — scored by label, ${REPEAT} repeats per cell`);
+  console.log("=".repeat(100));
+
+  const cells: { name: string; query: string }[] = [
+    { name: "P first,  E second", query: "" },
+    { name: "E first,  P second", query: "&exfirst=1" },
+    { name: "swap: E first,  P second", query: "&exswap=1" },
+    { name: "swap: P first,  E second", query: "&exswap=1&exfirst=1" },
+  ];
+  const PROCEED = "Proceed to checkout";
+  const EXPRESS = "Express checkout";
+
+  const rows: { name: string; pP: number[]; pE: number[]; picked: string[]; order: string }[] = [];
+  for (const cell of cells) {
+    const pP: number[] = [];
+    const pE: number[] = [];
+    const picked: string[] = [];
+    let order = "";
+    for (let r = 0; r < REPEAT; r += 1) {
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      await toCart(page, `${url}?routes=1${cell.query}`);
+      const p = await probe(page);
+      const criteria: Record<string, string> = {};
+      // index -> the label actually rendered on that element.
+      const labels = new Map<string, string>();
+      for (const c of p.candidates) {
+        const note = notableFacts(c);
+        criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
+        labels.set(String(c.index), c.locator.name);
+      }
+      order = p.candidates
+        .filter((c) => [PROCEED, EXPRESS].includes(c.locator.name))
+        .map((c) => (c.locator.name === PROCEED ? "P" : "E"))
+        .join(">");
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          screen: (await page.locator("#view").innerText()).slice(0, 1200),
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      picked.push(labels.get(a.choice) === PROCEED ? "P" : labels.get(a.choice) === EXPRESS ? "E" : "?");
+      const massForLabel = (want: string) => {
+        let sum = 0;
+        for (const [k, v] of Object.entries(a.probabilities)) {
+          if (labels.get(k) === want) sum += v;
+        }
+        return sum;
+      };
+      pP.push(massForLabel(PROCEED));
+      pE.push(massForLabel(EXPRESS));
+      await ctx.close();
+    }
+    rows.push({ name: cell.name, pP, pE, picked, order });
+  }
+
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+  console.log("");
+  const w = Math.max(24, ...rows.map((r) => r.name.length));
+  console.log(`  ${"cell".padEnd(w)}  order  picked      p("Proceed")  p("Express")`);
+  console.log(`  ${"-".repeat(w)}  -----  ----------  ------------  ------------`);
+  for (const r of rows) {
+    const uniq = [...new Set(r.picked)];
+    console.log(
+      `  ${r.name.padEnd(w)}  ${r.order.padEnd(5)}  ` +
+        `${(uniq.length === 1 ? `${uniq[0]} ${r.picked.length}/${r.picked.length}` : r.picked.join(",")).padEnd(10)}  ` +
+        `${mean(r.pP).toFixed(3).padStart(12)}  ${mean(r.pE).toFixed(3).padStart(12)}`,
+    );
+  }
+  console.log("");
+  const p1 = mean(rows[0]!.pP), p2 = mean(rows[1]!.pP);
+  const p3 = mean(rows[2]!.pP), p4 = mean(rows[3]!.pP);
+  console.log(`  "Proceed" first -> second, normal labels:  ${p1.toFixed(3)} -> ${p2.toFixed(3)}  (${(p2 - p1 >= 0 ? "+" : "") + (p2 - p1).toFixed(3)})`);
+  console.log(`  "Proceed" second -> first, swapped labels: ${p3.toFixed(3)} -> ${p4.toFixed(3)}  (${(p4 - p3 >= 0 ? "+" : "") + (p4 - p3).toFixed(3)})`);
+  console.log("");
+  console.log(
+    `  cost: ${jev.calls} calls, ${jev.inputTokens} input tokens, ` +
+      `$${((jev.inputTokens / 1e6) * 0.042).toFixed(5)}`,
+  );
+  console.log("");
+}
+
+/** What one page variant offers: the criteria map and the screen text. */
+interface Captured {
+  criteria: Record<string, string>;
+  screen: string;
+  /** index -> element id, for naming a pick. */
+  ids: Map<string, string>;
+  order: string;
+}
+
+async function capture(page: Page, base: string): Promise<Captured> {
+  await toCart(page, base);
+  const p = await probe(page);
+  const criteria: Record<string, string> = {};
+  const ids = new Map<string, string>();
+  for (const c of p.candidates) {
+    const note = notableFacts(c);
+    criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
+    ids.set(String(c.index), c.locator.id ?? "");
+  }
+  return {
+    criteria,
+    screen: (await page.locator("#view").innerText()).slice(0, 1200),
+    ids,
+    order: p.candidates
+      .filter((c) => ["checkout", "express"].includes(c.locator.id ?? ""))
+      .map((c) => c.locator.id)
+      .join(">"),
+  };
+}
+
+async function decompose(browser: Awaited<ReturnType<typeof chromium.launch>>, url: string): Promise<void> {
+  const jev = new Jev();
+  console.log("");
+  console.log("=".repeat(100));
+  console.log(`  WHY express-first STRENGTHENS IT — numbering vs screen text, ${REPEAT} repeats`);
+  console.log("=".repeat(100));
+
+  // Capture each real page once; the criteria and screen text are
+  // deterministic for a given variant, so one capture is enough.
+  const grabbed: Record<"base" | "ex", Captured> = {} as never;
+  for (const [key, q] of [["base", ""], ["ex", "&exfirst=1"]] as const) {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    grabbed[key] = await capture(page, `${url}?routes=1${q}`);
+    await ctx.close();
+  }
+  console.log("");
+  console.log(`  captured: base candidates ${grabbed.base.order}, exfirst candidates ${grabbed.ex.order}`);
+  const firstLine = (s: string) =>
+    s.split("\n").map((l) => l.trim()).filter((l) => /checkout/i.test(l))[0] ?? "?";
+  console.log(`  base screen first checkout-ish line:    "${firstLine(grabbed.base.screen)}"`);
+  console.log(`  exfirst screen first checkout-ish line: "${firstLine(grabbed.ex.screen)}"`);
+
+  const arms: { name: string; cands: "base" | "ex"; screen: "base" | "ex" }[] = [
+    { name: "base (both base)", cands: "base", screen: "base" },
+    { name: "numbering only", cands: "ex", screen: "base" },
+    { name: "screen text only", cands: "base", screen: "ex" },
+    { name: "exfirst (both ex)", cands: "ex", screen: "ex" },
+  ];
+
+  const rows: { name: string; picks: string[]; pS: number[]; pE: number[] }[] = [];
+  for (const arm of arms) {
+    const picks: string[] = [];
+    const pS: number[] = [];
+    const pE: number[] = [];
+    const g = grabbed[arm.cands];
+    for (let r = 0; r < REPEAT; r += 1) {
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          screen: grabbed[arm.screen].screen,
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria: g.criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      picks.push(g.ids.get(a.choice) || `?${a.choice}`);
+      const massFor = (want: string) => {
+        for (const [k, v] of Object.entries(a.probabilities)) {
+          if (g.ids.get(k) === want) return v;
+        }
+        return 0;
+      };
+      pS.push(massFor("checkout"));
+      pE.push(massFor("express"));
+      if (VERBOSE) {
+        console.log(`  [${arm.name} r${r}] chose ${picks[picks.length - 1]} @${a.confidence.toFixed(2)}`);
+      }
+    }
+    rows.push({ name: arm.name, picks, pS, pE });
+  }
+
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+  console.log("");
+  const w = Math.max(18, ...rows.map((r) => r.name.length));
+  console.log(`  ${"arm".padEnd(w)}  candidates  screen text  picked            p(3-step)  p(express)`);
+  console.log(`  ${"-".repeat(w)}  ----------  -----------  ----------------  ---------  ----------`);
+  for (const [i, r] of rows.entries()) {
+    const a = arms[i]!;
+    const uniq = [...new Set(r.picks)];
+    console.log(
+      `  ${r.name.padEnd(w)}  ${a.cands.padEnd(10)}  ${a.screen.padEnd(11)}  ` +
+        `${(uniq.length === 1 ? `${uniq[0]} ${r.picks.length}/${r.picks.length}` : r.picks.join(",")).padEnd(16)}  ` +
+        `${mean(r.pS).toFixed(3).padStart(9)}  ${mean(r.pE).toFixed(3).padStart(10)}`,
+    );
+  }
+  console.log("");
+  console.log(
+    `  cost: ${jev.calls} calls, ${jev.inputTokens} input tokens, ` +
+      `$${((jev.inputTokens / 1e6) * 0.042).toFixed(5)}`,
+  );
+  console.log("");
+}
+
 async function main(): Promise<void> {
   const { server, url } = (await serve(0)) as { server: { close(): void }; url: string };
   const exe = process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
@@ -105,6 +361,17 @@ async function main(): Promise<void> {
     args: ["--no-sandbox"],
     ...(existsSync(exe) ? { executablePath: exe } : {}),
   });
+  if (DECOMPOSE || LABEL_POSITION) {
+    try {
+      if (DECOMPOSE) await decompose(browser, url);
+      if (LABEL_POSITION) await labelPosition(browser, url);
+    } finally {
+      await browser.close();
+      server.close();
+    }
+    return;
+  }
+
   const jev = new Jev();
 
   console.log("");
