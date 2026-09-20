@@ -67,13 +67,31 @@ const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*[A-Za-z]`, "g");
  * is brittle rather than thorough. Established by check-bugs.ts, not by
  * assumption.
  */
-const MUTATIONS: { bug: string; isBug: boolean; what: string }[] = [
+const BASE_MUTATIONS: { bug: string; isBug: boolean; what: string }[] = [
   { bug: "cart", isBug: true, what: "add-to-cart stops adding" },
   { bug: "order", isBug: true, what: "the order is never recorded" },
   { bug: "gate", isBug: true, what: "checkout step 2 stops requiring an email" },
   { bug: "label", isBug: false, what: "the Continue buttons are renamed" },
   { bug: "slow", isBug: false, what: "every render is delayed 400ms" },
 ];
+
+/**
+ * `--routes` points the generator at `?routes=1`, where the goal has
+ * four route families instead of one gated line (docs/27 §4.6).
+ *
+ * It adds one mutation, and the reason it is only added here is that it
+ * is **route-specific**: `express` drops the address on the express page
+ * and leaves the 3-step path alone, so whether a spec catches it depends
+ * on which route that generation happened to take. `gate` is its mirror
+ * — a check express never runs. Both are established by check-bugs.ts.
+ */
+const ROUTES = process.argv.includes("--routes");
+const MUTATIONS = ROUTES
+  ? [
+      ...BASE_MUTATIONS,
+      { bug: "express", isBug: true, what: "the express page drops the address" },
+    ]
+  : BASE_MUTATIONS;
 
 const STATUS = `(() => {
   const s = document.getElementById("status");
@@ -144,6 +162,9 @@ interface TrialResult {
   keptAssertions: number;
   usefulSteps: number;
   reachedGoal: boolean;
+  /** Which route family the explorer took, and the raw step ids. */
+  route: string;
+  stepIds: string[];
   calls: number;
   tokens: number;
 }
@@ -158,6 +179,7 @@ async function trial(
   trialIndex: number,
 ): Promise<TrialResult> {
   {
+    const appUrl = ROUTES ? `${url}?routes=1` : url;
     // ---- 1. explore, recording enough to write a file afterwards -------
     const jev = new Jev();
     const ctx = await browser.newContext();
@@ -173,7 +195,7 @@ async function trial(
 
     const run = await runPolicy({
       page,
-      baseUrl: url,
+      baseUrl: appUrl,
       steps: 20,
       // The best policy from docs/25: never offer a control the geometry
       // says cannot be clicked.
@@ -181,7 +203,12 @@ async function trial(
       jev,
       goal: GOAL,
       goalState: "#/confirm",
-      flow: ["#/cart", "#/checkout-1", "#/checkout-2", "#/checkout-3", "#/confirm"],
+      // On the routes board the express page is a legitimate waypoint,
+      // so the flow hint has to admit it or a picker taking that route
+      // would be scored as wandering.
+      flow: ROUTES
+        ? ["#/cart", "#/express", "#/checkout-1", "#/checkout-2", "#/checkout-3", "#/confirm"]
+        : ["#/cart", "#/checkout-1", "#/checkout-2", "#/checkout-3", "#/confirm"],
       seed: SEED_BASE + trialIndex,
       trace: VERBOSE ? (l) => console.log(`    ${l}`) : undefined,
       afterStep: async (row) => {
@@ -208,6 +235,7 @@ async function trial(
       return {
         scores: {}, caughtBugs: {}, keptAssertions: 0,
         usefulSteps: 0, reachedGoal: false,
+        route: "(did not arrive)", stepIds: [],
         calls: jev.calls, tokens: jev.inputTokens,
       };
     }
@@ -284,9 +312,9 @@ export default defineConfig({
     for (const spec of specs) {
       grid[spec.name] = {};
       const cfg = join(OUT, "playwright.config.ts");
-      grid[spec.name]!["(clean)"] = (await runSpec(spec.file, url, cfg)).passed;
+      grid[spec.name]!["(clean)"] = (await runSpec(spec.file, appUrl, cfg)).passed;
       for (const m of MUTATIONS) {
-        const r = await runSpec(spec.file, `${url}?bug=${m.bug}`, cfg);
+        const r = await runSpec(spec.file, `${appUrl}${appUrl.includes("?") ? "&" : "?"}bug=${m.bug}`, cfg);
         grid[spec.name]![m.bug] = r.passed;
         if (VERBOSE && !r.passed) console.log(`    ${spec.name}/${m.bug}: ${r.firstFailure}`);
       }
@@ -331,12 +359,20 @@ export default defineConfig({
       };
       caughtBugs[spec.name] = MUTATIONS.filter((m) => m.isBug && row[m.bug] === false).map((m) => m.bug);
     }
+    // Name the route from what was actually clicked, not from what the
+    // flow hint allowed: `buynow`/`add` is the entry and `place-express`
+    // vs `place` is the checkout path.
+    const ids = useful.map((s) => s.locator.id || `${s.locator.role}:${s.locator.name}`);
+    const entry = ids.includes("buynow") ? "buynow" : ids.includes("add") ? "products" : "?";
+    const path = ids.includes("place-express") ? "express" : ids.includes("place") ? "steps" : "?";
     return {
       scores,
       caughtBugs,
       keptAssertions: kept.reduce((n, k) => n + k.length, 0),
       usefulSteps: useful.length,
       reachedGoal: run.reachedGoal,
+      route: `${entry}+${path}`,
+      stepIds: ids,
       calls: jev.calls,
       tokens: jev.inputTokens,
     };
@@ -411,6 +447,21 @@ async function main() {
       `assertions kept ${trials.map((t) => t.keptAssertions).join(",")}   ` +
       `reached goal ${trials.filter((t) => t.reachedGoal).length}/${REPEAT}`,
   );
+  // Path diversity is the precondition for any of this to mean
+  // something: if every trial walks the same route, a stable grade says
+  // nothing about the method.
+  const routes = trials.map((t) => t.route);
+  const distinctRoutes = new Set(routes).size;
+  const distinctSeqs = new Set(trials.map((t) => t.stepIds.join(">"))).size;
+  console.log("");
+  console.log(`  routes taken: ${routes.join(", ")}`);
+  console.log(
+    `  distinct routes ${distinctRoutes}/${REPEAT}   distinct step sequences ${distinctSeqs}/${REPEAT}`,
+  );
+  if (distinctRoutes === 1) {
+    console.log(`  NOTE: every trial took the same route, so a stable grade is the board, not the method.`);
+  }
+  for (const t of trials) console.log(`    ${t.route.padEnd(16)} ${t.stepIds.join(" > ")}`);
   const tok = trials.reduce((s, t) => s + t.tokens, 0);
   console.log(
     `  total: ${trials.reduce((s, t) => s + t.calls, 0)} calls, ${tok} input tokens, ` +

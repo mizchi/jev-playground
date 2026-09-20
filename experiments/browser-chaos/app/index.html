@@ -236,6 +236,34 @@ const WRAPPING = [["", "No gift wrap"], ["kraft", "Kraft paper"],
 const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
 
 /*
+  `?routes=1` gives the goal MORE THAN ONE PATH, for docs/27 §4.6.
+
+  Everything else in this app is a gated linear flow: the eight steps to
+  `ordered=true` admit almost no choice, which is why five independent
+  generations produced the identical nine-step spec. That measured the
+  method on a board with no room, so it could not measure what happens
+  when the generator has a choice to make.
+
+  Two independent choices, so four route families:
+
+    into the cart   #/products "Add Widget to cart", or
+                    #/home "Buy Widget now" (adds AND navigates)
+    through it      the 3-step checkout, or #/express, one page with
+                    both fields and its own Place order
+
+  The express page also makes FIELD ORDER free — both inputs are on it,
+  so email-then-address and address-then-email are both valid — which
+  varies the recorded step sequence without changing the route.
+
+  This matters for grading because validation is per-route, exactly as in
+  a real application: `?bug=gate` weakens a check that only the 3-step
+  path runs, and `?bug=express` weakens one that only the express path
+  runs. **A generated spec can only catch the bug on the route it
+  happened to take.** That is the question this board exists to answer.
+*/
+const ROUTES = new URLSearchParams(location.search).get("routes") === "1";
+
+/*
   `?bug=NAME` breaks one thing on purpose, for docs/27: a generated test
   is only worth keeping if it fails when the app does. Each mutation is
   the smallest edit that breaks one real behaviour, and the app keeps
@@ -385,6 +413,7 @@ const routes = {
   "#/home": () => `
     <h1>Welcome</h1>
     <p>Browse the catalogue to get started.</p>
+    ${ROUTES ? `<button type="button" id="buynow">Buy Widget now</button>` : ""}
     ${decoys(["Subscribe to newsletter", "Take the tour", "Dismiss banner", "Change language"])}`,
 
   "#/products": () => `
@@ -398,6 +427,7 @@ const routes = {
     <h1>Cart</h1>
     <p>${state.cart} item(s) in your cart.</p>
     <button type="button" id="checkout">Proceed to checkout</button>
+    ${ROUTES ? `<button type="button" id="express">Express checkout</button>` : ""}
     <button type="button" id="empty">Empty cart</button>
     ${decoys(["Apply promo code", "Save cart for later", "Continue shopping"])}` : `
     <h1>Cart</h1>
@@ -489,6 +519,25 @@ const routes = {
     <button type="button" id="back3">Back to delivery</button>
     ${HOSTILE ? "" : decoys(["Add gift wrap", "Apply store credit"])}`,
 
+  // `?routes=1` only. One page carrying both fields and its own Place
+  // order, so the flow is 3 steps instead of 6 and the two inputs can be
+  // filled in either order.
+  //
+  // Its guard is address-only ON PURPOSE: `?bug=express` weakens it, and
+  // that check is unreachable from the 3-step path. The mirror of
+  // `?bug=gate`, which is unreachable from here.
+  "#/express": () => !ROUTES || state.cart === 0 ? `
+    <h1>Checkout</h1><p>Nothing to check out.</p>` : `
+    <h1>Express checkout</h1>
+    <p>One page. Fill both fields and place the order.</p>
+    <label for="email-x">Email address</label>
+    <input id="email-x" type="email" placeholder="you@example.com" value="${state.email}">
+    <label for="address-x">Delivery address</label>
+    <input id="address-x" type="text" placeholder="1 Example Street" value="${state.address}">
+    <button type="button" id="place-express">Place order</button>
+    <button type="button" id="back-express">Back to cart</button>
+    ${decoys(["Use a different account", "Add delivery note"])}`,
+
   "#/confirm": () => `
     <h1 class="goal">Order placed — thank you!</h1>
     <p>This is the deepest state in the app.</p>`,
@@ -553,6 +602,31 @@ function wire() {
     update({ cart: BUG === "cart" ? state.cart : state.cart + 1 });
   });
   on("add2", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
+  // The second way in. Respects `?bug=cart` like `#add` does, so the
+  // cart bug is catchable from either entry rather than only from one.
+  on("buynow", () => {
+    update({ cart: BUG === "cart" ? state.cart : state.cart + 1 });
+    go("#/cart");
+  });
+  on("express", () => go("#/express"));
+  on("back-express", () => go("#/cart"));
+  on("place-express", () => {
+    const email = (document.getElementById("email-x") || {}).value || "";
+    const address = (document.getElementById("address-x") || {}).value || "";
+    if (!address.trim()) { update({ email: email.trim() }); return; }
+    // `?bug=express` DROPS THE ADDRESS on this path only, the way
+    // `?bug=order` drops the order. A dropped recording is what a
+    // positive test can catch; a removed guard is not (docs/27 §5-4, and
+    // why `?bug=gate` is missed by both specs). The 3-step path records
+    // the address in `#next2`, which this does not touch — so the same
+    // bug is caught or missed purely by which route the spec took.
+    update({
+      email: email.trim(),
+      address: BUG === "express" ? state.address : address.trim(),
+      ordered: BUG === "order" ? state.ordered : true,
+    });
+    go("#/confirm");
+  });
   on("checkout", () => {
     if (slow("checkout")) thrashLayout(600);
     go("#/checkout-1");
