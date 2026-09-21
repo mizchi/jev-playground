@@ -114,7 +114,7 @@ const sandbox = process.env.FINISH_SANDBOX ? resolve(process.env.FINISH_SANDBOX)
  * read-only traffic in practice". That was false by construction: the harness
  * keeps its clone trees AND every sandbox under `/tmp`, so the trees each run
  * copies from were reachable and writable by the agent being measured -- the
- * exact failure this fence exists to prevent. docs/56 measured it at 12 reads
+ * exact failure this fence exists to prevent. docs/63 measured it at 12 reads
  * and 0 writes before it was fixed.
  *
  * But `/tmp` cannot simply be added to the list above, because the sandbox

@@ -596,7 +596,7 @@ const TOOLCHAIN_BINS = ["/root/.moon/bin", "/root/.cargo/bin", "/root/.bun/bin",
  * The fence covered `/home/` and `/root/` and skipped `/tmp` because "/tmp,
  * /usr, /opt and friends are read-only traffic in practice" -- false by
  * construction here, since the harness keeps both its clone trees and every
- * sandbox under `/tmp`. docs/56 measured the consequence at 12 reads of
+ * sandbox under `/tmp`. docs/63 measured the consequence at 12 reads of
  * docs/55's clone tree, 0 writes.
  *
  * `/tmp` cannot just be added to the fence's prefix list, because the sandbox
@@ -1309,7 +1309,7 @@ function pairedRows(rec: Record_): { repo: string; section: string; open: Row; d
 }
 
 /**
- * The paired comparison, using the test docs/56 §3.0 pre-registered.
+ * The paired comparison, using the test docs/63 §3.0 pre-registered.
  *
  * Written while the sweep was at 4 of 32 rows and no comparison had been
  * computed, for the same reason the test itself was: analysis code written
@@ -1345,7 +1345,7 @@ function pairedSection(rec: Record_, metrics: { name: string; of: (r: Row) => nu
   /**
    * A METRIC THE CAP KILLED, said out loud rather than shown as a dash.
    *
-   * `seconds` was pre-registered in docs/56 §3.0 with the other four, from
+   * `seconds` was pre-registered in docs/63 §3.0 with the other four, from
    * docs/55 §5.3. But every run in this sweep hit the 600 s cap, so the
    * measure is CONSTANT: every pair ties, `n` falls to zero and the test
    * returns no p. docs/55's runs had a median of 483 s and only some hit the

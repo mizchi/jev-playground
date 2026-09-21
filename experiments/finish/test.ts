@@ -1685,9 +1685,9 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
 });
 
-check("the paired test docs/56 pre-registered is exact, and its floor is returned", () => {
+check("the paired test docs/63 pre-registered is exact, and its floor is returned", () => {
   /**
-   * PRE-REGISTERED: written and asserted while docs/56's sweep was still
+   * PRE-REGISTERED: written and asserted while docs/63's sweep was still
    * running, before any of its numbers existed. Two controls, because a test
    * that cannot fail is not a test.
    */
@@ -1838,7 +1838,7 @@ check("the fence protects the harness's own directories, and nothing else new", 
    * THE `/tmp` GAP, CLOSED. The fence covered `/home/` and `/root/` and
    * skipped `/tmp` because "/tmp, /usr, /opt and friends are read-only traffic
    * in practice" -- false by construction, since the harness keeps its clone
-   * trees AND every sandbox under `/tmp`. docs/56 measured 12 reads of
+   * trees AND every sandbox under `/tmp`. docs/63 measured 12 reads of
    * docs/55's clone tree before this.
    *
    * `/tmp` could not simply join the prefix list: the sandbox is under it, so
