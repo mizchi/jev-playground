@@ -35,7 +35,7 @@ import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js"
 // ALIASED for the same reason as INTENT_ARMS above: `corpus` is already
 // fanout.ts's harvest, and wild.ts exports one too.
 import { corpus as wildCorpus, fencePrefixes, headMatch, matched, pairGaps, pairs, promptFor, sectionKey, tasksIn, type Task } from "./src/wild.js";
-import { permutation } from "../shared/thresholds.js";
+import { pairedPermutation, permutation } from "../shared/thresholds.js";
 // Aliased for reading, not to dodge a clash -- nothing else here exports
 // `candidates`. In a file importing rosters from a dozen modules the bare name
 // would not say which one, and the two aliases above are what that costs.
@@ -1656,6 +1656,48 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
   ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
+});
+
+check("the paired test docs/56 pre-registered is exact, and its floor is returned", () => {
+  /**
+   * PRE-REGISTERED: written and asserted while docs/56's sweep was still
+   * running, before any of its numbers existed. Two controls, because a test
+   * that cannot fail is not a test.
+   */
+  const flat = pairedPermutation([
+    { a: 5, b: 4 }, { a: 4, b: 5 }, { a: 6, b: 5 }, { a: 5, b: 6 },
+    { a: 7, b: 6 }, { a: 6, b: 7 }, { a: 8, b: 7 }, { a: 7, b: 8 },
+  ]);
+  ok(flat.p > 0.5, `pairs that cancel must not be significant, got p = ${flat.p}`);
+  eq(flat.wins, 4, "half the pairs go each way: ");
+  const same = pairedPermutation(Array.from({ length: 16 }, (_, i) => ({ a: 100 + i, b: i })));
+  eq(same.n, 16, "sixteen non-tied pairs: ");
+  eq(same.splits, 65_536, "every sign flip of 16 pairs must be enumerated: ");
+  ok(same.exact, "and reported as exact");
+  eq(same.wins, 16, "all sixteen in one direction: ");
+  // THE FLOOR, which is the number that keeps a null honest.
+  ok(Math.abs(same.floor - 2 / 65_536) < 1e-12, `the floor at 16 pairs is 2/65536, got ${same.floor}`);
+  ok(same.p >= same.floor - 1e-12, `no result may beat the floor, got ${same.p}`);
+  eq(same.p, same.floor, "all-one-direction must land exactly on the floor: ");
+  // TIES CARRY NO SIGN, so they lower n and RAISE the floor.
+  const tied = pairedPermutation([{ a: 3, b: 3 }, { a: 9, b: 1 }, { a: 8, b: 2 }]);
+  eq(tied.n, 2, "the tie is dropped rather than counted as evidence: ");
+  eq(tied.floor, 2 / 4, "and dropping it raises the floor to 1/2: ");
+  ok(Number.isNaN(pairedPermutation([{ a: 1, b: 1 }]).p), "all ties must not produce a p");
+  ok(Number.isNaN(pairedPermutation([]).p), "no pairs must not produce a p");
+  /**
+   * AND IT IS GENUINELY PAIRED, which is subtler than it looks. Re-pairing
+   * the same numbers cannot move the observed statistic at all -- mean(a - b)
+   * is `(sum a - sum b) / n`, and both sums are fixed. What re-pairing moves
+   * is the NULL DISTRIBUTION, because the sign flips act on the deltas. So
+   * the p changes while the difference does not, and a test whose p did not
+   * change here would be ignoring the pairing it claims to use.
+   */
+  const kept = pairedPermutation([{ a: 10, b: 1 }, { a: 8, b: 2 }, { a: 3, b: 9 }]);
+  const swapped = pairedPermutation([{ a: 10, b: 9 }, { a: 8, b: 1 }, { a: 3, b: 2 }]);
+  eq(kept.diff, swapped.diff, "re-pairing cannot move the observed difference: ");
+  eq(kept.p, 0.75, "deltas 9, 6, -6 against their own sign flips: ");
+  eq(swapped.p, 0.25, "the same six numbers paired differently: ");
 });
 
 check("a write into a harness clone tree would be caught, and none has happened", () => {
