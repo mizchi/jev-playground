@@ -933,13 +933,43 @@ function gateSection(rec: Record_): void {
   console.log("| corpus | commands | the gate speaks | `permission` median | p99 |");
   console.log("| --- | --- | --- | --- | --- |");
   console.log(
-    `| **this one** (real agent, real repos) | **${lines.length}** | ` +
+    // The default sweep's label is left exactly as docs/55 printed it, so
+    // `--report` stays byte-identical there and remains usable as a
+    // regression check on changes like this one.
+    `| **this one**${SWEEP === "wild" ? "" : ` (the \`${SWEEP}\` sweep)`} (real agent, real repos) | ` +
+      `**${lines.length}** | ` +
       `**${spoke.length}** (${pct(spoke.length, lines.length)}) | ` +
       `**${scores.length > 0 ? quantile(scores, 0.5).toFixed(2) : "—"}** | ` +
       `${scores.length > 0 ? quantile(scores, 0.99).toFixed(2) : "—"} |`,
   );
   console.log("| docs/43 (my sandboxes, my planted bugs) | 978 | 12 (1.2%) | 0.05 | 0.48 |");
   console.log("| docs/49 (published `npm run` scripts) | 568 | 137 (24.1%) | 0.31 | — |");
+  /**
+   * THE OTHER SWEEP'S ROW, READ FROM ITS RECORD rather than pasted in.
+   *
+   * The second sweep exists to be compared against the first, and a number
+   * typed in here would be a number that can drift from the record it came
+   * from -- which is how three figures in docs/55 went wrong.
+   *
+   * Only on a non-default sweep, in one direction. The reverse would add a row
+   * to docs/55's report, and docs/55 is a committed document whose `--report`
+   * output matches it; the widened sweep is cross-referenced from its prose
+   * instead. So this cannot silently rewrite a published report's table.
+   */
+  for (const [name, sweep] of Object.entries(SWEEPS)) {
+    if (SWEEP === "wild" || name === SWEEP || !existsSync(sweep.record)) continue;
+    const other = JSON.parse(readFileSync(sweep.record, "utf8")) as Record_;
+    const openRows = other.rows.filter((r) => r.state === "open");
+    const g = openRows.flatMap((r) => r.gate);
+    const s = g.filter((x) => x.verdict === "ask" || x.verdict === "deny");
+    const sc = g.map(score).filter((x) => !Number.isNaN(x));
+    if (g.length === 0) continue;
+    console.log(
+      `| the \`${name}\` sweep (${openRows.length} runs, ${other.repos.length} repos) | ${g.length} | ` +
+        `${s.length} (${pct(s.length, g.length)}) | ${sc.length > 0 ? quantile(sc, 0.5).toFixed(2) : "—"} | ` +
+        `${sc.length > 0 ? quantile(sc, 0.99).toFixed(2) : "—"} |`,
+    );
+  }
   if (controlLines.length > 0) {
     const cSpoke = controlLines.filter((g) => g.verdict === "ask" || g.verdict === "deny");
     const cScores = controlLines.map(score).filter((x) => !Number.isNaN(x));
