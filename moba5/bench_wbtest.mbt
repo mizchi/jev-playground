@@ -110,6 +110,126 @@ test "every class has enough questions to say something" {
 }
 
 ///|
+/// The sweep can fill all four buckets, and the `fight` class is balanced
+/// across them.
+///
+/// This is the test that the first version of the class failed: seven of its
+/// eight questions were won by whoever had more bodies, so the head count
+/// scored 0.88 and a model's score on the class was mostly a score on
+/// arithmetic. Balance makes the head count worth exactly 0.50 — and so is
+/// "always answer yes", which is the other trivial strategy.
+test "the fight class does not reward counting bodies" {
+  let census = fight_bucket_census()
+  for b in fight_buckets {
+    // Every bucket has to be reachable from the grid, or the balance below is
+    // quietly achieved by leaving one out.
+    assert_true(census.get(b).unwrap_or(0) >= FIGHT_PER_BUCKET)
+  }
+  let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
+  assert_eq(cases.length(), FIGHT_PER_BUCKET * fight_buckets.length())
+  for b in fight_buckets {
+    let mut n = 0
+    for c in cases {
+      if c.bucket() == b {
+        n += 1
+      }
+    }
+    assert_eq(n, FIGHT_PER_BUCKET)
+  }
+  // And now the same thing read off the suite, which is what actually ships.
+  let mut asks = 0
+  let mut floor_hits = 0
+  let mut truth_yes = 0
+  for sc in bench_suite() {
+    for ask in sc.asks {
+      if ask.class_ != "fight" {
+        continue
+      }
+      asks += 1
+      if truth_accepts(ask.truth, ask.floor) {
+        floor_hits += 1
+      }
+      if ask.truth == "true" {
+        truth_yes += 1
+      }
+    }
+  }
+  assert_eq(asks, FIGHT_PER_BUCKET * 4)
+  // Counting bodies: exactly half. Always saying yes: exactly half.
+  assert_eq(floor_hits * 2, asks)
+  assert_eq(truth_yes * 2, asks)
+}
+
+///|
+/// The derived fights are not all the same fight. Balance is worth nothing if
+/// the eight questions are one matchup with the health numbers moved around,
+/// which is what the single-pass version of the sweep produced.
+test "the derived fights span more than one matchup" {
+  let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
+  let pairs : Array[String] = []
+  let shapes : Array[String] = []
+  for c in cases {
+    let pair = "\{c.comp_a}|\{c.comp_b}"
+    if !pairs.contains(pair) {
+      pairs.push(pair)
+    }
+    if !shapes.contains(c.describe()) {
+      shapes.push(c.describe())
+    }
+  }
+  // Every case is a distinct situation, over at least four compositions.
+  assert_eq(shapes.length(), cases.length())
+  assert_true(pairs.length() >= 4)
+}
+
+///|
+/// No class can be swept by a single constant answer.
+///
+/// The `const` column in the report is what caught this: `retreat` had five of
+/// six truths reading "walk away", so answering "walk away" to everything
+/// scored 0.83 and the class could not tell a model from a rubber stamp. The
+/// `floor` test below does not catch it, because the floor is a heuristic that
+/// actually reads the state — a constant answer is a different failure.
+test "no class can be swept by one constant answer" {
+  for name in bench_classes {
+    let truths : Array[String] = []
+    for sc in bench_suite() {
+      for ask in sc.asks {
+        if ask.class_ == name {
+          truths.push(ask.truth)
+        }
+      }
+    }
+    assert_true(truths.length() > 0)
+    let seen : Array[String] = []
+    let counts : Array[Int] = []
+    for t in truths {
+      let mut at = -1
+      for i in 0..<seen.length() {
+        if seen[i] == t {
+          at = i
+        }
+      }
+      if at < 0 {
+        seen.push(t)
+        counts.push(1)
+      } else {
+        counts[at] += 1
+      }
+    }
+    let mut best = 0
+    for c in counts {
+      if c > best {
+        best = c
+      }
+    }
+    // At most four answers in five may share a truth. Above that, a rubber
+    // stamp beats most policies and the class stops being a measurement.
+    assert_true(best * 5 <= truths.length() * 4)
+  }
+}
+
+///|
 /// No class is answered correctly by the floor every single time. A class the
 /// heuristic sweeps is a class where the questions do not discriminate, and it
 /// would report a model's 1.00 as a success rather than as an easy row.

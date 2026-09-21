@@ -26,6 +26,8 @@ pub const DRAGON_HP : Int = 210
 
 pub const EXECUTE_PCT : Int = 35
 
+pub const FIGHT_PER_BUCKET : Int = 4
+
 pub const HEAL_AT_BASE : Int = 30
 
 pub const ITEM_COST : Int = 350
@@ -78,6 +80,8 @@ pub let action_kinds : Array[String]
 
 pub let adjacency : Array[Array[Int]]
 
+pub fn balanced_fight_cases(Int) -> Array[FightCase]
+
 pub fn base_of(Int) -> Int
 
 pub fn baseline_team_actions(Game, Int, String) -> Map[Int, Action]
@@ -95,6 +99,10 @@ pub fn camp_xp(Int) -> Int
 pub fn comp_by_name(String) -> Array[String]
 
 pub fn enemy_of(Int) -> Int
+
+pub fn fight_bucket_census() -> Map[String, Int]
+
+pub let fight_buckets : Array[String]
 
 pub fn hops(Int, Int) -> Int
 
@@ -249,6 +257,22 @@ pub fn Comp::has_frontline(Self) -> Bool
 pub fn Comp::has_sustain(Self) -> Bool
 pub fn Comp::mixed_damage(Self) -> Bool
 pub fn Comp::ranged_count(Self) -> Int
+
+pub(all) struct FightCase {
+  comp_a : String
+  comp_b : String
+  node : Int
+  n_a : Int
+  n_b : Int
+  level_a : Int
+  level_b : Int
+  hp_a : Int
+  hp_b : Int
+}
+pub fn FightCase::bucket(Self) -> String
+pub fn FightCase::build(Self) -> Game
+pub fn FightCase::count_favours_us(Self) -> Bool
+pub fn FightCase::describe(Self) -> String
 
 pub(all) struct FightResult {
   a_standing : Int

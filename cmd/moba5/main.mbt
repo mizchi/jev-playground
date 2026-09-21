@@ -631,6 +631,11 @@ struct Tally {
   /// Questions answered at least twice, and how many of those never moved.
   mut comparable : Int
   mut stable : Int
+  /// Every truth in the class, so the report can say what the best CONSTANT
+  /// answer would score. A class where "always no" scores 0.80 cannot
+  /// distinguish a model from a rubber stamp, and the accuracy column alone
+  /// does not show that.
+  truths : Array[String]
   mut conf_hit : Double
   mut conf_hit_n : Int
   mut conf_miss : Double
@@ -646,11 +651,50 @@ fn Tally::new() -> Tally {
     floor: 0,
     comparable: 0,
     stable: 0,
+    truths: [],
     conf_hit: 0.0,
     conf_hit_n: 0,
     conf_miss: 0.0,
     conf_miss_n: 0,
   }
+}
+
+///|
+/// What the best CONSTANT answer scores on these questions: the share of the
+/// most common truth.
+///
+/// This is the column that says whether an accuracy figure is a measurement.
+/// A model that answers "no" to every question in a class where four of five
+/// truths are "no" scores 0.80 and has read nothing, and the `fight` class was
+/// built balanced (0.50 here) precisely so that a rubber stamp cannot beat
+/// chance on it.
+fn trivial_rate(truths : Array[String]) -> String {
+  if truths.length() == 0 {
+    return "—"
+  }
+  let seen : Array[String] = []
+  let counts : Array[Int] = []
+  for t in truths {
+    let mut at = -1
+    for i in 0..<seen.length() {
+      if seen[i] == t {
+        at = i
+      }
+    }
+    if at < 0 {
+      seen.push(t)
+      counts.push(1)
+    } else {
+      counts[at] += 1
+    }
+  }
+  let mut best = 0
+  for c in counts {
+    if c > best {
+      best = c
+    }
+  }
+  rate(best, truths.length())
 }
 
 ///|
@@ -667,12 +711,22 @@ fn rate(hits : Int, n : Int) -> String {
 /// probability, and naming the two sides sharpens where the boundary is; the
 /// wording belongs with the request rather than with the ground truth, so it
 /// lives here and not in `bench.mbt`.
+///
+/// The two sides are kept the same SHAPE on purpose. The `fight` pair used to
+/// read "we win outright: every one of them off the node and at least one of
+/// ours standing" against "we do not win it outright: some of them are still
+/// standing, or we are wiped, or both sides survive" — one clause against
+/// three, with "do not" and "wiped" on the second. Against a balanced set the
+/// model answered `false` to 31 of 32, and a lopsided pair of criteria is a
+/// live explanation for that which has nothing to do with reading a fight. So
+/// each side is now a single mirrored clause; docs/56 §4 reports what the
+/// change was worth.
 fn noul_criteria(class_ : String) -> (String, String) {
   match class_ {
     "fight" =>
       (
-        "We win the fight outright: every one of them is off the node and at least one of ours is still standing",
-        "We do not win it outright: some of them are still standing, or we are wiped, or both sides survive",
+        "When the fight ends, at least one of ours is standing on the node and none of theirs is",
+        "When the fight ends, at least one of theirs is standing on the node",
       )
     "dive" =>
       (
@@ -871,6 +925,7 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
       acc.asks += 1
       acc.n += r.said.length()
       acc.jev += r.hits
+      acc.truths.push(ask.truth)
       if floor_hit(ask) {
         acc.floor += 1
       }
@@ -932,10 +987,10 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
 
   let model_col = if opts.dry { "—" } else { opts.model }
   println(
-    "  class      asks  ans  \{@report.pad(model_col, 16)} floor        stable   conf(hit)  conf(miss)",
+    "  class      asks  ans  \{@report.pad(model_col, 16)} floor        const  stable   conf(hit)  conf(miss)",
   )
-  @report.rule(88)
-  fn row_of(name : String, t : Tally) -> Unit {
+  @report.rule(95)
+  fn row_of(name : String, t : Tally, with_const : Bool) -> Unit {
     let jev_col = if opts.dry || t.n == 0 {
       "—"
     } else {
@@ -952,18 +1007,48 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
       "—"
     }
     println(
-      "  \{@report.pad(name, 10)} \{@report.pad(t.asks.to_string(), 5)} \{@report.pad(t.n.to_string(), 4)} \{@report.pad(jev_col, 16)} \{@report.pad("\{t.floor}/\{t.asks}  \{rate(t.floor, t.asks)}", 12)} \{@report.pad(rate(t.stable, t.comparable), 8)} \{@report.pad(ch, 10)} \{cm}",
+      "  \{@report.pad(name, 10)} \{@report.pad(t.asks.to_string(), 5)} \{@report.pad(t.n.to_string(), 4)} \{@report.pad(jev_col, 16)} \{@report.pad("\{t.floor}/\{t.asks}  \{rate(t.floor, t.asks)}", 12)} \{@report.pad(if with_const { trivial_rate(t.truths) } else { "—" }, 6)} \{@report.pad(rate(t.stable, t.comparable), 8)} \{@report.pad(ch, 10)} \{cm}",
     )
   }
 
   for name in @game.bench_classes {
     match tallies.get(name) {
-      Some(t) => if t.asks > 0 { row_of(name, t) }
+      Some(t) => if t.asks > 0 { row_of(name, t, true) }
       None => ()
     }
   }
-  @report.rule(88)
-  row_of("overall", overall)
+  @report.rule(95)
+  // No `const` on this row: the most common truth across ten mixed classes is
+  // not a baseline for anything.
+  row_of("overall", overall, false)
+  // The pooled `overall` weights a class by how many questions it has, and
+  // that count is an artifact of which scenarios happened to be able to answer
+  // it — `power` rides along on almost every state, `macro` on almost none. So
+  // print the mean over classes as well, which does not move when a class
+  // gains questions. When the two disagree, the class mean is the one to read.
+  let mut jev_sum = 0.0
+  let mut floor_sum = 0.0
+  let mut classes = 0
+  for name in @game.bench_classes {
+    match tallies.get(name) {
+      Some(t) =>
+        if t.asks > 0 {
+          classes += 1
+          floor_sum += t.floor.to_double() / t.asks.to_double()
+          if t.n > 0 {
+            jev_sum += t.jev.to_double() / t.n.to_double()
+          }
+        }
+      None => ()
+    }
+  }
+  if classes > 0 {
+    let n = classes.to_double()
+    let jev_mean = if opts.dry { "—" } else { @report.d2(jev_sum / n) }
+    println(
+      "  \{@report.pad("class mean", 10)} \{@report.pad("\{classes}", 5)}      \{@report.pad(jev_mean, 16)} \{@report.d2(floor_sum / n)}",
+    )
+  }
   println("")
 
   if opts.dry {

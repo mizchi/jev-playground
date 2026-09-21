@@ -146,14 +146,14 @@ test-jevdsl: moon-deps
     moon test --target native -p jevdsl
 
 # @inputs: moba5/**
-# @cost: 5.5
+# @cost: 10.4
 # @reset: moon clean
 # Run the 5v5 MOBA's rules, map-symmetry and benchmark-integrity tests
 test-moba5: moon-deps
     moon test --target native -p moba5
 
 # @inputs: moba5/** cmd/moba5/**
-# @cost: 3.3
+# @cost: 3.6
 # Re-derive docs/56's benchmark suite and the heuristic floor's score, no API
 replay-moba5-bench: moon-build
     moon run --target native cmd/moba5 -- --bench --dry

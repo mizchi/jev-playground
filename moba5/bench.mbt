@@ -663,7 +663,6 @@ fn sc_river_fight() -> Scenario {
     note: "5v5 on the dragon pit, both teams worn",
     state,
     asks: [
-      ask_fight(g, RIV_BOT, TEAM_A),
       ask_focus(g, RIV_BOT, TEAM_A, ""),
       ask_power(g, TEAM_A),
       ask_ability(g, RIV_BOT, 0),
@@ -693,7 +692,6 @@ fn sc_down_a_body() -> Scenario {
     note: "4v5 on mid_mid, our jungler dead for 6 ticks",
     state,
     asks: [
-      ask_fight(g, 9, TEAM_A),
       ask_retreat(g, 9, TEAM_A),
       ask_power(g, TEAM_A),
       ask_fog_count(g, TEAM_A),
@@ -725,7 +723,6 @@ fn sc_focus_trap() -> Scenario {
         TEAM_A,
         " Our whole team deals magic damage, so their armor is irrelevant and their magic resist is what matters.",
       ),
-      ask_fight(g, 20, TEAM_A),
       ask_power(g, TEAM_A),
       // Our mid is a mage with an area ability and four enemies in front of it.
       ask_ability(g, 20, 2),
@@ -760,7 +757,6 @@ fn sc_tower_dive() -> Scenario {
       ask_dive(g, 6, TEAM_A),
       ask_diver(g, pit, TEAM_A),
       ask_focus(g, pit, TEAM_A, ""),
-      ask_fight(g, pit, TEAM_A),
       // Our tank's stun, under their tower, where a removed turn buys the
       // whole dive a tick.
       ask_ability(g, pit, 0),
@@ -794,7 +790,6 @@ fn sc_lone_dive() -> Scenario {
     asks: [
       ask_dive(g, 8, TEAM_A),
       ask_diver(g, pit, TEAM_A),
-      ask_fight(g, pit, TEAM_A),
       ask_retreat(g, pit, TEAM_A),
       ask_focus(g, pit, TEAM_A, ""),
     ],
@@ -1103,7 +1098,6 @@ fn sc_early_skirmish() -> Scenario {
     note: "2v2 in bot lane at level 2, every cooldown up",
     state,
     asks: [
-      ask_fight(g, node, TEAM_A),
       ask_focus(g, node, TEAM_A, ""),
       ask_retreat(g, node, TEAM_A),
       // Our enchanter's shield: pre-emptive, so the timing question is real.
@@ -1146,7 +1140,6 @@ fn sc_baron_buffed() -> Scenario {
     state,
     asks: [
       ask_power(g, TEAM_A),
-      ask_fight(g, RIV_TOP, TEAM_A),
       ask_retreat(g, RIV_TOP, TEAM_A),
       ask_focus(
         g,
@@ -1266,9 +1259,36 @@ fn sc_split_pressure() -> Scenario {
       ),
       ask_lane(g, TEAM_A),
       ask_retreat(g, 16, TEAM_A),
-      ask_fight(g, 16, TEAM_A),
       ask_fog_where(g, TEAM_A, mem, " Three of them were last seen grouping."),
       ask_power(g, TEAM_A),
+    ],
+  }
+}
+
+///|
+/// One derived fight: a case from the balanced sweep in `fightset.mbt`, with
+/// the questions its state can answer.
+///
+/// The bucket is in the scenario's name so the report shows the balance, and
+/// it never reaches the model — a request carries only the state and the
+/// question text.
+fn sc_fight_case(case_ : FightCase, index : Int) -> Scenario {
+  let g = case_.build()
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name: "fight_\{index + 1}_\{case_.bucket()}",
+    note: case_.describe(),
+    state,
+    asks: [
+      ask_fight(g, case_.node, TEAM_A),
+      ask_focus(g, case_.node, TEAM_A, ""),
+      ask_power(g, TEAM_A),
+      // `retreat` rides along here for the same reason the fight set exists:
+      // written only into the narrative scenarios, five of its six truths came
+      // out "walk away", so answering "walk away" to everything scored 0.83
+      // and the class could not tell a model from a rubber stamp. Half of
+      // these fights are ones we win, so asking here balances it.
+      ask_retreat(g, case_.node, TEAM_A),
     ],
   }
 }
@@ -1279,7 +1299,7 @@ fn sc_split_pressure() -> Scenario {
 /// Every scenario, in report order. Each one is a single request: one state,
 /// several questions.
 pub fn bench_suite() -> Array[Scenario] {
-  [
+  let out : Array[Scenario] = [
     sc_river_fight(),
     sc_down_a_body(),
     sc_focus_trap(),
@@ -1311,7 +1331,20 @@ pub fn bench_suite() -> Array[Scenario] {
     sc_baron_buffed(),
     sc_split_pressure(),
   ]
+  // The `fight` class comes last and comes from the sweep, not from here: two
+  // cases per bucket, so the head count is worth 0.50 on the class and any
+  // score above chance is a read of the fight rather than of the head count.
+  let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
+  for i in 0..<cases.length() {
+    out.push(sc_fight_case(cases[i], i))
+  }
+  out
 }
+
+///|
+/// How many fights to take from each of the four buckets. Four buckets times
+/// this is the size of the `fight` class.
+pub const FIGHT_PER_BUCKET = 4
 
 ///|
 /// The classes the report groups by, in a fixed order so two runs line up.
