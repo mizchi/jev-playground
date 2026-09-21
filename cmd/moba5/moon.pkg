@@ -8,6 +8,7 @@ import {
   "moonbitlang/core/argparse",
   "moonbitlang/core/cmp",
   "moonbitlang/core/env",
+  "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/x/sys",
 }

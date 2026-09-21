@@ -38,6 +38,12 @@ struct Opts {
   /// Put the `fight` and `retreat` truths side by side over the derived fight
   /// states, against one recorded run. No API key.
   coherence : Bool
+  /// Ask the derived fight states under both retreat wordings and compare.
+  wording : Bool
+  /// Where to write the per-answer log, or where to read one back from.
+  answers : String
+  /// Re-derive the wording comparison from a committed answers log. No API key.
+  from_answers : String
   /// Ask Jev to draft from the raw archetype stats, against the empirical
   /// arena.
   draft : Bool
@@ -546,6 +552,578 @@ fn run_arena(max_ticks : Int) -> Unit {
   )
 }
 
+// ----------------------------------------------------- the wording experiment
+
+///|
+/// One answer, as it was recorded. This is the row the answers log carries, so
+/// the analysis below can be re-derived from a committed file with no API —
+/// which is the discipline every other `replay-*` recipe in this repository
+/// already follows.
+struct Answer {
+  run : Int
+  /// `two_way` or `three_way`.
+  arm : String
+  scenario : String
+  key : String
+  class_ : String
+  truth : String
+  said : String
+  conf : Double
+}
+
+///|
+fn Answer::to_json_line(self : Answer) -> String {
+  let j : Json = {
+    "run": Json::number(self.run.to_double()),
+    "arm": Json::string(self.arm),
+    "scenario": Json::string(self.scenario),
+    "key": Json::string(self.key),
+    "class": Json::string(self.class_),
+    "truth": Json::string(self.truth),
+    "said": Json::string(self.said),
+    "conf": Json::number(self.conf),
+  }
+  j.stringify()
+}
+
+///|
+fn answer_of_json(j : Json) -> Answer {
+  {
+    run: as_int(field(j, "run")),
+    arm: as_str(field(j, "arm")),
+    scenario: as_str(field(j, "scenario")),
+    key: as_str(field(j, "key")),
+    class_: as_str(field(j, "class")),
+    truth: as_str(field(j, "truth")),
+    said: as_str(field(j, "said")),
+    conf: as_num(field(j, "conf")),
+  }
+}
+
+///|
+fn field(j : Json, k : String) -> Json? {
+  match j {
+    Json::Object(f) => f.get(k)
+    _ => None
+  }
+}
+
+///|
+fn as_int(j : Json?) -> Int {
+  match j {
+    Some(Json::Number(n, ..)) => n.to_int()
+    _ => 0
+  }
+}
+
+///|
+fn as_num(j : Json?) -> Double {
+  match j {
+    Some(Json::Number(n, ..)) => n
+    _ => 0.0
+  }
+}
+
+///|
+fn as_str(j : Json?) -> String {
+  match j {
+    Some(Json::String(s)) => s
+    _ => ""
+  }
+}
+
+///|
+fn split_lines(s : String) -> Array[String] {
+  let out = []
+  let cur = StringBuilder()
+  for ch in s {
+    if ch == '\n' {
+      out.push(cur.to_string())
+      cur.reset()
+    } else if ch != '\r' {
+      cur.write_char(ch)
+    }
+  }
+  out.push(cur.to_string())
+  out
+}
+
+///|
+/// The two arms, in report order. `two_way` is the wording the benchmark
+/// ships; `three_way` splits its commit option in two.
+let wording_arms : Array[String] = ["two_way", "three_way"]
+
+///|
+/// What one arm did on one run, over the sixteen derived fight states.
+struct ArmRun {
+  arm : String
+  run : Int
+  /// Per state, in suite order: did it answer `fight` with `false`?
+  fight_false : Array[Bool]
+  /// Per state: did it choose to swing rather than walk away?
+  commit : Array[Bool]
+  /// Per state: the retreat answer verbatim, so the three-way split is
+  /// readable.
+  retreat_said : Array[String]
+  /// Per state: was the retreat answer correct?
+  retreat_hit : Array[Bool]
+  /// Per state: was the fight answer correct?
+  fight_hit : Array[Bool]
+}
+
+///|
+fn ArmRun::new(arm : String, run : Int) -> ArmRun {
+  {
+    arm,
+    run,
+    fight_false: [],
+    commit: [],
+    retreat_said: [],
+    retreat_hit: [],
+    fight_hit: [],
+  }
+}
+
+///|
+fn count(flags : Array[Bool]) -> Int {
+  let mut n = 0
+  for b in flags {
+    if b {
+      n += 1
+    }
+  }
+  n
+}
+
+///|
+/// How many states answered `fight` `false` AND chose to swing — the pairing
+/// the whole of TODO §1.12 is about.
+fn ArmRun::paired(self : ArmRun) -> Int {
+  let mut n = 0
+  for i in 0..<self.fight_false.length() {
+    if self.fight_false[i] && i < self.commit.length() && self.commit[i] {
+      n += 1
+    }
+  }
+  n
+}
+
+///|
+/// The overlap this run's two margins force before any state is looked at. A
+/// `paired` equal to this is the two margins restated (docs/56 §4).
+fn ArmRun::forced(self : ArmRun) -> Int {
+  @game.forced_overlap(
+    count(self.fight_false),
+    count(self.commit),
+    self.fight_false.length(),
+  )
+}
+
+///|
+/// How many states chose the named option.
+fn ArmRun::chose(self : ArmRun, option : String) -> Int {
+  let mut n = 0
+  for s in self.retreat_said {
+    if s == option {
+      n += 1
+    }
+  }
+  n
+}
+
+///|
+/// Of the states where this same request said "we do not win this fight" and
+/// chose to swing, how many named the middle option — "we do not win it, and
+/// swinging is still worth more"?
+///
+/// This is the number the reworded question exists to produce. The middle
+/// option is the position the two-option question had nowhere to put, so
+/// picking it means the two options were too coarse; picking `win_and_fight`
+/// instead is a contradiction inside one request, with no wording left to
+/// blame.
+fn ArmRun::middle_when_losing(self : ArmRun) -> (Int, Int) {
+  let mut middle = 0
+  let mut total = 0
+  for i in 0..<self.fight_false.length() {
+    if !self.fight_false[i] || i >= self.commit.length() || !self.commit[i] {
+      continue
+    }
+    total += 1
+    if self.retreat_said[i] == "lose_but_fight" {
+      middle += 1
+    }
+  }
+  (middle, total)
+}
+
+///|
+/// Turn recorded answers into per-arm, per-run rows.
+///
+/// `states` is the two-option arm's scenarios, which fixes the state order;
+/// every arm is built from the same `balanced_fight_cases`, so a scenario name
+/// identifies a state across arms and runs.
+fn arm_runs(
+  states : Array[@game.Scenario],
+  answers : Array[Answer],
+) -> Array[ArmRun] {
+  let order : Array[String] = []
+  for sc in states {
+    order.push(sc.name)
+  }
+  let out : Array[ArmRun] = []
+  let mut max_run = 0
+  for a in answers {
+    if a.run > max_run {
+      max_run = a.run
+    }
+  }
+  for arm in wording_arms {
+    for run in 1..<=max_run {
+      let row = ArmRun::new(arm, run)
+      for name in order {
+        // Missing answers are recorded as such rather than guessed: a request
+        // that failed every attempt leaves a state out of this run's arm, and
+        // the row is then short and reported as short.
+        let mut fight = ""
+        let mut fight_truth = ""
+        let mut retreat = ""
+        let mut retreat_truth = ""
+        for a in answers {
+          if a.run != run || a.arm != arm || a.scenario != name {
+            continue
+          }
+          if a.class_ == "fight" {
+            fight = a.said
+            fight_truth = a.truth
+          }
+          if a.class_ == "retreat" || a.class_ == "retreat3" {
+            retreat = a.said
+            retreat_truth = a.truth
+          }
+        }
+        if fight == "" || retreat == "" {
+          continue
+        }
+        row.fight_false.push(fight == "false")
+        row.fight_hit.push(@game.truth_accepts(fight_truth, fight))
+        row.commit.push(retreat != "walk_away")
+        row.retreat_said.push(retreat)
+        row.retreat_hit.push(@game.truth_accepts(retreat_truth, retreat))
+      }
+      if row.fight_false.length() > 0 {
+        out.push(row)
+      }
+    }
+  }
+  out
+}
+
+///|
+/// `--wording`: TODO §1.12 item 2 — the one check that needs the API.
+///
+/// The same sixteen derived fight states are asked twice per run. The two
+/// requests are identical except for one question: `retreat` offers
+/// `fight_now` / `walk_away`, and `retreat3` offers `win_and_fight` /
+/// `lose_but_fight` / `walk_away` over the same two scores. So whatever moves
+/// between the arms is the wording, not the situation.
+///
+/// Item 1 changed what this has to measure. "Does the pairing count drop" is
+/// not the question, because that count is forced by the two margins: the
+/// recorded run's 13 of 16 was exactly `14 + 15 - 16`. What matters is
+/// whether the MARGINS move — whether naming the middle position changes how
+/// often the model says it loses the fight and how often it swings anyway —
+/// and, when it swings on a fight it says it loses, whether it will say so.
+async fn run_wording(opts : Opts, client : @lib.Client) -> Unit {
+  let two = @game.fight_scenarios(false)
+  let three = @game.fight_scenarios(true)
+  let repeat = if opts.repeat < 1 { 1 } else { opts.repeat }
+  @report.header(
+    "moba5 wording — the retreat question as two options and as three",
+    "\{opts.model}, \{two.length()} states × 2 wordings × \{repeat} run(s)",
+  )
+  let answers : Array[Answer] = []
+  let stats = Stats::new()
+  for run in 1..<=repeat {
+    for arm in wording_arms {
+      let suite = if arm == "two_way" { two } else { three }
+      for sc in suite {
+        let qs = scenario_questions(sc)
+        let resp = ask_with_retry(
+          client,
+          { state: sc.state, model: opts.model, questions: qs, },
+          stats,
+        )
+        match resp {
+          Some(got) =>
+            for ask in sc.asks {
+              let (said, conf) = read_answer(got, ask)
+              answers.push({
+                run,
+                arm,
+                scenario: sc.name,
+                key: ask.key,
+                class_: ask.class_,
+                truth: ask.truth,
+                said,
+                conf,
+              })
+            }
+          None => ()
+        }
+      }
+    }
+  }
+  if opts.answers != "" {
+    let lines : Array[String] = []
+    for a in answers {
+      lines.push(a.to_json_line())
+    }
+    @fs.write_file(opts.answers, lines.join("\n") + "\n")
+    println("  wrote \{answers.length()} answers to \{opts.answers}")
+    println("")
+  }
+  print_wording(two, answers)
+  println(
+    "  \{stats.requests} requests, \{stats.input_tokens} input tokens (~$\{cost_of(stats.input_tokens)})",
+  )
+  if stats.failures > 0 {
+    println(
+      "  \{stats.failures} request(s) failed every attempt and are left out: \{stats.last_error}",
+    )
+  }
+  println("")
+}
+
+///|
+/// `--from-answers`: the same comparison, re-derived from a committed log.
+///
+/// This is the half of TODO §1.12 item 2 that is about the record rather than
+/// the model. The first coherence run printed `retreat` as a class total, so
+/// which state took its single `walk_away` was not recoverable and
+/// `pairing_bounds` had to enumerate the arrangements instead. A per-answer log
+/// makes that unnecessary: the states are named, the analysis is exact, and it
+/// reruns for nothing — the discipline every other `replay-*` recipe here
+/// already follows.
+async fn replay_wording(path : String) -> Unit {
+  let answers = read_answers(path)
+  @report.header(
+    "moba5 wording — the retreat question as two options and as three",
+    "re-derived from \{path}: \{answers.length()} recorded answers, no API",
+  )
+  print_wording(@game.fight_scenarios(false), answers)
+}
+
+///|
+/// Read an answers log. A line that is not JSON is skipped and said to be
+/// skipped, because a silently shortened record would move every number below
+/// it without showing up as an error.
+async fn read_answers(path : String) -> Array[Answer] {
+  let text = @fs.read_file(path).text() catch {
+    _ => {
+      @stdio.stderr.write("moba5: cannot read \{path}\n")
+      @sys.exit(1)
+      return []
+    }
+  }
+  let answers : Array[Answer] = []
+  let mut bad = 0
+  for line in split_lines(text) {
+    if line == "" {
+      continue
+    }
+    let j = @json.parse(line) catch {
+      _ => {
+        bad += 1
+        continue
+      }
+    }
+    answers.push(answer_of_json(j))
+  }
+  if bad > 0 {
+    println("  \{bad} line(s) of \{path} were not JSON and were skipped")
+    println("")
+  }
+  answers
+}
+
+///|
+/// The wording comparison, from recorded answers. No API, so the same numbers
+/// come back from a committed log.
+fn print_wording(
+  states : Array[@game.Scenario],
+  answers : Array[Answer],
+) -> Unit {
+  let rows = arm_runs(states, answers)
+  if rows.is_empty() {
+    println("  no answers to read.")
+    return
+  }
+  let n = states.length()
+  println("  1. What each wording was answered with")
+  println("")
+  println(
+    "  \{@report.pad("arm", 12)}\{@report.pad("run", 5)}\{@report.pad("\"we lose it\"", 14)}\{@report.pad("swing", 8)}\{@report.pad("paired", 8)}\{@report.pad("forced", 8)}the retreat answers",
+  )
+  @report.rule(100)
+  for r in rows {
+    let split = if r.arm == "two_way" {
+      "fight_now \{r.chose("fight_now")}, walk_away \{r.chose("walk_away")}"
+    } else {
+      "win_and_fight \{r.chose("win_and_fight")}, lose_but_fight \{r.chose("lose_but_fight")}, walk_away \{r.chose("walk_away")}"
+    }
+    println(
+      "  \{@report.pad(r.arm, 12)}\{@report.pad("\{r.run}", 5)}\{@report.pad("\{count(r.fight_false)}/\{r.fight_false.length()}", 14)}\{@report.pad("\{count(r.commit)}/\{r.commit.length()}", 8)}\{@report.pad("\{r.paired()}", 8)}\{@report.pad("\{r.forced()}", 8)}\{split}",
+    )
+  }
+  println("")
+  // The paired question: does the wording move either margin? Each state is
+  // answered under both wordings in the same run, so the comparison is paired
+  // state by state and the sign test applies to the states that changed.
+  println("  2. Did the wording move the two margins?")
+  println("")
+  println(
+    "  Each state is answered under both wordings in the same run, so the comparison is paired",
+  )
+  println(
+    "  state by state. The test is run by run: the same \{n} states are asked every run, so pooling",
+  )
+  println("  the runs would count one state several times.")
+  println("")
+  for what in ["fight \"we lose it\"", "swing"] {
+    let parts : Array[String] = []
+    for a in rows {
+      if a.arm != "two_way" {
+        continue
+      }
+      for b in rows {
+        if b.arm != "three_way" || b.run != a.run {
+          continue
+        }
+        let mut two_only = 0
+        let mut three_only = 0
+        let len = if a.fight_false.length() < b.fight_false.length() {
+          a.fight_false.length()
+        } else {
+          b.fight_false.length()
+        }
+        for i in 0..<len {
+          let (x, y) = if what == "swing" {
+            (a.commit[i], b.commit[i])
+          } else {
+            (a.fight_false[i], b.fight_false[i])
+          }
+          if x && !y {
+            two_only += 1
+          }
+          if y && !x {
+            three_only += 1
+          }
+        }
+        let p = @game.sign_test(three_only, two_only)
+        parts.push(
+          "run \{a.run}: \{two_only + three_only} changed (\{two_only}/\{three_only}), p = \{@report.d3(p)}",
+        )
+      }
+    }
+    println("  \{@report.pad(what, 20)}\{parts.join("   ")}")
+  }
+  println("")
+  println(
+    "  (changed counts read as two-way-only / three-way-only, and one changed state cannot be",
+  )
+  println("  a difference under any test — the sign test says so itself.)")
+  println("")
+  println("  3. What the three-option arm said about the same fight twice")
+  println("")
+  println(
+    "  Both answers come out of one request about one node, so the two questions can be crossed",
+  )
+  println(
+    "  directly. `lose_but_fight` is the position the two-option question had nowhere to put;",
+  )
+  println(
+    "  the two off-diagonal cells are contradictions with no wording left to blame.",
+  )
+  println("")
+  let options = ["win_and_fight", "lose_but_fight", "walk_away"]
+  println(
+    "  \{@report.pad("its fight answer", 20)}\{@report.pad("win_and_fight", 16)}\{@report.pad("lose_but_fight", 17)}walk_away",
+  )
+  @report.rule(72)
+  for said_false in [false, true] {
+    let cells : Array[Int] = [0, 0, 0]
+    for r in rows {
+      if r.arm != "three_way" {
+        continue
+      }
+      for i in 0..<r.fight_false.length() {
+        if r.fight_false[i] != said_false {
+          continue
+        }
+        for k in 0..<options.length() {
+          if r.retreat_said[i] == options[k] {
+            cells[k] += 1
+          }
+        }
+      }
+    }
+    let label = if said_false { "\"we lose it\"" } else { "\"we win it\"" }
+    let marks = if said_false { ["  ←", "", ""] } else { ["", "  ←", ""] }
+    println(
+      "  \{@report.pad(label, 20)}\{@report.pad("\{cells[0]}\{marks[0]}", 16)}\{@report.pad("\{cells[1]}\{marks[1]}", 17)}\{cells[2]}",
+    )
+  }
+  println("")
+  let parts : Array[String] = []
+  for r in rows {
+    if r.arm != "three_way" {
+      continue
+    }
+    let (m, t) = r.middle_when_losing()
+    parts.push("run \{r.run}: \{m}/\{t}")
+  }
+  println(
+    "  Of the states where it said \"we lose it\" AND swung, the share that named the middle",
+  )
+  println("  option, run by run: \{parts.join(",  ")}")
+  println("")
+  println("  4. Scored against the simulator")
+  println("")
+  println(
+    "  \{@report.pad("arm", 12)}\{@report.pad("fight", 16)}\{@report.pad("retreat", 16)}rubber stamp on the retreat question",
+  )
+  @report.rule(80)
+  for arm in wording_arms {
+    let mut f_hits = 0
+    let mut f_n = 0
+    let mut r_hits = 0
+    let mut r_n = 0
+    for r in rows {
+      if r.arm != arm {
+        continue
+      }
+      f_hits += count(r.fight_hit)
+      f_n += r.fight_hit.length()
+      r_hits += count(r.retreat_hit)
+      r_n += r.retreat_hit.length()
+    }
+    // The best constant answer for this arm's retreat question, from the
+    // truths themselves rather than from what the model happened to say.
+    let truths : Array[String] = []
+    for a in answers {
+      if a.arm == arm &&
+        a.run == 1 &&
+        (a.class_ == "retreat" || a.class_ == "retreat3") {
+        truths.push(a.truth)
+      }
+    }
+    println(
+      "  \{@report.pad(arm, 12)}\{@report.pad("\{f_hits}/\{f_n}  \{rate(f_hits, f_n)}", 16)}\{@report.pad("\{r_hits}/\{r_n}  \{rate(r_hits, r_n)}", 16)}\{trivial_rate(truths)}",
+    )
+  }
+  println("")
+}
+
 ///|
 /// `--coherence`: the two questions the benchmark asks about the same node,
 /// put side by side. TODO §1.12 items 1 and 3, neither of which needs the API.
@@ -558,7 +1136,7 @@ fn run_arena(max_ticks : Int) -> Unit {
 /// The model's side is a recorded run rather than a live one, which is the
 /// point: the analysis is a property of the rules plus one recorded draw, so
 /// it reruns for free and says the same thing.
-fn run_coherence() -> Unit {
+async fn run_coherence(log : String) -> Unit {
   let rows = @game.coherence_rows()
   let rec = @game.recorded_run
   let rep = @game.coherence_report(rec)
@@ -623,6 +1201,32 @@ fn run_coherence() -> Unit {
     println(
       "  the recorded totals do not agree with each other; nothing to test.",
     )
+  }
+  // A run whose answers were recorded per state needs none of that. The
+  // bounds above exist because the first run printed `retreat` as a class
+  // total; `--wording --answers` writes one line per answer, and then the
+  // same test is exact.
+  if log != "" {
+    println("")
+    let answers = read_answers(log)
+    let arms = arm_runs(@game.fight_scenarios(false), answers)
+    let mut printed = false
+    for r in arms {
+      if r.arm != "two_way" {
+        continue
+      }
+      if !printed {
+        println("  and from \{log}, where the answers were recorded per state:")
+        printed = true
+      }
+      let d = @game.pairing_exact(rows, r.fight_false, r.commit)
+      println(
+        "  run \{r.run}: paired \{r.paired()} (forced \{r.forced()}), discordant \{d.first_only}/\{d.second_only} run-only/truth-only, p = \{@report.d3(d.p)}",
+      )
+    }
+    if !printed {
+      println("  \{log} holds no two-option answers to lay over these states.")
+    }
   }
   println("")
   println("  3. Moving the fight question's threshold")
@@ -1456,6 +2060,11 @@ async fn main {
         long="coherence",
         about="Put the fight and retreat truths side by side over the derived fight states, against one recorded run. Needs no API key.",
       ),
+      @argparse.FlagArg(
+        "wording",
+        long="wording",
+        about="Ask the derived fight states under both retreat wordings (two options and three) and compare what moved.",
+      ),
     ],
     options=[
       @argparse.OptionArg(
@@ -1526,6 +2135,16 @@ async fn main {
         about="Write the last game's replay to this file (JSON lines).",
       ),
       @argparse.OptionArg(
+        "answers",
+        long="answers",
+        about="--wording: write every answer to this file (JSON lines), so the comparison can be re-derived without the API.",
+      ),
+      @argparse.OptionArg(
+        "from-answers",
+        long="from-answers",
+        about="Re-derive the wording comparison from an answers file written earlier. Needs no API key.",
+      ),
+      @argparse.OptionArg(
         "hcap-a",
         long="hcap-a",
         default_values=["100"],
@@ -1566,6 +2185,9 @@ async fn main {
     tournament: matches.flags.get("tournament").unwrap_or(false),
     arena: matches.flags.get("arena").unwrap_or(false),
     coherence: matches.flags.get("coherence").unwrap_or(false),
+    wording: matches.flags.get("wording").unwrap_or(false),
+    answers: opt_value(matches, "answers").unwrap_or(""),
+    from_answers: opt_value(matches, "from-answers").unwrap_or(""),
     draft: matches.flags.get("draft").unwrap_or(false),
     bench: matches.flags.get("bench").unwrap_or(false),
     dry: matches.flags.get("dry").unwrap_or(false),
@@ -1580,8 +2202,9 @@ async fn main {
   let offline = opts.tournament ||
     opts.arena ||
     opts.coherence ||
+    opts.from_answers != "" ||
     (opts.bench && opts.dry)
-  if !offline && !opts.bench && !opts.draft {
+  if !offline && !opts.bench && !opts.draft && !opts.wording {
     for kind in [opts.team_a, opts.team_b] {
       if kind != "jev" && kind != "scripted" && kind != "smart" {
         @stdio.stderr.write(
@@ -1593,7 +2216,13 @@ async fn main {
     }
   }
   let needs_api = !offline &&
-    (opts.draft || opts.bench || opts.team_a == "jev" || opts.team_b == "jev")
+    (
+      opts.draft ||
+      opts.bench ||
+      opts.wording ||
+      opts.team_a == "jev" ||
+      opts.team_b == "jev"
+    )
   if needs_api && api_key.is_empty() {
     @stdio.stderr.write(
       "moba5: no API key; set TYPESAFEAI_API_KEY or pass --api-key (or use --bench --dry)\n",
@@ -1628,9 +2257,12 @@ async fn run(opts : Opts) -> Unit {
     run_tournament(opts.baseline, opts.max_ticks)
   }
   if opts.coherence {
-    run_coherence()
+    run_coherence(opts.from_answers)
   }
-  if opts.arena || opts.tournament || opts.coherence {
+  if opts.from_answers != "" && !opts.coherence {
+    replay_wording(opts.from_answers)
+  }
+  if opts.arena || opts.tournament || opts.coherence || opts.from_answers != "" {
     return
   }
   let client = if opts.base_url == "https://api.typesafe.ai" {
@@ -1640,6 +2272,10 @@ async fn run(opts : Opts) -> Unit {
   }
   if opts.bench {
     run_bench(opts, client)
+    return
+  }
+  if opts.wording {
+    run_wording(opts, client)
     return
   }
   if opts.draft {

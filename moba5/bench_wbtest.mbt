@@ -7,10 +7,43 @@
 /// like a result. These tests are what stop either from being published.
 
 ///|
+/// Every scenario the CLI can send: the suite, plus the wording experiment's
+/// three-option arm. The arm is the same sixteen states with one question
+/// reworded, and a class has to hold up in whichever of the two asks it —
+/// otherwise the arm would be the one place a broken question could hide.
+fn all_scenarios() -> Array[Scenario] {
+  let out = bench_suite()
+  for sc in fight_scenarios(true) {
+    out.push(sc)
+  }
+  out
+}
+
+///|
+/// The same, as questions, once each. The arm repeats the suite's `fight`,
+/// `focus` and `power` questions verbatim, and counting those twice would make
+/// a class look twice as large as it is.
+fn all_asks() -> Array[Ask] {
+  let out : Array[Ask] = []
+  let seen : Array[String] = []
+  for sc in all_scenarios() {
+    for ask in sc.asks {
+      let tag = "\{sc.name}/\{ask.key}"
+      if seen.contains(tag) {
+        continue
+      }
+      seen.push(tag)
+      out.push(ask)
+    }
+  }
+  out
+}
+
+///|
 /// Every ask is well formed: the truth is answerable, the classes are ones the
 /// report knows how to group, and nothing is blank.
 test "every benchmark ask is answerable" {
-  let suite = bench_suite()
+  let suite = all_scenarios()
   assert_true(suite.length() >= 8)
   let mut asks = 0
   for sc in suite {
@@ -77,7 +110,7 @@ test "every benchmark ask is answerable" {
 /// Question names are unique within a scenario — they are the keys on the wire,
 /// so a duplicate would silently drop an answer and score it as a miss.
 test "question names are unique within a scenario" {
-  for sc in bench_suite() {
+  for sc in all_scenarios() {
     let seen : Array[String] = []
     for ask in sc.asks {
       assert_false(seen.contains(ask.key))
@@ -95,14 +128,12 @@ test "question names are unique within a scenario" {
 /// four such classes and the report printed them next to a class of six as if
 /// they were comparable.
 test "every class has enough questions to say something" {
-  let suite = bench_suite()
+  let asks = all_asks()
   for name in bench_classes {
     let mut n = 0
-    for sc in suite {
-      for ask in sc.asks {
-        if ask.class_ == name {
-          n += 1
-        }
+    for ask in asks {
+      if ask.class_ == name {
+        n += 1
       }
     }
     assert_true(n >= 5)
@@ -191,13 +222,12 @@ test "the derived fights span more than one matchup" {
 /// `floor` test below does not catch it, because the floor is a heuristic that
 /// actually reads the state — a constant answer is a different failure.
 test "no class can be swept by one constant answer" {
+  let asks = all_asks()
   for name in bench_classes {
     let truths : Array[String] = []
-    for sc in bench_suite() {
-      for ask in sc.asks {
-        if ask.class_ == name {
-          truths.push(ask.truth)
-        }
+    for ask in asks {
+      if ask.class_ == name {
+        truths.push(ask.truth)
       }
     }
     assert_true(truths.length() > 0)
@@ -234,17 +264,15 @@ test "no class can be swept by one constant answer" {
 /// heuristic sweeps is a class where the questions do not discriminate, and it
 /// would report a model's 1.00 as a success rather than as an easy row.
 test "no class is a free pass for the heuristic" {
-  let suite = bench_suite()
+  let asks = all_asks()
   for name in bench_classes {
     let mut n = 0
     let mut hits = 0
-    for sc in suite {
-      for ask in sc.asks {
-        if ask.class_ == name {
-          n += 1
-          if truth_accepts(ask.truth, ask.floor) {
-            hits += 1
-          }
+    for ask in asks {
+      if ask.class_ == name {
+        n += 1
+        if truth_accepts(ask.truth, ask.floor) {
+          hits += 1
         }
       }
     }

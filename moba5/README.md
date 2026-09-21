@@ -15,9 +15,14 @@ moon run --target native cmd/moba5 -- --bench         # score a model against th
 moon run --target native cmd/moba5 -- --arena         # 5v5 teamfight round-robin, no API key
 moon run --target native cmd/moba5 -- --tournament    # whole-game round-robin, no API key
 moon run --target native cmd/moba5 -- --draft         # rank comps from raw stats
-moon run --target native cmd/moba5 -- --coherence     # the fight and retreat truths side by side, no API key
+moon run --target native cmd/moba5 -- --coherence --from-answers moba5/runs/wording.jsonl
+                                                      # the fight and retreat truths side by side, no API key
+moon run --target native cmd/moba5 -- --from-answers moba5/runs/wording.jsonl
+                                                      # the retreat question as two options and as three, no API key
+moon run --target native cmd/moba5 -- --wording --repeat 3 --answers moba5/runs/wording.jsonl
+                                                      # ask both wordings again (96 requests)
 moon run --target native cmd/moba5 -- --a jev --b smart --max-ticks 40
-moon test --target native -p moba5                    # 51 tests, no API key
+moon test --target native -p moba5                    # 52 tests, no API key
 ```
 
 ## The files
@@ -35,6 +40,7 @@ moon test --target native -p moba5                    # 51 tests, no API key
 | `bench.mbt` | The fifteen written scenarios and their questions, each with the answer the simulator produced and the heuristic floor's answer |
 | `fightset.mbt` | The `fight` class, swept rather than written: 540 staged fights played out and filed by whether the head count predicted the outcome, then taken evenly from four buckets |
 | `coherence.mbt` | Two questions about the same node, put side by side: how often the rules allow "we do not win" *and* "swing anyway", a looser reading of winning, and the sign test — including `forced_overlap`, which says how much of a co-occurrence count its two margins already forced |
+| `runs/wording.jsonl` | One recorded run's answers, one line per question, so the analyses above re-derive with no API key |
 | `replay.mbt` | Self-contained JSON-lines replay (`version: "moba5/1"`) |
 
 ## The one rule everything turns on
@@ -85,7 +91,9 @@ third exist because the first kind of bug is not the kind that bites:
   and means nothing;
 - **the coherence analysis** (`coherence_wbtest.mbt`) — that its rows carry the
   benchmark's own `fight` and `retreat` truths rather than a second copy of the
-  pricing, that the sign test matches values worked out by hand, and that a
-  count equal to its forced overlap is recognised as one. The last of those is
-  the check that turned the report's "13 of 16 contradict" into a weaker and
-  correct claim.
+  pricing, that the reworded three-option question is the same question with
+  the same oracle, that the sign test matches values worked out by hand, and
+  that a count equal to its forced overlap is recognised as one. The last of
+  those is the check that turned the report's "13 of 16 contradict" into a
+  weaker and correct claim; the wording one is what makes the two arms an A/B
+  rather than two different measurements.

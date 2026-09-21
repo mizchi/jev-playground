@@ -227,6 +227,62 @@ pub fn sign_test(less : Int, more : Int) -> Double {
   }
 }
 
+///|
+/// A paired comparison of two yes/no readings of the same states: the
+/// discordant counts, and what the sign test makes of them.
+pub(all) struct Discordance {
+  /// States the first reading says yes to and the second does not.
+  first_only : Int
+  second_only : Int
+  agree : Int
+  p : Double
+}
+
+///|
+/// Compare two readings state by state. `first` is the one being tested (a
+/// run's pairing); `second` is what it is tested against (the truth's).
+///
+/// This is `pairing_bounds` without the guessing, and it is what a per-state
+/// record buys: the arrangements do not have to be enumerated because the
+/// arrangement is known.
+pub fn discordance(first : Array[Bool], second : Array[Bool]) -> Discordance {
+  let c = pair_census(first, second)
+  {
+    first_only: c.first_only,
+    second_only: c.second_only,
+    agree: c.both + c.neither,
+    p: sign_test(c.second_only, c.first_only),
+  }
+}
+
+///|
+/// One run's pairing against the truth's, exactly, from per-state answers.
+///
+/// `fight_false[i]` and `commit[i]` are what the run answered about state `i`
+/// of `rows`, which is `coherence_rows()` order. A run whose answers were
+/// recorded per state needs this rather than `pairing_bounds`.
+pub fn pairing_exact(
+  rows : Array[CoherenceRow],
+  fight_false : Array[Bool],
+  commit : Array[Bool],
+) -> Discordance {
+  let said : Array[Bool] = []
+  let truth : Array[Bool] = []
+  let n = if fight_false.length() < commit.length() {
+    fight_false.length()
+  } else {
+    commit.length()
+  }
+  for i in 0..<n {
+    if i >= rows.length() {
+      break
+    }
+    said.push(fight_false[i] && commit[i])
+    truth.push(rows[i].truth_pairs())
+  }
+  discordance(said, truth)
+}
+
 // -------------------------------------------- a run that recorded only totals
 
 ///|

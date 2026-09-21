@@ -293,6 +293,58 @@ fn ask_retreat(g : Game, node : Int, team : Int) -> Ask {
 }
 
 ///|
+/// `retreat3` — the same decision with the same oracle, split three ways.
+///
+/// `ask_retreat` offers `fight_now` against `walk_away`, and a model that says
+/// "we do not win this fight" and then `fight_now` about the same node looks
+/// like it is contradicting itself. But it need not be: **"we lose the fight
+/// and swinging is still the better move" is a real position** (a trade that
+/// stops their siege, say), and the two-option question has nowhere to put it.
+/// Splitting the commit side in two gives that answer a name, so the model can
+/// state it instead of having it inferred:
+///
+/// - picking the MIDDLE option means the two-option question was too coarse;
+/// - picking `win_and_fight` right after answering `fight` with `false` is a
+///   contradiction inside one request, with no wording left to blame.
+///
+/// The oracle is `ask_retreat`'s, unchanged — the same two scores over the same
+/// horizon — with the commit side labelled by whether the fight is won
+/// outright, which is `ask_fight`'s truth. So the two questions cannot disagree
+/// by construction, and whatever the model does with them is the measurement.
+/// docs/56 §4 and TODO §1.12 item 2 report what it did.
+fn ask_retreat3(g : Game, node : Int, team : Int) -> Ask {
+  let (s_commit, s_back) = g.retreat_scores(node, team, RETREAT_HORIZON)
+  let won = g.fight_is_won(node, team, FIGHT_TICKS)
+  let commit_name = if won { "win_and_fight" } else { "lose_but_fight" }
+  {
+    key: "commit_or_disengage_3",
+    class_: "retreat3",
+    form: "choice",
+    tier: "score",
+    instructions: "What should the champions we have on \{node_name(node)} do this tick? Swinging can be right whether or not the fight itself is winnable, so say which it is.",
+    options: ["win_and_fight", "lose_but_fight", "walk_away"],
+    descriptions: [
+      "Swing, and we win this fight outright: every one of them off the node with at least one of ours standing",
+      "Swing even though we do not win it outright — the trade is still worth more to us than backing off",
+      "Break off toward our base and come back on better terms",
+    ],
+    // Exactly `ask_retreat`'s truth with its commit side named: the same two
+    // scores decide whether to swing, and `ask_fight`'s truth decides which
+    // swing it is.
+    truth: tied_best([commit_name, "walk_away"], [s_commit, s_back]),
+    why: "\{RETREAT_HORIZON} ticks forward with both sides on the strong baseline: fighting scored \{s_commit}, walking away scored \{s_back}; the fight itself is \{if won { "won" } else { "not won" }} outright",
+    // The floor has no concept of "worth it anyway": it commits exactly when
+    // it wins, so it can never name the middle option. That is the point of
+    // having the option.
+    floor: if won {
+      "win_and_fight"
+    } else {
+      "walk_away"
+    },
+  }
+}
+
+///|
 /// `ability` — spend this champion's cooldown on the first tick of the fight,
 /// or hold it? A stun deals no damage at all, so the answer is pure timing.
 fn ask_ability(g : Game, node : Int, champ_id : Int) -> Ask {
@@ -1276,7 +1328,10 @@ fn sc_split_pressure() -> Scenario {
 /// The bucket is in the scenario's name so the report shows the balance, and
 /// it never reaches the model — a request carries only the state and the
 /// question text.
-fn sc_fight_case(case_ : FightCase, index : Int) -> Scenario {
+/// `three_way` swaps the two-option `retreat` question for the three-option
+/// `retreat3` one and changes nothing else, which is what makes the two
+/// suites a paired A/B on the wording rather than two different measurements.
+fn sc_fight_case(case_ : FightCase, index : Int, three_way : Bool) -> Scenario {
   let g = case_.build()
   let (state, _) = observe(g, TEAM_A)
   {
@@ -1292,9 +1347,29 @@ fn sc_fight_case(case_ : FightCase, index : Int) -> Scenario {
       // out "walk away", so answering "walk away" to everything scored 0.83
       // and the class could not tell a model from a rubber stamp. Half of
       // these fights are ones we win, so asking here balances it.
-      ask_retreat(g, case_.node, TEAM_A),
+      if three_way {
+        ask_retreat3(g, case_.node, TEAM_A)
+      } else {
+        ask_retreat(g, case_.node, TEAM_A)
+      },
     ],
   }
+}
+
+///|
+/// The derived fight states as their own suite, in either retreat wording.
+///
+/// `bench_suite` appends the two-option arm; the wording experiment asks both
+/// and compares them state by state. Both arms are built from the same
+/// `balanced_fight_cases`, so the states, their names and every other question
+/// in the request are identical and the retreat wording is the only difference.
+pub fn fight_scenarios(three_way : Bool) -> Array[Scenario] {
+  let out : Array[Scenario] = []
+  let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
+  for i in 0..<cases.length() {
+    out.push(sc_fight_case(cases[i], i, three_way))
+  }
+  out
 }
 
 // --------------------------------------------------------------- the suite
@@ -1338,9 +1413,8 @@ pub fn bench_suite() -> Array[Scenario] {
   // The `fight` class comes last and comes from the sweep, not from here: two
   // cases per bucket, so the head count is worth 0.50 on the class and any
   // score above chance is a read of the fight rather than of the head count.
-  let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
-  for i in 0..<cases.length() {
-    out.push(sc_fight_case(cases[i], i))
+  for sc in fight_scenarios(false) {
+    out.push(sc)
   }
   out
 }
@@ -1353,6 +1427,6 @@ pub const FIGHT_PER_BUCKET = 4
 ///|
 /// The classes the report groups by, in a fixed order so two runs line up.
 pub let bench_classes : Array[String] = [
-  "fight", "focus", "item", "dive", "lane", "macro", "retreat", "power", "ability",
-  "fog",
+  "fight", "focus", "item", "dive", "lane", "macro", "retreat", "retreat3", "power",
+  "ability", "fog",
 ]

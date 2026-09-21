@@ -106,11 +106,15 @@ pub fn coherence_rows() -> Array[CoherenceRow]
 
 pub fn comp_by_name(String) -> Array[String]
 
+pub fn discordance(Array[Bool], Array[Bool]) -> Discordance
+
 pub fn enemy_of(Int) -> Int
 
 pub fn fight_bucket_census() -> Map[String, Int]
 
 pub let fight_buckets : Array[String]
+
+pub fn fight_scenarios(Bool) -> Array[Scenario]
 
 pub fn forced_overlap(Int, Int, Int) -> Int
 
@@ -141,6 +145,8 @@ pub let node_names : Array[String]
 pub fn pair_census(Array[Bool], Array[Bool]) -> Pairing
 
 pub fn pairing_bounds(Array[CoherenceRow], Recorded) -> PairingBounds
+
+pub fn pairing_exact(Array[CoherenceRow], Array[Bool], Array[Bool]) -> Discordance
 
 pub fn power_level(Int) -> Int
 
@@ -310,6 +316,13 @@ pub fn Comp::has_frontline(Self) -> Bool
 pub fn Comp::has_sustain(Self) -> Bool
 pub fn Comp::mixed_damage(Self) -> Bool
 pub fn Comp::ranged_count(Self) -> Int
+
+pub(all) struct Discordance {
+  first_only : Int
+  second_only : Int
+  agree : Int
+  p : Double
+}
 
 pub(all) struct FightCase {
   comp_a : String

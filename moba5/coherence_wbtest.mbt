@@ -45,6 +45,81 @@ test "the coherence rows carry the benchmark's own truths" {
 }
 
 ///|
+/// The three-option wording is the SAME decision, priced the same way.
+///
+/// This is what makes the wording an A/B rather than two measurements: if the
+/// reworded question's truth could disagree with the two-option one about
+/// whether to swing, or with the `fight` question about whether the fight is
+/// won, then a model's answers moving between arms would tell us nothing about
+/// the model.
+test "the three-way retreat wording asks the same question" {
+  let two = fight_scenarios(false)
+  let three = fight_scenarios(true)
+  assert_eq(two.length(), three.length())
+  let mut checked = 0
+  for i in 0..<two.length() {
+    assert_eq(two[i].name, three[i].name)
+    // Same state, and the same questions apart from the reworded one.
+    assert_eq(two[i].state.stringify(), three[i].state.stringify())
+    assert_eq(two[i].asks.length(), three[i].asks.length())
+    let mut a_retreat = ""
+    let mut b_retreat = ""
+    let mut fight_truth = ""
+    for ask in two[i].asks {
+      if ask.class_ == "retreat" {
+        a_retreat = ask.truth
+      }
+      if ask.class_ == "fight" {
+        fight_truth = ask.truth
+      }
+    }
+    for ask in three[i].asks {
+      if ask.class_ == "retreat3" {
+        b_retreat = ask.truth
+      }
+      // Every other question is identical to the two-option arm's.
+      if ask.class_ != "retreat3" {
+        let mut found = false
+        for other in two[i].asks {
+          if other.key == ask.key {
+            found = true
+            assert_eq(other.truth, ask.truth)
+            assert_eq(other.instructions, ask.instructions)
+          }
+        }
+        assert_true(found)
+      }
+    }
+    assert_true(a_retreat.length() > 0 && b_retreat.length() > 0)
+    checked += 1
+    // The two arms agree about whether to swing at all.
+    let a_commit = truth_accepts(a_retreat, "fight_now")
+    let b_commit = truth_accepts(b_retreat, "win_and_fight") ||
+      truth_accepts(b_retreat, "lose_but_fight")
+    assert_eq(a_commit, b_commit)
+    assert_eq(
+      truth_accepts(a_retreat, "walk_away"),
+      truth_accepts(b_retreat, "walk_away"),
+    )
+    // And the commit side is labelled by the `fight` question's own truth, so
+    // the middle option means exactly "the fight is lost and swinging is
+    // still better" and nothing else.
+    if truth_accepts(b_retreat, "win_and_fight") {
+      assert_eq(fight_truth, "true")
+    }
+    if truth_accepts(b_retreat, "lose_but_fight") {
+      assert_eq(fight_truth, "false")
+    }
+    // Never both: a state is one or the other.
+    assert_false(
+      truth_accepts(b_retreat, "win_and_fight") &&
+      truth_accepts(b_retreat, "lose_but_fight"),
+    )
+  }
+  assert_eq(checked, 4 * FIGHT_PER_BUCKET)
+}
+
+///|
 /// Neither reading is vacuous: the truth allows the pair somewhere and refuses
 /// it somewhere. If it allowed the pair everywhere the finding would be
 /// meaningless, and if it allowed it nowhere the question would not need
