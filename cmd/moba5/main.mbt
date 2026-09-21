@@ -43,6 +43,9 @@ struct Opts {
   /// With --bench: print the suite and the heuristic floor's score without
   /// touching the API.
   dry : Bool
+  /// With --bench: ask the identical questions this many times. The model is
+  /// probabilistic, so one pass cannot separate a real gap from a draw.
+  repeat : Int
   /// The baseline policy used as the opponent in tournament mode and as the
   /// floor everywhere.
   baseline : String
@@ -64,6 +67,11 @@ struct Stats {
   mut illegal : Int
   /// Ticks where the API failed and the scripted fallback was used.
   mut fallback_ticks : Int
+  /// Requests that failed once and were retried, and requests that failed
+  /// every attempt. A measurement has to say which of its numbers are missing.
+  mut retries : Int
+  mut failures : Int
+  mut last_error : String
   /// How many actions of each family were chosen.
   used : Map[String, Int]
   /// The fog-of-war read, scored against where the enemies actually were. The
@@ -82,6 +90,9 @@ fn Stats::new() -> Stats {
     api_ms: 0,
     illegal: 0,
     fallback_ticks: 0,
+    retries: 0,
+    failures: 0,
+    last_error: "",
     used: Map([]),
     fog_asked: 0,
     fog_right: 0,
@@ -100,6 +111,52 @@ fn Stats::note(self : Stats, a : @game.Action) -> Unit {
 /// with.
 fn cost_of(tokens : Int) -> String {
   @report.fixed(tokens.to_double() / 1000000.0 * 0.042, 4)
+}
+
+///|
+/// How many times a request is attempted before it is called a failure, and
+/// how long the first wait is (doubling each time).
+const ATTEMPTS = 3
+
+///|
+const BACKOFF_MS = 400
+
+///|
+/// Send a request, retrying a failure with backoff.
+///
+/// Without this a single transient failure silently degrades a measurement
+/// rather than showing up as one: in a game the tick falls back to the
+/// scripted policy, and in the benchmark a whole scenario's questions go
+/// unanswered and are scored as misses. Neither is a fact about the model.
+/// `stats.retries` counts what happened so the report can say so.
+async fn ask_with_retry(
+  client : @lib.Client,
+  req : @lib.SystemOneRequest,
+  stats : Stats,
+) -> @lib.SystemOneResponse? {
+  let mut wait = BACKOFF_MS
+  for attempt in 0..<ATTEMPTS {
+    let t0 = @env.now()
+    let resp = client.system_one(req) catch {
+      e => {
+        stats.api_ms += (@env.now() - t0).to_int()
+        if attempt + 1 < ATTEMPTS {
+          stats.retries += 1
+          @async.sleep(wait)
+          wait *= 2
+          continue
+        }
+        stats.failures += 1
+        stats.last_error = "\{e}"
+        return None
+      }
+    }
+    stats.api_ms += (@env.now() - t0).to_int()
+    stats.requests += 1
+    stats.input_tokens += resp.input_tokens
+    return Some(resp)
+  }
+  None
 }
 
 // -------------------------------------------------------------- jev a team
@@ -169,10 +226,12 @@ async fn jev_team_actions(
   )
 
   let state = g.observation(team, mem)
-  let t0 = @env.now()
-  let resp = client.system_one({ state, model, questions: qs, }) catch {
-    _ => {
-      // The game must keep moving; fall back to the scripted policy and say so.
+  let resp = match
+    ask_with_retry(client, { state, model, questions: qs, }, stats) {
+    Some(r) => r
+    None => {
+      // Every attempt failed. The game must keep moving; fall back to the
+      // scripted policy and say so in the report.
       stats.fallback_ticks += 1
       for e in @game.scripted_team_actions(g, team) {
         out[e.0] = e.1
@@ -180,9 +239,6 @@ async fn jev_team_actions(
       return out
     }
   }
-  stats.api_ms += (@env.now() - t0).to_int()
-  stats.requests += 1
-  stats.input_tokens += resp.input_tokens
 
   for entry in legal_by_champ {
     let (id, legal) = entry
@@ -523,15 +579,58 @@ fn run_tournament(policy : String, max_ticks : Int) -> Unit {
     games,
   )
 }
-
 // -------------------------------------------------------------- the benchmark
 
 ///|
-/// Running totals for one class of decision.
+/// What one question did across every repeat. Keeping the individual answers
+/// rather than only a running total is what makes the noise floor below
+/// computable: a model that flips its own answer between two identical runs
+/// has told you how large a difference has to be before it means anything.
+struct AskRuns {
+  ask : @game.Ask
+  /// Which scenario this question was asked in, for the detail lines.
+  where_ : String
+  said : Array[String]
+  conf : Array[Double]
+  mut hits : Int
+}
+
+///|
+fn AskRuns::new(ask : @game.Ask, where_ : String) -> AskRuns {
+  { ask, where_, said: [], conf: [], hits: 0, }
+}
+
+///|
+/// Whether this question got the same answer every time it was asked. Only
+/// meaningful once it has been answered twice, which `comparable` reports.
+fn AskRuns::comparable(self : AskRuns) -> Bool {
+  self.said.length() >= 2
+}
+
+///|
+fn AskRuns::stable(self : AskRuns) -> Bool {
+  for s in self.said {
+    if s != self.said[0] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+/// Running totals for one class of decision, pooled over every repeat.
 struct Tally {
+  /// Questions in this class, and answers collected for them (questions ×
+  /// repeats, minus anything a failed request lost).
+  mut asks : Int
   mut n : Int
   mut jev : Int
+  /// The floor answers once and deterministically, so it is counted per
+  /// QUESTION and its denominator is `asks`, not `n`.
   mut floor : Int
+  /// Questions answered at least twice, and how many of those never moved.
+  mut comparable : Int
+  mut stable : Int
   mut conf_hit : Double
   mut conf_hit_n : Int
   mut conf_miss : Double
@@ -541,13 +640,25 @@ struct Tally {
 ///|
 fn Tally::new() -> Tally {
   {
+    asks: 0,
     n: 0,
     jev: 0,
     floor: 0,
+    comparable: 0,
+    stable: 0,
     conf_hit: 0.0,
     conf_hit_n: 0,
     conf_miss: 0.0,
     conf_miss_n: 0,
+  }
+}
+
+///|
+fn rate(hits : Int, n : Int) -> String {
+  if n == 0 {
+    "—"
+  } else {
+    @report.d2(hits.to_double() / n.to_double())
   }
 }
 
@@ -570,7 +681,11 @@ fn noul_criteria(class_ : String) -> (String, String) {
       )
     "ability" =>
       (
-        "Spending it on the first tick leaves us better off than holding it", "Holding it leaves us better off than spending it now",
+        "Spending it now leaves us better off than holding it", "Holding it leaves us better off than spending it now",
+      )
+    "retreat" =>
+      (
+        "Committing leaves us better off than backing away", "Backing away leaves us better off than committing",
       )
     _ => ("Yes", "No")
   }
@@ -625,14 +740,6 @@ fn to_level(v : Double) -> Int {
 }
 
 ///|
-/// A score answer is right if it rounds to the correct rubric level — the same
-/// rule the floor is held to, so the two columns are comparable.
-fn score_hit(answer : Double, truth : String) -> Bool {
-  let want = @string.from_str(truth) catch { _ => -1 }
-  to_level(answer) == want
-}
-
-///|
 /// Did the heuristic floor get this one right? The floor answers in the same
 /// vocabulary as the truth, so both columns go through the same check — which
 /// also means both get the benefit of a tie the simulator could not separate.
@@ -641,11 +748,40 @@ fn floor_hit(ask : @game.Ask) -> Bool {
 }
 
 ///|
+/// Read one answer out of a response, as the string the truth is compared
+/// against plus a confidence. A `noul` answers a probability, so its
+/// confidence is how far it is from the coin flip.
+fn read_answer(
+  resp : @lib.SystemOneResponse,
+  ask : @game.Ask,
+) -> (String, Double) {
+  if ask.form == "noul" {
+    let p = @report.noul_at(resp, ask.key)
+    let said = if p >= 0.5 { "true" } else { "false" }
+    let conf = if p >= 0.5 { (p - 0.5) * 2.0 } else { (0.5 - p) * 2.0 }
+    (said, conf)
+  } else if ask.form == "score" {
+    let (s, conf) = @report.score_at(resp, ask.key)
+    ("\{to_level(s)}", conf)
+  } else {
+    @report.choice_at(resp, ask.key)
+  }
+}
+
+///|
 /// The scored benchmark. Every scenario is one request; every question carries
 /// the answer the simulator produced for it, so the output is an accuracy
 /// table rather than a transcript.
+///
+/// `--repeat N` asks the identical questions N times. That is not padding: the
+/// model is probabilistic, so one pass cannot tell a real gap from a draw, and
+/// the fraction of questions whose own answer moves between passes is the floor
+/// any claimed difference has to clear (docs/37 and docs/41 call it draw
+/// noise). An unanswered question — a request that failed every attempt — is
+/// left out rather than scored wrong: missing data is not a mistake.
 async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
   let suite = @game.bench_suite()
+  let repeat = if opts.dry || opts.repeat < 1 { 1 } else { opts.repeat }
   let mut asks_total = 0
   for sc in suite {
     asks_total += sc.ask_count()
@@ -655,9 +791,64 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     if opts.dry {
       "the suite and the heuristic floor, no API"
     } else {
-      "\{opts.model}, \{suite.length()} scenarios, \{asks_total} questions, one request per scenario"
+      "\{opts.model}, \{suite.length()} scenarios, \{asks_total} questions × \{repeat} run(s)"
     },
   )
+
+  // One row per question, in suite order, reused across every repeat so the
+  // questions really are identical between runs.
+  let rows : Array[AskRuns] = []
+  for sc in suite {
+    for ask in sc.asks {
+      rows.push(AskRuns::new(ask, "\{sc.name} — \{sc.note}"))
+    }
+  }
+  let stats = Stats::new()
+  // Per-run overall scores, so the spread is visible rather than averaged away.
+  let per_run : Array[Int] = []
+  for run in 0..<repeat {
+    if opts.dry {
+      break
+    }
+    let mut row = 0
+    let mut run_hits = 0
+    let mut run_answered = 0
+    for sc in suite {
+      let qs = scenario_questions(sc)
+      let resp = ask_with_retry(
+        client,
+        { state: sc.state, model: opts.model, questions: qs, },
+        stats,
+      )
+      for ask in sc.asks {
+        let r = rows[row]
+        row += 1
+        match resp {
+          Some(got) => {
+            let (said, conf) = read_answer(got, ask)
+            r.said.push(said)
+            r.conf.push(conf)
+            run_answered += 1
+            if @game.truth_accepts(ask.truth, said) {
+              r.hits += 1
+              run_hits += 1
+            }
+          }
+          None => ()
+        }
+      }
+    }
+    per_run.push(run_hits)
+    if repeat > 1 {
+      println(
+        "  run \{run + 1}: \{run_hits}/\{run_answered}  \{rate(run_hits, run_answered)}",
+      )
+    }
+  }
+  if repeat > 1 && !opts.dry {
+    println("")
+  }
+
   let tallies : Map[String, Tally] = Map([])
   fn tally(name : String) -> Tally {
     match tallies.get(name) {
@@ -670,158 +861,116 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     }
   }
 
-  let stats = Stats::new()
   let overall = Tally::new()
   let mut missing = 0
-  for sc in suite {
-    if opts.verbose || opts.dry {
-      println("  \{sc.name} — \{sc.note}")
+  let mut shown = ""
+  for r in rows {
+    let ask = r.ask
+    let t = tally(ask.class_)
+    for acc in [t, overall] {
+      acc.asks += 1
+      acc.n += r.said.length()
+      acc.jev += r.hits
+      if floor_hit(ask) {
+        acc.floor += 1
+      }
+      if r.comparable() {
+        acc.comparable += 1
+        if r.stable() {
+          acc.stable += 1
+        }
+      }
     }
-    // The floor is scored whether or not the API is in play, so `--dry` still
-    // produces a complete left-hand column.
-    let mut answers : Map[String, (String, Double)] = Map([])
-    if !opts.dry {
-      let qs = scenario_questions(sc)
-      let t0 = @env.now()
-      let resp = client.system_one({
-        state: sc.state,
-        model: opts.model,
-        questions: qs,
-      }) catch {
-        e => {
-          println("    request failed: \{e}")
-          missing += sc.ask_count()
-          continue
-        }
-      }
-      stats.api_ms += (@env.now() - t0).to_int()
-      stats.requests += 1
-      stats.input_tokens += resp.input_tokens
-      let got : Map[String, (String, Double)] = Map([])
-      for ask in sc.asks {
-        if ask.form == "noul" {
-          let p = @report.noul_at(resp, ask.key)
-          let said = if p >= 0.5 { "true" } else { "false" }
-          // A noul's confidence is how far it is from the coin flip.
-          let conf = if p >= 0.5 { (p - 0.5) * 2.0 } else { (0.5 - p) * 2.0 }
-          got[ask.key] = (said, conf)
-        } else if ask.form == "score" {
-          let (s, conf) = @report.score_at(resp, ask.key)
-          got[ask.key] = ("\{to_level(s)}", conf)
-          // Keep the raw value for the verbose line.
-          got["\{ask.key}__raw"] = (@report.d2(s), conf)
-        } else {
-          let (c, conf) = @report.choice_at(resp, ask.key)
-          got[ask.key] = (c, conf)
-        }
-      }
-      answers = got
-    }
-    for ask in sc.asks {
-      let t = tally(ask.class_)
-      t.n += 1
-      overall.n += 1
-      let floor_ok = floor_hit(ask)
-      if floor_ok {
-        t.floor += 1
-        overall.floor += 1
-      }
-      let mut said = ""
-      let mut conf = 0.0
-      let mut ok = false
-      if !opts.dry {
-        match answers.get(ask.key) {
-          Some((s, c)) => {
-            said = s
-            conf = c
-            // Score answers were already rounded to a rubric level, so every
-            // form compares the same way — and a tie the simulator could not
-            // separate accepts any of its members.
-            ok = @game.truth_accepts(ask.truth, s)
-          }
-          None => ()
-        }
+    missing += repeat - r.said.length()
+    for k in 0..<r.said.length() {
+      let ok = @game.truth_accepts(ask.truth, r.said[k])
+      for acc in [t, overall] {
         if ok {
-          t.jev += 1
-          overall.jev += 1
-          t.conf_hit += conf
-          t.conf_hit_n += 1
-          overall.conf_hit += conf
-          overall.conf_hit_n += 1
+          acc.conf_hit += r.conf[k]
+          acc.conf_hit_n += 1
         } else {
-          t.conf_miss += conf
-          t.conf_miss_n += 1
-          overall.conf_miss += conf
-          overall.conf_miss_n += 1
-        }
-      }
-      if opts.verbose || opts.dry {
-        let truth_shown = if ask.form == "score" {
-          "\{ask.truth} (\{ask.options[@string.from_str(ask.truth) catch { _ => 0 }]})"
-        } else {
-          ask.truth
-        }
-        println(
-          "    \{@report.pad(ask.key, 22)} \{@report.pad(ask.class_, 9)} \{@report.pad(ask.tier, 6)} truth=\{truth_shown}",
-        )
-        println("        why: \{ask.why}")
-        println(
-          "        floor: \{ask.floor} \{if floor_ok { "hit" } else { "MISS" }}",
-        )
-        if !opts.dry {
-          println(
-            "        \{opts.model}: \{said} \{if ok { "hit" } else { "MISS" }} (conf \{@report.d2(conf)})",
-          )
+          acc.conf_miss += r.conf[k]
+          acc.conf_miss_n += 1
         }
       }
     }
-    if opts.verbose || opts.dry {
+    if !(opts.verbose || opts.dry) {
+      continue
+    }
+    if r.where_ != shown {
       println("")
+      println("  \{r.where_}")
+      shown = r.where_
+    }
+    let truth_shown = if ask.form == "score" {
+      let lvl : Int = @string.from_str(ask.truth) catch { _ => 0 }
+      "\{ask.truth} (\{ask.options[lvl]})"
+    } else {
+      ask.truth
+    }
+    println(
+      "    \{@report.pad(ask.key, 22)} \{@report.pad(ask.class_, 9)} \{@report.pad(ask.tier, 6)} truth=\{truth_shown}",
+    )
+    println("        why: \{ask.why}")
+    println(
+      "        floor: \{ask.floor} \{if floor_hit(ask) { "hit" } else { "MISS" }}",
+    )
+    if r.said.length() > 0 {
+      let marks = []
+      for k in 0..<r.said.length() {
+        let ok = @game.truth_accepts(ask.truth, r.said[k])
+        marks.push("\{r.said[k]}\{if ok { "" } else { "*" }}")
+      }
+      println(
+        "        \{opts.model}: \{r.hits}/\{r.said.length()} — \{marks.join(", ")}\{if r.comparable() && !r.stable() { "   (moved between runs)" } else { "" }}",
+      )
     }
   }
+  if opts.verbose || opts.dry {
+    println("")
+  }
 
-  // The table.
+  let model_col = if opts.dry { "—" } else { opts.model }
   println(
-    "  class      n    \{@report.pad(if opts.dry { "—" } else { opts.model }, 16)} floor        conf(hit)  conf(miss)",
+    "  class      asks  ans  \{@report.pad(model_col, 16)} floor        stable   conf(hit)  conf(miss)",
   )
-  @report.rule(78)
+  @report.rule(88)
+  fn row_of(name : String, t : Tally) -> Unit {
+    let jev_col = if opts.dry || t.n == 0 {
+      "—"
+    } else {
+      "\{t.jev}/\{t.n}  \{rate(t.jev, t.n)}"
+    }
+    let ch = if t.conf_hit_n > 0 {
+      @report.d2(t.conf_hit / t.conf_hit_n.to_double())
+    } else {
+      "—"
+    }
+    let cm = if t.conf_miss_n > 0 {
+      @report.d2(t.conf_miss / t.conf_miss_n.to_double())
+    } else {
+      "—"
+    }
+    println(
+      "  \{@report.pad(name, 10)} \{@report.pad(t.asks.to_string(), 5)} \{@report.pad(t.n.to_string(), 4)} \{@report.pad(jev_col, 16)} \{@report.pad("\{t.floor}/\{t.asks}  \{rate(t.floor, t.asks)}", 12)} \{@report.pad(rate(t.stable, t.comparable), 8)} \{@report.pad(ch, 10)} \{cm}",
+    )
+  }
+
   for name in @game.bench_classes {
     match tallies.get(name) {
-      Some(t) =>
-        if t.n > 0 {
-          let jev_col = if opts.dry {
-            "—"
-          } else {
-            "\{t.jev}/\{t.n}  \{@report.d2(t.jev.to_double() / t.n.to_double())}"
-          }
-          let ch = if t.conf_hit_n > 0 {
-            @report.d2(t.conf_hit / t.conf_hit_n.to_double())
-          } else {
-            "—"
-          }
-          let cm = if t.conf_miss_n > 0 {
-            @report.d2(t.conf_miss / t.conf_miss_n.to_double())
-          } else {
-            "—"
-          }
-          println(
-            "  \{@report.pad(name, 10)} \{@report.pad(t.n.to_string(), 4)} \{@report.pad(jev_col, 16)} \{t.floor}/\{t.n}  \{@report.d2(t.floor.to_double() / t.n.to_double())}   \{@report.pad(ch, 10)} \{cm}",
-          )
-        }
+      Some(t) => if t.asks > 0 { row_of(name, t) }
       None => ()
     }
   }
-  @report.rule(78)
-  let jev_col = if opts.dry {
-    "—"
-  } else {
-    "\{overall.jev}/\{overall.n}  \{@report.d2(overall.jev.to_double() / overall.n.to_double())}"
-  }
-  println(
-    "  \{@report.pad("overall", 10)} \{@report.pad(overall.n.to_string(), 4)} \{@report.pad(jev_col, 16)} \{overall.floor}/\{overall.n}  \{@report.d2(overall.floor.to_double() / overall.n.to_double())}",
-  )
+  @report.rule(88)
+  row_of("overall", overall)
   println("")
+
   if opts.dry {
+    println(
+      "  the heuristic floor gets \{overall.floor}/\{overall.asks} = \{rate(overall.floor, overall.asks)}",
+    )
+    println("")
     println(
       "  Every truth above was produced by the simulator, not written down by hand:",
     )
@@ -831,9 +980,27 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     println(
       "  and `score` rows are the argmax of moba5's position score over the stated horizon.",
     )
-    println("  Re-run without --dry to score a model against the same answers.")
+    println(
+      "  Re-run without --dry to score a model against the same answers, and with",
+    )
+    println(
+      "  --repeat N to see how much of any difference is the model's own draw noise.",
+    )
     println("")
     return
+  }
+
+  // The three readings that decide whether the accuracy column means anything.
+  if overall.comparable > 0 {
+    let moved = overall.comparable - overall.stable
+    println(
+      "  self-consistency: \{overall.stable}/\{overall.comparable} questions answered the same way every run",
+    )
+    if moved > 0 {
+      println(
+        "  → \{moved} moved on their own, so a gap under \{rate(moved, overall.comparable)} of the suite is draw noise",
+      )
+    }
   }
   if overall.conf_hit_n > 0 && overall.conf_miss_n > 0 {
     let ch = overall.conf_hit / overall.conf_hit_n.to_double()
@@ -842,12 +1009,37 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
       "  calibration: mean confidence \{@report.d2(ch)} when right, \{@report.d2(cm)} when wrong\{if ch > cm { " — the gap is in the right direction" } else { " — NOT separating right from wrong" }}",
     )
   }
-  if missing > 0 {
-    println("  \{missing} question(s) went unanswered because a request failed")
-  }
-  if stats.requests > 0 {
+  if per_run.length() > 1 {
+    let mut lo = per_run[0]
+    let mut hi = per_run[0]
+    for v in per_run {
+      if v < lo {
+        lo = v
+      }
+      if v > hi {
+        hi = v
+      }
+    }
     println(
-      "  \{stats.requests} requests decided \{overall.n} questions, \{@report.d0(stats.api_ms.to_double() / overall.n.to_double())} ms per question",
+      "  per-run spread: \{lo} to \{hi} of \{asks_total} (\{rate(lo, asks_total)} to \{rate(hi, asks_total)}), floor \{rate(overall.floor, overall.asks)}",
+    )
+  }
+  if stats.retries > 0 {
+    println("  \{stats.retries} request(s) failed once and were retried")
+  }
+  if stats.failures > 0 {
+    println(
+      "  \{stats.failures} request(s) failed every attempt: \{@report.clip(stats.last_error, 120)}",
+    )
+  }
+  if missing > 0 {
+    println(
+      "  \{missing} answer(s) missing because a request failed — left out, not scored as wrong",
+    )
+  }
+  if stats.requests > 0 && overall.n > 0 {
+    println(
+      "  \{stats.requests} requests decided \{overall.n} answers, \{@report.d0(stats.api_ms.to_double() / overall.n.to_double())} ms per answer",
     )
     println(
       "  \{stats.input_tokens} input tokens (~$\{cost_of(stats.input_tokens)})",
@@ -868,6 +1060,7 @@ async fn run_draft(
   model : String,
   max_ticks : Int,
 ) -> Unit {
+  let stats = Stats::new()
   let comps = @game.tournament_comps
   let n = comps.length()
   @report.header(
@@ -957,9 +1150,13 @@ async fn run_draft(
     names,
     instructions="You are drafting for a 5v5 teamfight. Which of these compositions gives the best chance to win the fight?",
   )
-  let resp = client.system_one({ state, model, questions: qs, }) catch {
-    e => {
-      println("  draft request failed: \{e}")
+  let resp = match
+    ask_with_retry(client, { state, model, questions: qs, }, stats) {
+    Some(r) => r
+    None => {
+      println(
+        "  draft request failed after \{ATTEMPTS} attempts: \{stats.last_error}",
+      )
       return
     }
   }
@@ -1105,6 +1302,12 @@ async fn main {
         about="Team B composition, same form. Default `meta`.",
       ),
       @argparse.OptionArg(
+        "repeat",
+        long="repeat",
+        default_values=["1"],
+        about="--bench: ask the identical questions this many times, and report the spread and the model's own self-consistency.",
+      ),
+      @argparse.OptionArg(
         "baseline",
         long="baseline",
         default_values=["smart"],
@@ -1158,6 +1361,7 @@ async fn main {
     draft: matches.flags.get("draft").unwrap_or(false),
     bench: matches.flags.get("bench").unwrap_or(false),
     dry: matches.flags.get("dry").unwrap_or(false),
+    repeat: parse_int(opt_value(matches, "repeat"), 1),
     baseline: opt_value(matches, "baseline").unwrap_or("smart"),
     hcap_a: parse_int(opt_value(matches, "hcap-a"), 100),
     hcap_b: parse_int(opt_value(matches, "hcap-b"), 100),

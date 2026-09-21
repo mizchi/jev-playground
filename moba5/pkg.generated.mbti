@@ -163,7 +163,6 @@ pub(all) enum Ability {
 } derive(Eq)
 pub fn Ability::describe(Self) -> String
 pub fn Ability::name(Self) -> String
-pub fn Ability::needs_enemy(Self) -> Bool
 
 pub(all) enum Action {
   Move(Int)
@@ -380,7 +379,6 @@ pub struct Memory {
   last_seen_tick : Array[Int]
   last_seen_hp : Array[Int]
 }
-pub fn Memory::copy(Self) -> Self
 pub fn Memory::new() -> Self
 pub fn Memory::observe(Self, Game, Int) -> Unit
 

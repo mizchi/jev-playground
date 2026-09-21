@@ -87,9 +87,14 @@ test "question names are unique within a scenario" {
 }
 
 ///|
-/// The suite covers every class the report prints, and no class is a single
-/// question that happens to go one way.
-test "the suite covers the classes it reports" {
+/// The suite covers every class the report prints, with enough questions each
+/// that a class row means something.
+///
+/// A class of one question reports 1.00 or 0.00 and neither is a measurement —
+/// the whole reason this test exists is that the first version of the suite had
+/// four such classes and the report printed them next to a class of six as if
+/// they were comparable.
+test "every class has enough questions to say something" {
   let suite = bench_suite()
   for name in bench_classes {
     let mut n = 0
@@ -100,7 +105,31 @@ test "the suite covers the classes it reports" {
         }
       }
     }
+    assert_true(n >= 5)
+  }
+}
+
+///|
+/// No class is answered correctly by the floor every single time. A class the
+/// heuristic sweeps is a class where the questions do not discriminate, and it
+/// would report a model's 1.00 as a success rather than as an easy row.
+test "no class is a free pass for the heuristic" {
+  let suite = bench_suite()
+  for name in bench_classes {
+    let mut n = 0
+    let mut hits = 0
+    for sc in suite {
+      for ask in sc.asks {
+        if ask.class_ == name {
+          n += 1
+          if truth_accepts(ask.truth, ask.floor) {
+            hits += 1
+          }
+        }
+      }
+    }
     assert_true(n > 0)
+    assert_true(hits < n)
   }
 }
 

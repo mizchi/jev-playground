@@ -100,15 +100,6 @@ pub fn Ability::describe(self : Ability) -> String {
 }
 
 ///|
-/// Whether the ability needs an enemy champion on this node to be worth using.
-pub fn Ability::needs_enemy(self : Ability) -> Bool {
-  match self {
-    Nuke(_) | Aoe(_) | Stun(_) | Execute(_) => true
-    NoAbility | Heal(_) | Shield(_) | Blink => false
-  }
-}
-
-///|
 /// A champion template.
 pub(all) struct Kind {
   key : String

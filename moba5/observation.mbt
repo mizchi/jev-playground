@@ -40,19 +40,6 @@ pub fn Memory::observe(self : Memory, g : Game, team : Int) -> Unit {
   }
 }
 
-///|
-pub fn Memory::copy(self : Memory) -> Memory {
-  let node = Array::make(10, -1)
-  let t = Array::make(10, -1)
-  let hp = Array::make(10, -1)
-  for i in 0..<10 {
-    node[i] = self.last_seen_node[i]
-    t[i] = self.last_seen_tick[i]
-    hp[i] = self.last_seen_hp[i]
-  }
-  { last_seen_node: node, last_seen_tick: t, last_seen_hp: hp, }
-}
-
 // --------------------------------------------------------- derived team reads
 
 ///|
