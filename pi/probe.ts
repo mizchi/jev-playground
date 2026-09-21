@@ -159,8 +159,10 @@ async function main(): Promise<void> {
   if (md) {
     console.log(
       `\n**The two profiles collide on ${both.length} of the seams they take** ` +
-        `(${both.map((s) => `\`${s}\``).join(", ")}), which is why they are separate packages: ` +
-        "`tool_call` twice is two permission gates on one call.\n",
+        `(${both.map((s) => `\`${s}\``).join(", ")}), which is why they are separate packages. ` +
+        "What each collision costs is not uniform and is not inferable from this table -- " +
+        "`collide.ts` fires them: a command in the gate's `ask` band shows the user two " +
+        "confirmation dialogs, and a blocked one stops at the first gate.\n",
     );
   } else {
     console.log(`\n  both profiles take: ${both.join(", ")} (${both.length} seams -- the collision)`);

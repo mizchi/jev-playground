@@ -466,7 +466,8 @@ glob だけにすると **14/15 に取りこぼします**。
 ```bash
 cd pi && npm install     # 6 パッケージをローカルから symlink(コピーではない)
 npm run probe            # どの拡張がどの seam を取るか、実測。API キー不要
-npm test                 # 11 件。API キー不要
+npm test                 # 12 件。API キー不要
+npm run collide          # 両方入れたら何が 2 回走るか、Pi のランナーで実測
 npm run load             # Pi 自身の resolver に読ませる(6 パッケージ + 2 プロファイル)
 pi install ./pi/components   # 5 つを別々に
 pi install ./pi/resident     # または jev-hermes 1 つ(同じ 5 つを内包)。両方は不可
@@ -474,8 +475,10 @@ pi install ./packages/jev-guard   # 1 つだけ入れることもできる
 ```
 
 **2 つのプロファイルは排他です** —— `jev-hermes` は guard も自前で持つので
-`resident` は `components` の代替で、両方入れると **1 コマンドに permission gate が 2 つ**
-付きます(5 seam 全部で衝突。`npm run probe` が測ります)。
+`resident` は `components` の代替です。両方入れると 5 seam 全部で衝突し、
+**`ask` に落ちたコマンドはユーザに確認ダイアログを 2 回出します**
+(`npm run collide` が Pi のランナーで実測。**block されるコマンドは
+最初の gate で短絡して 1 回**、削除も 1 回 —— 2 倍になるのは ask だけでした)。
 
 そして **npm 上の `jev-guard` / `jev-model-router` / `jev-compact` は別人のパッケージ**です
 (残り 4 つは 404 —— このリポジトリのものは未公開)。
