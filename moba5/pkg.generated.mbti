@@ -469,9 +469,12 @@ pub fn Game::ability_damage(Self, Champ, Champ) -> Int
 pub fn Game::ability_play(Self, Champ) -> Action?
 pub fn Game::backline_pick(Self, Int, Int) -> Champ?
 pub fn Game::best_diver_names(Self, Int, Int) -> String
+pub fn Game::best_drake_element(Self, Int, Int, Int) -> String
 pub fn Game::best_focus(Self, Int, Int, Int) -> Int
 pub fn Game::best_focus_names(Self, Int, Int, Int) -> String
 pub fn Game::best_item(Self, Int, Int, Int) -> String
+pub fn Game::best_ward(Self, Int, Int) -> String
+pub fn Game::blind_brush(Self, Int) -> Array[Int]
 pub fn Game::buff_pct(Self, Int) -> Int
 pub fn Game::can_contest(Self, Int, Int) -> Bool
 pub fn Game::cc_pick(Self, Int, Int) -> Champ?
@@ -544,6 +547,7 @@ pub fn Game::softest_at(Self, Int, Int) -> Champ?
 pub fn Game::soul_of(Self, Int) -> String
 pub fn Game::soul_point(Self) -> Bool
 pub fn Game::step(Self, Map[Int, Action]) -> Unit
+pub fn Game::step_in_survives(Self, Int, Int, Int) -> Bool
 pub fn Game::structure_at(Self, Int) -> Structure?
 pub fn Game::structure_attackable(Self, Structure) -> Bool
 pub fn Game::structure_hp(Self, Int) -> Int

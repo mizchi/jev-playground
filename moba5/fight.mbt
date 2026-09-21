@@ -539,3 +539,65 @@ pub fn Game::dive_is_clean(
   }
   true
 }
+
+///|
+/// Which drake element would help this team most in the fight on `node`: each
+/// one is granted on a copy and the fight played out. The truth for the
+/// `drake` class.
+///
+/// Reusing `simulate_fight` is deliberate, and it is also the reason ocean
+/// loses every one of these: ocean stacks are out-of-combat regeneration, and
+/// a fight on one node is never out of combat. That is not a flaw in the
+/// question — it is the rule, stated where a policy can be wrong about it —
+/// but it does mean this question is about the fight and not about the game,
+/// and a reader weighing ocean should read the horizon.
+pub fn Game::best_drake_element(
+  self : Game,
+  team : Int,
+  node : Int,
+  max_ticks : Int,
+) -> String {
+  let names = []
+  let scores = []
+  for element in drake_kinds {
+    let g = self.copy()
+    let i = drake_index(team, element)
+    if i < 0 {
+      continue
+    }
+    g.drakes[i] += 1
+    names.push(element)
+    scores.push(g.simulate_fight(node, max_ticks).score_for(team))
+  }
+  tied_best(names, scores)
+}
+
+///|
+/// Whether a champion that walks into `node` is still alive `ticks` later,
+/// with both teams playing the strong baseline from there.
+///
+/// The truth for "is stepping into that brush safe". It is a question the
+/// rules can answer and the champion cannot: the brush is exactly the node
+/// whose contents the observation does not show.
+pub fn Game::step_in_survives(
+  self : Game,
+  champ_id : Int,
+  node : Int,
+  ticks : Int,
+) -> Bool {
+  let g = self.copy()
+  g.champs[champ_id].node = node
+  for _t in 0..<ticks {
+    if g.winner != 0 || !g.champs[champ_id].alive() {
+      break
+    }
+    let actions : Map[Int, Action] = Map([])
+    for team in [TEAM_A, TEAM_B] {
+      for e in smart_team_actions(g, team) {
+        actions[e.0] = e.1
+      }
+    }
+    g.step(actions)
+  }
+  g.champs[champ_id].alive()
+}

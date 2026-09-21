@@ -330,3 +330,38 @@ pub fn power_level(ratio : Int) -> Int {
     4
   }
 }
+
+///|
+/// The ward that reveals the most enemies from where this champion stands:
+/// each spot is warded on a copy and the visible enemies counted. The truth
+/// for the vision half of the `brush` class.
+///
+/// Ties are joined, and they are common — two spots that reveal the same two
+/// champions really are the same answer, and letting the option order pick
+/// between them would mark a correct read wrong.
+pub fn Game::best_ward(self : Game, team : Int, from : Int) -> String {
+  let names = []
+  let scores = []
+  for n in ward_spots(from) {
+    let g = self.copy()
+    g.wards.push({ node: n, team, ttl: WARD_TTL, })
+    names.push(node_name(n))
+    scores.push(g.visible_enemies(team).length())
+  }
+  tied_best(names, scores)
+}
+
+///|
+/// Nodes `team` cannot see that could be holding an enemy: the brush, minus
+/// the ones it has vision of. Arithmetic over the vision mask, and the whole
+/// of what the brush rule costs a team without wards.
+pub fn Game::blind_brush(self : Game, team : Int) -> Array[Int] {
+  let seen = self.vision(team)
+  let out = []
+  for n in brush_nodes {
+    if !seen[n] {
+      out.push(n)
+    }
+  }
+  out
+}

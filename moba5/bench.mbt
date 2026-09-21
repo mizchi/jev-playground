@@ -829,6 +829,378 @@ fn ask_item(g : Game, champ_id : Int, node : Int) -> Ask {
 }
 
 ///|
+/// `cs` — what is the wave in front of this champion worth right now?
+///
+/// The arithmetic the last-hit rule defines, offered as the amounts it can
+/// come to. A policy that reads `minions_ripe_here` gets this for free, which
+/// is the point: the question is whether it reads the state at all before
+/// deciding that poking is better.
+fn ask_cs_pay(g : Game, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let ripe = g.ripe_here(c.node, c.team)
+  let options = []
+  let descs = []
+  for n in 0..<=CS_RIPE_CAP {
+    options.push("\{n * CS_GOLD}")
+    descs.push(
+      if n == 0 {
+        "nothing is low enough to last-hit"
+      } else {
+        "\{n} minion(s) at \{CS_GOLD} gold each"
+      },
+    )
+  }
+  {
+    key: "cs_pay_\{c.role}",
+    class_: "cs",
+    form: "choice",
+    tier: "arith",
+    instructions: "How much gold would \{c.name} take if it spent this tick on `farm` in \{node_lane[c.node]}? Each lane brings one more minion low per tick for each side, up to \{CS_RIPE_CAP}, and `farm` takes every minion that is low right now for \{CS_GOLD} gold each.",
+    options,
+    descriptions: descs,
+    truth: "\{ripe * CS_GOLD}",
+    why: "\{ripe} minion(s) are low in that lane for that team, at \{CS_GOLD} gold each",
+    // The floor reads the same number off the state, so this row says whether
+    // a model does — it is the one class where the heuristic should be perfect
+    // and any gap is a failure to look.
+    floor: "\{ripe * CS_GOLD}",
+  }
+}
+
+///|
+/// `cs` — what does standing in a lane and not farming it cost over a few
+/// ticks?
+///
+/// The number nobody computes by accident. A wave refills at one minion a
+/// tick, so three ticks of not farming a two-minion wave is four minions and
+/// not six, and the naive answer is the one a policy reaches for. The truth
+/// is played out rather than derived, so it cannot be wrong in the same way
+/// the arithmetic in this comment could be.
+fn ask_cs_forfeit(g : Game, champ_id : Int, ticks : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let lost = {
+    let h = g.copy()
+    let me = h.champs[champ_id]
+    // Everybody else out of the lane, so the only thing moving the counter is
+    // this champion standing there not farming.
+    for other in h.champs {
+      if other.id != champ_id {
+        other.node = base_of(other.team)
+      }
+    }
+    let before = me.cs_lost
+    for _t in 0..<ticks {
+      h.step(Map([(champ_id, Hold)]))
+    }
+    me.cs_lost - before
+  }
+  let options = []
+  let descs = []
+  let ripe = g.ripe_here(c.node, c.team)
+  for n in 0..<=(CS_RIPE_CAP * ticks) {
+    options.push("\{n * CS_GOLD}")
+    descs.push("\{n} minion(s) finished by our own wave")
+  }
+  {
+    key: "cs_forfeit_\{c.role}",
+    class_: "cs",
+    form: "choice",
+    tier: "rules",
+    instructions: "\{c.name} is going to spend the next \{ticks} tick(s) standing in \{node_lane[c.node]} doing something other than `farm` — trading, poking, holding, it does not matter which. How much gold will its own wave finish without it? Whatever is low at the end of a tick is finished by our minions and paid to nobody, and the lane brings one more low per tick up to \{CS_RIPE_CAP}.",
+    options,
+    descriptions: descs,
+    truth: "\{lost * CS_GOLD}",
+    why: "the champion held for \{ticks} tick(s) on a copy and its `minions_let_die` counter moved by \{lost}",
+    // The answer a reader reaches for: what is low now, every tick. It is
+    // wrong because the wave refills at one a tick rather than staying as big
+    // as it is, and it is wrong in the direction that matters — it overstates
+    // the cost of leaving the wave alone.
+    floor: "\{ripe * ticks * CS_GOLD}",
+  }
+}
+
+///|
+/// `cs` — farm, poke or hold? Each is taken on a copy and the champion's own
+/// gold and experience compared a tick later.
+///
+/// A one-tick horizon on purpose. Over ten ticks the answer would be about
+/// the fight that follows; over one it is exactly the trade the last-hit rule
+/// creates, which is the thing worth measuring separately from the fight.
+fn ask_cs_choice(g : Game, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let legal = g.legal_actions(c)
+  let names = []
+  let descs = []
+  let scores = []
+  for a in legal {
+    let keep = match a {
+      Farm | Hold => true
+      Poke(_) => true
+      _ => false
+    }
+    if !keep {
+      continue
+    }
+    let h = g.copy()
+    h.step(Map([(c.id, a)]))
+    let after = h.champs[c.id]
+    names.push(a.to_string())
+    descs.push(g.describe_action(c, a))
+    // Gold and experience, plus what the enemy lost: poking is worth the
+    // damage it does, and the last-hit rule is what makes that a trade rather
+    // than a free hit.
+    let mut theirs = 0
+    for e in h.champs {
+      if e.team != c.team {
+        theirs += g.champs[e.id].hp - e.hp
+      }
+    }
+    scores.push((after.gold - c.gold) * 3 + (after.xp - c.xp) * 2 + theirs)
+  }
+  {
+    key: "cs_trade_\{c.role}",
+    class_: "cs",
+    form: "choice",
+    tier: "rules",
+    instructions: "\{c.name} is standing in \{node_lane[c.node]}. Taking the wave pays gold and experience; poking an enemy costs the wave and pays damage instead. Which is worth more to us this tick?",
+    options: names,
+    descriptions: descs,
+    truth: tied_best(names, scores),
+    why: "each action taken on a copy for one tick, scored on the gold and experience gained plus the health taken off them",
+    // The baseline's lane-economy branch, rather than `smart_action` whole.
+    // Asked for a whole turn it may answer with a move or a recall, which is
+    // an answer to a different question; what this asks about is the part of
+    // it that chooses between the wave and the trade, so that is the part
+    // quoted here.
+    floor: cs_floor(g, c, names),
+  }
+}
+
+///|
+/// What the strong baseline does about the wave-or-trade decision: take the
+/// gold when there is gold on the floor, poke when there is not. The same
+/// order `smart_action` uses, restricted to the options this question offers.
+fn cs_floor(g : Game, c : Champ, names : Array[String]) -> String {
+  if g.ripe_here(c.node, c.team) > 0 && names.contains(Farm.to_string()) {
+    return Farm.to_string()
+  }
+  for n in names {
+    if n.has_prefix("poke_") {
+      return n
+    }
+  }
+  if names.contains(Farm.to_string()) {
+    return Farm.to_string()
+  }
+  names[0]
+}
+
+///|
+/// `drake` — which element helps this team most in the fight on this pit?
+fn ask_drake_element(g : Game, team : Int, node : Int) -> Ask {
+  let descs = []
+  for element in drake_kinds {
+    descs.push(drake_reward(element))
+  }
+  {
+    key: "drake_element",
+    class_: "drake",
+    form: "choice",
+    tier: "rules",
+    instructions: "A drake is about to die on \{node_name(node)} and the rift could have made it any of the four elements. Which element's stack would help OUR five most in the fight that is happening on that pit right now? The teams are in the state; each element is permanent and team-wide.",
+    options: drake_kinds,
+    descriptions: descs,
+    truth: g.best_drake_element(team, node, FIGHT_TICKS),
+    why: "each element granted on a copy and the fight on that node played out; this one left us the most bodies and health",
+    // The heuristic has no opinion about elements, so it names the one that is
+    // worth the most in the abstract. Being wrong here is what the class is
+    // for: which stack pays depends on the two teams, not on the stack.
+    floor: "infernal",
+  }
+}
+
+///|
+/// `drake` — how many more drakes does this team need for the soul?
+fn ask_drake_soul(g : Game, team : Int) -> Ask {
+  let need = g.drakes_to_soul(team)
+  let options = []
+  for n in 0..<=SOUL_STACKS {
+    options.push("\{n}")
+  }
+  {
+    key: "drake_to_soul",
+    class_: "drake",
+    form: "choice",
+    tier: "arith",
+    instructions: "Counting the drake that is about to fall to us, how many more drakes does OUR team need before it has the \{g.rift_element()} soul? The first team to \{SOUL_STACKS} of any elements takes it, and only the first.",
+    options,
+    descriptions: [],
+    truth: "\{if need <= 1 { 0 } else { need - 1 }}",
+    why: "we hold \{g.drake_total(team)} of the \{SOUL_STACKS} the soul needs, and this one makes \{g.drake_total(team) + 1}",
+    floor: "\{g.drakes_to_soul(team)}",
+  }
+}
+
+///|
+/// `brush` — which node could be hiding the enemies we cannot account for?
+fn ask_brush_hidden(g : Game, team : Int) -> Ask {
+  let blind = g.blind_brush(team)
+  let seen = g.vision(team)
+  let options = []
+  let descs = []
+  // The river is in the list on purpose. It is the node a reader would expect
+  // to be cover — it is off-lane, it is where the monsters are — and it is
+  // not, so an option list of nothing but brush would let a policy score by
+  // naming any unlit node rather than by knowing which nodes hide anybody.
+  let candidates = []
+  for n in brush_nodes {
+    candidates.push(n)
+  }
+  candidates.push(RIV_TOP)
+  candidates.push(RIV_BOT)
+  for n in candidates {
+    options.push(node_name(n))
+    descs.push(
+      if !is_brush(n) {
+        "\{node_lane[n]}, not brush\{if seen[n] { ", and we can see it" } else { ", and we have no vision of it" }}"
+      } else if seen[n] {
+        "brush, and we have vision of it right now"
+      } else {
+        "brush, and we have no vision of it"
+      },
+    )
+  }
+  // Any blind brush is an acceptable answer: the question is whether a policy
+  // knows which nodes the rule hides, not which of several equally unlit
+  // ones it picks.
+  let names = []
+  for n in blind {
+    names.push(node_name(n))
+  }
+  {
+    key: "brush_hidden",
+    class_: "brush",
+    form: "choice",
+    tier: "arith",
+    instructions: "Standing next to a brush shows you nothing inside it. Which of these could be holding enemies we cannot see right now?",
+    options,
+    descriptions: descs,
+    truth: names.join("|"),
+    why: "the brush nodes outside our vision mask, which is the same mask the observation was built from",
+    // The floor names the brush nearest our own base, which is the wrong
+    // instinct: the one that matters is the one next to the lane we are in.
+    floor: node_name(brush_nodes[0]),
+  }
+}
+
+///|
+/// `brush` — where should this champion put its ward?
+fn ask_brush_ward(g : Game, team : Int, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let options = []
+  let descs = []
+  for n in ward_spots(c.node) {
+    options.push(node_name(n))
+    descs.push(
+      "\{node_lane[n]}\{if is_brush(n) { ", BRUSH — a ward is the only way to watch one from outside" } else { "" }}\{if g.has_ward(team, n) { "; already warded" } else { "" }}",
+    )
+  }
+  {
+    key: "brush_ward",
+    class_: "brush",
+    form: "choice",
+    tier: "rules",
+    instructions: "\{c.name} has a ward to place from \{node_name(c.node)}. Which node reveals the most of their five? A ward sees the node it sits in and its neighbours, and a ward in a brush is the only way to see inside one from outside.",
+    options,
+    descriptions: descs,
+    truth: g.best_ward(team, c.node),
+    why: "each spot warded on a copy and the enemies then visible counted",
+    floor: node_name(ward_spots(c.node)[0]),
+  }
+}
+
+///|
+/// `brush` — does walking into that brush get this champion killed?
+fn ask_brush_step(g : Game, champ_id : Int, node : Int) -> Ask {
+  let c = g.champs[champ_id]
+  {
+    key: "brush_step_\{c.role}",
+    class_: "brush",
+    form: "noul",
+    tier: "rules",
+    instructions: "\{c.name} is about to step into \{node_name(node)}, which is brush we have no vision of. Would it still be alive \{RETREAT_HORIZON} ticks later? Answer true if it survives.",
+    options: [],
+    descriptions: [],
+    truth: "\{g.step_in_survives(champ_id, node, RETREAT_HORIZON)}",
+    why: "the champion moved into that node on a copy and both teams played the strong baseline for \{RETREAT_HORIZON} ticks",
+    // The heuristic walks in whenever it is not already hurt, which is the
+    // mistake the brush exists to punish.
+    floor: "\{c.hp * 100 >= c.max_hp * 50}",
+  }
+}
+
+///|
+/// `siege` — what is the plating on this tower worth to the team?
+fn ask_siege_plates(g : Game, team : Int, node : Int) -> Ask {
+  let plates = match g.structure_at(node) {
+    Some(s) => s.plates
+    None => 0
+  }
+  let options = []
+  let descs = []
+  for n in 0..<=PLATES {
+    options.push("\{n * PLATE_GOLD}")
+    descs.push(
+      if n == 0 {
+        "no plating left on it"
+      } else {
+        "\{n} plate(s) at \{PLATE_GOLD} gold each, to every champion on the team"
+      },
+    )
+  }
+  {
+    key: "siege_plates",
+    class_: "siege",
+    form: "choice",
+    tier: "arith",
+    instructions: "How much gold would each of our champions earn if we took ALL the plating still on the tower at \{node_name(node)}? Champion damage takes plates off one at a time and pays \{PLATE_GOLD} gold per plate to every champion on the team; minion damage takes none, and the plating falls off by itself at tick \{PLATE_TICKS}.",
+    options,
+    descriptions: descs,
+    truth: "\{plates * PLATE_GOLD}",
+    why: "\{plates} plate(s) left at \{PLATE_GOLD} gold each",
+    floor: "\{PLATES * PLATE_GOLD}",
+  }
+}
+
+///|
+/// `siege` — their gate is down; can we reach the nexus before it closes?
+fn ask_siege_window(g : Game, team : Int, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let foe = enemy_of(team)
+  let mut left = 0
+  for s in g.structures {
+    if s.team == foe && s.tier == 2 && s.respawn_in > left {
+      left = s.respawn_in
+    }
+  }
+  let trip = hops(c.node, base_of(foe))
+  {
+    key: "siege_window",
+    class_: "siege",
+    form: "noul",
+    tier: "arith",
+    instructions: "One of their inner towers is down, so their nexus can be attacked — but it comes back up in \{left} tick(s) and closes the lane again. \{c.name} is \{trip} hop(s) from their base and moving is one node a tick. Would it arrive with at least one tick left to swing? Answer true if it would.",
+    options: [],
+    descriptions: [],
+    truth: "\{trip < left}",
+    why: "\{trip} hop(s) against \{left} tick(s) on the gate's timer",
+    // The heuristic goes whenever the nexus reads as attackable, which is what
+    // the timer is there to make wrong.
+    floor: "true",
+  }
+}
+
+///|
 /// `macro` — which of these plans leaves us best off? Each is played forward
 /// with the enemy on the strong baseline.
 fn ask_macro(
@@ -1570,6 +1942,170 @@ pub fn fight_scenarios(wording : RetreatWording) -> Array[Scenario] {
 // --------------------------------------------------------------- the suite
 
 ///|
+/// A laning state: two of ours in lanes with minions low, one of theirs in
+/// range to poke. The `cs` class's home.
+///
+/// `tick` and the ripe counts are set directly rather than played into,
+/// because a lane that has been played into for thirty ticks is a lane whose
+/// state nobody designed — the same reason `park_all` exists.
+fn sc_laning(
+  name : String,
+  note : String,
+  ripe_mid : Int,
+  ripe_bot : Int,
+  their_mid_hp : Int,
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("poke"), 4, 18)
+  park_all(g)
+  let mid = g.champs[2]
+  let bot = g.champs[3]
+  mid.node = node_id("mid_mid")
+  bot.node = node_id("a1_bot")
+  // One of theirs beside each, so poking is on the table and the trade is a
+  // real alternative to the wave rather than an illegal move.
+  g.champs[7].node = node_id("b1_mid")
+  g.champs[8].node = node_id("mid_bot")
+  at_hp(g.champs[7], their_mid_hp)
+  at_hp(g.champs[8], 90)
+  g.ripe[ripe_index("mid", TEAM_A)] = ripe_mid
+  g.ripe[ripe_index("bot", TEAM_A)] = ripe_bot
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [
+      ask_cs_pay(g, mid.id),
+      ask_cs_forfeit(g, bot.id, 3),
+      ask_cs_choice(g, mid.id),
+      ask_cs_choice(g, bot.id),
+    ],
+  }
+}
+
+///|
+/// A drake about to fall, with the two teams on the pit and the soul in
+/// reach. The `drake` class's home.
+fn sc_drake(
+  name : String,
+  note : String,
+  comp_b : Array[String],
+  rotation : Array[String],
+  ours : Int,
+  theirs : Int,
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_b, 5, 44)
+  g.with_drakes(rotation)
+  g.place_all(RIV_BOT)
+  g.drakes[drake_index(TEAM_A, rotation[0])] = ours
+  g.drakes[drake_index(TEAM_B, rotation[0])] = theirs
+  match g.neutral_named("dragon") {
+    Some(n) => {
+      n.spawn_in = 0
+      n.hp = 30
+    }
+    None => ()
+  }
+  // A worn fight, so the element that helps is not simply the one that adds
+  // the most damage to a team that was winning anyway.
+  at_hp(g.champs[0], 60)
+  at_hp(g.champs[3], 50)
+  at_hp(g.champs[5], 65)
+  at_hp(g.champs[8], 55)
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [ask_drake_element(g, TEAM_A, RIV_BOT), ask_drake_soul(g, TEAM_A)],
+  }
+}
+
+///|
+/// A jungle crossing with enemies in the brush. The `brush` class's home.
+fn sc_brush(
+  name : String,
+  note : String,
+  hiding : Array[Int],
+  ward_from : Int,
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("dive"), 5, 30)
+  park_all(g)
+  let scout = g.champs[1]
+  scout.node = ward_from
+  scout.wards = WARD_CHARGES
+  // One of ours sitting in a brush, so at least one is lit and "which of
+  // these could be hiding them" has a wrong answer in it.
+  g.champs[4].node = node_id("a_jg_top")
+  let carry = g.champs[3]
+  carry.node = node_id("mid_bot")
+  // Theirs, tucked into the brush the crossing runs past.
+  for i in 0..<hiding.length() {
+    g.champs[5 + i].node = hiding[i]
+  }
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [
+      ask_brush_hidden(g, TEAM_A),
+      ask_brush_ward(g, TEAM_A, scout.id),
+      ask_brush_step(g, carry.id, hiding[0]),
+    ],
+  }
+}
+
+///|
+/// A plated tower and an open gate: the two clocks the siege runs on.
+fn sc_siege(
+  name : String,
+  note : String,
+  tick : Int,
+  plates_left : Int,
+  gate_left : Int,
+  from : Int,
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("bruisers"), 5, tick)
+  park_all(g)
+  let tower = node_id("b1_mid")
+  for s in g.structures {
+    if s.node == tower {
+      s.plates = plates_left
+      s.hp = s.max_hp * (plates_left + 1) / (PLATES + 1)
+    }
+    // Their mid gate is down with a clock on it, and its outer tower with it,
+    // so the lane really is open.
+    if s.team == TEAM_B && s.lane == "mid" && s.tier == 2 {
+      s.hp = 0
+      s.respawn_in = gate_left
+    }
+    if s.team == TEAM_B && s.lane == "mid" && s.tier == 1 {
+      s.hp = 0
+      s.plates = 0
+    }
+  }
+  let mut runner = g.champs[0]
+  for c in g.champs {
+    if c.team == TEAM_A {
+      c.node = from
+      runner = c
+    }
+  }
+  g.push[lane_index("mid")] = PUSH_TO_TOWER
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [
+      ask_siege_plates(g, TEAM_A, node_id("b1_top")),
+      ask_siege_window(g, TEAM_A, runner.id),
+    ],
+  }
+}
+
+///|
 /// Every scenario, in report order. Each one is a single request: one state,
 /// several questions.
 pub fn bench_suite() -> Array[Scenario] {
@@ -1604,6 +2140,85 @@ pub fn bench_suite() -> Array[Scenario] {
     sc_hidden_enemies(),
     sc_baron_buffed(),
     sc_split_pressure(),
+    // The mechanics the game grew after docs/56 was first written. Each class
+    // gets more than one state, because one state's answer is one state's
+    // answer: the `cs` arithmetic is only a measurement if the number differs
+    // between questions, and which drake element pays is only a judgment if
+    // the two teams differ between scenarios.
+    sc_laning(
+      "laning_full_wave", "two minions low in mid, three in bot, nobody in poke range is hurt",
+      2, 3, 45,
+    ),
+    sc_laning(
+      "laning_thin_wave", "nothing low in mid, one low in bot", 0, 1, 60,
+    ),
+    // The state the baseline's rule gets wrong. It takes the gold whenever
+    // there is gold on the floor, and here one minion is on the floor and a
+    // kill is standing next to it.
+    sc_laning(
+      "laning_kill_in_range", "one minion low in mid and their mid laner is nearly dead beside it",
+      1, 2, 3,
+    ),
+    sc_drake(
+      "drake_vs_carries",
+      "a drake one hit from dying, both fives on the pit, their comp is carries",
+      comp_by_name("glass_ad"),
+      ["infernal", "mountain"],
+      1,
+      2,
+    ),
+    sc_drake(
+      "drake_at_soul_point",
+      "the same pit with three of ours already down: this one is the soul",
+      comp_by_name("dive"),
+      ["ocean", "cloud"],
+      3,
+      1,
+    ),
+    sc_drake(
+      "drake_vs_frontline",
+      "their comp is bodies rather than damage, and nobody is near the soul",
+      comp_by_name("bruisers"),
+      ["cloud", "infernal"],
+      0,
+      0,
+    ),
+    sc_brush(
+      "brush_two_waiting",
+      "two of theirs in the bottom jungle, and a carry about to cross it",
+      [node_id("b_jg_bot"), node_id("a_jg_bot")],
+      RIV_BOT,
+    ),
+    sc_brush(
+      "brush_one_waiting",
+      "one of theirs in their own bottom jungle, beside the pit we are standing on",
+      [node_id("b_jg_bot")],
+      RIV_BOT,
+    ),
+    sc_siege(
+      "siege_early_plates",
+      "tick 20: the plating is still worth gold and the gate has just opened",
+      20,
+      PLATES,
+      5,
+      node_id("mid_mid"),
+    ),
+    sc_siege(
+      "siege_half_plated",
+      "tick 32: two plates left, and we are a long way from their base",
+      32,
+      2,
+      3,
+      node_id("a2_mid"),
+    ),
+    sc_siege(
+      "siege_late_window",
+      "tick 52: the plating is gone and the gate is closing",
+      52,
+      0,
+      2,
+      node_id("a1_mid"),
+    ),
   ]
   // The `fight` class comes last and comes from the sweep, not from here: two
   // cases per bucket, so the head count is worth 0.50 on the class and any
@@ -1624,5 +2239,5 @@ pub const FIGHT_PER_BUCKET = 4
 /// The classes the report groups by, in a fixed order so two runs line up.
 pub let bench_classes : Array[String] = [
   "fight", "focus", "item", "dive", "lane", "macro", "retreat", "retreat3", "power",
-  "ability", "fog",
+  "ability", "fog", "cs", "drake", "brush", "siege",
 ]
