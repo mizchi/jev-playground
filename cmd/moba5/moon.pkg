@@ -1,0 +1,17 @@
+import {
+  "mizchi/jev-playground/lib",
+  "mizchi/jev-playground/moba5" @game,
+  "mizchi/jev-playground/report",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/argparse",
+  "moonbitlang/core/cmp",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/x/sys",
+}
+
+supported_targets = "+native"
+
+pkgtype(kind: "executable")

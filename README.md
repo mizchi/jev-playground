@@ -14,6 +14,7 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/patterns` | 公式ドキュメントの[意思決定パターン](https://docs.typesafe.ai/patterns)を実 API に対して走らせ、効果を実測する CLI |
 | `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
 | `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
+| `moba5/`, `cmd/moba5` | **ヘッドレス 5v5 MOBA**(3 レーン + 両サイドのジャングル + 川、レベル・アイテム・スキル・目標・ミニオン・ワード)と、**シミュレータ自身が正解を出す採点ベンチマーク** |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 | `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標 + **セレクタ 1 個と 1 文で書く ad-hoc ルール**、ファイル単位でバッチ) |
@@ -171,6 +172,9 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
 | [23](docs/23-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
 | [24](docs/24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 |
+| [56](docs/56-moba5.md) | **本格的な 5v5 MOBA と採点できるベンチマーク** — 試合は 3-0 で勝ち、22 問で採点すると手書きの床を下回った |
+
+(索引の全文は [docs/README.md](docs/README.md) にあります。)
 
 一行でまとめると、**一番効いたのは「答えの形を問題の形に合わせる」こと**でした
 (順序のある結論を `choice` から `score` に変えるだけで正解率 19/24 → 23/24)。
@@ -182,6 +186,9 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 moon run --target native cmd/patterns --                   # 公式パターン集の実測
 moon run --target native cmd/shellrisk --                  # シェルコマンド判定
 moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
+moon run --target native cmd/moba5 -- --bench --dry         # 5v5 の採点表と床(API 不要)
+moon run --target native cmd/moba5 -- --bench               # 5v5 を 22 問で採点
+moon run --target native cmd/moba5 -- --a jev --b smart     # 5v5 MOBA
 ```
 
 TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測・
@@ -488,9 +495,64 @@ pi install ./packages/jev-guard   # 1 つだけ入れることもできる
 **コードブロックに `npm:<このリポジトリの名前>` が現れたらテストが落ちます**。
 詳細は [`pi/README.md`](pi/README.md)。
 
+## 12. 5v5 MOBA と採点できるベンチマーク —— [`moba5/`](moba5/)
+
+§5 の [02](docs/02-moba.md) は 3v3 で、**測れるものが勝敗しかありませんでした**。
+[`moba5/`](moba5/) はそれを**ジャンルが実際に遊ばれているサイズと機構**まで広げた
+別パッケージで、**3v3 側(`moba/`, `cmd/moba`)は 1 行も変えていません**。
+
+```bash
+moon run --target native cmd/moba5 -- --bench --dry      # 採点表と床(API キー不要)
+moon run --target native cmd/moba5 -- --bench            # モデルを同じ答えで採点
+moon run --target native cmd/moba5 -- --arena            # 5v5 集団戦の総当たり(API 不要)
+moon run --target native cmd/moba5 -- --tournament       # 全試合の総当たり(API 不要)
+moon run --target native cmd/moba5 -- --draft            # 生のステータスから編成を選ばせる
+moon run --target native cmd/moba5 -- --a jev --b smart --max-ticks 40
+moon run --target native cmd/moba5 -- --a jev --b smart --verbose --replay r.jsonl
+moon test --target native -p moba5                       # 41 件。API キー不要
+```
+
+増えた機構は**どれも判断を 1 つ作るために**入れてあります ——
+3 レーン + 両サイドのジャングル + 川(23 ノード)、レベルと経験値、
+アイテム 5 種(装備枠 3)、クールダウン付きの固有スキル、
+**相手の 1 ターンを消すスタン**、遠距離の `poke`、
+ドラゴン(永続)とバロン(短時間・強)、ミニオンの押し合い、ワード、2 段のタワー。
+
+構造として一番効いているのは 1 行の規則です:
+
+> **自陣のウェーブが居るレーンのタワーは、その champion を撃たない**(撃つ対象がミニオンになる)。
+
+これで「タワーに単騎で立つ」は必ず負ける取引になり、
+**`Farm` でウェーブを押してから殴る**が正しい手順になります。
+ミニオンは**タワーしか割れない**ので、試合を終わらせるのは必ず champion です。
+
+**`--bench` が本題です。** 11 シナリオに 22 問、**答えは全部シミュレータが出します** ——
+ルールが決定的なので「この集団戦は勝てるか」は**再生すれば分かる**。
+正解の出し方は `rules`(再生した)/ `arith`(ルールの算術)/ `score`(明示した目的関数)の
+3 段階に分けて**問ごとに明記**してあり、
+**同点は同点として両方正解**にします(選択肢の並び順を測らないため)。
+出力は**クラス別の正解率と、同じ問いに対する手書きヒューリスティックの床**、
+それに **confidence が正誤を分けているか**の 2 列です。
+
+実測(`jev-latest`、2026-09、詳細は [56](docs/56-moba5.md)):
+
+| | 結果 |
+| --- | --- |
+| 試合(両サイド × 2 種の bot) | **3-0**、3 試合すべて自陣の構造物は満額 |
+| 1 リクエストが決めたキャラ行動 | **5.00**(3v3 は 2.76)、**52〜54 ms/体**(3v3 は 76) |
+| 不正な手 | **588 判断で 0 件** |
+| **22 問の採点** | **0.45 / 0.45 / 0.55** —— **手書きの床 0.64 を 3 回とも下回る** |
+| 戦場の霧の読み(23 択) | **82 tick で 8 正解 = 0.10**、平均 confidence 0.53〜0.65 |
+
+**試合には勝って、採点では床に届かない。**
+勝敗は相手の弱点の形を測っていて、どの判断を直すかは言いません。
+そして [02 §3](docs/02-moba.md) が所見にした
+「confidence が行動の種類ごとにきれいに分かれる」は、
+**正誤で分けたら差が消えました**。
+
 ## 補足
 
-- **料金**(2026-09 時点): 入力トークン `$0.042 / MTok`、出力トークン無料。15×15 の五目並べ 1 局で入力約 5.8 万トークン(≈ $0.0024)程度。
+- **料金**(2026-09 時点): 入力トークン `$0.042 / MTok`、出力トークン無料。15×15 の五目並べ 1 局で入力約 5.8 万トークン(≈ $0.0024)程度。5v5 MOBA は 40 tick の 1 試合で入力約 27 万トークン(≈ $0.011)、`--bench` は 11 リクエストで約 5 万トークン(≈ $0.002)。
 - Jev の応答は毎回 1 回の `POST /v1/systemone`(約 0.5 秒/手)。
 - GIF エンジン(`WGYo90/moonbit-gif`)はバリデータ上は有効な GIF を出力しますが、**同エンジンのデコーダーは自分の出力を再デコードできません**(標準のブラウザ/ビューアでは再生可能)。
 - 参考: Jev に関する解説は [Introducing System One Models & Jev(TypeSafe AI ブログ)](https://typesafe.ai/blog/introducing-system-one-models-and-jev)、API 仕様は [docs.typesafe.ai](https://docs.typesafe.ai/introduction) と `https://api.typesafe.ai/openapi.json`。
