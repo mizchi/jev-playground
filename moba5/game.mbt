@@ -2440,6 +2440,18 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
               s.hp -= MINION_DAMAGE
               if s.hp <= 0 {
                 s.hp = 0
+                // The plating goes with it, unpaid. Minions never break a
+                // plate — that is the rule that makes "go and hit it
+                // yourself" a decision — but a tower they finish cannot keep
+                // plating on it either, or the observation would report
+                // `plates_left` on a structure that is not there and the
+                // expiry at `PLATE_TICKS` would announce plating coming off a
+                // ruin.
+                s.plates = 0
+                // Nor does an inner tower they finish skip its timer.
+                if s.tier == 2 {
+                  s.respawn_in = INHIB_TICKS
+                }
                 events.push(
                   "minions destroyed the \{s.kind_name()} at \{node_name(s.node)}",
                 )

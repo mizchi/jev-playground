@@ -435,3 +435,40 @@ fn total_plates(g : Game) -> Int {
   }
   n
 }
+
+///|
+/// A tower the minions finish loses its plating and starts its timer, the
+/// same as one a champion finishes.
+///
+/// Minions break no plates — that is the rule above — but a structure they
+/// destroy cannot go on reporting plating either, or the observation would
+/// show `plates_left` on a ruin and the expiry at `PLATE_TICKS` would
+/// announce the plating coming off one.
+test "a structure the minions finish loses its plating and its lane" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  for c in g.champs {
+    c.node = base_of(c.team)
+  }
+  let outer = enemy_outer(g, TEAM_A, "top")
+  let gate = inner_of(g, TEAM_B, "top")
+  g.push[lane_index("top")] = PUSH_CAP
+  // Their outer first, since a tier cannot be skipped.
+  outer.hp = MINION_DAMAGE
+  g.step(Map([]))
+  assert_eq(outer.hp, 0)
+  assert_eq(outer.plates, 0)
+  assert_false(outer.is_down_temporarily())
+
+  // Then the gate behind it, which does start a timer.
+  gate.hp = MINION_DAMAGE
+  g.step(Map([]))
+  assert_eq(gate.hp, 0)
+  assert_true(gate.is_down_temporarily())
+  assert_true(g.lane_open(TEAM_B, "top"))
+  // And it comes back, exactly as one a champion broke would.
+  while gate.is_down_temporarily() {
+    g.step(Map([]))
+  }
+  assert_eq(gate.hp, gate.max_hp)
+  assert_false(g.lane_open(TEAM_B, "top"))
+}
