@@ -38,6 +38,7 @@ cd experiments/browser-chaos  && npx tsx src/run-testgen.ts --repeat 5 --routes 
 cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --repeat 6 # 27 §4.7: なぜ 1 経路に寄るのか
 cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --label-position --repeat 6 # 27 §4.8: ラベル x 位置
 cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --long-list --repeat 6 # 27 §4.9: 候補 46 個でも成り立つか
+cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --filler-vocab --repeat 6 # 27 §4.10: なぜ filler で確信が上がるか
 cd experiments/browser-chaos  && npx tsx src/run-perf.ts --repeat 3 # 28: 計測 -> 診断 -> 検証
 cd experiments/browser-chaos  && npx tsx src/check-fanout.ts     # 29: action space と validateChoice(API 不要)
 cd experiments/browser-chaos  && npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 # 29: 投機的 fan-out
@@ -187,6 +188,8 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | 視野で絞ったうえで `SCROLL` を操作として足す | 見えないものを探すのが探索で、見えなくしたのは絞り込み自身。Playwright はクリック時に自動スクロールするので、全部送るなら `SCROLL` は要らない([30 §6.5](30-browser-accuracy.md#65-scroll-を実装したら64-の推奨が崩れた)) |
 | ゴールとの語彙一致で候補を絞る | 正解を**答えから遠ざける方向**に並べ替える。画面テキストを足すと全体のスコアが上がって識別が消え、小さい k ではさらに悪化する([30 §6.1](30-browser-accuracy.md#61-ゴールに対する語彙検索は使えない)) |
 | 「今の値と違う最初の選択肢」でドロップダウンを送る | 列挙ではなく 2 周期の**振動**になり、3 番目以降に永久に到達しない。記憶を持たせると 1 選択肢 1 手で終わる([29](29-speculative-fanout.md#3-six-options-the-flat-shape-stops-arriving)) |
+| 誤差の床を測らずに小さな差を解釈する | 同一条件 2 回で **0.04 動く**。1 回目に出た「2 プールが 0.853 でぴったり一致」を機構として書きかけ、2 回目で偶然だと分かった。**再実行が唯一の検出器**([27 §4.10](27-nl-test-generation.md#410-追記-filler-で確信が上がる理由--語彙ではなく個数そして-003-は誤差)) |
+| 候補を絞っても confidence は変わらないと思う | ページに 56 個あるうち 16 個だけ提示すると **0.845 → 0.783**。精度は同じでも**閾値の側に副作用**が出る([27 §4.10](27-nl-test-generation.md#410-追記-filler-で確信が上がる理由--語彙ではなく個数そして-003-は誤差)) |
 | リンク文言を「表示だけ」の変更だと思う | **ラベルが実行経路を決めている。** 文字列を交換しただけで生成されるテストが別経路に移り、通らない経路のバグは見えなくなる —— **文言の変更がカバレッジを静かに動かす**([27 §4.7](27-nl-test-generation.md#47-追記-なぜ-1-つの経路に寄るのかを測った)) |
 | 置かなかったアームについて結論を書く | 「消す」と「伝える」を比べるつもりで「伝えるだけ」を置き忘れると、出る結論は「消すと効く」になる。後で足したら**同値**だった。**結論ではなく解釈が静かに間に合わなくなる**([30 §4](30-browser-accuracy.md#4-docs25-の解釈を-1-つ訂正する)) |
 | 「正直な限界」節を書かずにレポートを出す | **書き忘れた本にだけ未検証の主張が残っていた。** 25〜28 の 4 本が限界節なしで、うち 25 は 30 に否定され、26 は機構の解釈を「分かった」と書き、27 は **n=1 の生成物 2 個**で方式を比べていた。限界節のある本を当たっても同じ形は出てこない —— **節を書く作業が、測っていない軸を数える作業**だった([25 §8](25-confidence-fallback.md#8-正直な限界))。**3 本とも後から測り、26 は否定・27 は確認**([26 §4.5](26-coverage-guidance.md#45-追記-残りの-2-マスを埋めたら5-の説明は間違っていた) / [27 §4.5](27-nl-test-generation.md#45-追記-5-回独立に生成させた--差は成果物ではなく方式だった)) |

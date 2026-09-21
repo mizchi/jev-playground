@@ -417,14 +417,58 @@ const FILLER_NOUNS = [
   "wishlist", "recently viewed", "loyalty points", "payment methods", "invoices",
 ];
 
+/*
+  `?fillervocab=` swaps the noun pool, for docs/27 §4.10 — why does
+  adding 40 filler controls RAISE confidence in the right one (0.680 ->
+  0.897)? The 40 cannot be doing it by arithmetic: they take 0.000 of
+  the probability mass, so they cannot change the ratio between the two
+  contenders. That leaves their content.
+
+  At `?wide=40` the default pool yields eight labels containing
+  "checkout" and eight containing "express", so both contenders are
+  diluted equally and a plain dilution story predicts no asymmetry.
+  These pools break the symmetry deliberately:
+
+    mixed     (default) unchanged, so every earlier number reproduces
+    neutral   only the shop furniture — no goal vocabulary at all
+    express   every label carries "express"
+    checkout  every label carries "checkout"
+
+  If `express` pushes p("Proceed to checkout") up and `checkout` pushes
+  it down, the mechanism is per-contender vocabulary dilution. If all
+  four land together, it is the count or the context and not the words.
+*/
+const FILLER_NEUTRAL = [
+  "gift cards", "store locations", "return policy", "size guide", "reviews",
+  "wishlist", "recently viewed", "loyalty points", "payment methods", "invoices",
+];
+const FILLER_EXPRESS = [
+  "express delivery FAQ", "express returns", "express gift wrap",
+  "express pickup points", "express support hours",
+];
+const FILLER_CHECKOUT = [
+  "checkout help", "checkout FAQ", "checkout troubleshooting",
+  "checkout accessibility", "checkout security",
+];
+const FILLER_VOCAB = new URLSearchParams(location.search).get("fillervocab") || "mixed";
+const FILLER_POOL =
+  FILLER_VOCAB === "neutral" ? FILLER_NEUTRAL
+  : FILLER_VOCAB === "express" ? FILLER_EXPRESS
+  : FILLER_VOCAB === "checkout" ? FILLER_CHECKOUT
+  : FILLER_NOUNS;
+
 function filler(n) {
   const out = [];
   for (let i = 0; i < n; i += 1) {
     const verb = FILLER_VERBS[i % FILLER_VERBS.length];
-    const noun = FILLER_NOUNS[Math.floor(i / FILLER_VERBS.length) % FILLER_NOUNS.length];
+    const noun = FILLER_POOL[Math.floor(i / FILLER_VERBS.length) % FILLER_POOL.length];
     // The index keeps labels unique past verbs x nouns without adding a
     // token a retriever could key on for the right answer.
-    const suffix = i >= FILLER_VERBS.length * FILLER_NOUNS.length ? ` (${i})` : "";
+    // Against FILLER_POOL, not FILLER_NOUNS: the narrower pools have 5
+    // nouns rather than 20, so keying this on the default pool would let
+    // labels repeat past verbs x pool and put two identical descriptions
+    // in the criteria map.
+    const suffix = i >= FILLER_VERBS.length * FILLER_POOL.length ? ` (${i})` : "";
     out.push(`<button type="button" data-filler="1">${verb} ${noun}${suffix}</button>`);
   }
   return out.join("");

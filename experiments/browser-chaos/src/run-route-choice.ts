@@ -461,6 +461,179 @@ async function longList(
   console.log("");
 }
 
+/**
+ * `--filler-vocab`: why does adding 40 filler controls RAISE confidence
+ * in the right one, 0.680 -> 0.897? (docs/27 §4.10)
+ *
+ * The 40 cannot be doing it by arithmetic — they take 0.000 of the mass
+ * (§4.9), so they cannot move the ratio between the two contenders.
+ * That leaves their content, and the default pool at `?wide=40` happens
+ * to put eight "checkout" labels and eight "express" labels on the page,
+ * diluting both contenders equally.
+ *
+ * `?fillervocab=` breaks that symmetry, and the count sweep separates
+ * "the words" from "how many":
+ *
+ *   count 0, 8, 40   with the default mixed pool
+ *   at count 40      mixed / neutral / express / checkout
+ *
+ * If `express` pushes p("Proceed") up and `checkout` pushes it down, the
+ * mechanism is per-contender vocabulary dilution. If the four pools land
+ * together, the words are not it and the count or the context is.
+ */
+const FILLER_VOCAB = process.argv.includes("--filler-vocab");
+
+async function fillerVocab(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  url: string,
+): Promise<void> {
+  const jev = new Jev();
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+
+  console.log("");
+  console.log("=".repeat(100));
+  console.log(`  WHY FILLER RAISES CONFIDENCE — vocabulary x count, ${REPEAT} repeats`);
+  console.log("=".repeat(100));
+
+  const cells: { name: string; query: string; n: number; vocab: string }[] = [
+    { name: "no filler", query: "", n: 0, vocab: "-" },
+    { name: "8, mixed", query: "&wide=8", n: 8, vocab: "mixed" },
+    { name: "40, mixed", query: "&wide=40", n: 40, vocab: "mixed" },
+    { name: "40, neutral", query: "&wide=40&fillervocab=neutral", n: 40, vocab: "neutral" },
+    { name: "40, express", query: "&wide=40&fillervocab=express", n: 40, vocab: "express" },
+    { name: "40, checkout", query: "&wide=40&fillervocab=checkout", n: 40, vocab: "checkout" },
+  ];
+
+  type Row = { name: string; vocab: string; pP: number[]; pE: number[]; other: number[]; picked: string[]; nCand: number };
+  const rows: Row[] = [];
+
+  for (const cell of cells) {
+    const pP: number[] = [], pE: number[] = [], other: number[] = [], picked: string[] = [];
+    let nCand = 0;
+    for (let r = 0; r < REPEAT; r += 1) {
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      await toCart(page, `${url}?routes=1${cell.query}`);
+      const p = await probe(page);
+      nCand = p.candidates.length;
+      const criteria: Record<string, string> = {};
+      const labels = new Map<string, string>();
+      for (const c of p.candidates) {
+        const note = notableFacts(c);
+        criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
+        labels.set(String(c.index), c.locator.name);
+      }
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          screen: (await page.locator("#view").innerText()).slice(0, 1200),
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      const m = massByLabel(a.probabilities, labels, [PROCEED_LABEL, EXPRESS_LABEL]);
+      pP.push(m.on[0]!);
+      pE.push(m.on[1]!);
+      other.push(m.other);
+      const chosen = labels.get(a.choice);
+      picked.push(chosen === PROCEED_LABEL ? "P" : chosen === EXPRESS_LABEL ? "E" : "other");
+      await ctx.close();
+    }
+    rows.push({ name: cell.name, vocab: cell.vocab, pP, pE, other, picked, nCand });
+  }
+
+  console.log("");
+  const w = Math.max(14, ...rows.map((r) => r.name.length));
+  console.log(`  ${"cell".padEnd(w)}  候補数  picked      p("Proceed")  p("Express")  p(filler)`);
+  console.log(`  ${"-".repeat(w)}  ------  ----------  ------------  ------------  ---------`);
+  for (const r of rows) {
+    const uniq = [...new Set(r.picked)];
+    console.log(
+      `  ${r.name.padEnd(w)}  ${String(r.nCand).padStart(6)}  ` +
+        `${(uniq.length === 1 ? `${uniq[0]} ${r.picked.length}/${r.picked.length}` : r.picked.join(",")).padEnd(10)}  ` +
+        `${mean(r.pP).toFixed(3).padStart(12)}  ${mean(r.pE).toFixed(3).padStart(12)}  ${mean(r.other).toFixed(3).padStart(9)}`,
+    );
+  }
+  // ---- is it the option set, or just more text? ----------------------
+  //
+  // The filler adds candidates AND page text together. Capture both
+  // pages once and cross them: offering 16 while the screen describes 56
+  // is exactly what narrowing does (docs/30 §6.4), so this cell is not
+  // only a control — it is the retrieval question in miniature.
+  const grab = async (query: string) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await toCart(page, `${url}?routes=1${query}`);
+    const p = await probe(page);
+    const criteria: Record<string, string> = {};
+    const labels = new Map<string, string>();
+    for (const c of p.candidates) {
+      const note = notableFacts(c);
+      criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
+      labels.set(String(c.index), c.locator.name);
+    }
+    const screen = (await page.locator("#view").innerText()).slice(0, 1200);
+    await ctx.close();
+    return { criteria, labels, screen, n: p.candidates.length };
+  };
+  const few = await grab("");
+  const many = await grab("&wide=40");
+
+  const crossed: { name: string; cands: typeof few; screen: string }[] = [
+    { name: "offer 16, screen 56", cands: few, screen: many.screen },
+    { name: "offer 56, screen 16", cands: many, screen: few.screen },
+  ];
+  console.log("");
+  console.log("  offered set vs page text (crossed; the two disagree by construction)");
+  for (const c of crossed) {
+    const pP: number[] = [], pE: number[] = [];
+    for (let r = 0; r < REPEAT; r += 1) {
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          screen: c.screen,
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria: c.cands.criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      const m = massByLabel(a.probabilities, c.cands.labels, [PROCEED_LABEL, EXPRESS_LABEL]);
+      pP.push(m.on[0]!);
+      pE.push(m.on[1]!);
+    }
+    console.log(
+      `  ${c.name.padEnd(22)} candidates ${String(c.cands.n).padStart(2)}  ` +
+        `p("Proceed") ${mean(pP).toFixed(3)}   p("Express") ${mean(pE).toFixed(3)}`,
+    );
+  }
+
+  const by = (n: string) => mean(rows.find((r) => r.name === n)!.pP);
+  console.log("");
+  console.log(`  count, mixed pool:  0 -> 8 -> 40   ${by("no filler").toFixed(3)} -> ${by("8, mixed").toFixed(3)} -> ${by("40, mixed").toFixed(3)}`);
+  console.log(`  vocabulary at 40:   neutral ${by("40, neutral").toFixed(3)}   mixed ${by("40, mixed").toFixed(3)}   express ${by("40, express").toFixed(3)}   checkout ${by("40, checkout").toFixed(3)}`);
+  console.log("");
+  console.log(
+    `  cost: ${jev.calls} calls, ${jev.inputTokens} input tokens, ` +
+      `$${((jev.inputTokens / 1e6) * 0.042).toFixed(5)}`,
+  );
+  console.log("");
+}
+
 /** What one page variant offers: the criteria map and the screen text. */
 interface Captured {
   criteria: Record<string, string>;
@@ -590,11 +763,12 @@ async function main(): Promise<void> {
     args: ["--no-sandbox"],
     ...(existsSync(exe) ? { executablePath: exe } : {}),
   });
-  if (DECOMPOSE || LABEL_POSITION || LONG_LIST) {
+  if (DECOMPOSE || LABEL_POSITION || LONG_LIST || FILLER_VOCAB) {
     try {
       if (DECOMPOSE) await decompose(browser, url);
       if (LABEL_POSITION) await labelPosition(browser, url);
       if (LONG_LIST) await longList(browser, url);
+      if (FILLER_VOCAB) await fillerVocab(browser, url);
     } finally {
       await browser.close();
       server.close();
