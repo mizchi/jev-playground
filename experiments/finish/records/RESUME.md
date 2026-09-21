@@ -30,13 +30,13 @@ and nothing already reported.
 
 ## What is still owed once the record is full
 
-- `docs/57-widen.md` §3 — a marked placeholder. The numbers go in from
+- `docs/63-widen.md` §3 — a marked placeholder. The numbers go in from
   `tsx src/wild.ts --sweep widened --report`, never typed by hand.
 - §4.1's paired comparison and the `--instruments` table, both of which read
   the record and need all 32 rows to be worth reading.
 - A row in `docs/README.md`, which summarises a result and so cannot be
   written before there is one.
-- **The fence's `/tmp` gap** (`harnessReach`, docs/57 limits): the fence
+- **The fence's `/tmp` gap** (`harnessReach`, docs/63 limits): the fence
   covers `/home/` and `/root/` while the harness keeps its clone trees and
   every sandbox under `/tmp`. Measured at 12 reads and 0 writes. NOT fixed
   during the sweep, because an instrument that differs between arms is this
