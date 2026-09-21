@@ -175,9 +175,17 @@ pub fn Game::replay_frame(self : Game) -> Json {
     "monsters": Json(monsters),
     "wards": Json(wards),
     "push": Json([Json(self.push[0]), Json(self.push[1]), Json(self.push[2])]),
-    "dragons": Json({
-      "A": Json(self.dragons[TEAM_A]),
-      "B": Json(self.dragons[TEAM_B]),
+    "drakes": Json({
+      "A": Json(self.drake_summary(TEAM_A)),
+      "B": Json(self.drake_summary(TEAM_B)),
+      "next": Json(self.drake_now()),
+      "soul": Json(
+        match self.soul_team {
+          1 => "A"
+          2 => "B"
+          _ => ""
+        },
+      ),
     }),
     "baron_ticks": Json({
       "A": Json(self.baron[TEAM_A]),
@@ -204,8 +212,8 @@ pub fn Game::replay_result(self : Game, winner : Int) -> Json {
     "b_structure_hp": Json(self.structure_hp(TEAM_B)),
     "a_gold": Json(self.team_gold(TEAM_A)),
     "b_gold": Json(self.team_gold(TEAM_B)),
-    "a_dragons": Json(self.dragons[TEAM_A]),
-    "b_dragons": Json(self.dragons[TEAM_B]),
+    "a_drakes": Json(self.drake_summary(TEAM_A)),
+    "b_drakes": Json(self.drake_summary(TEAM_B)),
     "reason": Json(self.over_reason()),
   })
 }

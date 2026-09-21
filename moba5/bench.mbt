@@ -678,7 +678,7 @@ fn ask_diver(g : Game, node : Int, team : Int) -> Ask {
   for c in g.champs_at(node, team) {
     names.push(c.name)
     descs.push(
-      "\{c.kind}, hp \{c.hp}/\{c.max_hp}, armor \{c.armor()} — the structure deals \{TOWER_DAMAGE * 100 / (100 + c.armor())} to it per tick, so it survives \{g.ticks_under_tower(c)} tick(s) there",
+      "\{c.kind}, hp \{c.hp}/\{c.max_hp}, armor \{c.armor()} — the structure deals \{g.tower_damage_to(c)} to it per tick, so it survives \{g.ticks_under_tower(c)} tick(s) there",
     )
   }
   // The floor picks the most health, ignoring armor.
@@ -1340,7 +1340,7 @@ fn sc_baron_buffed() -> Scenario {
   let g = stage(comp_by_name("meta"), comp_by_name("poke"), 6, 58)
   g.place_all(RIV_TOP)
   g.baron[TEAM_B] = 8
-  g.dragons[TEAM_A] = 2
+  g.drakes[drake_index(TEAM_A, "infernal")] = 2
   for c in g.champs {
     if c.team == TEAM_A {
       c.items.push("blade")
@@ -1361,7 +1361,7 @@ fn sc_baron_buffed() -> Scenario {
   ]
   {
     name: "baron_buffed",
-    note: "5v5 on the baron pit; they have the Baron buff, we have two dragon stacks",
+    note: "5v5 on the baron pit; they have the Baron buff, we have two infernal drakes",
     state,
     asks: [
       ask_power(g, TEAM_A),
@@ -1377,7 +1377,7 @@ fn sc_baron_buffed() -> Scenario {
       // right answer can be "wait", and only for a stated number of ticks.
       ask_macro(
         "buffed_enemy_opening",
-        "Their whole team has the Baron buff for another \{g.baron[TEAM_B]} ticks, which raises their attack and their siege damage. We have two permanent dragon stacks and they have none. What should our five do?",
+        "Their whole team has the Baron buff for another \{g.baron[TEAM_B]} ticks, which raises their attack and their siege damage. We have two infernal drakes — a permanent +\{2 * DRAKE_INFERNAL_PCT}% damage — and they have none. What should our five do?",
         options,
         [
           "Fight them on the baron pit right now", "Pull back toward our own mid lane and wait for their buff to run out",

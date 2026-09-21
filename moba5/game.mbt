@@ -11,8 +11,10 @@
 ///   the shop is a decision with a knowable right answer (see `bench.mbt`).
 /// - **Abilities on cooldowns**, including crowd control that removes a
 ///   champion's turn outright, and shields that absorb before health.
-/// - **Neutral objectives.** Dragon stacks permanently; Baron is a short, large
-///   swing. Both sit off-lane, so taking one costs lane presence.
+/// - **Neutral objectives.** The drake stacks permanently, in one of four
+///   elements, and the fourth one a team takes gives it the rift's soul; Baron
+///   is a short, large swing. Both sit off-lane, so taking one costs lane
+///   presence, and the soul is what makes that cost worth paying twice.
 /// - **Minion pressure.** A lane nobody stands in still moves, so a team that
 ///   groups all five somewhere gives up the other two lanes. This is the
 ///   mechanism that makes "where should we be" a real question.
@@ -97,8 +99,60 @@ pub const DRAGON_HP = 210
 pub const BARON_HP = 340
 
 ///|
-/// Attack bonus per permanent Dragon stack, in percent.
-pub const DRAGON_ATK_PCT = 7
+/// The four drake elements, in the order `drake_index` numbers them.
+pub let drake_kinds : Array[String] = ["infernal", "mountain", "ocean", "cloud"]
+
+///|
+/// What one stack of each element is worth, permanently and team-wide.
+///
+/// Each element moves a different one of the engine's four levers — damage
+/// dealt, damage taken, health regained, ability uptime — so "which drake is
+/// this one" is a question with a different answer in different states rather
+/// than a reskin of the same +7%. The numbers are deliberately close in
+/// expected value at one stack; what separates them is *when* each one pays.
+pub const DRAKE_INFERNAL_PCT = 7
+
+///|
+/// Mountain is a reduction in damage taken rather than a bonus to `armor` and
+/// `mr`. Those are per-champion numbers read in seventeen places, including
+/// the stat lines the observation hands a policy, and a team-wide resist that
+/// three of those places forgot would be an asymmetry nobody could see from
+/// watching a game. A divisor at the one point damage is computed cannot be
+/// forgotten.
+pub const DRAKE_MOUNTAIN_PCT = 6
+
+///|
+/// Ocean adds to out-of-combat regeneration, so it pays for a team that trades
+/// and resets rather than one that commits.
+pub const DRAKE_OCEAN_PCT = 4
+
+///|
+/// Cloud is ability haste: a percentage off the cooldown, rounded. It is worth
+/// more to a long cooldown than a short one, which is true of haste in the
+/// games this is modelled on and is also why one stack can be worth nothing to
+/// a four-tick ability — `Game::ability_cd` states that plainly.
+pub const DRAKE_CLOUD_PCT = 12
+
+///|
+/// Drakes needed for the soul. Four, as in the game this is modelled on, and
+/// the whole reason the third and fourth drake are worth a teamfight.
+pub const SOUL_STACKS = 4
+
+///|
+/// The soul, on top of whatever the stacks already give. Each one is a larger
+/// version of its element's lever except mountain and ocean, which change kind
+/// rather than degree: mountain's soul is a shield that comes back, and
+/// ocean's soul heals during a fight instead of only after it.
+pub const SOUL_INFERNAL_PCT = 15
+
+///|
+pub const SOUL_MOUNTAIN_SHIELD = 24
+
+///|
+pub const SOUL_OCEAN_PCT = 8
+
+///|
+pub const SOUL_CLOUD_PCT = 30
 
 ///|
 /// The Baron buff: a large attack bonus and faster sieging, for a short window.
@@ -437,6 +491,39 @@ pub fn Neutral::copy(self : Neutral) -> Neutral {
 }
 
 ///|
+/// The default rotation: an infernal drake first, then an ocean rift. Two
+/// entries is all the rule needs, because every drake after the second has the
+/// rift's element — so the first entry is the opening drake and the second is
+/// the rift, and therefore the soul.
+///
+/// `Game::with_drakes` takes another rotation, which is how the benchmark and
+/// the arena reach the other three souls.
+pub fn default_drake_rotation() -> Array[String] {
+  ["infernal", "ocean"]
+}
+
+///|
+/// Where team `team`'s stacks of `element` live in `Game::drakes`. -1 for an
+/// element that is not one of the four.
+pub fn drake_index(team : Int, element : String) -> Int {
+  let ei = drake_kind_index(element)
+  if ei < 0 || team < 0 || team > 2 {
+    return -1
+  }
+  team * drake_kinds.length() + ei
+}
+
+///|
+pub fn drake_kind_index(element : String) -> Int {
+  for i in 0..<drake_kinds.length() {
+    if drake_kinds[i] == element {
+      return i
+    }
+  }
+  -1
+}
+
+///|
 /// A placed ward: vision of a node and its neighbours, for a while.
 pub struct Ward {
   node : Int
@@ -465,8 +552,19 @@ pub struct Game {
   /// `CS_RIPE_CAP`; whatever is ripe at the start of a tick and is not taken
   /// during it is finished by its own side's wave and paid to nobody.
   ripe : Array[Int]
-  /// Permanent Dragon stacks, indexed by team id (slot 0 unused).
-  dragons : Array[Int]
+  /// The element of the first drake, then the element of every drake after
+  /// it. Indexed by drakes already slain and clamped to the last entry: the
+  /// rift takes the second drake's element and keeps it, as it does in the
+  /// game this is modelled on, so the soul at stake is knowable in advance and
+  /// both teams can plan around it. Deciding the elements at construction
+  /// rather than drawing them keeps the simulator deterministic, which is what
+  /// lets it be the benchmark's oracle.
+  drake_rotation : Array[String]
+  /// Permanent drake stacks, indexed by `drake_index(team, element)`.
+  drakes : Array[Int]
+  /// The team holding the soul, or 0 while it is still on the table. Only the
+  /// first team to `SOUL_STACKS` gets one.
+  mut soul_team : Int
   /// Ticks of Baron buff left, indexed by team id.
   baron : Array[Int]
   mut tick : Int
@@ -632,8 +730,16 @@ pub fn Game::with_handicap(
     max_hp: 260,
   })
   let neutrals : Array[Neutral] = [
-    // Dragon is up early and often: a small permanent stack, repeatedly
-    // contested. Baron arrives late and once: a short, decisive window.
+    // The drake is up early and often: a small permanent stack, repeatedly
+    // contested, four of them for a soul. Baron arrives late and once: a
+    // short, decisive window.
+    //
+    // Baron used to spawn at 24 of a game that runs about 128 ticks, and
+    // because it is worth more than any single drake the plan went to the top
+    // river at tick 24 and never came back. The drake's whole cadence lived in
+    // the first fifth of the game and no team ever reached a second stack.
+    // Baron now arrives once the soul is roughly decided, which is the order
+    // these two objectives come in in the game they are modelled on.
     {
       node: RIV_BOT,
       key: "dragon",
@@ -647,8 +753,8 @@ pub fn Game::with_handicap(
       key: "baron",
       hp: BARON_HP,
       max_hp: BARON_HP,
-      spawn_in: 24,
-      respawn_ticks: 24,
+      spawn_in: 70,
+      respawn_ticks: 30,
     },
   ]
   {
@@ -658,7 +764,9 @@ pub fn Game::with_handicap(
     wards: [],
     push: [0, 0, 0],
     ripe: Array::make(lanes.length() * 3, 0),
-    dragons: [0, 0, 0],
+    drake_rotation: default_drake_rotation(),
+    drakes: Array::make(3 * drake_kinds.length(), 0),
+    soul_team: 0,
     baron: [0, 0, 0],
     tick: 0,
     winner: 0,
@@ -704,7 +812,21 @@ pub fn Game::copy(self : Game) -> Game {
       }
       r
     },
-    dragons: [0, self.dragons[1], self.dragons[2]],
+    drake_rotation: {
+      let r = []
+      for e in self.drake_rotation {
+        r.push(e)
+      }
+      r
+    },
+    drakes: {
+      let d = Array::make(self.drakes.length(), 0)
+      for i in 0..<self.drakes.length() {
+        d[i] = self.drakes[i]
+      }
+      d
+    },
+    soul_team: self.soul_team,
     baron: [0, self.baron[1], self.baron[2]],
     tick: self.tick,
     winner: self.winner,
@@ -732,6 +854,153 @@ pub fn Game::neutral_at(self : Game, node : Int) -> Neutral? {
     }
   }
   None
+}
+
+// ------------------------------------------------------------------- drakes
+
+///|
+/// How many stacks of `element` `team` holds.
+pub fn Game::drakes_of(self : Game, team : Int, element : String) -> Int {
+  let i = drake_index(team, element)
+  if i < 0 {
+    0
+  } else {
+    self.drakes[i]
+  }
+}
+
+///|
+/// Drakes of any element held by `team` — the number the soul counts.
+pub fn Game::drake_total(self : Game, team : Int) -> Int {
+  let mut n = 0
+  for element in drake_kinds {
+    n += self.drakes_of(team, element)
+  }
+  n
+}
+
+///|
+/// Drakes slain this game by either team, which is what the rotation advances
+/// on. A drake is a drake whoever took it: the rift transforms on the second
+/// one regardless of who killed it.
+pub fn Game::drakes_slain(self : Game) -> Int {
+  self.drake_total(TEAM_A) + self.drake_total(TEAM_B)
+}
+
+///|
+/// The element of the drake in the pit now — or of the next one, while the pit
+/// is empty. Both teams can read it, which is the point: an objective whose
+/// reward is a guess is not an objective a policy can plan around.
+pub fn Game::drake_now(self : Game) -> String {
+  let i = self.drakes_slain()
+  if i >= self.drake_rotation.length() {
+    self.drake_rotation[self.drake_rotation.length() - 1]
+  } else {
+    self.drake_rotation[i]
+  }
+}
+
+///|
+/// The rift's element, and so the soul on the table for whichever team reaches
+/// `SOUL_STACKS` first. It is the second drake's element.
+pub fn Game::rift_element(self : Game) -> String {
+  if self.drake_rotation.length() < 2 {
+    self.drake_rotation[0]
+  } else {
+    self.drake_rotation[1]
+  }
+}
+
+///|
+/// The soul `team` holds, or "" if it holds none. A team can hold exactly one,
+/// and only one team can hold any.
+pub fn Game::soul_of(self : Game, team : Int) -> String {
+  if self.soul_team == team {
+    self.rift_element()
+  } else {
+    ""
+  }
+}
+
+///|
+/// What one stack of `element` does, in words. One function, because the
+/// observation, the `AttackNeutral` description and the benchmark's prompts all
+/// have to describe the same rule, and three copies of a sentence is three
+/// chances for one of them to describe a rule the game does not have.
+pub fn drake_reward(element : String) -> String {
+  match element {
+    "infernal" =>
+      "+\{DRAKE_INFERNAL_PCT}% damage dealt, permanently, whole team"
+    "mountain" =>
+      "-\{DRAKE_MOUNTAIN_PCT}% damage taken, permanently, whole team"
+    "ocean" =>
+      "+\{DRAKE_OCEAN_PCT} points of out-of-combat health regeneration per tick, permanently, whole team"
+    "cloud" =>
+      "\{DRAKE_CLOUD_PCT}% ability haste, permanently, whole team — worth a tick only on the longer cooldowns"
+    _ => "nothing"
+  }
+}
+
+///|
+/// What the soul of `element` does, on top of the stacks.
+pub fn soul_reward(element : String) -> String {
+  match element {
+    "infernal" => "a further +\{SOUL_INFERNAL_PCT}% damage dealt"
+    "mountain" =>
+      "a \{SOUL_MOUNTAIN_SHIELD}-point shield that refills whenever no enemy is on the node, so every fight starts with it"
+    "ocean" =>
+      "+\{SOUL_OCEAN_PCT} points of regeneration per tick that keep working WITH an enemy on the node, which nothing else in the game does"
+    "cloud" => "a further \{SOUL_CLOUD_PCT}% ability haste"
+    _ => "nothing"
+  }
+}
+
+///|
+/// A team's stacks as one readable string — `2 infernal + 1 ocean + SOUL`, or
+/// `none`. For the state dump, the observation and the action descriptions,
+/// which all have to say the same thing about the same state.
+pub fn Game::drake_summary(self : Game, team : Int) -> String {
+  let parts = []
+  for element in drake_kinds {
+    let n = self.drakes_of(team, element)
+    if n > 0 {
+      parts.push("\{n} \{element}")
+    }
+  }
+  let soul = self.soul_of(team)
+  if soul != "" {
+    parts.push("\{soul} SOUL")
+  }
+  if parts.is_empty() {
+    "none"
+  } else {
+    parts.join(" + ")
+  }
+}
+
+///|
+/// Drakes this team still needs for the soul, or 0 once the soul is decided.
+pub fn Game::drakes_to_soul(self : Game, team : Int) -> Int {
+  if self.soul_team != 0 {
+    return 0
+  }
+  let left = SOUL_STACKS - self.drake_total(team)
+  if left < 0 {
+    0
+  } else {
+    left
+  }
+}
+
+///|
+/// A drake neither team can afford to trade away: one more and somebody has
+/// the soul. Below that a free tower really is worth more than one stack, and
+/// the plan is right to take the tower — this is the state in which it is not.
+pub fn Game::soul_point(self : Game) -> Bool {
+  if self.soul_team != 0 {
+    return false
+  }
+  self.drakes_to_soul(TEAM_A) <= 1 || self.drakes_to_soul(TEAM_B) <= 1
 }
 
 ///|
@@ -906,6 +1175,27 @@ pub fn Game::living(self : Game, team : Int) -> Array[Champ] {
 }
 
 ///|
+/// Set the drake rotation: the opening drake's element and then the rift's.
+///
+/// An empty or unrecognised rotation is refused in favour of the default,
+/// because a rotation of elements that do not exist would make every drake
+/// worth nothing and the game would still run.
+pub fn Game::with_drakes(self : Game, rotation : Array[String]) -> Unit {
+  for element in rotation {
+    if drake_kind_index(element) < 0 {
+      return
+    }
+  }
+  if rotation.is_empty() {
+    return
+  }
+  self.drake_rotation.clear()
+  for element in rotation {
+    self.drake_rotation.push(element)
+  }
+}
+
+///|
 /// Put every living champion on one node. Used only by the teamfight arena and
 /// by the benchmark, to force a fight with no map macro in the way.
 pub fn Game::place_all(self : Game, node : Int) -> Unit {
@@ -1055,16 +1345,100 @@ pub fn Game::wards_of(self : Game, team : Int) -> Array[Ward] {
 // ------------------------------------------------------------------- combat
 
 ///|
-/// The team-wide damage multiplier from objectives, in percent. Dragon stacks
-/// are permanent and small; the Baron buff is temporary and large. Both apply
-/// to basic attacks and to ability power, so an objective is worth the same to
-/// every composition rather than only to the ones that auto-attack.
+/// The team-wide damage multiplier from objectives, in percent. Infernal
+/// stacks are permanent and small, the infernal soul is permanent and large,
+/// and the Baron buff is large but runs out. All three apply to basic attacks
+/// and to ability power, so an objective is worth the same to every
+/// composition rather than only to the ones that auto-attack.
+///
+/// The other three elements do not appear here. Only infernal is damage dealt;
+/// mountain is damage taken, ocean is health regained and cloud is ability
+/// uptime, and each of those is applied where it belongs.
 pub fn Game::buff_pct(self : Game, team : Int) -> Int {
-  let mut pct = 100 + DRAGON_ATK_PCT * self.dragons[team]
+  let mut pct = 100 + DRAKE_INFERNAL_PCT * self.drakes_of(team, "infernal")
+  if self.soul_of(team) == "infernal" {
+    pct += SOUL_INFERNAL_PCT
+  }
   if self.baron[team] > 0 {
     pct += BARON_ATK_PCT
   }
   pct
+}
+
+///|
+/// How much of the damage aimed at `team` actually lands, as a percent of 100
+/// or more: the mountain divisor. 100 means no mountain stacks.
+pub fn Game::tough_pct(self : Game, team : Int) -> Int {
+  100 + DRAKE_MOUNTAIN_PCT * self.drakes_of(team, "mountain")
+}
+
+///|
+/// `raw` after the target team's mountain stacks, never below 1 so a fight
+/// cannot stall forever — the same floor every other damage path uses.
+pub fn Game::mitigate(self : Game, raw : Int, team : Int) -> Int {
+  let d = raw * 100 / self.tough_pct(team)
+  if d < 1 {
+    1
+  } else {
+    d
+  }
+}
+
+///|
+/// What a tower takes off this champion per tick: the flat shot, its armor,
+/// and its team's mountain stacks.
+///
+/// This arithmetic used to be written out at each of the four places that
+/// needed it — the tick, the dive oracle, the action description and the
+/// benchmark's prompt. Mountain had to reach all four or the description would
+/// have told a policy a number the game then did not use, so it is one
+/// function now.
+pub fn Game::tower_damage_to(self : Game, c : Champ) -> Int {
+  self.mitigate(TOWER_DAMAGE * 100 / (100 + c.armor()), c.team)
+}
+
+///|
+/// Health regained per tick out of combat, as a percent of maximum: the base
+/// plus ocean stacks. The ocean *soul* is not here, because it is the one
+/// element whose soul changes kind rather than degree — see `Game::in_combat_regen_pct`.
+pub fn Game::regen_pct(self : Game, team : Int) -> Int {
+  REGEN_PCT + DRAKE_OCEAN_PCT * self.drakes_of(team, "ocean")
+}
+
+///|
+/// Health regained per tick *with an enemy standing on the node*, which is
+/// nothing at all unless the team holds the ocean soul. Sustain during a fight
+/// rather than after it is what makes that soul worth racing for.
+pub fn Game::in_combat_regen_pct(self : Game, team : Int) -> Int {
+  if self.soul_of(team) == "ocean" {
+    SOUL_OCEAN_PCT
+  } else {
+    0
+  }
+}
+
+///|
+/// This champion's ability cooldown after cloud haste, at least 1.
+///
+/// Rounded rather than truncated, and the rounding is the honest part: a
+/// four-tick ability with one cloud stack comes to 4.07 ticks and so is
+/// unchanged, while a six-tick ability comes to 5.85 and drops a tick. Haste
+/// is worth more to a long cooldown than a short one here, as it is in the
+/// games this is modelled on.
+pub fn Game::ability_cd(self : Game, c : Champ) -> Int {
+  let mut haste = DRAKE_CLOUD_PCT * self.drakes_of(c.team, "cloud")
+  if self.soul_of(c.team) == "cloud" {
+    haste += SOUL_CLOUD_PCT
+  }
+  if haste == 0 {
+    return c.cooldown
+  }
+  let v = (c.cooldown * 100 + (100 + haste) / 2) / (100 + haste)
+  if v < 1 {
+    1
+  } else {
+    v
+  }
 }
 
 ///|
@@ -1112,8 +1486,10 @@ pub fn Game::damage_to(
 }
 
 ///|
+/// Damage `c` lands on `target`: the resist calculation, then the target
+/// team's mountain stacks.
 pub fn Game::damage_to_champ(self : Game, c : Champ, target : Champ) -> Int {
-  self.damage_to(c, target.armor(), target.mr())
+  self.mitigate(self.damage_to(c, target.armor(), target.mr()), target.team)
 }
 
 ///|
@@ -1149,12 +1525,7 @@ pub fn Game::ability_damage(self : Game, c : Champ, target : Champ) -> Int {
   if resist < 0 {
     resist = 0
   }
-  let dealt = scaled * 100 / (100 + resist)
-  if dealt < 1 {
-    1
-  } else {
-    dealt
-  }
+  self.mitigate(scaled * 100 / (100 + resist), target.team)
 }
 
 ///|
@@ -1266,7 +1637,7 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       Some(Blink(n)) =>
         if c.ability == Blink && c.cd == 0 && blink_targets(c.node).contains(n) {
           c.node = n
-          c.cd = c.cooldown
+          c.cd = self.ability_cd(c)
           events.push("\{c.name} blinked to \{node_name(n)}")
         }
       Some(Recall) => {
@@ -1417,7 +1788,7 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
             NoAbility | Blink => ()
           }
           if spent {
-            c.cd = c.cooldown
+            c.cd = self.ability_cd(c)
           }
         }
       Some(AttackStructure) => {
@@ -1608,10 +1979,24 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
               "team \{team_name(team)} took BARON (+\{BARON_ATK_PCT}% attack, +\{BARON_STRUCT_PCT}% siege for \{BARON_TICKS} ticks)",
             )
           } else {
-            self.dragons[team] += 1
+            // The element is read BEFORE the stack is added, because the stack
+            // is what advances the rotation: read it after and the second
+            // drake of the game would already be counted as the third.
+            let element = self.drake_now()
+            let i = drake_index(team, element)
+            if i >= 0 {
+              self.drakes[i] += 1
+            }
             events.push(
-              "team \{team_name(team)} took the dragon (stack \{self.dragons[team]})",
+              "team \{team_name(team)} took the \{element} drake (\{self.drakes_of(team, element)} of that element, \{self.drake_total(team)} in all)",
             )
+            // First to four takes the soul, and only the first.
+            if self.soul_team == 0 && self.drake_total(team) >= SOUL_STACKS {
+              self.soul_team = team
+              events.push(
+                "team \{team_name(team)} has the \{self.rift_element()} SOUL",
+              )
+            }
           }
         }
         None => ()
@@ -1630,7 +2015,7 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       if !self.tower_shoots(s, c) {
         continue
       }
-      take_damage(c, TOWER_DAMAGE * 100 / (100 + c.armor()))
+      take_damage(c, self.tower_damage_to(c))
       if c.hp <= 0 {
         c.hp = 0
         c.deaths += 1
@@ -1793,10 +2178,30 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
         if c.wards < WARD_CHARGES {
           c.wards += 1
         }
-      } else if c.hp < c.max_hp &&
-        self.champs_at(c.node, enemy_of(c.team)).is_empty() {
-        // Out of combat: a lost trade costs position, not the rest of the game.
-        c.hp = @cmp.minimum(c.max_hp, c.hp + c.max_hp * REGEN_PCT / 100)
+      } else {
+        let contested = !self.champs_at(c.node, enemy_of(c.team)).is_empty()
+        // Out of combat: a lost trade costs position, not the rest of the
+        // game, and ocean stacks make that reset faster. In combat nothing
+        // regenerates — unless the team holds the ocean soul, which is the
+        // whole of what that soul is: sustain that does not wait for the
+        // fight to end.
+        let pct = if contested {
+          self.in_combat_regen_pct(c.team)
+        } else {
+          self.regen_pct(c.team)
+        }
+        if c.hp < c.max_hp && pct > 0 {
+          c.hp = @cmp.minimum(c.max_hp, c.hp + c.max_hp * pct / 100)
+        }
+        // The mountain soul is a shield that comes back: out of combat it tops
+        // itself up, so every fight starts with it and no fight ends with it.
+        // It never shortens an ability's shield, only raises a smaller one.
+        if !contested && self.soul_of(c.team) == "mountain" {
+          if c.shield < SOUL_MOUNTAIN_SHIELD {
+            c.shield = SOUL_MOUNTAIN_SHIELD
+            c.shield_ttl = SHIELD_TTL
+          }
+        }
       }
       if c.stunned > 0 && pre_stunned[c.id] {
         c.stunned -= 1
@@ -1939,7 +2344,7 @@ pub fn Game::render(self : Game) -> String {
   lines.push(
     "  push: " +
     pushes.join(" ") +
-    "   dragons A=\{self.dragons[TEAM_A]} B=\{self.dragons[TEAM_B]}   baron A=\{self.baron[TEAM_A]} B=\{self.baron[TEAM_B]}",
+    "   drakes A=\{self.drake_summary(TEAM_A)} B=\{self.drake_summary(TEAM_B)}   next=\{self.drake_now()}   baron A=\{self.baron[TEAM_A]} B=\{self.baron[TEAM_B]}",
   )
   lines.join("\n")
 }

@@ -14,6 +14,8 @@ pub const BARON_STRUCT_PCT : Int = 40
 
 pub const BARON_TICKS : Int = 12
 
+pub const BARON_VALUE : Int = 200
+
 pub const B_BASE : Int = 1
 
 pub const CS_GOLD : Int = 6
@@ -26,15 +28,25 @@ pub const DMG_MAGIC : Int = 1
 
 pub const DMG_PHYSICAL : Int = 0
 
-pub const DRAGON_ATK_PCT : Int = 7
-
 pub const DRAGON_HP : Int = 210
+
+pub const DRAKE_CLOUD_PCT : Int = 12
+
+pub const DRAKE_INFERNAL_PCT : Int = 7
+
+pub const DRAKE_MOUNTAIN_PCT : Int = 6
+
+pub const DRAKE_OCEAN_PCT : Int = 4
+
+pub const DRAKE_STACK_VALUE : Int = 40
 
 pub const EXECUTE_PCT : Int = 35
 
 pub const FIGHT_PER_BUCKET : Int = 4
 
 pub const FIGHT_TICKS : Int = 16
+
+pub const FREE_TOWER_VALUE : Int = 110
 
 pub const GROWTH_EVEN : Int = 12
 
@@ -71,6 +83,18 @@ pub const RIV_BOT : Int = 21
 pub const RIV_TOP : Int = 20
 
 pub const SHIELD_TTL : Int = 3
+
+pub const SOUL_CLOUD_PCT : Int = 30
+
+pub const SOUL_INFERNAL_PCT : Int = 15
+
+pub const SOUL_MOUNTAIN_SHIELD : Int = 24
+
+pub const SOUL_OCEAN_PCT : Int = 8
+
+pub const SOUL_STACKS : Int = 4
+
+pub const SOUL_VALUE : Int = 250
 
 pub const STRUCT_ARMOR : Int = 20
 
@@ -116,7 +140,17 @@ pub fn coherence_rows() -> Array[CoherenceRow]
 
 pub fn comp_by_name(String) -> Array[String]
 
+pub fn default_drake_rotation() -> Array[String]
+
 pub fn discordance(Array[Bool], Array[Bool]) -> Discordance
+
+pub fn drake_index(Int, String) -> Int
+
+pub fn drake_kind_index(String) -> Int
+
+pub let drake_kinds : Array[String]
+
+pub fn drake_reward(String) -> String
 
 pub fn enemy_of(Int) -> Int
 
@@ -183,6 +217,8 @@ pub fn sign_test(Int, Int) -> Double
 pub fn smart_action(Game, Champ, Plan) -> Action
 
 pub fn smart_team_actions(Game, Int) -> Map[Int, Action]
+
+pub fn soul_reward(String) -> String
 
 pub fn step_toward(Int, Int) -> Int
 
@@ -382,12 +418,15 @@ pub struct Game {
   wards : Array[Ward]
   push : Array[Int]
   ripe : Array[Int]
-  dragons : Array[Int]
+  drake_rotation : Array[String]
+  drakes : Array[Int]
+  mut soul_team : Int
   baron : Array[Int]
   mut tick : Int
   mut winner : Int
   log : Array[String]
 }
+pub fn Game::ability_cd(Self, Champ) -> Int
 pub fn Game::ability_damage(Self, Champ, Champ) -> Int
 pub fn Game::ability_play(Self, Champ) -> Action?
 pub fn Game::backline_pick(Self, Int, Int) -> Champ?
@@ -406,6 +445,13 @@ pub fn Game::damage_to_structure(Self, Champ) -> Int
 pub fn Game::defend_target(Self, Int) -> Int
 pub fn Game::describe_action(Self, Champ, Action) -> String
 pub fn Game::dive_is_clean(Self, Int, Int, Int) -> Bool
+pub fn Game::drake_now(Self) -> String
+pub fn Game::drake_summary(Self, Int) -> String
+pub fn Game::drake_total(Self, Int) -> Int
+pub fn Game::drake_value(Self, Int) -> Int
+pub fn Game::drakes_of(Self, Int, String) -> Int
+pub fn Game::drakes_slain(Self) -> Int
+pub fn Game::drakes_to_soul(Self, Int) -> Int
 pub fn Game::fight_action(Self, Champ) -> Action
 pub fn Game::fight_actions(Self, Int) -> Map[Int, Action]
 pub fn Game::fight_actions_focus(Self, Int, Int, Int) -> Map[Int, Action]
@@ -414,6 +460,7 @@ pub fn Game::focus_pick(Self, Int, Int) -> Champ?
 pub fn Game::guarded_target(Self, Champ, Int) -> Champ
 pub fn Game::has_ward(Self, Int, Int) -> Bool
 pub fn Game::has_wave(Self, Int, String) -> Bool
+pub fn Game::in_combat_regen_pct(Self, Int) -> Int
 pub fn Game::lane_front(Self, Int, String) -> Int
 pub fn Game::lane_open(Self, Int, String) -> Bool
 pub fn Game::lane_under_pressure(Self, Int) -> (Int, Int)
@@ -422,11 +469,14 @@ pub fn Game::legal_actions(Self, Champ) -> Array[Action]
 pub fn Game::level_all(Self, Int) -> Unit
 pub fn Game::living(Self, Int) -> Array[Champ]
 pub fn Game::minion_front(Self, Int, String) -> Int
+pub fn Game::mitigate(Self, Int, Int) -> Int
+pub fn Game::monster_value(Self, Int, Neutral) -> Int
 pub fn Game::neediest_ally(Self, Champ) -> Champ?
 pub fn Game::neutral_at(Self, Int) -> Neutral?
 pub fn Game::new() -> Self
 pub fn Game::nexus_exposed(Self, Int) -> Bool
 pub fn Game::objective_target(Self, Int) -> Int
+pub fn Game::objective_value(Self, Int) -> Int
 pub fn Game::observation(Self, Int, Memory) -> Json
 pub fn Game::over_reason(Self) -> String
 pub fn Game::physical_share(Self, Int) -> Int
@@ -434,12 +484,14 @@ pub fn Game::place_all(Self, Int) -> Unit
 pub fn Game::position_score(Self, Int) -> Int
 pub fn Game::power_ratio(Self, Int) -> Int
 pub fn Game::raw_attack(Self, Champ) -> Int
+pub fn Game::regen_pct(Self, Int) -> Int
 pub fn Game::render(Self) -> String
 pub fn Game::replay_frame(Self) -> Json
 pub fn Game::replay_meta(Self, String, String, Array[String], Array[String], Int) -> Json
 pub fn Game::replay_result(Self, Int) -> Json
 pub fn Game::retreat_scores(Self, Int, Int, Int) -> (Int, Int)
 pub fn Game::retreat_truth(Self, Int, Int, Int) -> String
+pub fn Game::rift_element(Self) -> String
 pub fn Game::ripe_here(Self, Int, Int) -> Int
 pub fn Game::siege_target(Self, Int) -> Int
 pub fn Game::simulate_fight(Self, Int, Int) -> FightResult
@@ -448,6 +500,8 @@ pub fn Game::simulate_fight_opening(Self, Int, Int, Action?, Int) -> FightResult
 pub fn Game::simulate_macro(Self, Int, Array[Int], Int) -> Int
 pub fn Game::simulate_opening(Self, Int, Map[Int, Action], Int) -> Int
 pub fn Game::softest_at(Self, Int, Int) -> Champ?
+pub fn Game::soul_of(Self, Int) -> String
+pub fn Game::soul_point(Self) -> Bool
 pub fn Game::step(Self, Map[Int, Action]) -> Unit
 pub fn Game::structure_at(Self, Int) -> Structure?
 pub fn Game::structure_attackable(Self, Structure) -> Bool
@@ -457,6 +511,8 @@ pub fn Game::team_level(Self, Int) -> Int
 pub fn Game::team_plan(Self, Int) -> Plan
 pub fn Game::team_power(Self, Int) -> Int
 pub fn Game::ticks_under_tower(Self, Champ) -> Int
+pub fn Game::tough_pct(Self, Int) -> Int
+pub fn Game::tower_damage_to(Self, Champ) -> Int
 pub fn Game::tower_shoots(Self, Structure, Champ) -> Bool
 pub fn Game::turn_message(Self, Int, Memory) -> Json
 pub fn Game::visible_enemies(Self, Int) -> Array[Champ]
@@ -464,6 +520,7 @@ pub fn Game::visible_physical_share(Self, Int) -> Int
 pub fn Game::vision(Self, Int) -> Array[Bool]
 pub fn Game::wards_of(Self, Int) -> Array[Ward]
 pub fn Game::with_comps(Array[String], Array[String]) -> Self
+pub fn Game::with_drakes(Self, Array[String]) -> Unit
 pub fn Game::with_handicap(Array[String], Array[String], Int, Int) -> Self
 
 pub(all) struct Item {

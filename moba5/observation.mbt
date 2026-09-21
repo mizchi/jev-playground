@@ -359,11 +359,12 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
         "spawns_in": Json(n.spawn_in),
         "hp": Json(if n.alive() { n.hp } else { 0 }),
         "max_hp": Json(n.max_hp),
+        "element": Json(if n.key == "baron" { "" } else { self.drake_now() }),
         "reward": Json(
           if n.key == "baron" {
             "+\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% structure damage for \{BARON_TICKS} ticks, whole team"
           } else {
-            "a permanent +\{DRAGON_ATK_PCT}% attack stack, whole team"
+            drake_reward(self.drake_now())
           },
         ),
         "visible": Json(seen[n.node]),
@@ -388,6 +389,17 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     }
   }
   let (worst_lane, worst_ticks) = self.lane_under_pressure(team)
+  let element_rows = []
+  for element in drake_kinds {
+    element_rows.push(
+      Json({
+        "element": Json(element),
+        "one_stack": Json(drake_reward(element)),
+        "we_hold": Json(self.drakes_of(team, element)),
+        "they_hold": Json(self.drakes_of(foe, element)),
+      }),
+    )
+  }
   let brush_list = []
   for n in brush_nodes {
     brush_list.push(Json(node_names[n]))
@@ -428,8 +440,10 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "their_total_level_if_seen": Json(self.team_level(foe)),
       "our_gold_earned": Json(self.team_gold(team)),
       "their_damage_is_physical_pct": Json(self.visible_physical_share(team)),
-      "our_dragon_stacks": Json(self.dragons[team]),
-      "their_dragon_stacks": Json(self.dragons[foe]),
+      "our_drakes": Json(self.drake_summary(team)),
+      "their_drakes": Json(self.drake_summary(foe)),
+      "drakes_we_need_for_soul": Json(self.drakes_to_soul(team)),
+      "drakes_they_need_for_soul": Json(self.drakes_to_soul(foe)),
       "our_baron_ticks_left": Json(self.baron[team]),
       "their_baron_ticks_left": Json(self.baron[foe]),
       "lane_in_most_danger": Json(
@@ -456,6 +470,10 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "The four jungle nodes are BRUSH. Standing next to a brush shows you nothing inside it, and standing IN one shows you the nodes around it as normal — so a champion waiting in a brush is invisible to everyone outside it, and can see who is walking past. A ward placed in a brush is the only way to watch it from outside. Every node listed under nodes_you_are_blind_to could be holding enemies; a brush next to a lane you are pushing is where they would be.",
     ),
     "brush_nodes": Json(brush_list),
+    "drake_rule": Json(
+      "Every drake is one of four elements and gives its element's stack permanently to whoever kills it. The element of the drake in the pit now is under objectives; the first drake of the game has its own element and every drake after it has the rift's, so the soul at stake never changes. The first team to \{SOUL_STACKS} drakes of any elements takes the \{self.rift_element()} SOUL: \{soul_reward(self.rift_element())}. Nobody gets a second one, so the fourth drake is the one worth a teamfight and the enemy's fourth is worth denying.",
+    ),
+    "drake_elements": Json(element_rows),
   })
 }
 

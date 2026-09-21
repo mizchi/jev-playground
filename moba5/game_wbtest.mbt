@@ -387,8 +387,11 @@ test "an objective buffs the whole team" {
   let ally = g.champs[1]
   let before = g.raw_attack(ally)
   g.step(Map([(0, AttackNeutral)]))
-  assert_eq(g.dragons[TEAM_A], 1)
-  assert_eq(g.dragons[TEAM_B], 0)
+  assert_eq(g.drake_total(TEAM_A), 1)
+  assert_eq(g.drake_total(TEAM_B), 0)
+  // The stack is of the element that was in the pit, which is the first entry
+  // of the rotation while no drake has died.
+  assert_eq(g.drakes_of(TEAM_A, "infernal"), 1)
   assert_true(g.raw_attack(ally) > before) // the ally that did nothing benefits
   assert_true(dragon.spawn_in > 0) // and it is on a timer again
 }
@@ -475,7 +478,8 @@ test "a copied game shares nothing with its original" {
   h.neutrals[0].hp = 1
   h.wards[0].ttl = 1
   h.push[0] = 5
-  h.dragons[TEAM_A] = 3
+  h.drakes[drake_index(TEAM_A, "infernal")] = 3
+  h.soul_team = TEAM_A
   h.baron[TEAM_B] = 7
   h.tick = 99
   assert_true(g.champs[0].hp > 1)
@@ -484,7 +488,8 @@ test "a copied game shares nothing with its original" {
   assert_true(g.neutrals[0].hp > 1)
   assert_eq(g.wards[0].ttl, 4)
   assert_eq(g.push[0], 0)
-  assert_eq(g.dragons[TEAM_A], 0)
+  assert_eq(g.drake_total(TEAM_A), 0)
+  assert_eq(g.soul_team, 0)
   assert_eq(g.baron[TEAM_B], 0)
   assert_true(g.tick < 99)
 }

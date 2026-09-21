@@ -29,7 +29,13 @@ pub fn Game::position_score(self : Game, team : Int) -> Int {
   let struct_diff = self.structure_hp(team) - self.structure_hp(foe)
   let power_diff = self.team_power(team) - self.team_power(foe)
   let gold_diff = self.team_gold(team) - self.team_gold(foe)
-  let obj = (self.dragons[team] - self.dragons[foe]) * 120 +
+  // A drake is a drake whichever element it is: the elements differ in when
+  // they pay, not in how much, and a positional score that priced them apart
+  // would be asserting a ranking the arena has not measured. The soul is
+  // priced separately because it is a step rather than a stack.
+  let obj = (self.drake_total(team) - self.drake_total(foe)) * 120 +
+    (if self.soul_team == team { 250 } else { 0 }) -
+    (if self.soul_team == foe { 250 } else { 0 }) +
     (if self.baron[team] > 0 { 200 } else { 0 }) -
     (if self.baron[foe] > 0 { 200 } else { 0 })
   // A body that is down is a body that is not defending.
@@ -270,7 +276,7 @@ pub fn Game::ticks_under_tower(self : Game, c : Champ) -> Int {
   if s.team == c.team || !self.tower_shoots(s, c) {
     return 99
   }
-  let per_tick = TOWER_DAMAGE * 100 / (100 + c.armor())
+  let per_tick = self.tower_damage_to(c)
   if per_tick <= 0 {
     return 99
   }

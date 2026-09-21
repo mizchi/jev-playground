@@ -274,7 +274,7 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
         Some(s) => {
           let head = "attack the enemy \{s.kind_name()} here (hp \{s.hp}) for about \{self.damage_to_structure(c)}"
           if self.tower_shoots(s, c) {
-            "\{head}; WE HAVE NO WAVE HERE, so it will shoot back for \{TOWER_DAMAGE * 100 / (100 + c.armor())} a tick — about \{self.ticks_under_tower(c)} tick(s) before it kills this champion"
+            "\{head}; WE HAVE NO WAVE HERE, so it will shoot back for \{self.tower_damage_to(c)} a tick — about \{self.ticks_under_tower(c)} tick(s) before it kills this champion"
           } else {
             "\{head}; our minion wave is holding this lane, so it cannot shoot us"
           }
@@ -283,14 +283,27 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
       }
     AttackNeutral =>
       match self.neutral_at(c.node) {
-        Some(m) => {
-          let reward = if m.key == "baron" {
-            "+\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% siege for \{BARON_TICKS} ticks, team-wide"
+        Some(m) =>
+          if m.key == "baron" {
+            "attack the baron here (hp \{m.hp}/\{m.max_hp}) for about \{self.raw_attack(c)}; killing it gives +\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% siege for \{BARON_TICKS} ticks, team-wide"
           } else {
-            "a permanent +\{DRAGON_ATK_PCT}% attack stack, team-wide"
+            let element = self.drake_now()
+            let need = self.drakes_to_soul(c.team)
+            // What the stack is worth, and then whether it is the one that
+            // ends the race — a policy that is told only the stack is being
+            // asked to decide about the drake without being told what the
+            // drake is for.
+            let soul = if self.soul_team != 0 {
+              "the soul is already gone, so this is the stack and nothing more"
+            } else if need <= 1 {
+              "THIS IS OUR FOURTH: taking it gives us the \{self.rift_element()} SOUL — \{soul_reward(self.rift_element())}"
+            } else if self.drakes_to_soul(enemy_of(c.team)) <= 1 {
+              "they are one drake from the \{self.rift_element()} soul, so taking this one denies it for now"
+            } else {
+              "\{need} more of any element after this would give us the \{self.rift_element()} soul"
+            }
+            "attack the \{element} drake here (hp \{m.hp}/\{m.max_hp}) for about \{self.raw_attack(c)}; killing it gives \{drake_reward(element)}, and \{soul}"
           }
-          "attack the \{m.key} here (hp \{m.hp}/\{m.max_hp}) for about \{self.raw_attack(c)}; killing it gives \{reward}"
-        }
         None => "attack the monster here"
       }
     Farm => {

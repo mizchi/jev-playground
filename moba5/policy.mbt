@@ -35,6 +35,33 @@ pub(all) struct Plan {
   hold_lane : Int
 }
 
+// ------------------------------------------------- what the map is worth
+//
+// One scale for the three things the plan chooses between, so the choice is
+// arithmetic a reader can check rather than an order of branches a reader has
+// to trust. The numbers are this bot's opinion, not the simulator's: they
+// decide what the *baseline* does, and the benchmark's truths come from
+// playing the situation out rather than from these.
+
+///|
+/// A tower whose lane we hold: the cheapest structure on the map, since it
+/// cannot shoot back while our wave is in front of it.
+pub const FREE_TOWER_VALUE = 110
+
+///|
+/// Baron: a short window of far more damage and much faster sieging. Above a
+/// free tower, because the window is usually spent taking two of them.
+pub const BARON_VALUE = 200
+
+///|
+/// One drake stack, on its own, before anything the soul adds.
+pub const DRAKE_STACK_VALUE = 40
+
+///|
+/// A soul, whole. On this scale it is worth rather more than Baron, because
+/// Baron runs out and a soul does not.
+pub const SOUL_VALUE = 250
+
 ///|
 /// The enemy structure a team should be sieging. A lane whose wave we already
 /// hold comes first — the tower there cannot shoot us, so it is the cheapest
@@ -81,14 +108,63 @@ pub fn Game::objective_target(self : Game, team : Int) -> Int {
     if !n.alive() {
       continue
     }
-    // Baron is worth more than a dragon stack, so it wins the tie.
-    let value = if n.key == "baron" { 100 } else { 40 + self.dragons[team] }
+    let value = self.monster_value(team, n)
     if value > best_value {
       best_value = value
       best = n.node
     }
   }
   best
+}
+
+///|
+/// What `n` is worth to `team` right now, on one scale with `FREE_TOWER_VALUE`.
+pub fn Game::monster_value(self : Game, team : Int, n : Neutral) -> Int {
+  if n.key == "baron" {
+    BARON_VALUE
+  } else {
+    self.drake_value(team)
+  }
+}
+
+///|
+/// The best objective in the river right now, by that value, or 0 when the
+/// river is empty. What the plan weighs a free tower against.
+pub fn Game::objective_value(self : Game, team : Int) -> Int {
+  let mut best = 0
+  for n in self.neutrals {
+    if n.alive() {
+      let v = self.monster_value(team, n)
+      if v > best {
+        best = v
+      }
+    }
+  }
+  best
+}
+
+///|
+/// What the drake in the pit is worth to `team`: the stack, plus this drake's
+/// share of the soul it moves us toward, plus the share it takes off theirs.
+///
+/// Pricing the soul share is the whole of what changed when souls arrived, and
+/// it is what makes the first drake of a game worth contesting. Before it, a
+/// drake was a flat stack; a flat stack loses to a free tower on any honest
+/// arithmetic, the plan below took the tower every time, and the result was a
+/// game in which one drake fell in 128 ticks and the soul was unreachable —
+/// a mechanic that type-checked and never happened. Each drake is a quarter of
+/// a soul when the race is level and all of one when it is not, which is why
+/// the fourth is worth a teamfight and the first is still worth a rotation.
+pub fn Game::drake_value(self : Game, team : Int) -> Int {
+  if self.soul_team != 0 {
+    // The soul is decided; a drake is a stack again.
+    return DRAKE_STACK_VALUE
+  }
+  let ours = self.drakes_to_soul(team)
+  let theirs = self.drakes_to_soul(enemy_of(team))
+  // Denying is worth half of taking: it costs them a drake but does not put
+  // one on our side of the count.
+  DRAKE_STACK_VALUE + SOUL_VALUE / ours + SOUL_VALUE / (theirs * 2)
 }
 
 ///|
@@ -119,8 +195,16 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
     }
   }
   // 3. A lane whose wave we already hold: the tower there cannot shoot us, so
-  //    it is the cheapest structure on the map and it beats a monster.
-  if rally < 0 {
+  //    it is the cheapest structure on the map — unless the river holds
+  //    something worth more, which `FREE_TOWER_VALUE` is there to say.
+  //
+  //    This used to be an unconditional branch ahead of the objective, and the
+  //    comment said the free tower "beats a monster". It beat every monster:
+  //    the bot holds a wave in at least one lane almost every tick, so the
+  //    branch was a standing veto on the one below it, and a played game saw
+  //    one drake and one Baron in 128 ticks. An order of branches cannot say
+  //    "usually, but not this one"; a number can.
+  if rally < 0 && self.objective_value(team) <= FREE_TOWER_VALUE {
     for lane in lanes {
       if rally >= 0 || !self.has_wave(team, lane) {
         continue
@@ -519,11 +603,19 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
   // Reset while there is no fight to lose by leaving — and go home to SPEND,
   // too. Gold sitting in a champion's pocket is a stat it does not have; the
   // trip costs a few ticks and buys a permanent edge.
-  if low && legal.contains(Recall) {
+  //
+  // Not off a live objective, though. The gold will still be there in three
+  // ticks and the monster will not, and this was the other half of why the
+  // river went unfought: a jungler standing on the drake with enough gold for
+  // an item recalled, bought, walked back, and recalled again, so the trace
+  // read as ten ticks of commuting past a monster nobody touched.
+  let on_objective = g.neutral_at(c.node) is Some(_)
+  if low && !on_objective && legal.contains(Recall) {
     return Recall
   }
   if c.gold >= ITEM_COST &&
     c.items.length() < ITEM_SLOTS &&
+    !on_objective &&
     legal.contains(Recall) {
     return Recall
   }
