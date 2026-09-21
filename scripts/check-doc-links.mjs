@@ -40,17 +40,62 @@ const REPO = resolve(import.meta.dirname, "..");
 /** Not ours to check: dependencies, build output, and package caches. */
 const SKIP = new Set(["node_modules", ".git", "_build", ".mooncakes", ".openseek", "out"]);
 
-/** GitHub's heading slug: lowercase, drop punctuation and symbols, spaces to hyphens. */
+/**
+ * GitHub's heading slug: lowercase, drop punctuation and symbols, spaces to
+ * hyphens.
+ *
+ * `_` IS KEPT, and that is the second time this rule has been wrong in the
+ * same direction. The docblock above records the first: the CJK range was
+ * kept too eagerly, so `、` survived and working anchors were reported broken.
+ * This one dropped the underscore, so `## 6. \`browser_find\` を…` slugged to
+ * `6-browserfind-…` while GitHub produces `6-browser_find-…` -- and docs/62's
+ * own §6 link plus docs/README.md's link to it were reported broken **when
+ * both were correct**.
+ *
+ * BOTH OF THIS FILE'S BUGS WERE ALREADY SOLVED NEXT DOOR.
+ * `scripts/check-doc-anchors.mjs` keeps `_` in its character class and blanks
+ * code spans, and its docblock names the code-span case explicitly ("link
+ * syntax inside a code span or a fenced block is documentation, not a link").
+ * This script was written to widen that one's job past `docs/`, and it
+ * reimplemented the rules instead of reusing them -- so it shipped without two
+ * corrections its sibling had already made, and reported three correct links
+ * as broken. Two checkers with divergent slug rules is the actual defect here;
+ * they agree again now, and a test pins the cases.
+ *
+ * github-slugger strips `!`-`,`, `.`, `/`, `:`-`@`, `[`-`^`, a backtick and
+ * `{`-`~`. `_` is 0x5F, one past `^` (0x5E) and one before the backtick
+ * (0x60), so it falls in none of those ranges and survives.
+ *
+ * A checker that reports a correct anchor as broken is worse than no checker:
+ * the fix everybody reaches for is editing the link to match the tool, which
+ * breaks the link on GitHub while turning the report green.
+ */
 function slug(heading) {
   const text = heading.trim().replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").toLowerCase();
   let out = "";
   for (const ch of text) {
     if (ch === " ") out += "-";
-    else if (ch === "-" || /\p{L}|\p{N}|\p{M}/u.test(ch)) out += ch;
+    else if (ch === "-" || ch === "_" || /\p{L}|\p{N}|\p{M}/u.test(ch)) out += ch;
     // everything else is dropped WITHOUT a hyphen, which is the case that
     // caught me: `では、gate` becomes `ではgate`, not `では-gate`.
   }
   return out;
+}
+
+/**
+ * Blank out inline code spans, so prose ABOUT a link is not read as one.
+ *
+ * `findings.md` documents this very script with the sentence "同一ファイル内の
+ * `](#…)` を一切検査していなかった" -- a link-shaped string inside backticks,
+ * describing the bug this checker was written to fix. The checker then parsed
+ * its own example and reported `#…` as a broken anchor.
+ *
+ * Replaced with spaces of the same length rather than removed, so nothing
+ * downstream shifts and a code span can never glue its neighbours into a new
+ * false match.
+ */
+function withoutCodeSpans(source) {
+  return source.replace(/`+[^`\n]*`+/g, (run) => " ".repeat(run.length));
 }
 
 /** Both anchor forms a heading can define. */
@@ -94,7 +139,8 @@ const anchors = new Map(files.map((f) => [f, anchorsOf(readFileSync(f, "utf8"))]
 let broken = 0;
 let checked = 0;
 for (const file of files) {
-  const source = readFileSync(file, "utf8");
+  // Code spans blanked: a link inside backticks is prose about a link.
+  const source = withoutCodeSpans(readFileSync(file, "utf8"));
   const here = dirname(file);
   const name = relative(REPO, file);
   for (const m of source.matchAll(/\]\((?!https?:|mailto:)([^)#\s]*)(#[^)\s]*)?\)/g)) {

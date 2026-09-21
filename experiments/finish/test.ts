@@ -1780,6 +1780,59 @@ check("an installed toolchain is reachable without naming a path the fence denie
   }
 });
 
+check("the two doc-link checkers agree, and neither drops `_` from a slug", () => {
+  /**
+   * THREE CORRECT LINKS WERE REPORTED BROKEN, and both causes were already
+   * fixed in the other checker.
+   *
+   * `check-doc-links.mjs` was written to widen `check-doc-anchors.mjs`'s job
+   * past `docs/`, and it REIMPLEMENTED the slug rule rather than reusing it --
+   * so it shipped without two corrections its sibling had already made:
+   *
+   *   `_` belongs in a slug. github-slugger strips `!`-`,`, `.`, `/`, `:`-`@`,
+   *   `[`-`^`, a backtick and `{`-`~`; `_` is 0x5F, between `^` and the
+   *   backtick, so it survives. Dropping it turned docs/62's
+   *   `## 6. \`browser_find\` …` into `6-browserfind-…` and flagged that
+   *   report's own §6 link and docs/README.md's link to it.
+   *
+   *   Link syntax inside a code span is prose. `findings.md` documents this
+   *   script with the sentence "同一ファイル内の \`](#…)\` を…", and the
+   *   checker parsed its own example.
+   *
+   * **Nothing in the repository linked to the underscore-stripped form**, so
+   * the links were right and the tool was wrong -- which is the dangerous
+   * direction, because the reflex is to edit the link until the tool goes
+   * green, breaking it on GitHub.
+   *
+   * Two checkers with divergent slug rules is the real defect. This pins them
+   * to each other rather than to my reading of either.
+   */
+  const root = resolve(import.meta.dirname, "../..");
+  const src = (f: string): string => readFileSync(resolve(root, "scripts", f), "utf8");
+  const both = ["check-doc-links.mjs", "check-doc-anchors.mjs"];
+  for (const f of both) {
+    const s = src(f);
+    ok(/\p{L}/u.test(s), `${f} must exist`);
+    // `_` must be in the keep set, whichever shape the rule takes.
+    ok(
+      /ch === "_"/.test(s) || /\\-_\]/.test(s) || /_\\-/.test(s),
+      `${f} drops \`_\` from heading slugs, so an anchor GitHub serves is reported broken`,
+    );
+    // And a code span must be neutralised before links are matched.
+    ok(
+      /`\+?\[\^`\\n\]\*`/.test(s.replace(/\\/g, "")) || /\[\^`\\n\]\*/.test(s) || /" "\.repeat/.test(s),
+      `${f} reads link syntax inside a code span as a link`,
+    );
+  }
+  // Both scripts must actually run clean on the repository as it stands.
+  for (const f of both) {
+    const out = spawnSync("node", [resolve(root, "scripts", f)], { encoding: "utf8", timeout: 120_000 });
+    eq(out.status, 0, `${f} exited non-zero: `);
+    const tail = (out.stdout ?? "").trim().split("\n").pop() ?? "";
+    ok(/, 0 broken$/.test(tail), `${f} reports breakage: ${tail}`);
+  }
+});
+
 check("the fence protects the harness's own directories, and nothing else new", () => {
   /**
    * THE `/tmp` GAP, CLOSED. The fence covered `/home/` and `/root/` and
