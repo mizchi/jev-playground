@@ -629,8 +629,21 @@ function tasksSection(): void {
   }
 }
 
+/**
+ * THE CORPUS IS THE OPEN ARM. The done runs are a control and are counted
+ * separately, here and in §2.
+ *
+ * This section and the next describe the population that answers §2.1, and
+ * pooling the `- [x]` control into them moved the report's central number
+ * without saying so: adding the eight control runs took "the gate speaks on
+ * 6.3% of commands" to 5.5%, and the verb distribution with it. docs/43 and
+ * docs/49 are single populations, so the row that compares to them has to be
+ * one too. The control arm gets its own row, and §4 is where the two are
+ * actually compared.
+ */
 function trafficSection(rec: Record_): void {
-  const rows = rec.rows;
+  const rows = rec.rows.filter((r) => r.state === "open");
+  const control = rec.rows.filter((r) => r.state === "done");
   const calls = rows.flatMap((r) => r.calls);
   const bash = calls.filter((c) => c.tool === "Bash" && c.command);
   console.log("\n## 1. What real traffic looks like\n");
@@ -640,10 +653,16 @@ function trafficSection(rec: Record_): void {
       "every command without changing what the agent does** (docs/44 §4.3 measured that a gate which " +
       "speaks changes which route the agent takes; this is the route it takes on its own).\n",
   );
+  if (control.length > 0) {
+    console.log(
+      `Plus **${control.length} control runs** on the author's own \`- [x]\` items, ` +
+        `**counted separately everywhere in this report** and compared against the open arm in §4.\n`,
+    );
+  }
   console.log("| | tool calls per run | Bash per run |");
   console.log("| --- | --- | --- |");
   for (const state of ["open", "done"] as const) {
-    const g = rows.filter((r) => r.state === state);
+    const g = rec.rows.filter((r) => r.state === state);
     if (g.length === 0) continue;
     console.log(
       `| \`${state}\` (${g.length} runs) | median **${quantile(g.map((r) => r.calls.length), 0.5)}** ` +
@@ -717,7 +736,10 @@ export function fencePrefixes(command: string): string[] {
 }
 
 function gateSection(rec: Record_): void {
-  const lines = rec.rows.flatMap((r) => r.gate);
+  // The open arm, for the same reason as §1: the row that compares to docs/43
+  // and docs/49 has to be one population, and the control arm moved it.
+  const lines = rec.rows.filter((r) => r.state === "open").flatMap((r) => r.gate);
+  const controlLines = rec.rows.filter((r) => r.state === "done").flatMap((r) => r.gate);
   if (lines.length === 0) {
     console.log("\n**The gate recorded nothing.** Check `JEV_GATE_LOG`.\n");
     return;
@@ -735,6 +757,16 @@ function gateSection(rec: Record_): void {
   );
   console.log("| docs/43 (my sandboxes, my planted bugs) | 978 | 12 (1.2%) | 0.05 | 0.48 |");
   console.log("| docs/49 (published `npm run` scripts) | 568 | 137 (24.1%) | 0.31 | — |");
+  if (controlLines.length > 0) {
+    const cSpoke = controlLines.filter((g) => g.verdict === "ask" || g.verdict === "deny");
+    const cScores = controlLines.map(score).filter((x) => !Number.isNaN(x));
+    console.log(
+      `| *the \`- [x]\` control arm, §4* | *${controlLines.length}* | ` +
+        `*${cSpoke.length}* (*${pct(cSpoke.length, controlLines.length)}*) | ` +
+        `*${cScores.length > 0 ? quantile(cScores, 0.5).toFixed(2) : "—"}* | ` +
+        `*${cScores.length > 0 ? quantile(cScores, 0.99).toFixed(2) : "—"}* |`,
+    );
+  }
   console.log(
     "\n**docs/43's 1.2% and docs/49's 24.1% were the two ends of the same open question**: the first " +
       "was agent traffic in a corpus I wrote, the second was a corpus I did not write but was not " +
@@ -779,7 +811,12 @@ function gateSection(rec: Record_): void {
 const DELEGATION = new Set(["Task", "Agent"]);
 
 function fanoutSection(rec: Record_): void {
-  const calls = rec.rows.flatMap((r) => r.calls);
+  // The open arm, as in §1 and §2. Pooling the control arm here took the
+  // delegation count from 12 of 1,268 to 17 of 1,955 and the runs from 7 of
+  // 15 to 11 of 23 -- a claim about a corpus, quietly restated over two.
+  const open = rec.rows.filter((r) => r.state === "open");
+  const control = rec.rows.filter((r) => r.state === "done");
+  const calls = open.flatMap((r) => r.calls);
   const task = calls.filter((c) => DELEGATION.has(c.tool));
   console.log("\n## 3. Did the agent ever fan out?\n");
   console.log(
@@ -788,11 +825,11 @@ function fanoutSection(rec: Record_): void {
       "work was small -- and left this as the open half: **the 0 was an agent's choice, and nothing " +
       "had observed an agent choosing differently.** `Task` is in the list here for the same reason.\n",
   );
-  const runsWith = rec.rows.filter((r) => r.calls.some((c) => DELEGATION.has(c.tool)));
+  const runsWith = open.filter((r) => r.calls.some((c) => DELEGATION.has(c.tool)));
   console.log(
     `**${task.length} of ${calls.length} tool calls are delegations** ` +
       `(recorded as ${[...new Set(task.map((c) => `\`${c.tool}\``))].join(" / ") || "—"}), across ` +
-      `**${runsWith.length} of ${rec.rows.length} runs.** ` +
+      `**${runsWith.length} of ${open.length} runs.** ` +
       (task.length === 0
         ? "**Still zero.** On real repositories, on their authors' own work items, with the tool " +
           "available and nothing stopping it, this agent does not delegate. **That is now measured " +
@@ -909,6 +946,48 @@ function comparisonSection(rec: Record_): void {
       `| ${m.name} | ${quantile(a, 0.5)} | ${quantile(b, 0.5)} | ${t.diff > 0 ? "+" : ""}` +
         `${t.diff.toFixed(1)} | **${t.p.toFixed(3)}**${t.exact ? "" : " (sampled)"} | ${t.splits} |`,
     );
+  }
+  /**
+   * PER SECTION, because the pooled row above is a cancellation and not a
+   * null. The design pairs by section, so this is the breakdown the design
+   * supports, and the two sections move in OPPOSITE directions on every
+   * metric -- which is the whole reason the pooled difference is near zero.
+   * Neither reaches 0.05, and `Tier 2` cannot: its floor is one relabelling
+   * in ten.
+   */
+  console.log("\n| section | per run | open | done | diff | exact p | floor |");
+  console.log("| --- | --- | --- | --- | --- | --- | --- |");
+  for (const k of shared) {
+    const section = k.split("\u0000")[2];
+    const o = open.filter((r) => key(r) === k);
+    const d = done.filter((r) => key(r) === k);
+    for (const m of metrics) {
+      const t = permutation(o.map(m.of), d.map(m.of));
+      console.log(
+        `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
+          `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
+      );
+    }
+  }
+  const signs = shared.map((k) => {
+    const o = open.filter((r) => key(r) === k);
+    const d = done.filter((r) => key(r) === k);
+    return metrics.map((m) => Math.sign(permutation(o.map(m.of), d.map(m.of)).diff));
+  });
+  if (signs.length === 2) {
+    const flipped = metrics.filter((_, i) => signs[0][i] !== 0 && signs[0][i] === -signs[1][i]);
+    const same = metrics.filter((_, i) => signs[0][i] !== 0 && signs[0][i] === signs[1][i]);
+    if (flipped.length > same.length) {
+      console.log(
+        `\n**${flipped.length} of the ${metrics.length} measures flip sign between the two sections** ` +
+          `(${flipped.map((m) => m.name.replace(/\*/g, "")).join(", ")})` +
+          `${same.length > 0 ? `; ${same.map((m) => m.name.replace(/\*/g, "")).join(", ")} does not` : ""}. ` +
+          "So the pooled row above is not one population behaving alike -- it is two sections " +
+          "disagreeing about the direction, and pooling cancels them. Neither section's own p " +
+          "clears 0.05 and the smaller one cannot, so this is a consistent pattern that no test " +
+          "at this size can establish.\n",
+      );
+    }
   }
   const capped = (rs: Row[]): string => `${rs.filter((r) => r.exit === null).length} of ${rs.length}`;
   console.log(

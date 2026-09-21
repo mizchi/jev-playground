@@ -1582,6 +1582,50 @@ check("a task carries the heading it was written under, and --matched pairs on i
   }
 });
 
+check("the report's descriptive sections count the open arm, not the control arm", () => {
+  /**
+   * ADDING THE CONTROL ARM SILENTLY MOVED THE REPORT'S CENTRAL NUMBER. With
+   * the eight `- [x]` runs pooled in, §2's headline went from "the gate
+   * speaks on 6.3% of commands" to 5.5%, §1's traffic from 1,268 calls to
+   * 1,955, and §3's delegations from 12 of 1,268 across 7 of 15 runs to 17 of
+   * 1,955 across 11 of 23. docs/43 and docs/49 are single populations, so the
+   * row that compares to them has to be one too -- and a control arm has no
+   * business inside a description of the corpus.
+   *
+   * This is the guard: the three descriptive sections must filter to `open`,
+   * and §4 -- the comparison -- must be the only place the two arms are
+   * counted together.
+   */
+  const src = readFileSync(resolve(import.meta.dirname, "src/wild.ts"), "utf8");
+  for (const fn of ["trafficSection", "gateSection", "fanoutSection"]) {
+    const from = src.indexOf(`function ${fn}(`);
+    ok(from > 0, `${fn} is gone`);
+    const body = src.slice(from, src.indexOf("\nfunction ", from + 10));
+    ok(
+      /r\.state === "open"/.test(body),
+      `${fn} does not filter to the open arm, so the control runs are pooled into it`,
+    );
+  }
+  // And on the record itself: the arms must both be there, or the separation
+  // is untested.
+  const p = resolve(import.meta.dirname, "records/wild.json");
+  if (!existsSync(p)) return;
+  const rec = JSON.parse(readFileSync(p, "utf8")) as {
+    rows: { state: string; section?: string; gate: unknown[] }[];
+  };
+  const open = rec.rows.filter((r) => r.state === "open");
+  const done = rec.rows.filter((r) => r.state === "done");
+  ok(open.length > 0, "no open rows");
+  if (done.length === 0) return;
+  // The numbers docs/55 §1-§4 quote are the open arm's, so they must not move
+  // when the control arm grows.
+  eq(open.flatMap((r) => r.gate).length, 741, "docs/55 §2's denominator is the open arm's: ");
+  ok(
+    rec.rows.every((r) => r.section !== undefined),
+    "a row without a section cannot enter §4's pairing",
+  );
+});
+
 check("the permutation test is exact at this size, and its floor is stated", () => {
   /**
    * The instrument the `- [x]` comparison reports a p from. Two controls,
