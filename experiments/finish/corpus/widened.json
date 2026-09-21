@@ -1,0 +1,23 @@
+{
+  "note": "The widened roster for docs/56. DERIVED, not chosen: every repository the `account` rule in widen.ts selected that holds at least one matched section -- a markdown heading with both a `- [ ]` and a `- [x]` item, which is the only pairing docs/55 §4 supports. `revs` is the revision widen.ts's probe cloned and counted, so the roster is pinned to the tree the yields were measured on rather than to whatever HEAD moves to later.",
+  "rule": "source === 'account' && matchedSections > 0 in records/widen.json, pinned to the `head` that probe recorded, sorted by name",
+  "derivedFrom": "experiments/finish/records/widen.json",
+  "revs": {
+    "mizchi/actrun": "1db9aff5b364de6eacda68e3f2ce2238f9992272",
+    "mizchi/crater": "e7f8a0a6082e6b74e866ba530dbfb689c1ecf98e",
+    "mizchi/experimental_crypto": "d5a3c7005515a02fd9a0260cffaae7b738e69f6b",
+    "mizchi/jsimd": "2cf51e8885314764dcb44b6469899d95f204b148",
+    "mizchi/k1c": "80e2568696a4b655b74296f2699e5ce25b17c90c",
+    "mizchi/luna.mbt": "874f0f34e77d6800cd9aab611b0a441d9d8d3ffe",
+    "mizchi/markdown.mbt": "aceffd2190b38a9175165ad894581f1040c92e4d",
+    "mizchi/mbts": "4a877ec6ec9ddd4d0594d6f08ed9beda3076fd57",
+    "mizchi/moonbit_jsonschema": "c58c2433df573960e432c5f9061dfe57b40169a1",
+    "mizchi/moonlight": "205080e447d677a593a4f62b647b66739c24065a",
+    "mizchi/pkl-mbt": "2027c68c9021310d75ff6108104375f6a0a0713f",
+    "mizchi/starlint": "a3121dbd41ce8598a64c34416b42524be618bdaa",
+    "mizchi/ts.mbt": "e98d1b84ec1719e4be656c8738623f302a652160",
+    "mizchi/uneffect": "318409a52ef36dad60b3235faaab2a2355b01e00",
+    "mizchi/veri": "78d658b7434649b43e755e765462494690a072af",
+    "mizchi/vlmkit": "ecb56080795e32b978a6a261afc716663cbb7ab4"
+  }
+}

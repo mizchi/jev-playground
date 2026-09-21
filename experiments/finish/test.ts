@@ -34,7 +34,7 @@ import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
 // ALIASED for the same reason as INTENT_ARMS above: `corpus` is already
 // fanout.ts's harvest, and wild.ts exports one too.
-import { corpus as wildCorpus, fencePrefixes, headMatch, matched, promptFor, sectionKey, tasksIn } from "./src/wild.js";
+import { corpus as wildCorpus, fencePrefixes, headMatch, matched, pairGaps, pairs, promptFor, sectionKey, tasksIn, type Task } from "./src/wild.js";
 import { permutation } from "../shared/thresholds.js";
 // Aliased for reading, not to dodge a clash -- nothing else here exports
 // `candidates`. In a file importing rosters from a dozen modules the bare name
@@ -1647,6 +1647,68 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
   ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
+});
+
+check("the widened sample is one pair per repository, and nothing peeks at the text", () => {
+  /**
+   * THE SAMPLING RULE IS THE RESULT, so it is pinned here and was committed
+   * before the sweep ran. On a synthetic corpus, so it holds whether or not
+   * the clones are on disk.
+   *
+   * `big` has three matched sections and 40 done items; `small` has one
+   * matched section. A proportional sample would be `big` four times over.
+   */
+  const t = (repo: string, file: string, section: string, line: number, state: "open" | "done"): Task => ({
+    repo, rev: "deadbeef", file, section, line, state,
+    text: `${state} item at ${line} which is long enough to clear the floor`,
+  });
+  const synth: Task[] = [
+    // `big`: three matched sections, and one that holds no open item at all.
+    ...[10, 11, 12].map((l) => t("o/big", "TODO.md", "A", l, "open")),
+    ...[13, 14].map((l) => t("o/big", "TODO.md", "A", l, "done")),
+    t("o/big", "TODO.md", "B", 30, "done"), t("o/big", "TODO.md", "B", 31, "open"),
+    t("o/big", "docs/x.md", "C", 5, "open"), t("o/big", "docs/x.md", "C", 6, "done"),
+    ...[50, 51, 52].map((l) => t("o/big", "TODO.md", "NoOpen", l, "done")),
+    // `small`: one matched section. And `none`, which has no ticked item.
+    t("o/small", "TODO.md", "S", 9, "done"), t("o/small", "TODO.md", "S", 4, "open"),
+    t("o/none", "TODO.md", "N", 1, "open"),
+  ];
+  const one = pairs(1, synth);
+  eq(one.length, 2, "one pair is two tasks: ");
+  eq(one[0].state, "open", "the open arm comes first, so a cut sweep ends on whole pairs: ");
+  eq(one[1].state, "done", "and the done arm second: ");
+  // ROUND-ROBIN: the second pair must be the OTHER repository, not `big` again.
+  const two = pairs(2, synth);
+  eq(two[0].repo, "o/big", "repositories in name order: ");
+  eq(two[2].repo, "o/small", "one section each before any repository gets a second: ");
+  // The section with no open item cannot enter, and neither can `o/none`.
+  const many = pairs(99, synth);
+  ok(!many.some((x) => x.section === "NoOpen"), "a section with no open item is not a matched pair");
+  ok(!many.some((x) => x.repo === "o/none"), "a repository with nothing ticked cannot contribute");
+  eq(many.length, 8, "three matched sections in `big` plus one in `small`, both arms: ");
+  eq(many.filter((x) => x.state === "open").length, 4, "balanced by construction -- open: ");
+  eq(many.filter((x) => x.state === "done").length, 4, "and done: ");
+  // Every emitted pair really shares a section, which is the whole claim.
+  for (let i = 0; i + 1 < many.length; i += 2) {
+    eq(sectionKey(many[i]), sectionKey(many[i + 1]), `pair ${i / 2} must share a section key: `);
+  }
+  // FILE ORDER, then line: `docs/x.md` §C before `TODO.md` §A within `big`.
+  eq(pairs(99, synth).filter((x) => x.repo === "o/big")[0].file, "docs/x.md", "sections in file order: ");
+  // FIRST item by line in each arm, not first in document order: §S's open is
+  // at line 4 and appears after its done item at line 9 in the input.
+  const s = many.filter((x) => x.repo === "o/small");
+  eq(s[0].line, 4, "the open arm takes the lowest line: ");
+  eq(s[1].line, 9, "and so does the done arm: ");
+  // DETERMINISTIC, and independent of the text: shuffling the words in every
+  // task must not move a single selection.
+  const scrambled = synth.map((x) => ({ ...x, text: [...x.text].reverse().join("") }));
+  eq(
+    pairs(99, scrambled).map((x) => `${x.repo}:${x.line}`).join(","),
+    many.map((x) => `${x.repo}:${x.line}`).join(","),
+    "the rule must not read the task text: ",
+  );
+  // And the gap report is the pair's own line distance.
+  eq(pairGaps(pairs(1, synth))[0].gap, 1, "§C's two items are one line apart: ");
 });
 
 check("the widening record holds exactly the rows its rules name", () => {

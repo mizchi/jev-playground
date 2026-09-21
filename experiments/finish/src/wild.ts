@@ -10,9 +10,16 @@
  *   TYPESAFEAI_API_KEY=... tsx src/wild.ts              the open arm
  *   TYPESAFEAI_API_KEY=... tsx src/wild.ts --matched    the `- [x]` control arm
  *
+ *   tsx src/wild.ts --sweep widened --repos             the wider roster. No key.
+ *   TYPESAFEAI_API_KEY=... tsx src/wild.ts --sweep widened --pairs 16
+ *
  * `--state`, `--repo` and `--limit` narrow what a sweep runs; `--matched` is
  * the control arm and picks the done items that share a markdown section with
  * an open one, which is the only pairing this corpus supports (§4).
+ *
+ * `--sweep <name>` moves the roster, the record and the clone directory
+ * together (`SWEEPS`), and `--pairs <n>` is the widened sweep's sampling rule:
+ * one matched section per repository, round-robin, both arms (`pairs`).
  *
  * WHY THIS EXISTS. Four reports converged on one missing thing, from four
  * directions:
@@ -69,13 +76,65 @@ import { basename, resolve } from "node:path";
 import { permutation, quantile } from "../../shared/thresholds.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
-const PATH_ = resolve(RECORDS, "wild.json");
 const GATE = resolve(import.meta.dirname, "gate.mjs");
 const SHIPPED_GATE = resolve(import.meta.dirname, "../../../hooks/jev-permission-gate.mjs");
-/** docs/30's roster: the repository list, chosen before this question existed. */
-const ROSTER = resolve(import.meta.dirname, "../../skill-pick/corpus/roster.json");
-/** Where clones live. Outside the project, so the fence's job is unambiguous. */
-const CLONES = resolve(tmpdir(), "jev-wild-clones");
+
+/**
+ * A SWEEP IS THREE PATHS THAT MUST AGREE, so it is one switch and not three.
+ *
+ * docs/55 swept docs/30's roster. The widened one sweeps a roster derived from
+ * `records/widen.json`, and **`mizchi/actrun` is in both.** Today it is in
+ * both at the SAME revision -- `1db9aff5b3`, checked, because the pin comes
+ * from a probe that cloned HEAD and docs/30 pinned that same commit -- so
+ * sharing a clone directory would currently be harmless. It is separated
+ * anyway: `clone()` skips a directory that already exists, so the day those
+ * two pins diverge, a shared directory hands the widened sweep docs/55's tree
+ * and records the widened revision beside it. That row would claim a revision
+ * the agent never read, and nothing in the record could show it.
+ *
+ * Three separate flags would let exactly that happen by half-setting them.
+ * One `--sweep <name>` cannot: roster, record and clone directory move
+ * together or not at all. The default is docs/55's sweep, unchanged.
+ */
+export interface Sweep {
+  /** `{revs: {repo: rev}}` -- the roster, pinned. */
+  roster: string;
+  record: string;
+  /** Outside the project, so the fence's job is unambiguous. */
+  clones: string;
+}
+
+export const SWEEPS: Record<string, Sweep> = {
+  /** docs/55: docs/30's roster, chosen before this question existed. */
+  wild: {
+    roster: resolve(import.meta.dirname, "../../skill-pick/corpus/roster.json"),
+    record: resolve(RECORDS, "wild.json"),
+    clones: resolve(tmpdir(), "jev-wild-clones"),
+  },
+  /** The widened roster: the account rule's repositories that hold a matched section. */
+  widened: {
+    roster: resolve(import.meta.dirname, "../corpus/widened.json"),
+    record: resolve(RECORDS, "widened.json"),
+    clones: resolve(tmpdir(), "jev-widened-clones"),
+  },
+};
+
+let ROSTER = SWEEPS.wild.roster;
+let PATH_ = SWEEPS.wild.record;
+let CLONES = SWEEPS.wild.clones;
+/** Which sweep is selected. Written into the record, so a row says where it came from. */
+let SWEEP = "wild";
+
+/** Select a sweep. Exported so a test can drive both without a subprocess. */
+export function useSweep(name: string): Sweep {
+  const s = SWEEPS[name];
+  if (s === undefined) throw new Error(`unknown sweep \`${name}\` -- one of ${Object.keys(SWEEPS).join(", ")}`);
+  ROSTER = s.roster;
+  PATH_ = s.record;
+  CLONES = s.clones;
+  SWEEP = name;
+  return s;
+}
 
 export interface Task {
   repo: string;
@@ -139,6 +198,11 @@ export interface Row {
 
 export interface Record_ {
   note: string;
+  /**
+   * Which sweep wrote this. Absent in docs/55's record, which predates the
+   * switch and is the `wild` sweep by definition.
+   */
+  sweep?: string;
   repos: { repo: string; rev: string }[];
   /**
    * What the clones were actually at, read from the clone trees the runs
@@ -149,12 +213,23 @@ export interface Record_ {
   rows: Row[];
 }
 
-const NOTE =
-  "§2.1 candidate 1: real agent traffic in repositories I did not build. The repos are " +
-  "docs/30's roster -- `rev` is the revision that roster pinned, `heads` is what the shallow " +
-  "clone actually had, and they are not assumed equal. The tasks are `- [ ]` and `- [x]` " +
-  "items their own authors wrote in the repositories' markdown. The shipped gate runs in " +
-  "--dry-run so it records a verdict for every Bash command without changing what the agent does.";
+const NOTES: Record<string, string> = {
+  wild:
+    "§2.1 candidate 1: real agent traffic in repositories I did not build. The repos are " +
+    "docs/30's roster -- `rev` is the revision that roster pinned, `heads` is what the shallow " +
+    "clone actually had, and they are not assumed equal. The tasks are `- [ ]` and `- [x]` " +
+    "items their own authors wrote in the repositories' markdown. The shipped gate runs in " +
+    "--dry-run so it records a verdict for every Bash command without changing what the agent does.",
+  widened:
+    "docs/55's sweep on a WIDER roster: the repositories the `account` rule in widen.ts " +
+    "selected that hold a matched section, pinned at the revision that probe recorded. " +
+    "Everything about a run is docs/55's -- same prompt, same 600s cap, same shipped gate in " +
+    "--dry-run, same fence -- so the two sweeps are comparable. What differs is the roster and " +
+    "the sample: `pairs()` takes one matched section per repository, round-robin in name order, " +
+    "the first `- [ ]` and the first `- [x]` in each. That rule was committed before the sweep ran.",
+};
+/** The note for the selected sweep. A record says which question it answers. */
+const NOTE = (): string => NOTES[SWEEP] ?? NOTES.wild;
 
 // ------------------------------------------------------------------ the corpus
 
@@ -372,6 +447,98 @@ export function matched(): Task[] {
   return all.filter((t) => t.state === "done" && openSections.has(sectionKey(t)));
 }
 
+/**
+ * THE WIDENED SWEEP'S SAMPLING RULE, WRITTEN DOWN BEFORE IT RAN.
+ *
+ * The widened roster holds 686 open and 2,992 done items. Sweeping all of them
+ * is weeks of wall clock at ~8 minutes a run, so a subset gets swept -- and
+ * **which subset is the whole result**, because I would be choosing it while
+ * knowing what I wanted it to show. So it is a rule, it is a function, a test
+ * pins it, and it was committed before the first run started.
+ *
+ * ONE MATCHED PAIR PER REPOSITORY, which is balanced by construction:
+ *
+ *   1. the unit is a matched SECTION -- a heading holding at least one `- [ ]`
+ *      and at least one `- [x]`, which is the only pairing §4 supports;
+ *   2. repositories in name order, one section each per round, round-robin, so
+ *      a repository with ten matched sections cannot outvote one with a single
+ *      section (`uneffect` has 1,346 done items; `mbts` has 33 -- a
+ *      proportional sample would be two repositories wearing a roster's name);
+ *   3. within a repository, sections ordered by file then by the line of their
+ *      first item -- "from the top", the order the author wrote them in;
+ *   4. within a section, the FIRST open item and the FIRST done item by line;
+ *   5. the two are emitted adjacently, so a sweep cut short by a timeout or a
+ *      dead container still ends on whole pairs rather than a heap of one arm.
+ *
+ * `n` counts PAIRS, and the returned length is twice it. Nothing here looks at
+ * a task's text, its length, or anything a result could depend on: the rule
+ * can be re-run against the roster to reproduce the identical sample.
+ *
+ * `all` is injectable so `test.ts` can pin the round-robin on a corpus it
+ * constructs, holding whether or not the clones are on disk -- the clones live
+ * in `/tmp` and this container is ephemeral.
+ */
+export function pairs(n: number, all: Task[] = corpus()): Task[] {
+  const byRepo = new Map<string, Map<string, Task[]>>();
+  for (const t of all) {
+    const repo = byRepo.get(t.repo) ?? new Map<string, Task[]>();
+    byRepo.set(t.repo, repo);
+    repo.set(sectionKey(t), [...(repo.get(sectionKey(t)) ?? []), t]);
+  }
+  /** Each repository's matched sections, in the author's order. */
+  const queues = [...byRepo.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, sections]) =>
+      [...sections.values()]
+        .map((ts) => ({
+          open: ts.filter((t) => t.state === "open").sort((a, b) => a.line - b.line)[0],
+          done: ts.filter((t) => t.state === "done").sort((a, b) => a.line - b.line)[0],
+          file: ts[0].file,
+          line: Math.min(...ts.map((t) => t.line)),
+        }))
+        .filter((s) => s.open !== undefined && s.done !== undefined)
+        .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line),
+    )
+    .filter((q) => q.length > 0);
+  const out: Task[] = [];
+  for (let round = 0; out.length < 2 * n; round += 1) {
+    const available = queues.filter((q) => q.length > round);
+    if (available.length === 0) break;
+    for (const q of available) {
+      if (out.length >= 2 * n) break;
+      out.push(q[round].open, q[round].done);
+    }
+  }
+  return out;
+}
+
+/**
+ * HOW ADJACENT THE PAIRS ACTUALLY ARE. A limitation, measured, not asserted.
+ *
+ * docs/55 §4 justified pairing by section with "the two arms are adjacent
+ * lines of one list". On the widened roster that claim is too strong, and
+ * reading the sample is what showed it: `luna.mbt`'s pair sits 35 lines apart,
+ * because `tasksIn` splits on markdown HEADINGS and that author's sub-lists
+ * are `**bold labels**`, which are not headings. Both items really are under
+ * `### APG Components`; they are not in the same sub-list, and nothing in the
+ * harvest can see that they are not.
+ *
+ * So the gap is reported per pair. A section-sharing pair 3 lines apart and
+ * one 35 lines apart are not the same kind of control, and a reader who can
+ * see the distribution can discount the far ones themselves.
+ */
+export function pairGaps(sample: Task[]): { repo: string; section: string; gap: number }[] {
+  const out: { repo: string; section: string; gap: number }[] = [];
+  for (let i = 0; i + 1 < sample.length; i += 2) {
+    out.push({
+      repo: sample[i].repo,
+      section: sample[i].section,
+      gap: Math.abs(sample[i].line - sample[i + 1].line),
+    });
+  }
+  return out;
+}
+
 // --------------------------------------------------------------------- the run
 
 /**
@@ -569,12 +736,28 @@ function corpusSection(): void {
   );
   const repos = roster();
   const tasks = corpus();
+  /**
+   * THE PROVENANCE SENTENCE IS PER SWEEP, because it is the claim the whole
+   * report rests on and it is different for each roster. It was hardcoded to
+   * docs/30's roster, so the first widened report printed "the list docs/30
+   * used" over 16 repositories docs/30 never held -- the report lying about
+   * its own corpus, in the one paragraph a reader would check.
+   */
+  const PROVENANCE: Record<string, string> = {
+    wild:
+      "`experiments/skill-pick/corpus/roster.json` -- **the list docs/30 used, assembled before this " +
+      "question existed**, which is the only reason it is not a set I picked to make a point",
+    widened:
+      "`corpus/widened.json`, which is **derived and not chosen**: every repository the `account` rule " +
+      "in `widen.ts` selected (public, non-fork, non-archived, owned by the account, from its own " +
+      "listing) that holds a section with both a `- [ ]` and a `- [x]` item. Two filters over a list " +
+      "nobody assembled for this question, so the roster is still not mine -- what is mine is the " +
+      "decision to require a matched section, and that requirement comes from docs/55 §4 needing one",
+  };
   console.log(
     `**Two things here are not mine.** The **${repos.length} repositories** come from ` +
-      "`experiments/skill-pick/corpus/roster.json` -- **the list docs/30 used, assembled before this " +
-      "question existed**, which is the only reason it is not a set I picked to make a point. And the " +
-      "**tasks are their authors' own `- [ ]` items**, which is docs/49's move (the author labelled it) " +
-      "applied to goals instead of commands.\n",
+      `${PROVENANCE[SWEEP] ?? PROVENANCE.wild}. And the **tasks are their authors' own \`- [ ]\` items**, ` +
+      "which is docs/49's move (the author labelled it) applied to goals instead of commands.\n",
   );
   console.log("| repository | cloned | markdown tasks | `- [ ]` open | `- [x]` done |");
   console.log("| --- | --- | --- | --- | --- |");
@@ -1060,7 +1243,7 @@ function headLine(rec: Record_): string {
 }
 
 function load(): Record_ {
-  if (!existsSync(PATH_)) return { note: NOTE, repos: roster(), rows: [], heads: heads() };
+  if (!existsSync(PATH_)) return { note: NOTE(), sweep: SWEEP, repos: roster(), rows: [], heads: heads() };
   return JSON.parse(readFileSync(PATH_, "utf8")) as Record_;
 }
 
@@ -1079,6 +1262,14 @@ function report(rec: Record_): void {
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
+  /**
+   * FIRST, before any path is read: the sweep decides where the roster, the
+   * record and the clones are, and every function below reads those.
+   */
+  if (argv.includes("--sweep")) {
+    const s = useSweep(argv[argv.indexOf("--sweep") + 1] ?? "");
+    process.stderr.write(`  sweep \`${SWEEP}\`: ${basename(s.roster)} -> ${basename(s.record)}\n`);
+  }
   if (argv.includes("--repos")) {
     for (const r of clone()) {
       console.log(`  ${r.head ? "ok  " : "FAIL"} ${r.repo.padEnd(44)} head=${r.head?.slice(0, 10) ?? "—"} (roster pinned ${r.rev.slice(0, 10)})`);
@@ -1108,7 +1299,7 @@ async function main(): Promise<void> {
       );
     }
     if (existsSync(PATH_)) {
-      writeFileSync(PATH_, `${JSON.stringify({ ...rec, note: NOTE, heads: at }, null, 2)}\n`);
+      writeFileSync(PATH_, `${JSON.stringify({ ...rec, note: NOTE(), sweep: SWEEP, heads: at }, null, 2)}\n`);
       console.log(`\n  wrote heads for ${at.length} repos into ${basename(PATH_)} (rows untouched)\n`);
     }
     return;
@@ -1174,6 +1365,34 @@ async function main(): Promise<void> {
     }
     return;
   }
+  /**
+   * `--sample <n>`: the fixed sample, inspectable before a key is spent.
+   *
+   * The sampling rule decides the result, so it has to be readable without
+   * running anything. This prints exactly what `--pairs <n>` would run, in the
+   * order it would run it, with the line gap inside each pair.
+   */
+  if (argv.includes("--sample")) {
+    const n = Number.parseInt(argv[argv.indexOf("--sample") + 1] ?? "16", 10);
+    const sample = pairs(n);
+    console.log(`\n  ${sample.length} tasks = ${sample.length / 2} pairs, over ${new Set(sample.map((t) => t.repo)).size} repositories`);
+    console.log(`  ${sample.filter((t) => t.state === "open").length} open, ${sample.filter((t) => t.state === "done").length} done\n`);
+    for (let i = 0; i + 1 < sample.length; i += 2) {
+      const [o, d] = [sample[i], sample[i + 1]];
+      console.log(`  ${String(i / 2 + 1).padStart(2)}. ${o.repo}  ${o.file}  §${o.section}`);
+      console.log(`      open :${String(o.line).padStart(5)}  ${o.text.replace(/\s+/g, " ").slice(0, 80)}`);
+      console.log(`      done :${String(d.line).padStart(5)}  ${d.text.replace(/\s+/g, " ").slice(0, 80)}`);
+    }
+    const gaps = pairGaps(sample).map((g) => g.gap).sort((a, b) => a - b);
+    if (gaps.length > 0) {
+      console.log(
+        `\n  line gap inside a pair: median ${gaps[Math.floor(gaps.length / 2)]}, ` +
+          `min ${gaps[0]}, max ${gaps[gaps.length - 1]} ` +
+          `(${gaps.filter((g) => g <= 5).length} of ${gaps.length} within 5 lines)\n`,
+      );
+    }
+    return;
+  }
   if (argv.includes("--report")) {
     report(load());
     return;
@@ -1214,6 +1433,19 @@ async function main(): Promise<void> {
   const matchedOnly = argv.includes("--matched");
   const matchedKeys = new Set(matchedOnly ? matched().map((t) => `${sectionKey(t)}\u0000${t.line}`) : []);
   /**
+   * `--pairs <n>`: the widened sweep's sample, both arms, in pair order.
+   *
+   * `pairs()` holds the rule and the reasoning; this only turns it into a task
+   * list. It REPLACES the `--state`/`--repo`/`--matched` filters rather than
+   * composing with them, because the rule already fixes the state (one of
+   * each), the repository (round-robin) and the matching (by section) -- and a
+   * filter layered on top would silently unbalance the pairs it emits.
+   */
+  const nPairs = argv.includes("--pairs")
+    ? Number.parseInt(argv[argv.indexOf("--pairs") + 1] ?? "", 10)
+    : null;
+  if (nPairs !== null && !Number.isFinite(nPairs)) throw new Error("--pairs needs a number");
+  /**
    * RESUME, because a sweep that cannot resume loses everything to one bug.
    *
    * The first run of this file died in cleanup after 8 of 15 tasks (see
@@ -1225,16 +1457,22 @@ async function main(): Promise<void> {
   const had = existsSync(PATH_) ? load().rows : [];
   const key = (r: { repo: string; file: string; line: number }): string => `${r.repo}\u0000${r.file}\u0000${r.line}`;
   const done_ = new Set(had.map(key));
-  const all = corpus()
-    .filter((t) => (only ? t.state === only : true))
-    .filter((t) => (repoOnly ? t.repo === repoOnly || basename(t.repo) === repoOnly : true))
-    .filter((t) => (matchedOnly ? matchedKeys.has(`${sectionKey(t)}\u0000${t.line}`) : true));
+  const all =
+    nPairs !== null
+      ? pairs(nPairs)
+      : corpus()
+          .filter((t) => (only ? t.state === only : true))
+          .filter((t) => (repoOnly ? t.repo === repoOnly || basename(t.repo) === repoOnly : true))
+          .filter((t) => (matchedOnly ? matchedKeys.has(`${sectionKey(t)}\u0000${t.line}`) : true));
+  // `pairs()` is already in the order it wants running, and `--limit` would cut
+  // a pair in half, so it is refused rather than quietly applied.
+  if (nPairs !== null && limit !== Infinity) throw new Error("--pairs fixes the sample; --limit would halve a pair");
   const tasks = all.filter((t) => !done_.has(key(t))).slice(0, limit);
   const at = heads();
   if (all.length === 0) throw new Error("no tasks -- run `--repos` first to clone");
   if (tasks.length === 0) {
     console.log(`\n  all ${all.length} tasks are already in the record; nothing to do.\n`);
-    report({ note: NOTE, repos: roster(), heads: at, rows: had });
+    report({ note: NOTE(), sweep: SWEEP, repos: roster(), heads: at, rows: had });
     return;
   }
   process.stderr.write(
@@ -1254,10 +1492,10 @@ async function main(): Promise<void> {
     mkdirSync(RECORDS, { recursive: true });
     writeFileSync(
       PATH_,
-      `${JSON.stringify({ note: NOTE, repos: roster(), heads: at, rows }, null, 2)}\n`,
+      `${JSON.stringify({ note: NOTE(), sweep: SWEEP, repos: roster(), heads: at, rows }, null, 2)}\n`,
     );
   }
-  report({ note: NOTE, repos: roster(), heads: at, rows });
+  report({ note: NOTE(), sweep: SWEEP, repos: roster(), heads: at, rows });
 }
 
 if (process.argv[1]?.endsWith("wild.ts")) await main();
