@@ -2028,6 +2028,7 @@ fn sc_brush(
   note : String,
   hiding : Array[Int],
   ward_from : Int,
+  lit : Int,
 ) -> Scenario {
   let g = stage(comp_by_name("meta"), comp_by_name("dive"), 5, 30)
   park_all(g)
@@ -2035,8 +2036,10 @@ fn sc_brush(
   scout.node = ward_from
   scout.wards = WARD_CHARGES
   // One of ours sitting in a brush, so at least one is lit and "which of
-  // these could be hiding them" has a wrong answer in it.
-  g.champs[4].node = node_id("a_jg_top")
+  // these could be hiding them" has a wrong answer in it. Which one differs
+  // between the states: with the same brush lit in both, the two questions
+  // had the same answer and the class was measuring one state twice.
+  g.champs[4].node = lit
   let carry = g.champs[3]
   carry.node = node_id("mid_bot")
   // Theirs, tucked into the brush the crossing runs past.
@@ -2068,7 +2071,12 @@ fn sc_siege(
 ) -> Scenario {
   let g = stage(comp_by_name("meta"), comp_by_name("bruisers"), 5, tick)
   park_all(g)
-  let tower = node_id("b1_mid")
+  // The plated tower is in TOP, and the open gate is in MID. They have to be
+  // different lanes: the first version plated their mid outer tower and then
+  // broke it two lines later to open the lane, so the plate question was
+  // asked about a tower that was not there and answered 140 — the count on
+  // an untouched tower somewhere else — in all three states.
+  let tower = node_id("b1_top")
   for s in g.structures {
     if s.node == tower {
       s.plates = plates_left
@@ -2098,10 +2106,7 @@ fn sc_siege(
     name,
     note,
     state,
-    asks: [
-      ask_siege_plates(g, node_id("b1_top")),
-      ask_siege_window(g, TEAM_A, runner.id),
-    ],
+    asks: [ask_siege_plates(g, tower), ask_siege_window(g, TEAM_A, runner.id)],
   }
 }
 
@@ -2185,15 +2190,17 @@ pub fn bench_suite() -> Array[Scenario] {
     ),
     sc_brush(
       "brush_two_waiting",
-      "two of theirs in the bottom jungle, and a carry about to cross it",
+      "two of theirs in the bottom jungle, our own top jungle lit, and a carry about to cross",
       [node_id("b_jg_bot"), node_id("a_jg_bot")],
       RIV_BOT,
+      node_id("a_jg_top"),
     ),
     sc_brush(
       "brush_one_waiting",
-      "one of theirs in their own bottom jungle, beside the pit we are standing on",
+      "one of theirs in their bottom jungle, and we are standing in their TOP jungle",
       [node_id("b_jg_bot")],
       RIV_BOT,
+      node_id("b_jg_top"),
     ),
     sc_siege(
       "siege_early_plates",

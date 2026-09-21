@@ -545,12 +545,13 @@ pub fn Game::dive_is_clean(
 /// one is granted on a copy and the fight played out. The truth for the
 /// `drake` class.
 ///
-/// Reusing `simulate_fight` is deliberate, and it is also the reason ocean
-/// loses every one of these: ocean stacks are out-of-combat regeneration, and
-/// a fight on one node is never out of combat. That is not a flaw in the
-/// question — it is the rule, stated where a policy can be wrong about it —
-/// but it does mean this question is about the fight and not about the game,
-/// and a reader weighing ocean should read the horizon.
+/// Reusing `simulate_fight` is deliberate, and it shapes the answers: a fight
+/// on one node is never out of combat, so an ocean STACK does nothing here
+/// and the question is about the fight rather than about the game. An ocean
+/// stack that completes the SOUL is a different matter — that soul heals with
+/// an enemy on the node, which nothing else in the game does — and it does
+/// win one of the benchmark's three states. The first version of this comment
+/// claimed ocean never wins; the suite disagreed with it.
 pub fn Game::best_drake_element(
   self : Game,
   team : Int,
