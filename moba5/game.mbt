@@ -2114,18 +2114,48 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       a.hp = @cmp.minimum(a.max_hp, a.hp + amount)
     }
   }
+  // Who died is decided HERE, from the damage and the heals, before anything
+  // else in this loop can move anybody's health.
+  //
+  // It used to be decided inside the loop, and that was a real bug with a
+  // real consequence: a kill awards experience, experience can raise a level,
+  // a level raises maximum health and `refresh_hp` adds the difference to
+  // current health — so a champion whose health had gone to -6 could be
+  // lifted back to 8 by the experience from the kill it had just made, and
+  // then read as alive when the loop reached it. Which of two champions that
+  // killed each other survived came down to the order `champ_dmg` happened to
+  // hold them, which is the order they acted, which is champion id order.
+  // **Team A won every exactly even fight**, and in a mirror match — five
+  // identical champions against five identical champions — the two teams'
+  // plans diverged at tick 40 because of it.
+  let dying : Array[Int] = []
   for entry in champ_dmg {
     let (id, _) = entry
     let target = self.champs[id]
-    if target.respawn != 0 || target.hp > 0 {
-      continue
+    if target.respawn == 0 && target.hp <= 0 {
+      dying.push(id)
     }
+  }
+  // Mark every death and set every respawn timer BEFORE awarding any kill.
+  //
+  // The timer is `RESPAWN_BASE + level`, and a kill awards experience that can
+  // raise a level — so two champions that killed each other, marked and paid
+  // one at a time, came back a tick apart: the second one's timer was read
+  // after the first one's kill had levelled it. Same shape as the bug above,
+  // one step further down, and it showed up the same way — a mirror match of
+  // `dive` against `dive` diverged at tick 16 with one jungler back at base
+  // and the other still lying in the river.
+  for id in dying {
+    let target = self.champs[id]
     target.hp = 0
     target.deaths += 1
     target.respawn = RESPAWN_BASE + target.level
     target.shield = 0
     target.shield_ttl = 0
     target.stunned = 0
+  }
+  for id in dying {
+    let target = self.champs[id]
     match top_hit.get(id) {
       Some((killer_id, _)) => {
         let killer = self.champs[killer_id]
@@ -2150,6 +2180,15 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       }
       None => ()
     }
+  }
+  // And zero them again. A champion that traded its life for a kill is owed
+  // the experience for it, `gain_xp` may level it and `refresh_hp` then adds
+  // the extra maximum to its current health — so without this a corpse shows
+  // up in the observation with health on it. `alive()` already reads the
+  // respawn timer, so this is about what a policy is shown rather than about
+  // who is standing.
+  for id in dying {
+    self.champs[id].hp = 0
   }
 
   // Crowd control takes the target's next turn.

@@ -1141,7 +1141,7 @@ fn ask_brush_step(g : Game, champ_id : Int, node : Int) -> Ask {
 
 ///|
 /// `siege` — what is the plating on this tower worth to the team?
-fn ask_siege_plates(g : Game, team : Int, node : Int) -> Ask {
+fn ask_siege_plates(g : Game, node : Int) -> Ask {
   let plates = match g.structure_at(node) {
     Some(s) => s.plates
     None => 0
@@ -2099,7 +2099,7 @@ fn sc_siege(
     note,
     state,
     asks: [
-      ask_siege_plates(g, TEAM_A, node_id("b1_top")),
+      ask_siege_plates(g, node_id("b1_top")),
       ask_siege_window(g, TEAM_A, runner.id),
     ],
   }

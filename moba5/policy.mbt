@@ -213,7 +213,16 @@ pub fn Game::can_contest(self : Game, node : Int, team : Int) -> Bool {
   if self.champs_at(node, enemy_of(team)).is_empty() {
     return true
   }
-  self.fight_is_won(node, team, 12)
+  // "We do not lose the trade", not "we win outright". The difference is the
+  // even fight, and it matters more than it sounds: an even fight in this
+  // engine is won by team A, because champions resolve in id order and A's
+  // ids come first. Asking `fight_is_won` here made a MIRROR MATCH diverge —
+  // at tick 40 of five identical champions against five identical champions,
+  // A's plan read "herald is up" and B's read "dragon is up", because A won
+  // the coin flip for the top river and B conceded it. The plan should not
+  // turn on the engine's resolution order, and conceding an even objective
+  // fight is not how the objective is played either.
+  self.simulate_fight(node, FIGHT_TICKS).trade_not_lost(team)
 }
 
 ///|
