@@ -1429,7 +1429,12 @@ function comparisonSection(rec: Record_): void {
     { name: "the gate spoke", of: spoke, lower: "less to judge" },
     { name: "seconds", of: (r) => Math.round(r.ms / 1000), lower: "finished sooner" },
   ];
-  console.log("\n| per run | open (median) | done (median) | diff of means | exact p | splits |");
+  // The header says `permutation p` and not `exact p`: at 16 against 16,
+  // C(32,16) is 601,080,390 and the test samples. docs/55's 5 against 8 was
+  // C(13,5) = 1,287 and enumerated everything, so the old header was true
+  // there and would have been false here -- with "(sampled)" printed in the
+  // cell next to a column claiming exactness.
+  console.log("\n| per run | open (median) | done (median) | diff of means | permutation p | splits |");
   console.log("| --- | --- | --- | --- | --- | --- |");
   for (const m of metrics) {
     const a = open.map(m.of);
@@ -1443,23 +1448,42 @@ function comparisonSection(rec: Record_): void {
   /**
    * PER SECTION, because the pooled row above is a cancellation and not a
    * null. The design pairs by section, so this is the breakdown the design
-   * supports, and the two sections move in OPPOSITE directions on every
-   * metric -- which is the whole reason the pooled difference is near zero.
+   * supports, and docs/55's two sections move in OPPOSITE directions on every
+   * metric -- which is the whole reason its pooled difference is near zero.
    * Neither reaches 0.05, and `Tier 2` cannot: its floor is one relabelling
    * in ten.
+   *
+   * SUPPRESSED WHEN EVERY SECTION HOLDS 1 AGAINST 1, which is what a paired
+   * sample is. There, `C(2,1)` is 2, so **every p is 1.000 and every floor is
+   * 0.500 by construction** -- for the widened sweep this table was 80 rows
+   * that could not have said anything else, which is worse than saying
+   * nothing because it looks like sixteen findings. §4.1's paired test is the
+   * instrument for that design, and it is the one that was pre-registered.
    */
-  console.log("\n| section | per run | open | done | diff | exact p | floor |");
-  console.log("| --- | --- | --- | --- | --- | --- | --- |");
-  for (const k of shared) {
-    const section = k.split("\u0000")[2];
-    const o = open.filter((r) => key(r) === k);
-    const d = done.filter((r) => key(r) === k);
-    for (const m of metrics) {
-      const t = permutation(o.map(m.of), d.map(m.of));
-      console.log(
-        `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
-          `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
-      );
+  const everyPairIsOneToOne = shared.every(
+    (k) => open.filter((r) => key(r) === k).length === 1 && done.filter((r) => key(r) === k).length === 1,
+  );
+  if (everyPairIsOneToOne) {
+    console.log(
+      `\n**No per-section table**: every one of the ${shared.length} sections holds exactly one run ` +
+        "of each class, so an unpaired test inside a section enumerates 2 relabellings and returns " +
+        "p = 1.000 and a floor of 0.500 **for every metric, by construction**. That is not a null, " +
+        "it is arithmetic. §4.1 is the test this design supports.\n",
+    );
+  } else {
+    console.log("\n| section | per run | open | done | diff | permutation p | floor |");
+    console.log("| --- | --- | --- | --- | --- | --- | --- |");
+    for (const k of shared) {
+      const section = k.split("\u0000")[2];
+      const o = open.filter((r) => key(r) === k);
+      const d = done.filter((r) => key(r) === k);
+      for (const m of metrics) {
+        const t = permutation(o.map(m.of), d.map(m.of));
+        console.log(
+          `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
+            `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
+        );
+      }
     }
   }
   const signs = shared.map((k) => {
@@ -1544,8 +1568,9 @@ function reachLine(rec: Record_): string {
     );
   }
   return (
-    `- **The fence has a gap and this sweep walked into it: ${r.calls} calls named a harness clone ` +
-    `tree**, ${r.writes === 0 ? "**none of them with a write tool**" : `**${r.writes} of them with a write tool**`}. ` +
+    `- **The fence has a gap and this sweep walked into it: ${r.calls} ` +
+    `${r.calls === 1 ? "call" : "calls"} named a harness clone tree**, ` +
+    `${r.writes === 0 ? "**none of them with a write tool**" : `**${r.writes} of them with a write tool**`}. ` +
     "`src/gate.mjs` says it denies anything outside the sandbox; its rule is `/home/` and `/root/` " +
     "only, because `/tmp` was assumed read-only traffic -- and the harness puts its clone trees and " +
     `every sandbox under \`/tmp\`. ${r.byTree[0] ? `Most of it is \`${r.byTree[0].tree}\` (${r.byTree[0].calls}).` : ""} ` +
