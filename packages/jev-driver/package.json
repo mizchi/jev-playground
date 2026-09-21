@@ -1,0 +1,33 @@
+{
+  "name": "jev-driver",
+  "version": "0.1.0",
+  "description": "A chaosbringer Driver that asks Jev what to do next over a typed, per-operation action space. One request per step, no screenshot.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": ["jev", "typesafe", "chaosbringer", "browser", "driver"],
+  "main": "./src/driver.ts",
+  "exports": {
+    ".": "./src/driver.ts",
+    "./space": "./src/space.ts",
+    "./enrich": "./src/enrich.ts"
+  },
+  "files": ["src", "README.md"],
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "test": "tsx test.ts",
+    "bench": "tsx bench.ts"
+  },
+  "dependencies": { "@jev-playground/jev-core": "*" },
+  "peerDependencies": {
+    "chaosbringer": ">=0.9.0",
+    "playwright": ">=1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "chaosbringer": { "optional": true },
+    "playwright": { "optional": true }
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

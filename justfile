@@ -434,9 +434,10 @@ router-harder: install-router
 
 # @inputs: packages/**
 # @cost: 1.0
-# Check the five components: question shapes, the policies' totality, the cost
-# ladder, the guard's fail-safe paths, the compactor's structural constraints.
-# No API key, no network, no pi
+# Check the components: question shapes, the policies' totality, the cost
+# ladder, the guard's fail-safe paths, the compactor's structural constraints,
+# and the browser driver's action space. No API key, no network, no pi, no
+# browser
 test-packages: install-packages
     npm --prefix packages/jev-core test
     npm --prefix packages/jev-model-router test
@@ -445,6 +446,7 @@ test-packages: install-packages
     npm --prefix packages/jev-compact test
     npm --prefix packages/jev-orchestrator test
     npm --prefix packages/jev-hermes test
+    npm --prefix packages/jev-driver test
 
 # @inputs: packages/**
 # @cost: 3.4
@@ -454,7 +456,7 @@ typecheck-packages: install-packages
       --moduleResolution nodenext --skipLibCheck \
       packages/jev-core/src/*.ts packages/jev-model-router/src/*.ts packages/jev-skill-router/src/*.ts \
       packages/jev-guard/src/*.ts packages/jev-compact/src/*.ts packages/jev-orchestrator/src/*.ts \
-      packages/jev-hermes/src/*.ts
+      packages/jev-hermes/src/*.ts packages/jev-driver/src/*.ts
 
 # @inputs: experiments/hermes/package.json
 # @cost: 8.0
