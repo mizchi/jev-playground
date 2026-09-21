@@ -194,6 +194,12 @@ test-jevlang-js:
 conformance: moon-build
     scripts/jevlang-conformance.sh
 
+# @inputs: docs/**
+# @cost: 0.1
+# Check every docs/NN-*.md#anchor still points at a heading that exists
+check-doc-anchors:
+    node scripts/check-doc-anchors.mjs
+
 # @inputs: hooks/**
 # @cost: 1.0
 # Check that all seven of the permission hook's failure paths defer
@@ -524,5 +530,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-moba5 replay-moba5-bench replay-moba5-comps replay-moba5-coherence replay-moba5-wording test-jevlang-js conformance test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-moba5 replay-moba5-bench replay-moba5-comps replay-moba5-coherence replay-moba5-wording test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
     @echo "all green"

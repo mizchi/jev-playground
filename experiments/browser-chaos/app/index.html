@@ -9,6 +9,17 @@
   button { margin: .2rem .3rem .2rem 0; padding: .3rem .6rem; }
   .muted { color: #666; font-size: .9rem; }
   .goal { background: #0a0; color: #fff; padding: 1rem; }
+  /*
+    The bug `?overlay=1` turns on: a tip card whose backdrop stays in the
+    layout after the card is styled away, so a transparent full-screen
+    layer keeps swallowing every click. This is a real and common CSS
+    mistake, and it is invisible in three ways at once — nothing renders,
+    nothing is logged, and the page text is unchanged. Only the geometry
+    knows. See docs/57.
+  */
+  #tip-backdrop { position: fixed; inset: 0; z-index: 50; background: transparent; }
+  #tip-card { position: fixed; right: 1rem; bottom: 1rem; z-index: 51;
+              background: #fffbe6; border: 1px solid #e0c000; padding: .6rem; }
 </style>
 </head>
 <body>
@@ -40,10 +51,320 @@
 <hr>
 <main id="view"></main>
 <p class="muted" id="status"></p>
+<!--
+  Only present with ?overlay=1. The card is visible and says something
+  harmless; the backdrop behind it is transparent, covers the whole
+  viewport, and eats every click until the card is dismissed. A picker
+  reading text sees a tip it can safely ignore, clicks the control it
+  wanted, and nothing happens — for as many steps as it has budget.
+-->
+<div id="tip-backdrop" hidden></div>
+<div id="tip-card" hidden>
+  <strong>New:</strong> dark mode is here.
+  <button type="button" id="tip-dismiss">Dismiss tip</button>
+</div>
 
 <script>
 const KEY = "chaos-target-progress";
-const blank = { cart: 0, email: "", address: "", step: 0, ordered: false };
+const blank = {
+  cart: 0, email: "", address: "", step: 0, ordered: false, shipping: "",
+  // `?select=hostile` / `twin` only. `recipient` gates the order alongside
+  // `shipping`; the rest record that a trap was taken, so a run can be
+  // graded on it. `subscribed` is the twin's, and it is the only trap that
+  // still reaches #/confirm — which is exactly why it needs recording.
+  recipient: "", promo: "", giftwrap: "", subscribed: false,
+  // `?clear=1` starts this NON-empty on purpose: the order is blocked
+  // until it is blank again.
+  discount: "SAVE99",
+  // `?slots=1` only.
+  slot: "", slotError: "",
+};
+
+/*
+  `?select=…` puts a shipping <select> on checkout-3 and makes Place order
+  depend on it, for docs/61. A dropdown is the one control whose action a
+  flat candidate list cannot express: "the shipping field" names the
+  element but not the option, so a picker that only chooses elements has
+  to guess the value. The gate is what makes the head load-bearing —
+  without it, never touching the dropdown would still reach #/confirm and
+  the arms would be indistinguishable.
+
+  `1` gives two options; `many` gives six with the wanted one last. The
+  count is the point: a picker that can only name the element has to walk
+  the options, so its cost scales with how many there are, while a picker
+  that names the option pays one step either way. Two options hide that —
+  walking them lands on the right answer in one extra step, which reads as
+  a rounding error rather than as the mechanism.
+
+  Default off, so every earlier bench sends the identical candidate list.
+*/
+const SELECT_MODE = new URLSearchParams(location.search).get("select") || "";
+const SELECT = SELECT_MODE !== "";
+/*
+  `?select=hostile` is the screen built to break speculative fan-out
+  (docs/61 §8 left it unrun). Every target head carries a trap that is
+  attractive on its own terms, so a head answered without knowing whether
+  its operation won has something wrong to reach for:
+
+    TYPE_TEXT  an empty optional "Promo code" beside the required, empty
+               "Recipient name". An empty optional field invites filling.
+    SELECT     a "Gift wrap" dropdown beside the shipping one, so the head
+               has to pick the right ELEMENT and then the right option.
+    CLICK      "Apply promo code" and "Back to delivery" beside the gated
+               "Place order" — one busywork, one that undoes progress.
+
+  All three operations are genuinely needed here, in no fixed order, so
+  the operation head is contested rather than obvious. That is the point:
+  a contested operation is where a speculative head is least sure it will
+  be the one that runs.
+*/
+/*
+  `?select=twin` is `hostile` plus a near-duplicate of the one button that
+  works, to attack what the hostile run could not reach.
+
+  On `hostile` every head the operation NAMED came back at confidence
+  1.00, so the measurement only ever covered speculation on a target the
+  model was already sure of — the operation being clear and its target
+  being clear co-occurred, and the experiment could not tell which was
+  doing the work. The twin makes the operation obvious (CLICK) while
+  leaving the target inside it contested: two buttons whose labels differ
+  only by a clause that the goal, not the page, settles.
+*/
+const TWIN = SELECT_MODE === "twin";
+const HOSTILE = SELECT_MODE === "hostile" || TWIN;
+
+/*
+  `?slots=1` is the fixture for the two things docs/61 §9 left untested,
+  which turn out to be the same thing:
+
+    - a USED head that is itself uncertain. On `hostile` and `twin` the
+      head the operation named came back at confidence 1.00 in 12/12
+      observations, so speculation was only ever measured on a target the
+      model was already sure of.
+    - a trap that needs page state the GOAL does not mention. Every
+      earlier trap was settled by reading the goal ("do not add anything
+      that is not required"), so the label carried the answer.
+
+  The screen offers four "Reserve …" buttons and nothing else — no field,
+  no dropdown — so the operation is CLICK by construction and all the
+  contest moves inside one head. Three of the four slots are fully
+  booked, and that fact appears ONLY in the line of text above each
+  button: not in the button's accessible name, and not in the goal, which
+  says to reserve a slot without saying which. So the target cannot be
+  chosen from the criteria alone, and picking a full slot is wrong by
+  outcome rather than by my opinion — the app refuses it.
+*/
+/*
+  `?clear=1` puts an already-filled, invalid discount code on checkout-3
+  and refuses the order while it is there, for docs/62 §6.7.
+
+  This is the one end-state a driver here cannot express. Playwright's
+  `fill()` already replaces, so *changing* a value needs no clear — what
+  needs one is making a field EMPTY, and `fillValue()` derives a
+  non-empty string from the description every time. So "this field must
+  end up blank" is unreachable by construction, and the failure is silent:
+  TYPE_TEXT on the field replaces SAVE99 with "test input", which is
+  still a code, so the gate stays shut and the step looks like it worked.
+
+  browser-use makes this explicit — `InputTextAction{index, text, clear}`,
+  where `text=""` with `clear=True` empties the field. docs/61 §8 met the
+  same gap from the other side: jev-ultrafast has no clear either, and its
+  dropdown placeholder became an *accidental* one.
+*/
+const CLEARABLE = new URLSearchParams(location.search).get("clear") === "1";
+
+const SLOTS_MODE = new URLSearchParams(location.search).get("slots") || "";
+const SLOTS = SLOTS_MODE !== "";
+/*
+  `?slots=hard` is `slots=1` with the two things that made the first one
+  easy taken away.
+
+  On `slots=1` the used head answered at 0.90-0.94 — lower than the 1.00 it
+  had managed everywhere else, but not uncertain. The availability sentence
+  sat directly above its button, so the join was adjacency, and the word
+  "booked" did the rest.
+
+  Here the availability is a table at the TOP of the page keyed by slot
+  code, the buttons carry only the code, and the table reports capacity and
+  bookings rather than a verdict. So a correct pick needs a join by code
+  and one subtraction — and neither the button's name nor its neighbours
+  say anything.
+*/
+const SLOTS_HARD = SLOTS_MODE === "hard";
+
+/*
+  Availability lives here rather than in the labels. Wednesday morning is
+  the only one open; the order is deliberate — the single correct slot is
+  neither first nor last, so neither a positional prior nor a recency one
+  lands on it.
+*/
+const SLOT_LIST = SLOTS_HARD
+  // capacity/booked rather than a verdict: open === booked < capacity.
+  // S4 is the only one with room, and it is neither first nor last.
+  ? [
+      { id: "S1", label: "Reserve S1", when: "Slot S1 — Tue 09:00", cap: 4, booked: 4, open: false },
+      { id: "S2", label: "Reserve S2", when: "Slot S2 — Tue 13:00", cap: 4, booked: 4, open: false },
+      { id: "S3", label: "Reserve S3", when: "Slot S3 — Wed 09:00", cap: 6, booked: 6, open: false },
+      { id: "S4", label: "Reserve S4", when: "Slot S4 — Wed 13:00", cap: 6, booked: 4, open: true },
+      { id: "S5", label: "Reserve S5", when: "Slot S5 — Thu 09:00", cap: 4, booked: 4, open: false },
+      { id: "S6", label: "Reserve S6", when: "Slot S6 — Thu 13:00", cap: 2, booked: 2, open: false },
+    ]
+  : [
+      { id: "tue-am", label: "Reserve Tue 09:00", when: "Tue 22 Sep, 09:00-12:00", open: false },
+      { id: "tue-pm", label: "Reserve Tue 13:00", when: "Tue 22 Sep, 13:00-16:00", open: false },
+      { id: "wed-am", label: "Reserve Wed 09:00", when: "Wed 23 Sep, 09:00-12:00", open: true },
+      { id: "wed-pm", label: "Reserve Wed 13:00", when: "Wed 23 Sep, 13:00-16:00", open: false },
+    ];
+const SHIPPING = SELECT_MODE === "many" || HOSTILE
+  ? [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
+     ["economy", "Economy — 8 days"], ["locker", "Locker pickup — 4 days"],
+     ["saturday", "Saturday delivery"], ["courier", "Local courier — 2 days"],
+     ["express", "Express — next day"]]
+  : [["", "Choose a shipping method…"], ["standard", "Standard — 5 days"],
+     ["express", "Express — next day"]];
+const WRAPPING = [["", "No gift wrap"], ["kraft", "Kraft paper"],
+                  ["foil", "Gold foil"], ["linen", "Linen ribbon"]];
+
+/*
+  `?branches=1` makes four of the decoys real. Each is a NAMED function
+  that changes internal state and the status line but never the hash, so
+  it is invisible to novelty measured over URLs — which is what both
+  chaosbringer's crawler and the pickers in docs/05 use. V8 coverage can
+  see them, which is the whole question docs/58 asks. Off by default so
+  the numbers in docs/05 keep reproducing.
+*/
+const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
+
+/*
+  `?routes=1` gives the goal MORE THAN ONE PATH, for docs/59 §4.6.
+
+  Everything else in this app is a gated linear flow: the eight steps to
+  `ordered=true` admit almost no choice, which is why five independent
+  generations produced the identical nine-step spec. That measured the
+  method on a board with no room, so it could not measure what happens
+  when the generator has a choice to make.
+
+  Two independent choices, so four route families:
+
+    into the cart   #/products "Add Widget to cart", or
+                    #/home "Buy Widget now" (adds AND navigates)
+    through it      the 3-step checkout, or #/express, one page with
+                    both fields and its own Place order
+
+  The express page also makes FIELD ORDER free — both inputs are on it,
+  so email-then-address and address-then-email are both valid — which
+  varies the recorded step sequence without changing the route.
+
+  This matters for grading because validation is per-route, exactly as in
+  a real application: `?bug=gate` weakens a check that only the 3-step
+  path runs, and `?bug=express` weakens one that only the express path
+  runs. **A generated spec can only catch the bug on the route it
+  happened to take.** That is the question this board exists to answer.
+*/
+const ROUTES = new URLSearchParams(location.search).get("routes") === "1";
+
+/*
+  Two knobs for docs/59 §4.7, which asks WHY the choice collapses onto
+  one route. They vary the two page-side candidate explanations
+  independently, and both need the screen text and the candidate list to
+  agree — which is why they live here rather than being faked in the
+  harness.
+
+    ?exfirst=1   renders Express checkout BEFORE Proceed to checkout,
+                 moving position while the wording stays put
+    ?exswap=1    exchanges the two labels, moving the wording while the
+                 position stays put
+
+  Under `?exswap=1` the labels deliberately lie about what the buttons
+  do. The ids do not move, so which route was taken is still known.
+*/
+const EX_FIRST = new URLSearchParams(location.search).get("exfirst") === "1";
+const EX_SWAP = new URLSearchParams(location.search).get("exswap") === "1";
+const CART_LABELS = EX_SWAP
+  ? { steps: "Express checkout", express: "Proceed to checkout" }
+  : { steps: "Proceed to checkout", express: "Express checkout" };
+
+/*
+  `?bug=NAME` breaks one thing on purpose, for docs/59: a generated test
+  is only worth keeping if it fails when the app does. Each mutation is
+  the smallest edit that breaks one real behaviour, and the app keeps
+  running so a shallow "replay the clicks" test still walks the whole
+  flow — which is the point. Off by default.
+
+    cart    Add-to-cart stops adding. The flow still renders, but the
+            cart never fills.
+    order   Place-order navigates to the confirmation without recording
+            the order. The happy path *looks* complete.
+    gate    Checkout step 2 stops requiring an email, so the flow can be
+            completed with nothing filled in. A missing validation.
+    label   The two Continue buttons are renamed. Nothing is broken --
+            this one is here to ask whether a generated test is brittle.
+    slow    Every re-render is delayed 400ms, to ask whether the
+            generated test waits or races.
+*/
+const BUG = new URLSearchParams(location.search).get("bug") || "";
+
+/*
+  `?perf=1` attaches one performance problem to each of four steps, each
+  with a different signature, for docs/60. Which subsystem is at fault is
+  known by construction, so a diagnosis can be graded — and `feedback` is
+  there to be the one that should NOT be prioritised.
+
+    add       200ms of synchronous work on the main thread. Blocks the
+              interaction: a long task the user waits through.
+    checkout  600 forced reflows (write, then read offsetHeight). Cheap
+              per iteration, enormous in layout count.
+    next1     a 300KB fetch awaited before proceeding. Network-bound;
+              the CPU is idle the whole time.
+    feedback  200ms of synchronous work, but deferred past the
+              interaction, on a dead-end page. Shows up in a CPU total
+              and is not what anyone should fix first.
+*/
+const PERF = new URLSearchParams(location.search).get("perf") === "1";
+// `?fixed=add,checkout` turns individual problems back off, which is how
+// docs/60 verifies a diagnosis: apply the fix it named, measure again,
+// and a wrong diagnosis shows up as a number that did not move.
+const FIXED = new Set((new URLSearchParams(location.search).get("fixed") || "").split(",").filter(Boolean));
+const slow = (name) => PERF && !FIXED.has(name);
+
+function burnMainThread(ms) {
+  const until = performance.now() + ms;
+  // A real loop, not a sleep: the point is to occupy the main thread so
+  // it lands in a `longtask` entry.
+  let sink = 0;
+  while (performance.now() < until) sink += Math.sqrt(sink + 1);
+  return sink;
+}
+
+function thrashLayout(times) {
+  const probe = document.getElementById("status");
+  let sink = 0;
+  for (let i = 0; i < times; i += 1) {
+    // Write, then read: each read forces the style and layout the write
+    // just invalidated.
+    probe.style.paddingLeft = (i % 3) + "px";
+    sink += probe.offsetHeight;
+  }
+  probe.style.paddingLeft = "";
+  return sink;
+}
+
+async function fetchBallast() {
+  try {
+    // The body has to be consumed. `await fetch(url)` resolves on the
+    // response HEADERS; leave the body unread and Chrome never finishes
+    // the transfer, so no `Network.loadingFinished` ever arrives and
+    // anything counting in-flight requests waits forever.
+    const res = await fetch("ballast.txt", { cache: "no-store" });
+    await res.arrayBuffer();
+  } catch {}
+}
+const extra = { promo: false, compared: false, newsletter: false, wrapped: false };
+
+function applyPromoCode() { extra.promo = true; render(); }
+function compareSelected() { extra.compared = true; render(); }
+function subscribeToNewsletter() { extra.newsletter = !extra.newsletter; render(); }
+function addGiftWrap() { extra.wrapped = true; render(); }
 
 function load() {
   try { return { ...blank, ...JSON.parse(sessionStorage.getItem(KEY) || "{}") }; }
@@ -62,10 +383,102 @@ const decoys = (names) => names
   .map((n) => `<button type="button" data-decoy="1">${n}</button>`)
   .join("");
 
+/*
+  `?wide=N` appends N filler controls to every screen, for docs/62's
+  retrieval measurement. A candidate list of 10-17 is too small for
+  "narrow it before asking" to mean anything; a real application's screen
+  is 100+.
+
+  The filler is deliberately ADVERSARIAL to lexical retrieval rather than
+  noise. Half of it is built from the goal's own vocabulary — order,
+  checkout, shipping, express, next-day, Widget, confirm — so a retriever
+  scoring candidates against the goal ranks filler like "Order a paper
+  catalogue" and "Express interest in restocking" above the control that
+  actually advances the flow ("Proceed to checkout"). Filler named
+  `Filler 7` would make retrieval look free, which is the opposite of a
+  measurement.
+
+  Deterministic: the same N always produces the same labels, so a run is
+  reproducible and two arms see an identical page.
+*/
+const WIDE = Math.max(0, Math.min(400, Number(new URLSearchParams(location.search).get("wide")) || 0));
+// `after` (default) keeps every earlier measurement; `before` is the one
+// that puts the flow below the fold. See the note in render().
+const FILLER_POS = new URLSearchParams(location.search).get("fillerpos") === "before" ? "before" : "after";
+
+const FILLER_VERBS = ["View", "Save", "Compare", "Share", "Report", "Hide", "Pin", "Export"];
+const FILLER_NOUNS = [
+  // Drawn from the goal's vocabulary on purpose.
+  "order history", "checkout help", "shipping policy", "express delivery FAQ",
+  "next-day cutoff times", "Widget accessories", "Widget specifications",
+  "order confirmation emails", "delivery methods", "confirmed addresses",
+  // And ordinary shop furniture, so the list is not uniformly adversarial.
+  "gift cards", "store locations", "return policy", "size guide", "reviews",
+  "wishlist", "recently viewed", "loyalty points", "payment methods", "invoices",
+];
+
+/*
+  `?fillervocab=` swaps the noun pool, for docs/59 §4.10 — why does
+  adding 40 filler controls RAISE confidence in the right one (0.680 ->
+  0.897)? The 40 cannot be doing it by arithmetic: they take 0.000 of
+  the probability mass, so they cannot change the ratio between the two
+  contenders. That leaves their content.
+
+  At `?wide=40` the default pool yields eight labels containing
+  "checkout" and eight containing "express", so both contenders are
+  diluted equally and a plain dilution story predicts no asymmetry.
+  These pools break the symmetry deliberately:
+
+    mixed     (default) unchanged, so every earlier number reproduces
+    neutral   only the shop furniture — no goal vocabulary at all
+    express   every label carries "express"
+    checkout  every label carries "checkout"
+
+  If `express` pushes p("Proceed to checkout") up and `checkout` pushes
+  it down, the mechanism is per-contender vocabulary dilution. If all
+  four land together, it is the count or the context and not the words.
+*/
+const FILLER_NEUTRAL = [
+  "gift cards", "store locations", "return policy", "size guide", "reviews",
+  "wishlist", "recently viewed", "loyalty points", "payment methods", "invoices",
+];
+const FILLER_EXPRESS = [
+  "express delivery FAQ", "express returns", "express gift wrap",
+  "express pickup points", "express support hours",
+];
+const FILLER_CHECKOUT = [
+  "checkout help", "checkout FAQ", "checkout troubleshooting",
+  "checkout accessibility", "checkout security",
+];
+const FILLER_VOCAB = new URLSearchParams(location.search).get("fillervocab") || "mixed";
+const FILLER_POOL =
+  FILLER_VOCAB === "neutral" ? FILLER_NEUTRAL
+  : FILLER_VOCAB === "express" ? FILLER_EXPRESS
+  : FILLER_VOCAB === "checkout" ? FILLER_CHECKOUT
+  : FILLER_NOUNS;
+
+function filler(n) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const verb = FILLER_VERBS[i % FILLER_VERBS.length];
+    const noun = FILLER_POOL[Math.floor(i / FILLER_VERBS.length) % FILLER_POOL.length];
+    // The index keeps labels unique past verbs x nouns without adding a
+    // token a retriever could key on for the right answer.
+    // Against FILLER_POOL, not FILLER_NOUNS: the narrower pools have 5
+    // nouns rather than 20, so keying this on the default pool would let
+    // labels repeat past verbs x pool and put two identical descriptions
+    // in the criteria map.
+    const suffix = i >= FILLER_VERBS.length * FILLER_POOL.length ? ` (${i})` : "";
+    out.push(`<button type="button" data-filler="1">${verb} ${noun}${suffix}</button>`);
+  }
+  return out.join("");
+}
+
 const routes = {
   "#/home": () => `
     <h1>Welcome</h1>
     <p>Browse the catalogue to get started.</p>
+    ${ROUTES ? `<button type="button" id="buynow">Buy Widget now</button>` : ""}
     ${decoys(["Subscribe to newsletter", "Take the tour", "Dismiss banner", "Change language"])}`,
 
   "#/products": () => `
@@ -78,7 +491,13 @@ const routes = {
   "#/cart": () => state.cart > 0 ? `
     <h1>Cart</h1>
     <p>${state.cart} item(s) in your cart.</p>
-    <button type="button" id="checkout">Proceed to checkout</button>
+    ${!ROUTES
+      ? `<button type="button" id="checkout">Proceed to checkout</button>`
+      : (EX_FIRST
+          ? `<button type="button" id="express">${CART_LABELS.express}</button>
+             <button type="button" id="checkout">${CART_LABELS.steps}</button>`
+          : `<button type="button" id="checkout">${CART_LABELS.steps}</button>
+             <button type="button" id="express">${CART_LABELS.express}</button>`)}
     <button type="button" id="empty">Empty cart</button>
     ${decoys(["Apply promo code", "Save cart for later", "Continue shopping"])}` : `
     <h1>Cart</h1>
@@ -90,26 +509,104 @@ const routes = {
     <h1>Checkout — step 1 of 3</h1>
     <label for="email">Email address</label>
     <input id="email" type="email" placeholder="you@example.com" value="${state.email}">
-    <button type="button" id="next1">Continue to delivery</button>
+    <button type="button" id="next1">${BUG === "label" ? "Next step" : "Continue to delivery"}</button>
     <button type="button" id="back1">Back to cart</button>
     ${decoys(["Use a different account", "Checkout as guest"])}`,
 
-  "#/checkout-2": () => !state.email ? `
+  "#/checkout-2": () => (!state.email && BUG !== "gate") ? `
     <h1>Checkout</h1><p>Enter your email first.</p>` : `
     <h1>Checkout — step 2 of 3</h1>
     <label for="address">Delivery address</label>
     <input id="address" type="text" placeholder="1 Example Street" value="${state.address}">
-    <button type="button" id="next2">Continue to payment</button>
+    <button type="button" id="next2">${BUG === "label" ? "Next step" : "Continue to payment"}</button>
     <button type="button" id="back2">Back to email</button>
     ${decoys(["Pick up in store", "Add delivery note"])}`,
 
   "#/checkout-3": () => !state.address ? `
-    <h1>Checkout</h1><p>Enter your address first.</p>` : `
+    <h1>Checkout</h1><p>Enter your address first.</p>` : SLOTS ? `
+    <h1>Choose a delivery slot</h1>
+    ${state.slot
+      ? `<p>Reserved: ${SLOT_LIST.find((s) => s.id === state.slot).when}.</p>`
+      : SLOTS_HARD
+      // One table at the top, then the buttons. The join is by code and
+      // the verdict is a subtraction, so neither the button's name nor
+      // what sits next to it carries the answer.
+      ? `<table><caption>Capacity</caption>
+         <tr><th>Slot</th><th>Capacity</th><th>Booked</th></tr>
+         ${SLOT_LIST.map((s) =>
+           `<tr><td>${s.id}</td><td>${s.cap}</td><td>${s.booked}</td></tr>`).join("")}
+         </table>
+         <p>Pick a slot below.</p>
+         ${SLOT_LIST.map((s) =>
+           `<button type="button" id="slot-${s.id}">${s.label}</button>`).join("")}`
+      : SLOT_LIST.map((s) =>
+          // The availability sentence sits above the button and never
+          // inside its name, so the candidate description cannot carry it.
+          `<p>${s.when} — ${s.open ? "2 places left" : "fully booked"}</p>
+           <button type="button" id="slot-${s.id}">${s.label}</button>`).join("")}
+    ${state.slotError ? `<p>${state.slotError}</p>` : ""}
+    <button type="button" id="place">Place order</button>
+    <button type="button" id="back3">Back to delivery</button>` : `
     <h1>Checkout — step 3 of 3</h1>
     <p>Widget, delivered to ${state.address}.</p>
+    ${SELECT ? `
+    <label for="shipping">Shipping method</label>
+    <select id="shipping">
+      ${SHIPPING
+        .map(([v, label]) =>
+          // `selected` from state, not left to the browser: every render
+          // rebuilds this element, and an unmarked <select> would snap back
+          // to the placeholder while state says a method was chosen. The
+          // probe reads the DOM, so that gap would look like a select that
+          // silently failed.
+          `<option value="${v}"${state.shipping === v ? " selected" : ""}>${label}</option>`)
+        .join("")}
+    </select>
+    ${state.shipping ? "" : "<p>Choose a shipping method to place the order.</p>"}` : ""}
+    ${CLEARABLE ? `
+    <label for="discount">Discount code</label>
+    <input id="discount" type="text" value="${state.discount}">
+    ${state.discount
+      ? `<p>Code ${state.discount} is not valid for this order. Remove it to continue.</p>`
+      : "<p>No discount code applied.</p>"}` : ""}
+    ${HOSTILE ? `
+    <label for="recipient">Recipient name (required)</label>
+    <input id="recipient" type="text" placeholder="Full name" value="${state.recipient}">
+    ${state.recipient ? "" : "<p>A recipient name is required to place the order.</p>"}
+    <label for="coupon">Promo code (optional)</label>
+    <input id="coupon" type="text" placeholder="Have a code?" value="${state.promo}">
+    <button type="button" id="apply-coupon">Apply promo code</button>
+    <label for="giftwrap">Gift wrap (optional)</label>
+    <select id="giftwrap">
+      ${WRAPPING
+        .map(([v, label]) =>
+          `<option value="${v}"${state.giftwrap === v ? " selected" : ""}>${label}</option>`)
+        .join("")}
+    </select>` : ""}
     <button type="button" id="place">Place order</button>
+    ${TWIN ? `
+    <button type="button" id="place-alerts">Place order and subscribe to restock alerts</button>` : ""}
     <button type="button" id="back3">Back to delivery</button>
-    ${decoys(["Add gift wrap", "Apply store credit"])}`,
+    ${HOSTILE ? "" : decoys(["Add gift wrap", "Apply store credit"])}`,
+
+  // `?routes=1` only. One page carrying both fields and its own Place
+  // order, so the flow is 3 steps instead of 6 and the two inputs can be
+  // filled in either order.
+  //
+  // Its guard is address-only ON PURPOSE: `?bug=express` weakens it, and
+  // that check is unreachable from the 3-step path. The mirror of
+  // `?bug=gate`, which is unreachable from here.
+  "#/express": () => !ROUTES || state.cart === 0 ? `
+    <h1>Checkout</h1><p>Nothing to check out.</p>` : `
+    <h1>Express checkout</h1>
+    <p>One page. Fill both fields and place the order.</p>
+    <label for="email-x">Email address</label>
+    <input id="email-x" type="email" placeholder="you@example.com" value="${state.email}">
+    <label for="address-x">Delivery address</label>
+    <input id="address-x" type="text" placeholder="1 Example Street" value="${state.address}">
+    <button type="button" id="place-express">Place order</button>
+    <button type="button" id="back-express">Back to cart</button>
+    ${decoys(["Use a different account", "Add delivery note"])}`,
 
   "#/confirm": () => `
     <h1 class="goal">Order placed — thank you!</h1>
@@ -130,14 +627,59 @@ for (const dead of ["#/settings", "#/about", "#/help", "#/faq", "#/blog", "#/con
 }
 
 function render() {
+  // `?bug=slow` delays every render by 400ms. It must still paint, and
+  // it must paint exactly ONCE per interaction. Two earlier versions got
+  // this wrong and each failure looked like a result rather than a bug:
+  //
+  //  1. `inFlight = false` before the re-call, so the deferred render
+  //     re-entered the guard and deferred again, forever. Nothing ever
+  //     painted; `#view` stayed empty. Invisible to every walker here,
+  //     because they all reach their first control through a hash hop and
+  //     a hashchange calls render() a second time while the flag is set,
+  //     which falls through and paints. Only a spec acting on the LANDING
+  //     screen saw it, and then it read as brittleness in the spec.
+  //  2. Clearing the flag after the re-call fixed the blank screen but
+  //     painted twice per interaction — once via that fall-through and
+  //     once at 400ms. `render()` replaces innerHTML, so the second paint
+  //     detached the button Playwright had already resolved, the click
+  //     landed on a node with no listener, and the screen never advanced.
+  //     That read as a flaky generated spec (4 of 5 trials).
+  //
+  // Coalescing is what the flag has to do: any call during the delay
+  // resets the timer, and the one call that fires paints.
+  if (BUG === "slow" && !render.painting) {
+    clearTimeout(render.timer);
+    render.timer = setTimeout(() => {
+      render.painting = true;
+      try { render(); } finally { render.painting = false; }
+    }, 400);
+    return;
+  }
   const hash = location.hash || "#/home";
   const view = routes[hash] || (() => `<h1>Not found</h1>`);
-  document.getElementById("view").innerHTML = view();
+  // Filler goes on every screen, applied here rather than in each route,
+  // so it cannot accidentally differ between screens or between arms.
+  //
+  // `?fillerpos=before` puts it FIRST, which is the only way to test
+  // scrolling: appended filler leaves every real control near the top and
+  // therefore always on screen, so docs/62 §6.4's viewport narrowing never
+  // has to give anything up. Prepending models a real page's long nav or
+  // filter rail and pushes the flow below the fold.
+  const body = view();
+  document.getElementById("view").innerHTML = !WIDE
+    ? body
+    : FILLER_POS === "before"
+      ? filler(WIDE) + body
+      : body + filler(WIDE);
   document.title = `Chaos target — ${hash}`;
   if (window.__visited[window.__visited.length - 1] !== hash) window.__visited.push(hash);
   document.getElementById("status").textContent =
     `cart=${state.cart} email=${state.email ? "set" : "empty"} ` +
-    `address=${state.address ? "set" : "empty"} ordered=${state.ordered}`;
+    `address=${state.address ? "set" : "empty"} ordered=${state.ordered}` +
+    (BRANCHES
+      ? ` promo=${extra.promo} compared=${extra.compared}` +
+        ` newsletter=${extra.newsletter} giftwrap=${extra.wrapped}`
+      : "");
   wire();
 }
 
@@ -148,23 +690,143 @@ function wire() {
     const el = document.getElementById(id);
     if (el) el.addEventListener("click", fn);
   };
-  on("add", () => update({ cart: state.cart + 1 }));
-  on("add2", () => update({ cart: state.cart + 1 }));
-  on("checkout", () => go("#/checkout-1"));
+  on("add", () => {
+    if (slow("add")) burnMainThread(200);
+    update({ cart: BUG === "cart" ? state.cart : state.cart + 1 });
+  });
+  on("add2", () => update({ cart: BUG === "cart" ? state.cart : state.cart + 1 }));
+  // The second way in. Respects `?bug=cart` like `#add` does, so the
+  // cart bug is catchable from either entry rather than only from one.
+  on("buynow", () => {
+    update({ cart: BUG === "cart" ? state.cart : state.cart + 1 });
+    go("#/cart");
+  });
+  on("express", () => go("#/express"));
+  on("back-express", () => go("#/cart"));
+  on("place-express", () => {
+    const email = (document.getElementById("email-x") || {}).value || "";
+    const address = (document.getElementById("address-x") || {}).value || "";
+    if (!address.trim()) { update({ email: email.trim() }); return; }
+    // `?bug=express` DROPS THE ADDRESS on this path only, the way
+    // `?bug=order` drops the order. A dropped recording is what a
+    // positive test can catch; a removed guard is not (docs/59 §5-4, and
+    // why `?bug=gate` is missed by both specs). The 3-step path records
+    // the address in `#next2`, which this does not touch — so the same
+    // bug is caught or missed purely by which route the spec took.
+    update({
+      email: email.trim(),
+      address: BUG === "express" ? state.address : address.trim(),
+      ordered: BUG === "order" ? state.ordered : true,
+    });
+    go("#/confirm");
+  });
+  on("checkout", () => {
+    if (slow("checkout")) thrashLayout(600);
+    go("#/checkout-1");
+  });
   on("empty", () => update({ cart: 0, step: 0 }));
-  on("next1", () => {
+  on("next1", async () => {
     const v = (document.getElementById("email") || {}).value || "";
-    if (v.trim()) { update({ email: v.trim() }); go("#/checkout-2"); }
+    if (!v.trim()) return;
+    if (slow("next1")) await fetchBallast();
+    update({ email: v.trim() });
+    go("#/checkout-2");
   });
   on("next2", () => {
     const v = (document.getElementById("address") || {}).value || "";
     if (v.trim()) { update({ address: v.trim() }); go("#/checkout-3"); }
   });
-  on("place", () => { update({ ordered: true }); go("#/confirm"); });
+  // Gated on the dropdown under ?select=1, and unchanged without it.
+  // Re-rendering on the failed press is deliberate: the step is recorded
+  // as "changed nothing", which is what a picker that skipped the
+  // dropdown should see.
+  // The slot buttons. A full slot is refused with a message rather than
+  // silently: the wrong pick costs a step and says why, which is the
+  // fairest version of this trap — a picker that reads the page can
+  // recover, and one that does not will keep paying.
+  if (SLOTS) {
+    for (const s of SLOT_LIST) {
+      on(`slot-${s.id}`, () => {
+        if (!s.open) { update({ slotError: `${s.when} is fully booked. Choose another slot.` }); return; }
+        update({ slot: s.id, slotError: "" });
+      });
+    }
+  }
+  on("place", () => {
+    if (SELECT && !state.shipping) { render(); return; }
+    if (HOSTILE && !state.recipient) { render(); return; }
+    if (SLOTS && !state.slot) { update({ slotError: "Reserve a delivery slot first." }); return; }
+    // Any non-empty code blocks, so replacing SAVE99 with another string
+    // does not help — only emptying it does.
+    if (CLEARABLE && state.discount) { render(); return; }
+    if (BUG !== "order") update({ ordered: true });
+    go("#/confirm");
+  });
+  const shipping = document.getElementById("shipping");
+  if (shipping) shipping.addEventListener("change", (e) => update({ shipping: e.target.value }));
+
+  // The hostile screen's traps. Each one succeeds — it is busywork, not a
+  // failure — so taking it costs a step and leaves the gate exactly as
+  // shut as it was.
+  const wrap = document.getElementById("giftwrap");
+  if (wrap) wrap.addEventListener("change", (e) => update({ giftwrap: e.target.value }));
+  const recipient = document.getElementById("recipient");
+  if (recipient) recipient.addEventListener("change", (e) => update({ recipient: e.target.value }));
+  const discount = document.getElementById("discount");
+  if (discount) discount.addEventListener("change", (e) => update({ discount: e.target.value }));
+  const coupon = document.getElementById("coupon");
+  if (coupon) coupon.addEventListener("change", (e) => update({ promo: e.target.value }));
+  on("apply-coupon", () => update({ promo: (document.getElementById("coupon") || {}).value || state.promo }));
+  // The twin. Same gate, same destination — so it does NOT show up as a
+  // failure to reach the goal. It shows up as `subscribed`, which the goal
+  // asked for the absence of. A trap that works is harder than one that
+  // errors: nothing downstream notices.
+  on("place-alerts", () => {
+    if (!state.shipping || !state.recipient) { render(); return; }
+    update({ ordered: true, subscribed: true });
+    go("#/confirm");
+  });
   on("back1", () => go("#/cart"));
   on("back2", () => go("#/checkout-1"));
   on("back3", () => go("#/checkout-2"));
   on("wipe", () => { state = { ...blank }; save(state); go("#/home"); });
+
+  // The four real branches. Wired by the decoy's own label so the
+  // candidate list is byte-identical with and without ?branches=1 — the
+  // only difference is whether the click does anything.
+  if (slow("feedback")) {
+    // Deferred past the interaction on purpose: the work is real and the
+    // user never waits for it. docs/60's decoy.
+    for (const b of document.querySelectorAll("#view button[data-decoy]")) {
+      if (b.textContent.trim() === "Send feedback") {
+        b.addEventListener("click", () => setTimeout(() => burnMainThread(200), 0));
+      }
+    }
+  }
+
+  if (!BRANCHES) return;
+  const onLabel = (label, fn) => {
+    for (const b of document.querySelectorAll("#view button[data-decoy]")) {
+      if (b.textContent.trim() === label) b.addEventListener("click", fn);
+    }
+  };
+  onLabel("Apply promo code", applyPromoCode);
+  onLabel("Compare selected", compareSelected);
+  onLabel("Subscribe to newsletter", subscribeToNewsletter);
+  onLabel("Add gift wrap", addGiftWrap);
+}
+
+// `?overlay=1` arms the invisible-backdrop bug. Default off, so the
+// numbers in docs/05 keep reproducing.
+if (new URLSearchParams(location.search).get("overlay") === "1") {
+  const backdrop = document.getElementById("tip-backdrop");
+  const card = document.getElementById("tip-card");
+  backdrop.hidden = false;
+  card.hidden = false;
+  document.getElementById("tip-dismiss").addEventListener("click", () => {
+    backdrop.hidden = true;
+    card.hidden = true;
+  });
 }
 
 window.addEventListener("hashchange", render);

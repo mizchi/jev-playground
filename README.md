@@ -19,7 +19,9 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 | `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標 + **セレクタ 1 個と 1 文で書く ad-hoc ルール**、ファイル単位でバッチ) |
 | `experiments/task-filter` | **タスク/テストランナーの filter** — `just` の依存グラフ + diff で「今何を走らせるか」を採点 |
+| `experiments/browser-chaos` | **ブラウザ操作** — 操作ごとに分けた action space を投機的に 1 リクエストで聞く driver。ベンチ用アプリと**モデル不要の検査 7 本**つき |
 | `justfile` | このリポジトリのチェックをタスクグラフにしたもの(`just ci` で全部、`just test-lib` で 1 つ) |
+| `scripts/` | 依存ゼロのリポジトリ検査(doc アンカー、jevlang 2 実装の一致、Jev vs Jev の対戦) |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 | `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
 | `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
@@ -163,6 +165,12 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
 | [06](docs/06-ideas.md) | 次に効きそうなことの提案(優先順位つき) |
+| [07](docs/07-escalation.md) | confidence でエスカレーションする二層構成 — 成立条件は 3 つある |
+| [08](docs/08-skill-suggestion.md) | [skill suggestion cookbook](https://docs.typesafe.ai/cookbooks/skill_suggestion) の追試(68 スキル) |
+| [09](docs/09-guardrails.md) | [LLM guardrails cookbook](https://docs.typesafe.ai/cookbooks/llm_guardrails) の追試(入出力スクリーニング) |
+| [10](docs/10-jev-vs-jev.md) | Jev vs Jev を独立プロセスで対戦させる(referee + player ×2) |
+| [11](docs/11-synergy.md) | チャンピオンのシナジーと相互キルの同時処理 — 機構を入れないと編成は測れない |
+| [12](docs/12-comeback.md) | 間違ったドラフトを正しいアクションで取り返せるか(基準を上げると反転する) |
 | [16](docs/16-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
 | [17](docs/17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
 | [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
@@ -303,7 +311,7 @@ gap が広ければ閾値はどこに置いても同じ答えになり、**gap �
 一方、**セレクタは静かに失敗します**。当たらなかったノードはどの閾値でも
 質問されず、レポートにも出ません(コーパスのバグ 1 件をこれで落としました)。
 
-実測と、gap をどう読むかは → [docs/23](docs/24-adhoc-rules.md)
+実測と、gap をどう読むかは → [docs/24](docs/24-adhoc-rules.md)
 
 プラグインとしての使い方(flat config、オプション全表、warm パスの CLI、閾値の
 チューニング、ルールの書き方、限界)は
@@ -592,6 +600,77 @@ moon test --target native -p moba5                         # 45 件。API キー
 > いまは **540 通りを再生して 4 つのバケツに分け、同数取って
 > 「体を数える戦略が正確に 0.50」**にしてあります(テストで等式として固定)。
 > **そして `const` 列を足した瞬間に `retreat` も 0.83 で引っかかりました。**
+
+## 13. ブラウザを操作させる — 操作ごとに分けた action space
+
+`experiments/browser-chaos` は「Jev にブラウザを操作させるとき、何を渡すか」だけを
+変えながら実アプリ(付属のチェックアウト SPA)を歩かせる実験です。
+[05](docs/05-browser-chaos.md) から始まって
+[57](docs/57-confidence-fallback.md)–[62](docs/62-browser-accuracy.md) の 6 本になりました。
+
+核は **1 リクエストで「どの操作をするか」と「操作ごとの target」を同時に聞く**ことです。
+`CLICK` の head にはクリックできる要素だけ、`SELECT` の head には
+`index:option` の**対**だけが入り、選ばれた操作が指す head だけ読んで残りは捨てます。
+
+```ts
+// 1 リクエスト。operation 1 問 + 空でない head ごとに 1 問。読むのは 1 つだけ。
+{ operation: choice(["CLICK", "TYPE_TEXT", "CLEAR", "SELECT", "DONE"]),
+  CLICK:  choice({ "3": "Continue to delivery", ... }),
+  SELECT: choice({ "7:1": "shipping = express", "7:2": "shipping = standard", ... }) }
+```
+
+**捨てる head の分は無駄になりません** —— 操作が決まる前に選んだ target が、
+決まった後に選んだものと**全実行で同一**でした。**実行された head は全一致**で、
+しかも argmax が同じなのではなく**分布が同じ**(本番 12/12 は **TV = 0.000**、
+敵対盤面 21/21 は平均 0.003 —— 差は head が 1 つしかない盤面だけ)。
+リクエストは半分、モデル壁時計は **−53%**。理由は**曖昧さが「操作」側にしかない**からで、
+全操作が必要な画面でも operation は 0.55、その target は 1.00 です。
+4 盤面から壊しにいって壊れませんでした([61 §8](docs/61-speculative-fanout.md#why-it-holds-and-when-it-could-not))。
+
+```bash
+cd experiments/browser-chaos && npm install
+
+npx tsx src/check-fanout.ts        # action space・掃引・trap の採点(モデル不要)
+npx tsx src/check-retrieve.ts      # 候補検索の recall@k をオフラインで(モデル不要)
+npx tsx src/check-cache.ts         # action キャッシュのキーと閾値(モデル不要)
+
+TYPESAFEAI_API_KEY=... npx tsx src/run-fanout.ts --select many   # 4 アーム比較
+TYPESAFEAI_API_KEY=... npx tsx src/run-adversarial.ts --fixture slots-hard
+TYPESAFEAI_API_KEY=... npx tsx src/run-ablation.ts               # leave-one-out
+TYPESAFEAI_API_KEY=... npx tsx src/run-ablation.ts --clear       # CLEAR の有無
+```
+
+**モデル不要の検査が 7 本**あります(`check-fanout` `check-retrieve` `check-cache`
+`check-overlay` `check-bugs` `check-code-map` `check-coverage`)。
+API キーが要るのは `run-*` だけです。
+
+他実装 4 つ([jev-ultrafast](https://github.com/browser-use/jev-ultrafast) /
+[playwright-mcp](https://github.com/microsoft/playwright-mcp) /
+[stagehand](https://github.com/browserbase/stagehand) /
+[browser-use](https://github.com/browser-use/browser-use))を決定点でコードから読んで、
+移せる機構を 1 つずつ実装して測りました。**採用 2・却下 3** です:
+
+| 移した機構 | 出どころ | 結果 |
+| --- | --- | --- |
+| 型付き fan-out | jev-ultrafast | **採用** — 判断は同一でリクエスト半分、6 択で 5 手短い |
+| `clear` フラグ | browser-use | **採用** — 無いと **0/2**。`fill()` は置換なので値の変更には要らないが、**空という終状態は他のどの操作でも表現できない** |
+| 候補検索(`browser_find`) | playwright-mcp | **却下** — ゴール語彙との一致で絞ると recall@20 が **1/10**(何もせず先頭 20 件なら 10/10) |
+| action キャッシュ | stagehand | **却下** — 同一ページなら 10/10 再生・トークン 0。ただし**注文を記録しないアプリでも 10/10 再生してゴール到達**し `ordered: no` で終わる |
+| 視野絞り + `SCROLL` | playwright-mcp | **却下** — トークン −67% は本物だが「答えが今の画面にある」を担保に借りていて、`SCROLL` では返せない(**効いていた盤面で 2/2 → 0/2**) |
+
+採用と却下はきれいに割れました。**採用した 2 つはどちらも action space の表現力を上げる側で、
+却下した 3 つはどちらも候補や質問を削って安くする側**です。
+→ **精度を買えるのは前者だけで、後者が買えるのはトークンでした。**
+
+そして一番効いたのは、実は fan-out ではなく**足りない操作を足すこと**でした。
+「空にする」を操作として持たないだけで **0/2・43% 多くトークンを払って**ルートを 3 周期し、
+しかも**対象フィールドに一度も触りません** ——
+必要な操作が無いとき、ドライバは「正しい要素に間違ったことをする」のではなく
+**画面を出て別の経路を探しに行きます**。
+[62 §6.7](docs/62-browser-accuracy.md#67-clear--4-つの転用候補で唯一そのまま採用できたもの)
+
+パターンとしてまとめたものは [docs/62 §5](docs/62-browser-accuracy.md#5-パターン)、
+やってはいけないこと一覧は [docs/README.md](docs/README.md#効かなかった--注意が要るパターン) にあります。
 
 ## 補足
 
