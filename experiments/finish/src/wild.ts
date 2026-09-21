@@ -1212,20 +1212,56 @@ function comparisonSection(rec: Record_): void {
   );
 }
 
+/**
+ * WHO OWNS THE ROSTER, counted rather than described.
+ *
+ * This limit was prose about docs/30's nine repositories -- "eight of the nine
+ * are one author's or are skill collections" -- and on the widened roster
+ * every word of it is false: sixteen repositories, no skill collections, and
+ * "a wider roster is the obvious next step" is what that sweep IS. The
+ * concentration is the load-bearing half and it is measurable, so it is
+ * measured; only the interpretation is per sweep.
+ */
+function ownerLine(): string {
+  const repos = roster();
+  const byOwner = new Map<string, number>();
+  for (const { repo } of repos) {
+    const owner = repo.split("/")[0];
+    byOwner.set(owner, (byOwner.get(owner) ?? 0) + 1);
+  }
+  const [top, n] = [...byOwner].sort((a, b) => b[1] - a[1])[0] ?? ["—", 0];
+  const why: Record<string, string> = {
+    wild:
+      "**Eight of the nine are one author's or are skill collections**: docs/30's roster was " +
+      "assembled to test skill selection, so it is heavy on `.claude/skills` repositories that have " +
+      "nothing to build. **The traffic is therefore from very few codebases**, and a wider roster is " +
+      "the obvious next step rather than a caveat to wave at.",
+    widened:
+      "That is the `account` rule's doing and not a coincidence: it selects by owner, so widening " +
+      "the roster this way **cannot** widen the set of authors. `- [ ]` conventions are a personal " +
+      "habit, and docs/55's roster at least had four repositories belonging to other people. " +
+      "**Widening across authors is a different move than widening across repositories, and this " +
+      "report only made the second one.**",
+  };
+  return (
+    (n === repos.length
+      ? `- **Every one of the ${repos.length} repositories belongs to \`${top}\`.** `
+      : `- **${n} of the ${repos.length} repositories belong to \`${top}\`.** `) + (why[SWEEP] ?? why.wild)
+  );
+}
+
 function limits(rec: Record_): void {
   const tasks = corpus();
   console.log("\n## 5. Honest limits\n");
   console.log(
-    `- **Eight of the nine repositories are one author's or are skill collections.** docs/30's roster ` +
-      "was assembled to test skill selection, so it is heavy on `.claude/skills` repositories that " +
-      "have nothing to build. **The traffic here is therefore from very few codebases**, and a wider " +
-      "roster is the obvious next step rather than a caveat to wave at.\n" +
+    `${ownerLine()}\n` +
       "- **`- [ ]` is my decision about what counts as a task.** The author wrote the line; treating " +
       "an unchecked checkbox as a work item is mine, and so is the 24-character floor that drops " +
       "three-word bullets. `--tasks` prints every line that survived so the cut is inspectable.\n" +
       `- **The clones are shallow, so they are at today's \`HEAD\` rather than at the roster's ` +
       `pinned revision by construction** -- a \`--depth 1\` clone cannot check out an old commit, ` +
-      `and full clones of nine repositories do not fit the disk allowance here. ${headLine(rec)}\n` +
+      `and full clones of ${roster().length} repositories do not fit the disk allowance here. ` +
+      `${headLine(rec)}\n` +
       "- **The prompt wrapper is mine**, and deliberately thin: where they are, that the line came " +
       "from the repository's own notes, stay put. **It says nothing about tests or about finishing**, " +
       "because a prompt that said \"make the tests pass\" would be me choosing the commands again.\n" +

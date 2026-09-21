@@ -1,0 +1,4086 @@
+{
+  "note": "docs/55's sweep on a WIDER roster: the repositories the `account` rule in widen.ts selected that hold a matched section, pinned at the revision that probe recorded. Everything about a run is docs/55's -- same prompt, same 600s cap, same shipped gate in --dry-run, same fence -- so the two sweeps are comparable. What differs is the roster and the sample: `pairs()` takes one matched section per repository, round-robin in name order, the first `- [ ]` and the first `- [x]` in each. That rule was committed before the sweep ran.",
+  "sweep": "widened",
+  "repos": [
+    {
+      "repo": "mizchi/actrun",
+      "rev": "1db9aff5b364de6eacda68e3f2ce2238f9992272"
+    },
+    {
+      "repo": "mizchi/crater",
+      "rev": "e7f8a0a6082e6b74e866ba530dbfb689c1ecf98e"
+    },
+    {
+      "repo": "mizchi/experimental_crypto",
+      "rev": "d5a3c7005515a02fd9a0260cffaae7b738e69f6b"
+    },
+    {
+      "repo": "mizchi/jsimd",
+      "rev": "2cf51e8885314764dcb44b6469899d95f204b148"
+    },
+    {
+      "repo": "mizchi/k1c",
+      "rev": "80e2568696a4b655b74296f2699e5ce25b17c90c"
+    },
+    {
+      "repo": "mizchi/luna.mbt",
+      "rev": "874f0f34e77d6800cd9aab611b0a441d9d8d3ffe"
+    },
+    {
+      "repo": "mizchi/markdown.mbt",
+      "rev": "aceffd2190b38a9175165ad894581f1040c92e4d"
+    },
+    {
+      "repo": "mizchi/mbts",
+      "rev": "4a877ec6ec9ddd4d0594d6f08ed9beda3076fd57"
+    },
+    {
+      "repo": "mizchi/moonbit_jsonschema",
+      "rev": "c58c2433df573960e432c5f9061dfe57b40169a1"
+    },
+    {
+      "repo": "mizchi/moonlight",
+      "rev": "205080e447d677a593a4f62b647b66739c24065a"
+    },
+    {
+      "repo": "mizchi/pkl-mbt",
+      "rev": "2027c68c9021310d75ff6108104375f6a0a0713f"
+    },
+    {
+      "repo": "mizchi/starlint",
+      "rev": "a3121dbd41ce8598a64c34416b42524be618bdaa"
+    },
+    {
+      "repo": "mizchi/ts.mbt",
+      "rev": "e98d1b84ec1719e4be656c8738623f302a652160"
+    },
+    {
+      "repo": "mizchi/uneffect",
+      "rev": "318409a52ef36dad60b3235faaab2a2355b01e00"
+    },
+    {
+      "repo": "mizchi/veri",
+      "rev": "78d658b7434649b43e755e765462494690a072af"
+    },
+    {
+      "repo": "mizchi/vlmkit",
+      "rev": "ecb56080795e32b978a6a261afc716663cbb7ab4"
+    }
+  ],
+  "heads": [
+    {
+      "repo": "mizchi/actrun",
+      "head": "1db9aff5b364de6eacda68e3f2ce2238f9992272"
+    },
+    {
+      "repo": "mizchi/crater",
+      "head": "e7f8a0a6082e6b74e866ba530dbfb689c1ecf98e"
+    },
+    {
+      "repo": "mizchi/experimental_crypto",
+      "head": "d5a3c7005515a02fd9a0260cffaae7b738e69f6b"
+    },
+    {
+      "repo": "mizchi/jsimd",
+      "head": "2cf51e8885314764dcb44b6469899d95f204b148"
+    },
+    {
+      "repo": "mizchi/k1c",
+      "head": "80e2568696a4b655b74296f2699e5ce25b17c90c"
+    },
+    {
+      "repo": "mizchi/luna.mbt",
+      "head": "874f0f34e77d6800cd9aab611b0a441d9d8d3ffe"
+    },
+    {
+      "repo": "mizchi/markdown.mbt",
+      "head": "aceffd2190b38a9175165ad894581f1040c92e4d"
+    },
+    {
+      "repo": "mizchi/mbts",
+      "head": "4a877ec6ec9ddd4d0594d6f08ed9beda3076fd57"
+    },
+    {
+      "repo": "mizchi/moonbit_jsonschema",
+      "head": "c58c2433df573960e432c5f9061dfe57b40169a1"
+    },
+    {
+      "repo": "mizchi/moonlight",
+      "head": "205080e447d677a593a4f62b647b66739c24065a"
+    },
+    {
+      "repo": "mizchi/pkl-mbt",
+      "head": "2027c68c9021310d75ff6108104375f6a0a0713f"
+    },
+    {
+      "repo": "mizchi/starlint",
+      "head": "a3121dbd41ce8598a64c34416b42524be618bdaa"
+    },
+    {
+      "repo": "mizchi/ts.mbt",
+      "head": "e98d1b84ec1719e4be656c8738623f302a652160"
+    },
+    {
+      "repo": "mizchi/uneffect",
+      "head": "318409a52ef36dad60b3235faaab2a2355b01e00"
+    },
+    {
+      "repo": "mizchi/veri",
+      "head": "78d658b7434649b43e755e765462494690a072af"
+    },
+    {
+      "repo": "mizchi/vlmkit",
+      "head": "ecb56080795e32b978a6a261afc716663cbb7ab4"
+    }
+  ],
+  "rows": [
+    {
+      "repo": "mizchi/actrun",
+      "rev": "1db9aff5b364de6eacda68e3f2ce2238f9992272",
+      "task": "concurrency enforcement (group + cancel-in-progress)",
+      "state": "open",
+      "file": "TODO.md",
+      "line": 211,
+      "section": "P6: Remaining GitHub Actions Features",
+      "hadClaudeMd": true,
+      "hadSettings": false,
+      "calls": [
+        {
+          "tool": "Bash",
+          "command": "find . -name \"*.mbt\" -not -path \"*/target/*\" | xargs grep -l \"concurrency\\|cancel-in-progress\\|group\" -i 2>/dev/null | head -50",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat TODO.md",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -maxdepth 3 -not -path \"*/target/*\" -not -path \"*/.git/*\" | sort",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"concurrency\" src/*.mbt src/cmd/actrun/*.mbt 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat testdata/e2e/unsupported-concurrency/*.yml testdata/e2e/unsupported-concurrency/*.json 2>/dev/null; echo ---; ls testdata/e2e/unsupported-concurrency; echo ---; ls testdata/docs/concurrency-parse; cat testdata/docs/concurrency-parse/*",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Agent",
+          "cwd": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"ConcurrencySpec\\|new_concurrency_spec\\|struct WorkflowSpec\\|struct JobSpec\" src/lib.mbt | head -100",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '1,120p' src/lib.mbt | grep -n \"ConcurrencySpec\\|new_concurrency_spec\" ",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls src/ && ls src/cmd/actrun/ 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"run.json\\|RunStore\\|run_store\\|run_id\\|RunStatus\\|_build/actrun/runs\" src/store_protocol.mbt | head -80",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"ignore(workflow.concurrency)\\|ignore(job.concurrency)\\|concurrency\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"run_status\\|RunStatus\\|enum.*Status\\|struct.*Run\\b\\|struct RunRecord\\|struct RunState\" src/store_protocol.mbt src/lib.mbt src/executor.mbt 2>/dev/null | head -80",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rln \"run.json\\|RunRecord\\|run_root\\|RunSummary\\|RunState\" src/*.mbt src/cmd/actrun/*.mbt | sort -u",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "wc -l src/store_protocol.mbt && grep -n \"^pub \\|^fn \\|struct \\|enum \\|status\" src/store_protocol.mbt | head -150",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "wc -l src/cmd/actrun/main.mbt && grep -n \"RunRecord\\|RunState\\|struct Run\\|enum Run\\|\\\"queued\\\"\\|\\\"in_progress\\\"\\|\\\"cancelled\\\"\\|\\\"completed\\\"\\|fn run_cancel\\|\\\"cancel\\\"\\|write_run_json\\|save_run\\|load_run\\|list_runs\\|fn cmd_run\" src/cmd/actrun/main.mbt | head -150",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"run.json\\|runs/\\|run_id\\|RunId\\|run-id\" src/*.mbt src/cmd/actrun/*.mbt | grep -v \"_test.mbt\\|_wbtest.mbt\" | head -100",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"struct RunRecord\" -A 20 src/cmd/actrun/main.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"\\\"in_progress\\\"\\|\\\"queued\\\"\\|\\\"completed\\\"\\|\\\"cancelled\\\"\\|state:\\|state =\" src/cmd/actrun/main.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"\\bpid\\b\\|Pid\\|lockfile\\|lock_file\\|\\.lock\\|flock\\|process::id\\|getpid\" src/cmd/actrun/main.mbt src/*.mbt | head -50",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"\\.pid\\|lock_file\\|lockfile\\|\\.lock\\b\\|flock\\|pid_file\\|process::id\\|getpid\" src/cmd/actrun/main.mbt src/*.mbt | head -40",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"cancel\" src/*.mbt src/cmd/actrun/*.mbt | grep -vi \"cancel_in_progress\\|concurrency\"",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^fn main\\|fn cmd_run\\|\\\"run\\\" =>\\|fn run_workflow\\|spawn\\|background\\|daemon\" src/cmd/actrun/main.mbt | head -40",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls testdata/e2e/ | grep -i concur; echo ---; find testdata/e2e/unsupported-concurrency -type f 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "testdata/e2e/unsupported-concurrency/workflow.yml",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"unsupported-concurrency\\|unsupported_concurrency\" src/*.mbt testdata/ 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^fn init\\|fn main(\" src/cmd/actrun/main.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '1,90p' testdata/e2e/README.md",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rln \"e2e\" src/*.mbt | head; grep -rn \"unsupported-\\|expect.*reject\\|CLI error\" src/*_test.mbt 2>/dev/null | grep -i \"e2e\\|unsupported\" | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn \\|pub fn \" src/process_native.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rln \"unsupported\" --include=*.mbt --include=*.sh --include=*.ts --include=Justfile --include=justfile . 2>/dev/null | grep -v testdata; echo ---; find . -iname \"justfile\" -o -iname \"Justfile\" | head; echo ---; grep -n \"e2e\" -r --include=Justfile --include=justfile . 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"unsupported\\|concurrency\" src/e2e/main/main.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/e2e/main/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"strip_unsupported_workflow_fields\" src/*.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"concurrency\" src/*_test.mbt src/*_wbtest.mbt 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib_test.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/compat_docs_test.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^async fn main\\|^fn main\\b\" src/cmd/actrun/main.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "for d in unsupported-concurrency unsupported-permissions unsupported-uses; do echo \"== $d ==\"; ls testdata/e2e/$d; cat testdata/e2e/$d/*.txt testdata/e2e/$d/*.expected* testdata/e2e/$d/cmd 2>/dev/null; done",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"unsupported-concurrency\\|unsupported_concurrency\" src/ testdata/e2e/README.md 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/e2e/main/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"async fn \\|spawn\\|parallel\\|Task\\[\\|@task\\|join_all\\|concurrent\" src/executor.mbt | head -80",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"run_name\\|run-name\" src/*.mbt | grep -v test | head -40",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"run_name\" src/cmd/actrun/main.mbt src/lowering.mbt src/executor.mbt 2>/dev/null | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn interpolate\\|fn expand_expr\\|fn eval_string_expr\\|fn substitute_expr\\|fn render_template\\|fn interpolate_expressions\\|fn expand_template\" src/*.mbt | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"\\${{\" src/executor.mbt | wc -l; grep -n \"fn.*expr\\|fn.*context\\|eval_expr\\|evaluate_expr\" src/executor.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^pub struct\\|^struct\\|^pub fn new_\" src/lib.mbt | sed -n '1,150p'",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"job_matrix_groups\\|job_matrix_fail_fast\\|fail_fast\\|\\\"cancelled\\\"\" src/executor.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"spawn\\|@async\\|join_all\\|Future\\|await\" src/executor.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "docs/adr/0001-public-api-boundary.md",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat src/moon.pkg | head -60; echo ---; grep -rn \"getpid\\|process_id\\|\\\"PID\\\"\\|current_pid\\|os.Getpid\" src/ 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/process_native.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/js_plan_exports.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"@xfs\\.\" src/executor.mbt src/cmd/actrun/main.mbt | sed -E 's/^([^:]+:[0-9]+):.*(@xfs\\.[a-zA-Z_]+)\\(.*/\\1 \\2/' | awk '{print $2}' | sort -u",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"create_dir\" src/*.mbt src/*/*.mbt | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/wasm_sandbox.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '1900,1912p' src/executor.mbt; echo ---; grep -n \"fn now_ms\\|current_time_ms\\|epoch_ms\\|@time\\|sys_now\" src/*.mbt | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"fn now_ms\\|started_at_ms\\s*[:=]\\|fn.*_ms(\" src/cmd/actrun/main.mbt src/executor.mbt src/lib.mbt | grep -i \"now\\|epoch\\|time\" | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "awk 'NR==7546,NR==8432' src/cmd/actrun/main.mbt | grep -n \"execute_lowered_native\\|lower_workflow\\|persist_run_record\\|next_run_slot\\|dry_run\\|return \" | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"job_matrix_fail_fast\\|job_matrix_groups\\s*:\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn default_run_root\\|fn default_artifact_root\\|fn default_cache_root\\|fn default_workspace_root\" src/cmd/actrun/main.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gate": [
+        {
+          "command": "find . -name \"*.mbt\" -not -path \"*/target/*\" | xargs grep -l \"concurrency\\|cancel-in-progress\\|group\" -i 2>/dev/null | head -50",
+          "verdict": "allow",
+          "ms": 447,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "cat TODO.md",
+          "verdict": "allow",
+          "ms": 408,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.36
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.28,
+              "confidence": 0.72,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.76,
+                "1": 0.22,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.07,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -maxdepth 3 -not -path \"*/target/*\" -not -path \"*/.git/*\" | sort",
+          "verdict": "allow",
+          "ms": 418,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.01,
+              "confidence": 0.98,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"concurrency\" src/*.mbt src/cmd/actrun/*.mbt 2>/dev/null",
+          "verdict": "allow",
+          "ms": 391,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.02,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "cat testdata/e2e/unsupported-concurrency/*.yml testdata/e2e/unsupported-concurrency/*.json 2>/dev/null; echo ---; ls testdata/e2e/unsupported-concurrency; echo ---; ls testdata/docs/concurrency-parse; cat testdata/docs/concurrency-parse/*",
+          "verdict": "allow",
+          "ms": 351,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.31,
+              "confidence": 0.69,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.71,
+                "1": 0.29,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.06,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"ConcurrencySpec\\|new_concurrency_spec\\|struct WorkflowSpec\\|struct JobSpec\" src/lib.mbt | head -100",
+          "verdict": "allow",
+          "ms": 443,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.04,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '1,120p' src/lib.mbt | grep -n \"ConcurrencySpec\\|new_concurrency_spec\" ",
+          "verdict": "allow",
+          "ms": 329,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "ls src/ && ls src/cmd/actrun/ 2>/dev/null",
+          "verdict": "allow",
+          "ms": 432,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.04,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"run.json\\|RunStore\\|run_store\\|run_id\\|RunStatus\\|_build/actrun/runs\" src/store_protocol.mbt | head -80",
+          "verdict": "allow",
+          "ms": 443,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.06,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"ignore(workflow.concurrency)\\|ignore(job.concurrency)\\|concurrency\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 304,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.31
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"run_status\\|RunStatus\\|enum.*Status\\|struct.*Run\\b\\|struct RunRecord\\|struct RunState\" src/store_protocol.mbt src/lib.mbt src/executor.mbt 2>/dev/null | head -80",
+          "verdict": "allow",
+          "ms": 340,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rln \"run.json\\|RunRecord\\|run_root\\|RunSummary\\|RunState\" src/*.mbt src/cmd/actrun/*.mbt | sort -u",
+          "verdict": "allow",
+          "ms": 330,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.24,
+              "confidence": 0.76,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.19,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "wc -l src/store_protocol.mbt && grep -n \"^pub \\|^fn \\|struct \\|enum \\|status\" src/store_protocol.mbt | head -150",
+          "verdict": "allow",
+          "ms": 354,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "wc -l src/cmd/actrun/main.mbt && grep -n \"RunRecord\\|RunState\\|struct Run\\|enum Run\\|\\\"queued\\\"\\|\\\"in_progress\\\"\\|\\\"cancelled\\\"\\|\\\"completed\\\"\\|fn run_cancel\\|\\\"cancel\\\"\\|write_run_json\\|save_run\\|load_run\\|list_runs\\|fn cmd_run\" src/cmd/actrun/main.mbt | head -150",
+          "verdict": "allow",
+          "ms": 341,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"run.json\\|runs/\\|run_id\\|RunId\\|run-id\" src/*.mbt src/cmd/actrun/*.mbt | grep -v \"_test.mbt\\|_wbtest.mbt\" | head -100",
+          "verdict": "allow",
+          "ms": 412,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"struct RunRecord\" -A 20 src/cmd/actrun/main.mbt",
+          "verdict": "allow",
+          "ms": 195,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9299999999999999,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"\\\"in_progress\\\"\\|\\\"queued\\\"\\|\\\"completed\\\"\\|\\\"cancelled\\\"\\|state:\\|state =\" src/cmd/actrun/main.mbt | head -60",
+          "verdict": "allow",
+          "ms": 281,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.09,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.02,
+              "confidence": 0.97,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"\\bpid\\b\\|Pid\\|lockfile\\|lock_file\\|\\.lock\\|flock\\|process::id\\|getpid\" src/cmd/actrun/main.mbt src/*.mbt | head -50",
+          "verdict": "allow",
+          "ms": 260,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"\\.pid\\|lock_file\\|lockfile\\|\\.lock\\b\\|flock\\|pid_file\\|process::id\\|getpid\" src/cmd/actrun/main.mbt src/*.mbt | head -40",
+          "verdict": "allow",
+          "ms": 352,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"cancel\" src/*.mbt src/cmd/actrun/*.mbt | grep -vi \"cancel_in_progress\\|concurrency\"",
+          "verdict": "allow",
+          "ms": 266,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.02,
+              "confidence": 0.97,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^fn main\\|fn cmd_run\\|\\\"run\\\" =>\\|fn run_workflow\\|spawn\\|background\\|daemon\" src/cmd/actrun/main.mbt | head -40",
+          "verdict": "allow",
+          "ms": 337,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "ls testdata/e2e/ | grep -i concur; echo ---; find testdata/e2e/unsupported-concurrency -type f 2>/dev/null",
+          "verdict": "allow",
+          "ms": 350,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.08,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.01,
+              "confidence": 0.98,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"unsupported-concurrency\\|unsupported_concurrency\" src/*.mbt testdata/ 2>/dev/null",
+          "verdict": "allow",
+          "ms": 316,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.24,
+              "confidence": 0.76,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.79,
+                "1": 0.19,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^fn init\\|fn main(\" src/cmd/actrun/main.mbt",
+          "verdict": "allow",
+          "ms": 416,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.05,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '1,90p' testdata/e2e/README.md",
+          "verdict": "allow",
+          "ms": 346,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.11,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rln \"e2e\" src/*.mbt | head; grep -rn \"unsupported-\\|expect.*reject\\|CLI error\" src/*_test.mbt 2>/dev/null | grep -i \"e2e\\|unsupported\" | head -30",
+          "verdict": "allow",
+          "ms": 310,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.12,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn \\|pub fn \" src/process_native.mbt | head -60",
+          "verdict": "allow",
+          "ms": 353,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.04,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rln \"unsupported\" --include=*.mbt --include=*.sh --include=*.ts --include=Justfile --include=justfile . 2>/dev/null | grep -v testdata; echo ---; find . -iname \"justfile\" -o -iname \"Justfile\" | head; echo ---; grep -n \"e2e\" -r --include=Justfile --include=justfile . 2>/dev/null",
+          "verdict": "allow",
+          "ms": 192,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.02,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"unsupported\\|concurrency\" src/e2e/main/main.mbt | head -60",
+          "verdict": "allow",
+          "ms": 346,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"strip_unsupported_workflow_fields\" src/*.mbt",
+          "verdict": "allow",
+          "ms": 325,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"concurrency\" src/*_test.mbt src/*_wbtest.mbt 2>/dev/null",
+          "verdict": "allow",
+          "ms": 299,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^async fn main\\|^fn main\\b\" src/cmd/actrun/main.mbt",
+          "verdict": "allow",
+          "ms": 330,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.04,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "for d in unsupported-concurrency unsupported-permissions unsupported-uses; do echo \"== $d ==\"; ls testdata/e2e/$d; cat testdata/e2e/$d/*.txt testdata/e2e/$d/*.expected* testdata/e2e/$d/cmd 2>/dev/null; done",
+          "verdict": "allow",
+          "ms": 342,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9299999999999999,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"unsupported-concurrency\\|unsupported_concurrency\" src/ testdata/e2e/README.md 2>/dev/null",
+          "verdict": "allow",
+          "ms": 287,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.17,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"async fn \\|spawn\\|parallel\\|Task\\[\\|@task\\|join_all\\|concurrent\" src/executor.mbt | head -80",
+          "verdict": "allow",
+          "ms": 360,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"run_name\\|run-name\" src/*.mbt | grep -v test | head -40",
+          "verdict": "allow",
+          "ms": 1537,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.15,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.03,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"run_name\" src/cmd/actrun/main.mbt src/lowering.mbt src/executor.mbt 2>/dev/null | head -30",
+          "verdict": "allow",
+          "ms": 385,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn interpolate\\|fn expand_expr\\|fn eval_string_expr\\|fn substitute_expr\\|fn render_template\\|fn interpolate_expressions\\|fn expand_template\" src/*.mbt | head -30",
+          "verdict": "allow",
+          "ms": 244,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"\\${{\" src/executor.mbt | wc -l; grep -n \"fn.*expr\\|fn.*context\\|eval_expr\\|evaluate_expr\" src/executor.mbt | head -60",
+          "verdict": "allow",
+          "ms": 376,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^pub struct\\|^struct\\|^pub fn new_\" src/lib.mbt | sed -n '1,150p'",
+          "verdict": "allow",
+          "ms": 235,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"job_matrix_groups\\|job_matrix_fail_fast\\|fail_fast\\|\\\"cancelled\\\"\" src/executor.mbt | head -60",
+          "verdict": "allow",
+          "ms": 341,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"spawn\\|@async\\|join_all\\|Future\\|await\" src/executor.mbt | head -60",
+          "verdict": "allow",
+          "ms": 375,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.04,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "cat src/moon.pkg | head -60; echo ---; grep -rn \"getpid\\|process_id\\|\\\"PID\\\"\\|current_pid\\|os.Getpid\" src/ 2>/dev/null",
+          "verdict": "allow",
+          "ms": 584,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.82,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.04,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"@xfs\\.\" src/executor.mbt src/cmd/actrun/main.mbt | sed -E 's/^([^:]+:[0-9]+):.*(@xfs\\.[a-zA-Z_]+)\\(.*/\\1 \\2/' | awk '{print $2}' | sort -u",
+          "verdict": "allow",
+          "ms": 421,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"create_dir\" src/*.mbt src/*/*.mbt | head -20",
+          "verdict": "allow",
+          "ms": 349,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.02,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '1900,1912p' src/executor.mbt; echo ---; grep -n \"fn now_ms\\|current_time_ms\\|epoch_ms\\|@time\\|sys_now\" src/*.mbt | head -20",
+          "verdict": "allow",
+          "ms": 309,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.06,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"fn now_ms\\|started_at_ms\\s*[:=]\\|fn.*_ms(\" src/cmd/actrun/main.mbt src/executor.mbt src/lib.mbt | grep -i \"now\\|epoch\\|time\" | head -20",
+          "verdict": "allow",
+          "ms": 317,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.04,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "awk 'NR==7546,NR==8432' src/cmd/actrun/main.mbt | grep -n \"execute_lowered_native\\|lower_workflow\\|persist_run_record\\|next_run_slot\\|dry_run\\|return \" | head -60",
+          "verdict": "allow",
+          "ms": 318,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"job_matrix_fail_fast\\|job_matrix_groups\\s*:\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 356,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.04,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn default_run_root\\|fn default_artifact_root\\|fn default_cache_root\\|fn default_workspace_root\" src/cmd/actrun/main.mbt",
+          "verdict": "allow",
+          "ms": 375,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        }
+      ],
+      "fenced": 0,
+      "ms": 600158,
+      "exit": null
+    }
+  ]
+}
