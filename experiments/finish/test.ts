@@ -40,6 +40,7 @@ import { permutation } from "../shared/thresholds.js";
 // `candidates`. In a file importing rosters from a dozen modules the bare name
 // would not say which one, and the two aliases above are what that costs.
 import { candidates as widenCandidates, reconcile } from "./src/widen.js";
+import { SWEEPS, harnessReach } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1454,33 +1455,41 @@ check("every fenced command lands in a named class, so the table cannot lose one
    * for. So the table is derived from the command text now, and this is the
    * guard: a fenced command that no prefix matches would silently vanish from
    * a table whose total is printed separately.
+   *
+   * EVERY SWEEP'S RECORD, not just docs/55's. The widened sweep's very first
+   * pair produced 5 fence denials in one run -- as many as docs/55's whole
+   * 23-run sweep -- in repositories whose toolchains nothing here has seen.
+   * A prefix class that does not cover them is exactly what this guards, so
+   * checking one record and calling it covered would miss the case it is for.
    */
-  const p = resolve(import.meta.dirname, "records/wild.json");
-  if (!existsSync(p)) {
-    console.log("       (no records/wild.json yet -- the sweep has not run here)");
-    return;
-  }
-  const rec = JSON.parse(readFileSync(p, "utf8")) as {
-    rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
-  };
-  const fenced = rec.rows.flatMap((r) => r.calls).filter((c) => c.by === "fence");
-  eq(
-    fenced.length,
-    rec.rows.reduce((n, r) => n + r.fenced, 0),
-    "the per-row fence counts and the labelled ledger rows disagree: ",
-  );
-  for (const c of fenced) {
-    const got = fencePrefixes(c.command ?? "");
-    ok(
-      got.length > 0,
-      `a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+  let checked = 0;
+  for (const [name, sweep] of Object.entries(SWEEPS)) {
+    if (!existsSync(sweep.record)) continue;
+    const rec = JSON.parse(readFileSync(sweep.record, "utf8")) as {
+      rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
+    };
+    if (rec.rows.length === 0) continue;
+    checked += 1;
+    const fenced = rec.rows.flatMap((r) => r.calls).filter((c) => c.by === "fence");
+    eq(
+      fenced.length,
+      rec.rows.reduce((n, r) => n + r.fenced, 0),
+      `\`${name}\`: the per-row fence counts and the labelled ledger rows disagree: `,
     );
-    // And the fence's own rule must be the thing being classified.
-    ok(
-      got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
-      `classified a path the fence does not protect: ${got.join(",")}`,
-    );
+    for (const c of fenced) {
+      const got = fencePrefixes(c.command ?? "");
+      ok(
+        got.length > 0,
+        `\`${name}\`: a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+      );
+      // And the fence's own rule must be the thing being classified.
+      ok(
+        got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
+        `\`${name}\`: classified a path the fence does not protect: ${got.join(",")}`,
+      );
+    }
   }
+  if (checked === 0) console.log("       (no sweep record with rows yet -- nothing has run here)");
 });
 
 check("the clones' revisions are measured against the roster, never assumed equal", () => {
@@ -1647,6 +1656,46 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
   ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
+});
+
+check("a write into a harness clone tree would be caught, and none has happened", () => {
+  /**
+   * THE NUMBER THAT DECIDES WHETHER A RECORD IS STILL TRUSTWORTHY.
+   *
+   * `src/gate.mjs`'s docblock says the fence denies anything naming a path
+   * outside the sandbox. Its rule is `/home/` and `/root/` only, because
+   * "`/tmp`, `/usr`, `/opt` and friends are read-only traffic in practice" --
+   * and the harness puts every sandbox AND every clone tree under `/tmp`. The
+   * widened sweep walked straight into it: 12 calls read
+   * `/tmp/jev-wild-clones/mizchi-flaker`, docs/55's clone of a repository that
+   * is not in the widened roster.
+   *
+   * A read pollutes one run's traffic. A WRITE corrupts the tree every later
+   * run of that repository copies from, which would make the record after it
+   * untrustworthy without anything saying so. So the write count is asserted
+   * at zero, and the detector is checked against a synthetic row -- an
+   * assertion that only ever sees clean input proves nothing.
+   */
+  const synth = {
+    rows: [
+      { calls: [{ tool: "Bash", command: `cat ${SWEEPS.wild.clones}/o-r/src/x.mbt` }] },
+      { calls: [{ tool: "Write", path: `${SWEEPS.widened.clones}/o-r/TODO.md` }] },
+      { calls: [{ tool: "Bash", command: "cat ./src/x.mbt && ls /usr/lib" }] },
+      // Named three times in one command: one call, not three.
+      { calls: [{ tool: "Bash", command: `ls ${SWEEPS.wild.clones}/o-r; cd ${SWEEPS.wild.clones}/o-r; find ${SWEEPS.wild.clones}/o-r` }] },
+    ],
+  } as never;
+  const probe = harnessReach(synth);
+  eq(probe.calls, 3, "three of the four calls name a clone tree: ");
+  eq(probe.writes, 1, "and the detector must see the write tool among them: ");
+  eq(probe.byTree.find((t) => t.tree.endsWith("o-r"))?.calls ?? 0, 2, "per call, not per match: ");
+  // Now the real records: reads are a stated limit, a write is not acceptable.
+  for (const [name, sweep] of Object.entries(SWEEPS)) {
+    if (!existsSync(sweep.record)) continue;
+    const rec = JSON.parse(readFileSync(sweep.record, "utf8")) as { rows: { calls: { tool: string }[] }[] };
+    const got = harnessReach(rec as never);
+    eq(got.writes, 0, `\`${name}\`: a run wrote into a harness clone tree, so every later run of that repo copied a polluted tree: `);
+  }
 });
 
 check("the widened sample is one pair per repository, and nothing peeks at the text", () => {

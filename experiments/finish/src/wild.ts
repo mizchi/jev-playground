@@ -912,6 +912,67 @@ const FENCE_WHAT: Record<string, string> = {
  * different prefixes counts under both, which is why the table's counts can
  * exceed the number of fenced commands -- the total is printed separately.
  */
+/**
+ * CALLS THAT REACHED INTO THE HARNESS'S OWN CLONE TREES. A fence gap, measured.
+ *
+ * `src/gate.mjs`'s docblock says the fence "denies anything naming a path
+ * outside the task sandbox". It does not: its rule covers `/home/` and
+ * `/root/` only, on the stated reasoning that "`/tmp`, `/usr`, `/opt` and
+ * friends are read-only traffic in practice". **That is false by construction
+ * here** -- the harness puts every run's sandbox AND every clone tree under
+ * `/tmp`, so the trees each run copies from are reachable and writable.
+ *
+ * The widened sweep found it: an agent working on `actrun`'s timeout item went
+ * looking for MoonBit's `async` package and read it out of
+ * `/tmp/jev-wild-clones/mizchi-flaker/` -- docs/55's clone of a repository
+ * that is not even in this roster.
+ *
+ * ONLY THE CLONE DIRECTORIES ARE COUNTED, because those are known constants
+ * and an exact prefix match. A run naming its OWN sandbox by absolute path
+ * looks identical to one naming another run's, since the record stores `cwd`
+ * relative to the sandbox and `""` is the sandbox root -- so that question is
+ * not answerable from a record and is not guessed at here.
+ *
+ * `writes` is the number that decides whether a record is still trustworthy: a
+ * read pollutes one run's traffic, a write corrupts the tree every later run
+ * of that repository copies from.
+ */
+const WRITE_TOOLS = new Set(["Edit", "Write", "NotebookEdit"]);
+
+export function harnessReach(rec: Pick<Record_, "rows">): {
+  calls: number;
+  writes: number;
+  byTree: { tree: string; calls: number }[];
+} {
+  const roots = Object.values(SWEEPS).map((s) => s.clones);
+  const byTree = new Map<string, number>();
+  let calls = 0;
+  let writes = 0;
+  for (const row of rec.rows) {
+    for (const c of row.calls) {
+      const text = `${c.command ?? ""} ${c.path ?? ""}`;
+      // Per CALL, not per match: one command can name the same tree three
+      // times, and a per-match tally printed beside a call count reads as a
+      // contradiction (it said "12 calls" next to "(14)" before this).
+      const trees = new Set<string>();
+      for (const root of roots) {
+        for (const m of text.matchAll(new RegExp(`${root.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/[\\w.@+-]+`, "g"))) {
+          trees.add(m[0]);
+        }
+      }
+      if (trees.size === 0) continue;
+      for (const tree of trees) byTree.set(tree, (byTree.get(tree) ?? 0) + 1);
+      calls += 1;
+      if (WRITE_TOOLS.has(c.tool)) writes += 1;
+    }
+  }
+  return {
+    calls,
+    writes,
+    byTree: [...byTree].map(([tree, n]) => ({ tree, calls: n })).sort((a, b) => b.calls - a.calls),
+  };
+}
+
 export function fencePrefixes(command: string): string[] {
   const out = new Set<string>();
   for (const m of command.matchAll(/\/(?:home|root)\/[\w.@+-]+/g)) out.add(m[0]);
@@ -1250,6 +1311,29 @@ function ownerLine(): string {
   );
 }
 
+/** The fence gap, from the record. Silent when a sweep never hit it. */
+function reachLine(rec: Record_): string {
+  const r = harnessReach(rec);
+  if (r.calls === 0) {
+    return (
+      "- **The fence covers `/home/` and `/root/`, not `/tmp`** -- and the harness keeps its clone " +
+      "trees and every sandbox under `/tmp`, so a run can read or write the tree later runs copy " +
+      "from. **No call in this record reached one**, which is luck rather than a guarantee."
+    );
+  }
+  return (
+    `- **The fence has a gap and this sweep walked into it: ${r.calls} calls named a harness clone ` +
+    `tree**, ${r.writes === 0 ? "**none of them with a write tool**" : `**${r.writes} of them with a write tool**`}. ` +
+    "`src/gate.mjs` says it denies anything outside the sandbox; its rule is `/home/` and `/root/` " +
+    "only, because `/tmp` was assumed read-only traffic -- and the harness puts its clone trees and " +
+    `every sandbox under \`/tmp\`. ${r.byTree[0] ? `Most of it is \`${r.byTree[0].tree}\` (${r.byTree[0].calls}).` : ""} ` +
+    "A read pollutes one run's traffic with a repository the task is not about; a write would " +
+    "corrupt the tree every later run of that repository copies from. **The fence was NOT changed " +
+    "mid-sweep**: an instrument that differs between arms is this file's own named confound, so the " +
+    "gap is reported and fixed afterwards rather than patched while the arms were still running."
+  );
+}
+
 function limits(rec: Record_): void {
   const tasks = corpus();
   console.log("\n## 5. Honest limits\n");
@@ -1270,6 +1354,7 @@ function limits(rec: Record_): void {
       "the `- [x]` class is a second population rather than a scoring key.\n" +
       `- **${tasks.length} tasks is small**, and several are in the same file of the same repository, ` +
       "so the runs are not independent draws from anything.\n" +
+      `${reachLine(rec)}\n` +
       "- **The fence is a safety device and it shapes the traffic it blocks.** A command it denies is " +
       "a command the agent then works around, so the ledger after a denial is a response to the " +
       "fence. Its denials are counted separately for exactly that reason.\n" +

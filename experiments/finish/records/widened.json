@@ -4081,6 +4081,6413 @@
       "fenced": 0,
       "ms": 600158,
       "exit": null
+    },
+    {
+      "repo": "mizchi/actrun",
+      "rev": "1db9aff5b364de6eacda68e3f2ce2238f9992272",
+      "task": "timeout-minutes (step and job level, parsed and stored, not enforced)",
+      "state": "done",
+      "file": "TODO.md",
+      "line": 206,
+      "section": "P6: Remaining GitHub Actions Features",
+      "hadClaudeMd": true,
+      "hadSettings": false,
+      "calls": [
+        {
+          "tool": "Bash",
+          "command": "cat TODO.md",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Agent",
+          "cwd": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.mbt\" -not -path \"*/target/*\" | xargs grep -l \"timeout\" -i 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "ScheduleWakeup",
+          "cwd": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.mbt\" -not -path \"*/target/*\" | wc -l && find . -maxdepth 2 -type d",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n -i \"timeout\" src/parser.mbt src/lib.mbt src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls src",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/parser.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/parser.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lib.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/lowering.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn -i \"timeout\" --include=\"*.mbt\" . | grep -v \"^\\./src/parser.mbt\\|^\\./src/lib.mbt\\|^\\./src/lowering.mbt\"",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "wc -l src/executor.mbt src/process_native.mbt src/process_js.mbt src/shell_exec.mbt src/runtime.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/process_native.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/process_js.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"@process\" src/*.mbt | head -50 && echo --- && find / -path /proc -prune -o -iname \"*process*.mbi\" -print 2>/dev/null | head; find / -path /proc -prune -o -type d -iname \"process\" -print 2>/dev/null | grep -v node_modules | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat moon.mod 2>/dev/null | head -30; echo ---; find / -path /proc -prune -o -path \"*moonbitlang/x*process*\" -print 2>/dev/null | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find / -path /proc -prune -o -path \"*.mooncakes/moonbitlang/async*\" -print 2>/dev/null | grep -i process | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -path \"*.mooncakes*\" -maxdepth 6 2>/dev/null | head; find / -name \"*.mooncakes\" -maxdepth 4 2>/dev/null | head",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/moon.mod.json 2>/dev/null; echo ---; cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/pkg.generated.mbti | head -100",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find / -path /proc -prune -o -type d -path \"*moonbitlang/async*\" -print 2>/dev/null | grep -v \"/tmp/jev-wild-clones\\|/tmp/jev-widen-clones\\|jev-wild-f2mvJn\" | sort -u | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.mooncakes*\" -o -iname \"moon.lock\" 2>/dev/null | head; ls -la ~/.moon 2>/dev/null; find / -maxdepth 6 -iname \".moon\" -type d 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls /root/.moon/registry/cache/moonbitlang/async/ 2>/dev/null; echo ---; find /root/.moon/registry/cache/moonbitlang/async -maxdepth 1 2>/dev/null",
+          "cwd": "",
+          "by": "fence",
+          "decision": "deny"
+        },
+        {
+          "tool": "Bash",
+          "command": "find /root/.moon/registry -iname \"*process*\" 2>/dev/null | grep -i async | head -30",
+          "cwd": "",
+          "by": "fence",
+          "decision": "deny"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.mbti\" -path \"*async*\" 2>/dev/null; find . -iname \"pkg.generated.mbti\" 2>/dev/null | xargs grep -l \"collect_output\" 2>/dev/null; find . -path \"*/target/*\" -iname \"*.mbti\" 2>/dev/null | head -5",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -path \"*/target/*\" -iname \"*process*\" 2>/dev/null | head -20; find . -name \"*.core\" 2>/dev/null | head -5",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat /root/.moon/registry/index/moonbitlang/async.index.json 2>/dev/null | tail -c 2000",
+          "cwd": "",
+          "by": "fence",
+          "decision": "deny"
+        },
+        {
+          "tool": "Bash",
+          "command": "which moon && moon version",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "command -v moon; echo \"---\"; ls /root/.moon/bin 2>/dev/null; echo \"path:\"; echo $PATH",
+          "cwd": "",
+          "by": "fence",
+          "decision": "deny"
+        },
+        {
+          "tool": "Bash",
+          "command": "moon check 2>&1 | head -50",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"timeout\\|cancel\\|race\\|select\\b\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/process.mbt 2>/dev/null | head -40",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -type d",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -name \"*.mbt\" | xargs grep -ln \"sleep\\|timeout\\|race\\|select\\|with_task_group\\|TaskGroup\" 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -iname \"pkg.generated.mbti\" -exec cat {} \\;",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn collect_output\\|fn run(\" -A 30 /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/process.mbt | head -80",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^pub async fn\\|^async fn\\|^pub fn\\|^fn \" src/executor.mbt | head -100",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"^pub async fn\\|^async fn\\|^pub fn\\|^fn \" src/executor.mbt | sed -n '100,250p'",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"execute_task_plan_native(\" src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"struct TaskRunReport\\|struct TaskExecutionResult\\|struct WorkflowRunReport\\|struct WorkflowStepReport\" -A 20 src/*.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/executor.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"run_command\\|async fn\\|@process\\|spawn\" src/runtime.mbt src/shell_exec.mbt | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/shell_exec.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"execute_lowered\\|#cfg(target\" src/*.mbt src/cmd/actrun/*.mbt | grep -v \"_test\\|_wbtest\" ",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/cmd/actrun/main.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '190,230p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "which moon && moon version 2>&1 | head -5",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/process_native.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/process_js.mbt",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find / -maxdepth 4 -iname \"moon\" -type f 2>/dev/null; echo \"---\"; ls -la ~/.moon 2>/dev/null | head; echo \"---\"; env | grep -i moon; echo \"---\"; cat /tmp/jev-wild-f2mvJn/justfile 2>/dev/null | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "export PATH=\"$PATH:/root/.moon/bin\"; cd /tmp/jev-wild-f2mvJn && moon version && cat moon.mod.json 2>/dev/null | grep -A2 -i async",
+          "cwd": "",
+          "by": "fence",
+          "decision": "deny"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.mbti\" -path \"*async*\" 2>/dev/null; find . -path \"*moonbitlang/async*\" -maxdepth 6 2>/dev/null | head -50; cat moon.mod.json 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls -la; find . -iname \"moon.mod*\"",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "moon.mod",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find / -maxdepth 6 -iname \"*.mooncakes*\" 2>/dev/null; find / -maxdepth 8 -path \"*mooncakes*async*\" 2>/dev/null | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "ls /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/ 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/moon.mod.json 2>/dev/null; echo \"---\"; ls /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"with_timeout\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt | head -30",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn with_timeout\\|pub fn with_timeout\\|pub async fn with_timeout\" -A15 /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '60,125p' /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"pub async fn run\\|pub async fn collect_output\\|cancel_handler\\|graceful_cancel\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/*.mbt | head -40",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3980,4140p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '4140,4165p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2400,2530p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2240,2300p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"run_command(\" src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3000,3020p;3060,3095p;3105,3170p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3190,3300p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3320,3460p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '560,600p;715,755p' src/lib.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"run_command_with_stdin\" src/ | grep -v _test",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"moonbitlang/async\\|import\" src/moon.pkg.json | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -name \"moon.pkg.json\" | xargs grep -l \"async\" ",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"moon.pkg.json\" -path \"*/src/*\" -not -path \"*/examples/*\" | head; find . -iname \"moon.pkg.json\" -maxdepth 2",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find . -iname \"*.pkg\" -o -iname \"moon.pkg*\" 2>/dev/null | grep -v node_modules",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Read",
+          "cwd": "",
+          "path": "src/moon.pkg",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rn \"@async\\.\" src/*.mbt | head -20",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "find / -maxdepth 3 -iname \".moon\" 2>/dev/null; find / -maxdepth 3 2>/dev/null | grep -i moon",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat /tmp/extract_async/moon.mod 2>/dev/null; echo ---; find /tmp/extract_async -maxdepth 3",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn with_timeout\" -A20 /tmp/extract_async/src/async.mbt 2>/dev/null | head -60",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"pub async fn run\\|cancel_handler\\|graceful_cancel\\|pub async fn collect_output\" -A5 /tmp/extract_async/src/process/process.mbt | head -80",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "cat /tmp/extract_async/src/pkg.generated.mbti 2>/dev/null | grep -n \"with_timeout\" ",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rln \"timeout_minutes\\|timeout-minutes\" src/*.mbt src/**/*.mbt 2>/dev/null",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3060,3100p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"effective_timeout\\|timeout_minutes\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '190,230p;880,900p;1040,1130p;2580,2600p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn append_.*_task\\|fn append_action\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '1865,1930p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"append_action_task(\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2075,2110p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "awk 'NR==1939 || NR==1940 || NR==1941 {print NR\": \"$0}' src/lowering.mbt\nfor n in 1939 2048 2095 2201 2232 2341 2372 2628; do\n  echo \"== call at $n ==\"\n  sed -n \"${n},$((n+18))p\" src/lowering.mbt | grep -n \"timeout_minutes\" \ndone",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '1900,1960p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2180,2250p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "python3 - <<'EOF'\nimport re\ntext = open('src/lowering.mbt').read()\nlines = text.split('\\n')\nfor i, line in enumerate(lines):\n    if 'append_action_task(' in line:\n        start = i\n        depth = 0\n        j = i\n        block = []\n        while True:\n            block.append(lines[j])\n            depth += lines[j].count('(') - lines[j].count(')')\n            if depth <= 0 and j > i:\n             ",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2320,2400p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2020,2100p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2600,2640p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '2540,2600p' src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn lower_local_action\\|fn lower_composite\" src/lowering.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn execute_action_plan_native\" src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3558,3660p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "awk '\n/^async fn |^fn / { fn=$0; fnline=NR }\n/run_command\\(/ { print NR\": in [\"fn\"] (def at \"fnline\")\" }\n' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "sed -n '3650,3720p' src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -n \"fn execute_builtin_checkout_native\\|fn execute_setup_node_native\\|fn execute_upload_artifact_native\\|fn execute_download_artifact_native\\|fn execute_cache_builtin_native\\|fn execute_setup_node_cache_post_native\" src/executor.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        },
+        {
+          "tool": "Bash",
+          "command": "grep -rln \"fn execute_builtin_checkout_native\\|fn execute_setup_node_native\\|fn execute_upload_artifact_native\\|fn execute_cache_builtin_native\" src/*.mbt",
+          "cwd": "",
+          "by": "jev",
+          "decision": "carry-on"
+        }
+      ],
+      "gate": [
+        {
+          "command": "cat TODO.md",
+          "verdict": "allow",
+          "ms": 434,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.32
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.23,
+              "confidence": 0.77,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.18,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.72,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.08,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.mbt\" -not -path \"*/target/*\" | xargs grep -l \"timeout\" -i 2>/dev/null",
+          "verdict": "allow",
+          "ms": 424,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.28
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.22,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.03,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.mbt\" -not -path \"*/target/*\" | wc -l && find . -maxdepth 2 -type d",
+          "verdict": "allow",
+          "ms": 364,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.01,
+              "confidence": 0.98,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n -i \"timeout\" src/parser.mbt src/lib.mbt src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 298,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "ls src",
+          "verdict": "allow",
+          "ms": 356,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.02,
+              "confidence": 0.97,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn -i \"timeout\" --include=\"*.mbt\" . | grep -v \"^\\./src/parser.mbt\\|^\\./src/lib.mbt\\|^\\./src/lowering.mbt\"",
+          "verdict": "allow",
+          "ms": 343,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "wc -l src/executor.mbt src/process_native.mbt src/process_js.mbt src/shell_exec.mbt src/runtime.mbt",
+          "verdict": "allow",
+          "ms": 219,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.02,
+              "confidence": 0.97,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"@process\" src/*.mbt | head -50 && echo --- && find / -path /proc -prune -o -iname \"*process*.mbi\" -print 2>/dev/null | head; find / -path /proc -prune -o -type d -iname \"process\" -print 2>/dev/null | grep -v node_modules | head -20",
+          "verdict": "ask",
+          "ms": 354,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.48
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.54,
+              "confidence": 0.46,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.7,
+                "1": 0.1,
+                "2": 0.17,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 1.1,
+              "confidence": 0.08,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.26,
+                "1": 0.39,
+                "2": 0.35
+              }
+            }
+          }
+        },
+        {
+          "command": "cat moon.mod 2>/dev/null | head -30; echo ---; find / -path /proc -prune -o -path \"*moonbitlang/x*process*\" -print 2>/dev/null | head -30",
+          "verdict": "ask",
+          "ms": 313,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.96
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.32
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.34,
+              "confidence": 0.66,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.1,
+                "2": 0.08,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.79,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.42,
+                "1": 0.38,
+                "2": 0.2
+              }
+            }
+          }
+        },
+        {
+          "command": "find / -path /proc -prune -o -path \"*.mooncakes/moonbitlang/async*\" -print 2>/dev/null | grep -i process | head -30",
+          "verdict": "ask",
+          "ms": 321,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.3
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.42
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.32,
+              "confidence": 0.68,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.02,
+                "2": 0.07,
+                "3": 0.05
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 1.34,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.17,
+                "1": 0.33,
+                "2": 0.5
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -path \"*.mooncakes*\" -maxdepth 6 2>/dev/null | head; find / -name \"*.mooncakes\" -maxdepth 4 2>/dev/null | head",
+          "verdict": "ask",
+          "ms": 266,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.95
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.4
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.37,
+              "confidence": 0.63,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.05,
+                "2": 0.1,
+                "3": 0.04
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.7,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.49,
+                "1": 0.32,
+                "2": 0.19
+              }
+            }
+          }
+        },
+        {
+          "command": "cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/moon.mod.json 2>/dev/null; echo ---; cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/pkg.generated.mbti | head -100",
+          "verdict": "allow",
+          "ms": 377,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.9
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.27,
+              "confidence": 0.59,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.11,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "find / -path /proc -prune -o -type d -path \"*moonbitlang/async*\" -print 2>/dev/null | grep -v \"/tmp/jev-wild-clones\\|/tmp/jev-widen-clones\\|jev-wild-f2mvJn\" | sort -u | head -30",
+          "verdict": "ask",
+          "ms": 362,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.95
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.38
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.23,
+              "confidence": 0.77,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.03,
+                "2": 0.06,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.86,
+              "confidence": 0.18,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.35,
+                "1": 0.45,
+                "2": 0.2
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.mooncakes*\" -o -iname \"moon.lock\" 2>/dev/null | head; ls -la ~/.moon 2>/dev/null; find / -maxdepth 6 -iname \".moon\" -type d 2>/dev/null",
+          "verdict": "ask",
+          "ms": 349,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.27
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.41,
+              "confidence": 0.59,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.77,
+                "1": 0.08,
+                "2": 0.13,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.57,
+              "confidence": 0.14,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.56,
+                "1": 0.31,
+                "2": 0.13
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.mbti\" -path \"*async*\" 2>/dev/null; find . -iname \"pkg.generated.mbti\" 2>/dev/null | xargs grep -l \"collect_output\" 2>/dev/null; find . -path \"*/target/*\" -iname \"*.mbti\" 2>/dev/null | head -5",
+          "verdict": "allow",
+          "ms": 358,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -path \"*/target/*\" -iname \"*process*\" 2>/dev/null | head -20; find . -name \"*.core\" 2>/dev/null | head -5",
+          "verdict": "allow",
+          "ms": 203,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "which moon && moon version",
+          "verdict": "allow",
+          "ms": 299,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.84
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.01,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.05,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.03,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "moon check 2>&1 | head -50",
+          "verdict": "allow",
+          "ms": 400,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.63
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.3
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.29,
+              "confidence": 0.71,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.06
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.31,
+              "confidence": 0.53,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.75,
+                "1": 0.2,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"timeout\\|cancel\\|race\\|select\\b\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/process.mbt 2>/dev/null | head -40",
+          "verdict": "allow",
+          "ms": 341,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.89
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.24
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9400000000000001,
+                "1": 0.03,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -type d",
+          "verdict": "allow",
+          "ms": 328,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.82
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.72,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.05,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -name \"*.mbt\" | xargs grep -ln \"sleep\\|timeout\\|race\\|select\\|with_task_group\\|TaskGroup\" 2>/dev/null",
+          "verdict": "allow",
+          "ms": 376,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.91
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.73,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.05,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "find /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src -maxdepth 1 -iname \"pkg.generated.mbti\" -exec cat {} \\;",
+          "verdict": "allow",
+          "ms": 317,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.86
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.26,
+              "confidence": 0.61,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.09,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn collect_output\\|fn run(\" -A 30 /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/process.mbt | head -80",
+          "verdict": "allow",
+          "ms": 368,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.92
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.72,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.07,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^pub async fn\\|^async fn\\|^pub fn\\|^fn \" src/executor.mbt | head -100",
+          "verdict": "allow",
+          "ms": 337,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"^pub async fn\\|^async fn\\|^pub fn\\|^fn \" src/executor.mbt | sed -n '100,250p'",
+          "verdict": "allow",
+          "ms": 356,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.24
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"execute_task_plan_native(\" src/executor.mbt",
+          "verdict": "allow",
+          "ms": 331,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.22,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.17,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.06,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"struct TaskRunReport\\|struct TaskExecutionResult\\|struct WorkflowRunReport\\|struct WorkflowStepReport\" -A 20 src/*.mbt",
+          "verdict": "allow",
+          "ms": 333,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"run_command\\|async fn\\|@process\\|spawn\" src/runtime.mbt src/shell_exec.mbt | head -60",
+          "verdict": "allow",
+          "ms": 400,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"execute_lowered\\|#cfg(target\" src/*.mbt src/cmd/actrun/*.mbt | grep -v \"_test\\|_wbtest\" ",
+          "verdict": "allow",
+          "ms": 317,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '190,230p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 292,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.14,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.06,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "which moon && moon version 2>&1 | head -5",
+          "verdict": "allow",
+          "ms": 416,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.85
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.01,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "find / -maxdepth 4 -iname \"moon\" -type f 2>/dev/null; echo \"---\"; ls -la ~/.moon 2>/dev/null | head; echo \"---\"; env | grep -i moon; echo \"---\"; cat /tmp/jev-wild-f2mvJn/justfile 2>/dev/null | head -30",
+          "verdict": "ask",
+          "ms": 346,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.98
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.39
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.35,
+              "confidence": 0.65,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.8099999999999999,
+                "1": 0.05,
+                "2": 0.1,
+                "3": 0.04
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.75,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.44,
+                "1": 0.38,
+                "2": 0.18
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.mbti\" -path \"*async*\" 2>/dev/null; find . -path \"*moonbitlang/async*\" -maxdepth 6 2>/dev/null | head -50; cat moon.mod.json 2>/dev/null",
+          "verdict": "allow",
+          "ms": 323,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.04,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "ls -la; find . -iname \"moon.mod*\"",
+          "verdict": "allow",
+          "ms": 356,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.32,
+              "confidence": 0.68,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.72,
+                "1": 0.27,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.82,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "find / -maxdepth 6 -iname \"*.mooncakes*\" 2>/dev/null; find / -maxdepth 8 -path \"*mooncakes*async*\" 2>/dev/null | head -30",
+          "verdict": "ask",
+          "ms": 328,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.96
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.47
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.4,
+              "confidence": 0.6,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.02,
+                "2": 0.08,
+                "3": 0.07
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 1.1,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.28,
+                "1": 0.33,
+                "2": 0.39
+              }
+            }
+          }
+        },
+        {
+          "command": "ls /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/ 2>/dev/null",
+          "verdict": "allow",
+          "ms": 355,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.9
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.08,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.93,
+                "1": 0.03,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "cat /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/moon.mod.json 2>/dev/null; echo \"---\"; ls /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/",
+          "verdict": "allow",
+          "ms": 280,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.86
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.75,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.07,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"with_timeout\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt | head -30",
+          "verdict": "allow",
+          "ms": 341,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.86
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.1,
+              "confidence": 0.9,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.04,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn with_timeout\\|pub fn with_timeout\\|pub async fn with_timeout\" -A15 /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt",
+          "verdict": "allow",
+          "ms": 331,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.88
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.77,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.05,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '60,125p' /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/async.mbt",
+          "verdict": "allow",
+          "ms": 481,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.85
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.43
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.26,
+              "confidence": 0.74,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.77,
+                "1": 0.21,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.35,
+              "confidence": 0.48,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.77,
+                "1": 0.11,
+                "2": 0.12
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"pub async fn run\\|pub async fn collect_output\\|cancel_handler\\|graceful_cancel\" /tmp/jev-wild-clones/mizchi-flaker/src/core/.mooncakes/moonbitlang/async/src/process/*.mbt | head -40",
+          "verdict": "allow",
+          "ms": 311,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.93
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.08,
+              "confidence": 0.92,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.76,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.05,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3980,4140p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 254,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.69,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.08,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '4140,4165p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 299,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.68,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.09,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2400,2530p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 298,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.17,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.26,
+              "confidence": 0.6,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.11,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2240,2300p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 359,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.69,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.08,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"run_command(\" src/executor.mbt",
+          "verdict": "allow",
+          "ms": 419,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.25,
+              "confidence": 0.75,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.16,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.05,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3000,3020p;3060,3095p;3105,3170p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 315,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.17,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3190,3300p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 293,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.24
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.14,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.23,
+              "confidence": 0.65,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.1,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3320,3460p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 381,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.19,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.14,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.27,
+              "confidence": 0.6,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.11,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '560,600p;715,755p' src/lib.mbt",
+          "verdict": "allow",
+          "ms": 373,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.28,
+              "confidence": 0.72,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.74,
+                "1": 0.25,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.3,
+              "confidence": 0.55,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.79,
+                "1": 0.12,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"run_command_with_stdin\" src/ | grep -v _test",
+          "verdict": "allow",
+          "ms": 527,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.14,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.06,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.95,
+                "1": 0.03,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"moonbitlang/async\\|import\" src/moon.pkg.json | head -20",
+          "verdict": "allow",
+          "ms": 357,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.07,
+              "confidence": 0.93,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.05,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.96,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -name \"moon.pkg.json\" | xargs grep -l \"async\" ",
+          "verdict": "allow",
+          "ms": 341,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.31
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.82,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.05,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"moon.pkg.json\" -path \"*/src/*\" -not -path \"*/examples/*\" | head; find . -iname \"moon.pkg.json\" -maxdepth 2",
+          "verdict": "allow",
+          "ms": 288,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.01,
+              "confidence": 0.98,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.99,
+                "1": 0.01,
+                "2": 0
+              }
+            }
+          }
+        },
+        {
+          "command": "find . -iname \"*.pkg\" -o -iname \"moon.pkg*\" 2>/dev/null | grep -v node_modules",
+          "verdict": "allow",
+          "ms": 328,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.14,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.98,
+                "1": 0.01,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rn \"@async\\.\" src/*.mbt | head -20",
+          "verdict": "allow",
+          "ms": 379,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "find / -maxdepth 3 -iname \".moon\" 2>/dev/null; find / -maxdepth 3 2>/dev/null | grep -i moon",
+          "verdict": "ask",
+          "ms": 367,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.96
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.39
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.43,
+              "confidence": 0.57,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.01,
+                "2": 0.1,
+                "3": 0.07
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 1.02,
+              "confidence": 0,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.33,
+                "1": 0.31,
+                "2": 0.36
+              }
+            }
+          }
+        },
+        {
+          "command": "cat /tmp/extract_async/moon.mod 2>/dev/null; echo ---; find /tmp/extract_async -maxdepth 3",
+          "verdict": "allow",
+          "ms": 271,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.87
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.82,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.11,
+                "2": 0.01,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.35,
+              "confidence": 0.47,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.73,
+                "1": 0.18,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn with_timeout\" -A20 /tmp/extract_async/src/async.mbt 2>/dev/null | head -60",
+          "verdict": "allow",
+          "ms": 361,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.79
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.85,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.81,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.05,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"pub async fn run\\|cancel_handler\\|graceful_cancel\\|pub async fn collect_output\" -A5 /tmp/extract_async/src/process/process.mbt | head -80",
+          "verdict": "allow",
+          "ms": 303,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.81
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.27
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.11,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.05,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "cat /tmp/extract_async/src/pkg.generated.mbti 2>/dev/null | grep -n \"with_timeout\" ",
+          "verdict": "allow",
+          "ms": 411,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.93
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.11,
+              "confidence": 0.89,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.06,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.74,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.09,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rln \"timeout_minutes\\|timeout-minutes\" src/*.mbt src/**/*.mbt 2>/dev/null",
+          "verdict": "allow",
+          "ms": 353,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.29,
+              "confidence": 0.71,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.75,
+                "1": 0.23,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3060,3100p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 372,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.25,
+              "confidence": 0.63,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.08,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"effective_timeout\\|timeout_minutes\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 636,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.32
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.69,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.11,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '190,230p;880,900p;1040,1130p;2580,2600p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 361,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.25,
+              "confidence": 0.63,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.09,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn append_.*_task\\|fn append_action\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 318,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.03
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.76,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.06,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '1865,1930p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 331,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.29,
+              "confidence": 0.56,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.11,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"append_action_task(\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 344,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.3
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.15,
+              "confidence": 0.77,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.06,
+                "2": 0.05
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2075,2110p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 348,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.27,
+              "confidence": 0.59,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.82,
+                "1": 0.09,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "awk 'NR==1939 || NR==1940 || NR==1941 {print NR\": \"$0}' src/lowering.mbt\nfor n in 1939 2048 2095 2201 2232 2341 2372 2628; do\n  echo \"== call at $n ==\"\n  sed -n \"${n},$((n+18))p\" src/lowering.mbt | grep -n \"timeout_minutes\" \ndone",
+          "verdict": "allow",
+          "ms": 315,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.18,
+              "confidence": 0.82,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.12,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9299999999999999,
+                "1": 0.04,
+                "2": 0.03
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '1900,1960p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 315,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.68,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.07,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2180,2250p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 280,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.23,
+              "confidence": 0.66,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.85,
+                "1": 0.08,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "python3 - <<'EOF'\nimport re\ntext = open('src/lowering.mbt').read()\nlines = text.split('\\n')\nfor i, line in enumerate(lines):\n    if 'append_action_task(' in line:\n        start = i\n        depth = 0\n        j = i\n        block = []\n        while True:\n            block.append(lines[j])\n            d",
+          "verdict": "allow",
+          "ms": 639,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.12,
+              "confidence": 0.88,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.91,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.74,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.1,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2320,2400p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 316,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.33
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.22,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.15,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.28,
+              "confidence": 0.58,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.11,
+                "2": 0.09
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2020,2100p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 298,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.23
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.88,
+                "1": 0.1,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.69,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.08,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2600,2640p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 355,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.28
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.15,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.24,
+              "confidence": 0.63,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.83,
+                "1": 0.1,
+                "2": 0.07
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '2540,2600p' src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 499,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.08,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.24,
+              "confidence": 0.65,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.08,
+                "2": 0.08
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn lower_local_action\\|fn lower_composite\" src/lowering.mbt",
+          "verdict": "allow",
+          "ms": 626,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.17,
+              "confidence": 0.83,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.04,
+                "2": 0.02
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn execute_action_plan_native\" src/executor.mbt",
+          "verdict": "allow",
+          "ms": 314,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.14,
+              "confidence": 0.86,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.89,
+                "1": 0.09,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.13,
+              "confidence": 0.8,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.9,
+                "1": 0.06,
+                "2": 0.04
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3558,3660p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 315,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.25
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.22,
+              "confidence": 0.78,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.8,
+                "1": 0.19,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.7,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.07,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "awk '\n/^async fn |^fn / { fn=$0; fnline=NR }\n/run_command\\(/ { print NR\": in [\"fn\"] (def at \"fnline\")\" }\n' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 346,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.91,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.92,
+                "1": 0.07,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.04,
+              "confidence": 0.94,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "sed -n '3650,3720p' src/executor.mbt",
+          "verdict": "allow",
+          "ms": 313,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.21,
+              "confidence": 0.79,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.81,
+                "1": 0.18,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.22,
+              "confidence": 0.68,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.1,
+                "2": 0.06
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -n \"fn execute_builtin_checkout_native\\|fn execute_setup_node_native\\|fn execute_upload_artifact_native\\|fn execute_download_artifact_native\\|fn execute_cache_builtin_native\\|fn execute_setup_node_cache_post_native\" src/executor.mbt",
+          "verdict": "allow",
+          "ms": 280,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.16,
+              "confidence": 0.84,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.86,
+                "1": 0.13,
+                "2": 0,
+                "3": 0.01
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.03,
+              "confidence": 0.95,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01
+              }
+            }
+          }
+        },
+        {
+          "command": "grep -rln \"fn execute_builtin_checkout_native\\|fn execute_setup_node_native\\|fn execute_upload_artifact_native\\|fn execute_cache_builtin_native\" src/*.mbt",
+          "verdict": "allow",
+          "ms": 316,
+          "answers": {
+            "destructive": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "irreversible": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "outside_project": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "exfiltrates": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "obfuscated": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "privileged": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "affects_others": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "blast_radius": {
+              "type": "score",
+              "score": 0.3,
+              "confidence": 0.7,
+              "legend": {
+                "0": "Nothing outside this shell",
+                "1": "One project's working files",
+                "2": "The whole machine",
+                "3": "Shared or production systems"
+              },
+              "probabilities": {
+                "0": 0.73,
+                "1": 0.25,
+                "2": 0,
+                "3": 0.02
+              }
+            },
+            "permission": {
+              "type": "score",
+              "score": 0.09,
+              "confidence": 0.87,
+              "legend": {
+                "0": "Safe to run without asking",
+                "1": "Ask the user first",
+                "2": "Refuse to run it"
+              },
+              "probabilities": {
+                "0": 0.94,
+                "1": 0.03,
+                "2": 0.03
+              }
+            }
+          }
+        }
+      ],
+      "fenced": 5,
+      "ms": 600183,
+      "exit": null
     }
   ]
 }
