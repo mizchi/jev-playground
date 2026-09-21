@@ -32,7 +32,10 @@ import { QUESTIONS } from "../../packages/jev-guard/src/battery.js";
 import { ARMS as INTENT_ARMS, INTENT_AXES, PART_OF_WORK, contextFor, count, stateFor } from "./src/intent.js";
 import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
-import { fencePrefixes, headMatch, promptFor, tasksIn } from "./src/wild.js";
+// ALIASED for the same reason as INTENT_ARMS above: `corpus` is already
+// fanout.ts's harvest, and wild.ts exports one too.
+import { corpus as wildCorpus, fencePrefixes, headMatch, matched, promptFor, sectionKey, tasksIn } from "./src/wild.js";
+import { permutation } from "../shared/thresholds.js";
 
 let pass = 0;
 let fail = 0;
@@ -1516,6 +1519,86 @@ check("the clones' revisions are measured against the roster, never assumed equa
     ok(h !== undefined, `${repo} produced rows but is not in the roster`);
     ok(h?.same !== null, `${repo} produced rows and has no recorded head, so its task text is uncheckable`);
   }
+});
+
+check("a task carries the heading it was written under, and --matched pairs on it", () => {
+  /**
+   * THE `- [x]` COMPARISON NEEDS A MATCHING UNIT, and the first one I reached
+   * for was wrong. Taking the first N done items in file order gets
+   * `actrun/TODO.md`'s `## Goals` and `## Design Principles` -- ticked
+   * statements of intent like "Use GitHub Docs as the source of truth for
+   * specifications" -- so a difference measured against the open items would
+   * be the KIND OF SENTENCE reported as an effect of the checkbox.
+   *
+   * The unit is therefore the nearest preceding heading, and this guards both
+   * halves: the section is captured, and `matched()` returns only done items
+   * that have an open neighbour under the same one.
+   */
+  const dir = mkdtempSync(resolve(tmpdir(), "jev-wild-sec-"));
+  try {
+    writeFileSync(
+      resolve(dir, "TODO.md"),
+      [
+        "# TODO",
+        "",
+        "## Goals",
+        "",
+        "- [x] Use the upstream docs as the source of truth",
+        "",
+        "## P6: Remaining Features",
+        "",
+        "- [x] timeout-minutes (step and job level, parsed and stored)",
+        "- [ ] concurrency enforcement (group + cancel-in-progress)",
+        "",
+      ].join("\n"),
+    );
+    const got = tasksIn("o/r", "deadbeef", dir);
+    eq(got.length, 3, "three items over two sections: ");
+    eq(got.find((t) => t.text.startsWith("Use the upstream"))?.section, "Goals", "the Goals item: ");
+    eq(
+      got.find((t) => t.text.startsWith("concurrency"))?.section,
+      "P6: Remaining Features",
+      "the open item's section: ",
+    );
+    const done = got.find((t) => t.text.startsWith("timeout-minutes")) as (typeof got)[number];
+    const open = got.find((t) => t.text.startsWith("concurrency")) as (typeof got)[number];
+    eq(sectionKey(done), sectionKey(open), "the adjacent pair must share a section key: ");
+    const goals = got.find((t) => t.text.startsWith("Use the upstream")) as (typeof got)[number];
+    ok(sectionKey(goals) !== sectionKey(done), "a different heading must be a different section");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  // Over the real corpus: every matched task is done and has an open
+  // neighbour. Skipped when the clones are absent, like the rest of wild's.
+  const m = matched();
+  if (m.length === 0) {
+    console.log("       (no clones, so --matched has nothing to check)");
+    return;
+  }
+  const openKeys = new Set(wildCorpus().filter((t) => t.state === "open").map(sectionKey));
+  for (const t of m) {
+    eq(t.state, "done", `${t.text.slice(0, 30)}: `);
+    ok(openKeys.has(sectionKey(t)), `${t.section} holds no open item, so it is not a matched control`);
+  }
+});
+
+check("the permutation test is exact at this size, and its floor is stated", () => {
+  /**
+   * The instrument the `- [x]` comparison reports a p from. Two controls,
+   * because a test that cannot fail is not a test: overlapping samples must
+   * not be significant, cleanly separated ones must be.
+   */
+  const flat = permutation([1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 1, 2, 3]);
+  ok(flat.p > 0.5, `overlapping samples must not be significant, got p = ${flat.p}`);
+  const split = permutation([100, 101, 102, 103, 104], [1, 2, 3, 4, 5, 6, 7, 8]);
+  ok(split.p < 0.01, `cleanly separated samples must be, got p = ${split.p}`);
+  // C(13,5) = 1287, so a 5-against-8 comparison enumerates everything.
+  eq(split.splits, 1287, "every relabelling of 5 and 8 must be enumerated: ");
+  ok(split.exact, "the test must report itself as exact at this size");
+  // THE FLOOR: no arrangement of 5 against 8 reaches below one relabelling in
+  // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
+  ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
+  ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
