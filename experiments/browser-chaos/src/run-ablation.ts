@@ -137,6 +137,17 @@ interface ArmResult {
   invalid: number;
   /** Steps spent moving the view rather than acting. */
   scrolls: number;
+  /**
+   * Every step's confidence, so narrowing can be checked against the
+   * threshold side and not only against goal/steps/tokens.
+   *
+   * docs/27 §4.10 measured that offering fewer candidates than the page
+   * describes costs confidence, which is exactly what `viewport` does —
+   * and docs/25 and §3.2 both route on confidence, so "accuracy
+   * unchanged" does not settle it. §6.4's original table had no such
+   * column, which is why the side effect went unnoticed.
+   */
+  confidences: number[];
   /** What the discount field ended on. `""` is the goal under ?clear=1. */
   discount: string;
 }
@@ -195,6 +206,7 @@ async function runArm(
   let requests = 0;
   let invalid = 0;
   let taken = 0;
+  const confidences: number[] = [];
   let lastAction: string | undefined;
   let lastHadEffect: boolean | undefined;
   let lastError: string | undefined;
@@ -291,6 +303,9 @@ async function runArm(
     }
     requests += decision.requests;
     taken = step + 1;
+    // Recorded before the DONE/BLOCKED break, so a terminal decision
+    // counts: it is a decision the driver made on the offered set.
+    confidences.push(decision.confidence);
 
     if (decision.operation === "DONE" || decision.operation === "BLOCKED") {
       trace?.(`  step=${step} ${decision.operation}@${decision.confidence.toFixed(2)}`);
@@ -407,6 +422,7 @@ async function runArm(
     discount: discount as string,
     invalid,
     scrolls,
+    confidences,
   };
 }
 
@@ -457,8 +473,11 @@ async function main(): Promise<void> {
     await browser.close();
   }
 
+  const meanOf = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const minOf = (xs: number[]) => (xs.length ? Math.min(...xs) : 0);
+
   console.log(`\n${query}, ${steps} step budget, ${runs} run(s) per arm`);
-  console.log("\narm              goal  steps  scroll  wasted  blocked  reqs  in_tok  out_tok    ms  express");
+  console.log("\narm              goal  steps  scroll  wasted  blocked  reqs  in_tok  out_tok    ms  conf  min  express");
   for (const arm of arms) {
     const mine = rows.filter((r) => r.arm === arm.name);
     const n = mine.length;
@@ -470,6 +489,10 @@ async function main(): Promise<void> {
         `${avg((r) => r.blockedPicks).padStart(7)}  ${avg((r) => r.requests).padStart(4)}  ` +
         `${avg((r) => r.inputTokens).padStart(6)}  ${avg((r) => r.outputTokens).padStart(7)}  ` +
         `${avg((r) => r.ms).padStart(4)}  ` +
+        // Mean over every decision in the arm, and the single lowest,
+        // because a routing threshold cares about the tail.
+        `${meanOf(mine.flatMap((r) => r.confidences)).toFixed(2).padStart(4)}  ` +
+        `${minOf(mine.flatMap((r) => r.confidences)).toFixed(2).padStart(3)}  ` +
         `${String(mine.filter((r) => r.shipping === "express").length)}/${n}` +
         (clearMode ? `  discount=${[...new Set(mine.map((r) => r.discount || "(empty)"))].join("/")}` : ""),
     );
