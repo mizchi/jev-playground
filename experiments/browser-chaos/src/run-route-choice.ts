@@ -232,6 +232,235 @@ async function labelPosition(
   console.log("");
 }
 
+/**
+ * `--long-list`: does §4.8's ordering effect survive a long list, and
+ * does it depend on how far apart the two contenders are? (docs/27 §4.9)
+ *
+ * §4.8 measured an ADJACENT pair holding 100% of the mass among 16
+ * candidates. Two things could break at scale: the effect could be
+ * local to adjacency, and 44 filler controls could take enough mass
+ * that the two-way contest stops being one. Both are reported.
+ *
+ * Part 1 uses real pages only. `?wide=40` appends 40 filler controls and
+ * `&fillerpos=before` prepends them, which puts the two contenders at
+ * slots 0-1 or 40-41 of 46 — an absolute-position control that needs no
+ * new flag. Crossed with `?exfirst=1` for their internal order.
+ *
+ * Part 2 varies the SEPARATION, which no page can do, so it reorders the
+ * criteria map and says so: that measures the map channel alone, which
+ * §4.8 put at about half the total effect.
+ */
+const LONG_LIST = process.argv.includes("--long-list");
+
+/** Mass on each label, plus whatever the rest of the list took. */
+function massByLabel(
+  probabilities: Record<string, number>,
+  labels: Map<string, string>,
+  wanted: string[],
+): { on: number[]; other: number } {
+  const on = wanted.map(() => 0);
+  let total = 0;
+  for (const [k, v] of Object.entries(probabilities)) {
+    total += v;
+    const i = wanted.indexOf(labels.get(k) ?? "");
+    if (i >= 0) on[i] += v;
+  }
+  return { on, other: Math.max(0, total - on.reduce((a, b) => a + b, 0)) };
+}
+
+const PROCEED_LABEL = "Proceed to checkout";
+const EXPRESS_LABEL = "Express checkout";
+
+async function longList(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  url: string,
+): Promise<void> {
+  const jev = new Jev();
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+
+  console.log("");
+  console.log("=".repeat(100));
+  console.log(`  LONG LIST — 46 candidates, ${REPEAT} repeats per cell`);
+  console.log("=".repeat(100));
+
+  // ---- Part 1: real pages, block position x internal order -----------
+  const cells: { name: string; query: string }[] = [
+    { name: "early block, P first", query: "&wide=40" },
+    { name: "early block, E first", query: "&wide=40&exfirst=1" },
+    { name: "late block,  P first", query: "&wide=40&fillerpos=before" },
+    { name: "late block,  E first", query: "&wide=40&fillerpos=before&exfirst=1" },
+  ];
+  type Row = { name: string; pP: number[]; pE: number[]; other: number[]; picked: string[]; at: string };
+  const rows: Row[] = [];
+
+  for (const cell of cells) {
+    const pP: number[] = [], pE: number[] = [], other: number[] = [], picked: string[] = [];
+    let at = "";
+    for (let r = 0; r < REPEAT; r += 1) {
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      await toCart(page, `${url}?routes=1${cell.query}`);
+      const p = await probe(page);
+      const criteria: Record<string, string> = {};
+      const labels = new Map<string, string>();
+      for (const c of p.candidates) {
+        const note = notableFacts(c);
+        criteria[String(c.index)] = note ? `${c.description}  [${note}]` : c.description;
+        labels.set(String(c.index), c.locator.name);
+      }
+      at = p.candidates
+        .map((c, i) => ({ c, i }))
+        .filter(({ c }) => [PROCEED_LABEL, EXPRESS_LABEL].includes(c.locator.name))
+        .map(({ c, i }) => `${c.locator.name === PROCEED_LABEL ? "P" : "E"}@${i}`)
+        .join(" ");
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          screen: (await page.locator("#view").innerText()).slice(0, 1200),
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      const m = massByLabel(a.probabilities, labels, [PROCEED_LABEL, EXPRESS_LABEL]);
+      pP.push(m.on[0]!);
+      pE.push(m.on[1]!);
+      other.push(m.other);
+      const chosen = labels.get(a.choice);
+      picked.push(chosen === PROCEED_LABEL ? "P" : chosen === EXPRESS_LABEL ? "E" : "other");
+      await ctx.close();
+    }
+    rows.push({ name: cell.name, pP, pE, other, picked, at });
+  }
+
+  console.log("");
+  console.log("  Part 1 — real pages (?wide=40, ?fillerpos=before, ?exfirst=1)");
+  const w = Math.max(20, ...rows.map((r) => r.name.length));
+  console.log(`  ${"cell".padEnd(w)}  slots        picked      p("Proceed")  p("Express")  p(other 44)`);
+  console.log(`  ${"-".repeat(w)}  -----------  ----------  ------------  ------------  -----------`);
+  for (const r of rows) {
+    const uniq = [...new Set(r.picked)];
+    console.log(
+      `  ${r.name.padEnd(w)}  ${r.at.padEnd(11)}  ` +
+        `${(uniq.length === 1 ? `${uniq[0]} ${r.picked.length}/${r.picked.length}` : r.picked.join(",")).padEnd(10)}  ` +
+        `${mean(r.pP).toFixed(3).padStart(12)}  ${mean(r.pE).toFixed(3).padStart(12)}  ${mean(r.other).toFixed(3).padStart(11)}`,
+    );
+  }
+  console.log("");
+  console.log(
+    `  order effect, early block: ${mean(rows[0]!.pP).toFixed(3)} -> ${mean(rows[1]!.pP).toFixed(3)}` +
+      `  (${(mean(rows[1]!.pP) - mean(rows[0]!.pP) >= 0 ? "+" : "") + (mean(rows[1]!.pP) - mean(rows[0]!.pP)).toFixed(3)})`,
+  );
+  console.log(
+    `  order effect, late block:  ${mean(rows[2]!.pP).toFixed(3)} -> ${mean(rows[3]!.pP).toFixed(3)}` +
+      `  (${(mean(rows[3]!.pP) - mean(rows[2]!.pP) >= 0 ? "+" : "") + (mean(rows[3]!.pP) - mean(rows[2]!.pP)).toFixed(3)})`,
+  );
+  console.log(
+    `  block effect at P-first:   ${mean(rows[0]!.pP).toFixed(3)} -> ${mean(rows[2]!.pP).toFixed(3)}` +
+      `  (${(mean(rows[2]!.pP) - mean(rows[0]!.pP) >= 0 ? "+" : "") + (mean(rows[2]!.pP) - mean(rows[0]!.pP)).toFixed(3)})`,
+  );
+
+  // ---- Part 2: separation, by reordering the criteria map -------------
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await toCart(page, `${url}?routes=1&wide=40`);
+  const p = await probe(page);
+  await ctx.close();
+
+  const labels = new Map<string, string>();
+  const entry = new Map<string, string>();
+  for (const c of p.candidates) {
+    const note = notableFacts(c);
+    entry.set(String(c.index), note ? `${c.description}  [${note}]` : c.description);
+    labels.set(String(c.index), c.locator.name);
+  }
+  const keyOf = (label: string) =>
+    [...labels.entries()].find(([, v]) => v === label)?.[0] ?? "";
+  const kP = keyOf(PROCEED_LABEL);
+  const kE = keyOf(EXPRESS_LABEL);
+  const fillers = [...entry.keys()].filter((k) => k !== kP && k !== kE);
+
+  /** Build a map with `first` at slot 0 and `second` at slot `gap`. */
+  const arrange = (first: string, second: string, gap: number): Record<string, string> => {
+    const keys = [first, ...fillers];
+    keys.splice(Math.min(gap, keys.length), 0, second);
+    const out: Record<string, string> = {};
+    for (const k of keys) out[k] = entry.get(k)!;
+    return out;
+  };
+
+  const seps: { name: string; first: string; second: string; gap: number }[] = [];
+  for (const gap of [1, 5, 15, 45]) {
+    seps.push({ name: `P then E, gap ${gap}`, first: kP, second: kE, gap });
+    seps.push({ name: `E then P, gap ${gap}`, first: kE, second: kP, gap });
+  }
+
+  const sepRows: { name: string; pP: number[]; pE: number[]; other: number[] }[] = [];
+  for (const s of seps) {
+    const pP: number[] = [], pE: number[] = [], other: number[] = [];
+    const criteria = arrange(s.first, s.second, s.gap);
+    for (let r = 0; r < REPEAT; r += 1) {
+      const res = await jev.ask(
+        {
+          goal: GOAL,
+          current_url: "#/cart",
+          // Deliberately omitted: the screen text would contradict the
+          // arrangement. This measures the candidate-map channel alone.
+          step: 2,
+          states_seen: ["#/home", "#/products", "#/cart"],
+          recent_actions: ['click button "Add Widget to cart"'],
+          last_action: 'click button "Add Widget to cart"',
+          last_action_changed_the_page: true,
+          actions_with_no_effect_in_a_row: 0,
+        },
+        { pick: { type: "choice", instructions: PICK_SHIPPED, criteria } },
+      );
+      const a = res.answers["pick"];
+      if (!a || a.type !== "choice") throw new Error("expected a choice answer");
+      const m = massByLabel(a.probabilities, labels, [PROCEED_LABEL, EXPRESS_LABEL]);
+      pP.push(m.on[0]!);
+      pE.push(m.on[1]!);
+      other.push(m.other);
+    }
+    sepRows.push({ name: s.name, pP, pE, other });
+  }
+
+  console.log("");
+  console.log("  Part 2 — separation, candidate map only (no screen text; see the note)");
+  const w2 = Math.max(16, ...sepRows.map((r) => r.name.length));
+  console.log(`  ${"arrangement".padEnd(w2)}  p("Proceed")  p("Express")  p(other 44)`);
+  console.log(`  ${"-".repeat(w2)}  ------------  ------------  -----------`);
+  for (const r of sepRows) {
+    console.log(
+      `  ${r.name.padEnd(w2)}  ${mean(r.pP).toFixed(3).padStart(12)}  ` +
+        `${mean(r.pE).toFixed(3).padStart(12)}  ${mean(r.other).toFixed(3).padStart(11)}`,
+    );
+  }
+  console.log("");
+  for (const gap of [1, 5, 15, 45]) {
+    const a = sepRows.find((r) => r.name === `P then E, gap ${gap}`)!;
+    const b = sepRows.find((r) => r.name === `E then P, gap ${gap}`)!;
+    const d = mean(b.pP) - mean(a.pP);
+    console.log(
+      `  gap ${String(gap).padStart(2)}: putting "Proceed" second is worth ` +
+        `${(d >= 0 ? "+" : "") + d.toFixed(3)}  (${mean(a.pP).toFixed(3)} -> ${mean(b.pP).toFixed(3)})`,
+    );
+  }
+  console.log("");
+  console.log(
+    `  cost: ${jev.calls} calls, ${jev.inputTokens} input tokens, ` +
+      `$${((jev.inputTokens / 1e6) * 0.042).toFixed(5)}`,
+  );
+  console.log("");
+}
+
 /** What one page variant offers: the criteria map and the screen text. */
 interface Captured {
   criteria: Record<string, string>;
@@ -361,10 +590,11 @@ async function main(): Promise<void> {
     args: ["--no-sandbox"],
     ...(existsSync(exe) ? { executablePath: exe } : {}),
   });
-  if (DECOMPOSE || LABEL_POSITION) {
+  if (DECOMPOSE || LABEL_POSITION || LONG_LIST) {
     try {
       if (DECOMPOSE) await decompose(browser, url);
       if (LABEL_POSITION) await labelPosition(browser, url);
+      if (LONG_LIST) await longList(browser, url);
     } finally {
       await browser.close();
       server.close();

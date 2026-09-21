@@ -37,6 +37,7 @@ cd experiments/browser-chaos  && npx tsx src/run-testgen.ts      # 27: 自然言
 cd experiments/browser-chaos  && npx tsx src/run-testgen.ts --repeat 5 --routes # 27 §4.6: 経路 4 通りの盤面
 cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --repeat 6 # 27 §4.7: なぜ 1 経路に寄るのか
 cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --label-position --repeat 6 # 27 §4.8: ラベル x 位置
+cd experiments/browser-chaos  && npx tsx src/run-route-choice.ts --long-list --repeat 6 # 27 §4.9: 候補 46 個でも成り立つか
 cd experiments/browser-chaos  && npx tsx src/run-perf.ts --repeat 3 # 28: 計測 -> 診断 -> 検証
 cd experiments/browser-chaos  && npx tsx src/check-fanout.ts     # 29: action space と validateChoice(API 不要)
 cd experiments/browser-chaos  && npx tsx src/run-fanout.ts --select many --seeds 2 --steps 18 # 29: 投機的 fan-out
@@ -136,7 +137,7 @@ MoonBit 側(`lib/` `report/` `moba/` `cmd/*`)と TypeScript 側(`experiments/*`)
 | **assertion の候補はコードで抽出し、どれが「結果」かだけ聞く** | 前後の差分だけを候補にする。初期状態 4 件は **0.00 で落ちた**。捕まえたバグ 1 → 2 で、**5 回独立に生成して 5/5** 同じ差(捕まえた集合まで同一) | 本リポジトリ | [27](27-nl-test-generation.md#1-何を分担させたか) [27 §4.5](27-nl-test-generation.md#45-追記-5-回独立に生成させた--差は成果物ではなく方式だった) |
 | **試行をまたいで点が動かないことは、カバレッジの証拠ではない** | ゴールへの経路を **4 通り**にしても選ばれる経路は **5/5 同一**(ゴール文から経路を名指す句を落としても同じ)。通らなかった経路のバグは **5/5 見逃し**。安定していたのは方式ではなく**通る道** | 本リポジトリ | [27 §4.6](27-nl-test-generation.md#46-追記-経路が複数ある盤面を作って測った) |
 | **経路を決めているのはラベルである** | 2 つのボタンの**文字列だけ交換**すると選ばれる経路が入れ替わる(p(express) **0.310 → 0.900**)。picker の指示句も同点も外れ —— 6/6 で 3 ステップ側のまま | 本リポジトリ | [27 §4.7](27-nl-test-generation.md#47-追記-なぜ-1-つの経路に寄るのかを測った) |
-| **`choice` の並び順は中立ではない。後ろが約 +0.21 得をする** | 説明文も state も変えず**並べる順だけ**入れ替えると質量が 0.21 動く(+0.212 / −0.202 で対称)。ラベルを交換しても**順番を揃えれば動かない** | 本リポジトリ | [00](00-api-notes.md#choice-order) [27 §4.8](27-nl-test-generation.md#48-追記-express-first-が強まる理由--後に描かれたほうが得をする) |
+| **`choice` の並び順は中立ではない。ただし候補が少ないときだけ** | 隣接 2 つを入れ替えると **16 候補で +0.21**(対称、ラベルに依らない)。**46 候補では +0.05 / +0.02 に薄まり、リスト内の絶対位置は +0.003 で効かない** | 本リポジトリ | [00](00-api-notes.md#choice-order) [27 §4.8](27-nl-test-generation.md#48-追記-express-first-が強まる理由--後に描かれたほうが得をする) [§4.9](27-nl-test-generation.md#49-追記-長いリストでは成り立たなかった--021-は短いリストの話) |
 | **「壊れていない」対照も採点対象にする** | `?bug=slow` を 3 版書いて 2 版が壊れており、どちらも**エラーではなく数字**を返した —— 空白画面が `brittle 5` に、二重描画が `flaky 4/5` に化けた。**対照が壊れると生成物の欠点として現れる** | 本リポジトリ | [27 §3.3](27-nl-test-generation.md#33-追記-壊れていない対照の-bugslow-が最初から壊れていた) |
 | **注記の散文は指標として扱える** | 「転送中はメインスレッドが空いている」を「ユーザーは壁時計を待ち切る」に直すだけで、推薦の実測価値が **188ms → 1,664ms** | 本リポジトリ | [28](28-perf-automation.md#結論先に) |
 | **再計測しないと機会損失が見えない** | 8% 速くして「当たり」に見えた診断の隣に 71% があった | 本リポジトリ | [28](28-perf-automation.md#6-輪を閉じたから分かったこと) |
