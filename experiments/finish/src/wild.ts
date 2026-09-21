@@ -73,7 +73,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { basename, resolve } from "node:path";
-import { permutation, quantile } from "../../shared/thresholds.js";
+import { pairedPermutation, permutation, quantile } from "../../shared/thresholds.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
 const GATE = resolve(import.meta.dirname, "gate.mjs");
@@ -1170,6 +1170,114 @@ function fanoutSection(rec: Record_): void {
  * to relabel the runs, so it assumes only that the labels were exchangeable
  * under the null.
  */
+/**
+ * THE SECTIONS HOLDING EXACTLY ONE RUN OF EACH CLASS: the paired sample.
+ *
+ * `pairs()` draws one open and one done item per section, so a widened record
+ * is paired by construction. docs/55's is not -- its two sections hold 3 open
+ * against 5 done and 2 against 3 -- so this returns nothing there and that
+ * report keeps the unpaired analysis that suits it. **A section with 3 and 5
+ * runs is deliberately not "paired" by taking the first of each**: choosing
+ * which run to pair would be choosing the result.
+ */
+function pairedRows(rec: Record_): { repo: string; section: string; open: Row; done: Row }[] {
+  const key = (r: Row): string => `${r.repo}\u0000${r.file}\u0000${r.section}`;
+  const bySection = new Map<string, Row[]>();
+  for (const r of rec.rows) {
+    if (r.section === undefined) continue;
+    bySection.set(key(r), [...(bySection.get(key(r)) ?? []), r]);
+  }
+  const out: { repo: string; section: string; open: Row; done: Row }[] = [];
+  for (const [k, rows] of [...bySection].sort(([a], [b]) => a.localeCompare(b))) {
+    const open = rows.filter((r) => r.state === "open");
+    const done = rows.filter((r) => r.state === "done");
+    if (open.length !== 1 || done.length !== 1) continue;
+    out.push({ repo: k.split("\u0000")[0], section: k.split("\u0000")[2], open: open[0], done: done[0] });
+  }
+  return out;
+}
+
+/**
+ * The paired comparison, using the test docs/56 §3.0 pre-registered.
+ *
+ * Written while the sweep was at 4 of 32 rows and no comparison had been
+ * computed, for the same reason the test itself was: analysis code written
+ * after seeing the data is analysis code shaped by it.
+ */
+function pairedSection(rec: Record_, metrics: { name: string; of: (r: Row) => number }[]): void {
+  const ps = pairedRows(rec);
+  if (ps.length < 2) return;
+  console.log(`\n### 4.1 Paired, one section at a time -- ${ps.length} pairs\n`);
+  console.log(
+    "**The comparison this sample was drawn to support.** Each row below is one markdown section " +
+      "holding exactly one open run and one done run, so the tick is the only thing that differs " +
+      "within a pair, and under the null each difference could have carried the opposite sign. " +
+      `2^n = ${2 ** ps.length} sign assignments, enumerated.\n`,
+  );
+  console.log("| per pair | median open − done | pairs where open > done | exact p | floor |");
+  console.log("| --- | --- | --- | --- | --- |");
+  for (const m of metrics) {
+    const t = pairedPermutation(ps.map((p) => ({ a: m.of(p.open), b: m.of(p.done) })));
+    const deltas = ps.map((p) => m.of(p.open) - m.of(p.done));
+    console.log(
+      `| ${m.name} | ${t.diff > 0 ? "+" : ""}${quantile(deltas, 0.5).toFixed(1)} | ` +
+        `**${t.wins} of ${t.n}**${t.n < ps.length ? ` (${ps.length - t.n} tied)` : ""} | ` +
+        `**${Number.isNaN(t.p) ? "—" : t.p.toFixed(4)}**${t.exact || Number.isNaN(t.p) ? "" : " (sampled)"} | ` +
+        `${Number.isNaN(t.floor) ? "—" : t.floor.toFixed(4)} |`,
+    );
+  }
+  console.log(
+    "\n**`floor` is what this many pairs can reach at best**, and a p at the floor means every pair " +
+      "went the same way rather than that the effect is large. A tied pair carries no sign, so it is " +
+      "dropped, which lowers `n` and raises the floor.\n",
+  );
+  /**
+   * A METRIC THE CAP KILLED, said out loud rather than shown as a dash.
+   *
+   * `seconds` was pre-registered in docs/56 §3.0 with the other four, from
+   * docs/55 §5.3. But every run in this sweep hit the 600 s cap, so the
+   * measure is CONSTANT: every pair ties, `n` falls to zero and the test
+   * returns no p. docs/55's runs had a median of 483 s and only some hit the
+   * cap, so this is a property of the widened tasks rather than of the
+   * instrument -- and a pre-registered metric that turns out to be degenerate
+   * is reported as degenerate, not quietly swapped for one that works.
+   */
+  const allCapped = rec.rows.length > 0 && rec.rows.every((r) => r.exit === null);
+  const dead = metrics.filter(
+    (m) => pairedPermutation(ps.map((p) => ({ a: m.of(p.open), b: m.of(p.done) }))).n === 0,
+  );
+  if (dead.length > 0) {
+    console.log(
+      `**${dead.length} pre-registered ${dead.length === 1 ? "measure is" : "measures are"} degenerate here** ` +
+        `(${dead.map((m) => m.name.replace(/\*/g, "")).join(", ")}): every pair ties, so no sign survives and ` +
+        `the test returns nothing. ${
+          allCapped
+            ? "**Every run in this record hit the 600 s cap**, which makes elapsed time a constant rather " +
+              "than a measurement -- docs/55's runs had a median of 483 s and only some were capped, so this " +
+              "is a property of the widened tasks. "
+            : ""
+        }A pre-registered measure that turns out degenerate is reported as degenerate rather than swapped ` +
+        "for one that works.\n",
+    );
+  }
+  console.log("| section | open | done | Δ calls | Δ edits | Δ gate spoke |");
+  console.log("| --- | --- | --- | --- | --- | --- |");
+  const ed = (r: Row): number => r.calls.filter((c) => c.tool === "Edit" || c.tool === "Write").length;
+  const sp = (r: Row): number => r.gate.filter((g) => g.verdict !== "allow").length;
+  const sign = (n: number): string => `${n > 0 ? "+" : ""}${n}`;
+  for (const p of ps) {
+    console.log(
+      `| \`${basename(p.repo)}\` — ${p.section.slice(0, 40)} | ${p.open.calls.length} | ${p.done.calls.length} | ` +
+        `${sign(p.open.calls.length - p.done.calls.length)} | ${sign(ed(p.open) - ed(p.done))} | ` +
+        `${sign(sp(p.open) - sp(p.done))} |`,
+    );
+  }
+  console.log(
+    "\n**Every pair is printed** because a p-value hides the direction, and the per-pair signs are " +
+      "the thing docs/55 §5.3 found flipping between sections.\n",
+  );
+}
+
 function comparisonSection(rec: Record_): void {
   const withSection = rec.rows.filter((r) => r.section !== undefined);
   const key = (r: Row): string => `${r.repo}\u0000${r.file}\u0000${r.section}`;
@@ -1263,6 +1371,9 @@ function comparisonSection(rec: Record_): void {
       );
     }
   }
+  // The pre-registered paired analysis, when the record is actually paired.
+  // Silent on docs/55's, whose sections hold 3-against-5 and 2-against-3.
+  pairedSection(rec, metrics);
   const capped = (rs: Row[]): string => `${rs.filter((r) => r.exit === null).length} of ${rs.length}`;
   console.log(
     `\n**Hit the 600 s cap**: ${capped(open)} open, ${capped(done)} done. ` +
