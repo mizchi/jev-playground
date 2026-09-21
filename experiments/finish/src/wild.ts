@@ -11,6 +11,8 @@
  *   TYPESAFEAI_API_KEY=... tsx src/wild.ts --matched    the `- [x]` control arm
  *
  *   tsx src/wild.ts --sweep widened --repos             the wider roster. No key.
+ *   tsx src/wild.ts --sweep widened --sample 16         the fixed sample. No key.
+ *   tsx src/wild.ts --sweep widened --instruments       the discarded sweep against this one. No key.
  *   TYPESAFEAI_API_KEY=... tsx src/wild.ts --sweep widened --pairs 16
  *
  * `--state`, `--repo` and `--limit` narrow what a sweep runs; `--matched` is
@@ -1690,6 +1692,101 @@ async function main(): Promise<void> {
           `(${gaps.filter((g) => g <= 5).length} of ${gaps.length} within 5 lines)\n`,
       );
     }
+    return;
+  }
+  /**
+   * `--instruments`: the discarded sweep against the corrected one, on the
+   * tasks they share.
+   *
+   * A free natural experiment, and the only reason it exists is that the six
+   * abandoned runs were kept. `pairs()` is deterministic, so the corrected
+   * sweep re-runs the SAME tasks in the same order -- same repository, same
+   * file, same line, same prompt, same cap, same gate. The one thing that
+   * differs is whether the fence was hiding an installed compiler.
+   *
+   * So this measures **how much my own safety device distorted the traffic**,
+   * paired by task rather than asserted. Written before the overlap existed,
+   * for the same reason as §4.1's code: analysis written after seeing the
+   * numbers is analysis shaped by them.
+   *
+   * It is a measurement OF THE HARNESS and not of jev, and it is reported
+   * separately for that reason -- these rows are never pooled into a result.
+   */
+  if (argv.includes("--instruments")) {
+    const deadPath = resolve(RECORDS, "widened-fenced-toolchain.json");
+    if (!existsSync(deadPath)) {
+      console.log("\n  no abandoned record to compare against.\n");
+      return;
+    }
+    const dead = JSON.parse(readFileSync(deadPath, "utf8")) as Record_;
+    const live = load();
+    const key = (r: Row): string => `${r.repo}\u0000${r.file}\u0000${r.line}`;
+    const byKey = new Map(dead.rows.map((r) => [key(r), r]));
+    const shared = live.rows.filter((r) => byKey.has(key(r)));
+    console.log("\n## The fence, measured against itself\n");
+    console.log(
+      `**${shared.length} ${shared.length === 1 ? "task" : "tasks"} ran under both instruments.** ` +
+        "Identical task, prompt, cap and gate; the difference is that the corrected run could invoke " +
+        "an installed compiler by bare name and the abandoned one could not (§3.1).\n",
+    );
+    if (shared.length === 0) {
+      console.log("  (the corrected sweep has not reached them yet)\n");
+      return;
+    }
+    /**
+     * WHICH SHARED TASKS ACTUALLY HIT THE FENCE, because a task where it never
+     * fired says nothing about it. `actrun` is a node project and its
+     * toolchain was always on PATH, so its pair had 0 denials on both sides --
+     * any difference there is run-to-run variance, and reading it as a fence
+     * effect would be reading noise. Counted rather than left to a reader who
+     * might not check the per-task columns.
+     */
+    const hit = shared.filter((r) => (byKey.get(key(r)) as Row).fenced > 0);
+    console.log(
+      `**The fence actually fired in ${hit.length} of these ${shared.length}** under the blocked ` +
+        `instrument${hit.length > 0 ? ` (${[...new Set(hit.map((r) => basename(r.repo)))].join(", ")})` : ""}. ` +
+        "A task where it never fired cannot show its effect, so the difference there is run-to-run " +
+        "variance and the rows below are the place to check which is which.\n",
+    );
+    const ed = (r: Row): number => r.calls.filter((c) => c.tool === "Edit" || c.tool === "Write").length;
+    const sp = (r: Row): number => r.gate.filter((g) => g.verdict !== "allow").length;
+    const ms = [
+      { name: "tool calls", of: (r: Row) => r.calls.length },
+      { name: "Bash commands", of: (r: Row) => r.calls.filter((c) => c.tool === "Bash").length },
+      { name: "**edits**", of: ed },
+      { name: "the gate spoke", of: sp },
+      { name: "**fence denials**", of: (r: Row) => r.fenced },
+      { name: "seconds", of: (r: Row) => Math.round(r.ms / 1000) },
+    ];
+    console.log("| per run | fence-blocked (median) | corrected (median) | Δ | pairs where corrected is higher |");
+    console.log("| --- | --- | --- | --- | --- |");
+    for (const m of ms) {
+      const before = shared.map((r) => m.of(byKey.get(key(r)) as Row));
+      const after = shared.map(m.of);
+      const up = shared.filter((r, i) => after[i] > before[i]).length;
+      console.log(
+        `| ${m.name} | ${quantile(before, 0.5)} | ${quantile(after, 0.5)} | ` +
+          `${quantile(after, 0.5) - quantile(before, 0.5) > 0 ? "+" : ""}` +
+          `${(quantile(after, 0.5) - quantile(before, 0.5)).toFixed(1)} | ${up} of ${shared.length} |`,
+      );
+    }
+    const t = pairedPermutation(shared.map((r) => ({ a: r.calls.length, b: (byKey.get(key(r)) as Row).calls.length })));
+    console.log(
+      `\n**Paired on tool calls**: ${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} per task, ` +
+        `${t.wins} of ${t.n} tasks up, exact p = ${Number.isNaN(t.p) ? "—" : t.p.toFixed(4)} ` +
+        `(floor ${Number.isNaN(t.floor) ? "—" : t.floor.toFixed(4)}). **This is a measurement of the ` +
+        "harness, not of jev**, and these rows are never pooled into a result.\n",
+    );
+    console.log("| task | blocked calls | corrected calls | blocked fenced | corrected fenced |");
+    console.log("| --- | --- | --- | --- | --- |");
+    for (const r of shared) {
+      const b = byKey.get(key(r)) as Row;
+      console.log(
+        `| \`${basename(r.repo)}\` ${r.state} ${r.file}:${r.line} | ${b.calls.length} | ${r.calls.length} | ` +
+          `${b.fenced} | ${r.fenced} |`,
+      );
+    }
+    console.log("");
     return;
   }
   if (argv.includes("--report")) {
