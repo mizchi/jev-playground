@@ -559,6 +559,41 @@ export function promptFor(t: Task): string {
   );
 }
 
+/**
+ * TOOLCHAIN DIRECTORIES THE FENCE WOULD OTHERWISE HIDE.
+ *
+ * The widened sweep's first six runs found this and they were thrown away for
+ * it (`records/widened-fenced-toolchain.json`). `/root/.moon/bin/moon` is
+ * installed and executable -- the MoonBit compiler is in this container -- but
+ * it is **not on PATH**, so the only way to invoke it names a `/root/` path,
+ * and the fence denies those. In four of those six runs the agent diagnosed it
+ * correctly and ran `export PATH="$PATH:/root/.moon/bin" && moon ...`, and the
+ * fence denied every attempt. 5 of 6 runs hit the 600 s cap against 10 of 23
+ * in docs/55.
+ *
+ * So the sweep was measuring an agent fighting my safety device, in a roster
+ * where most repositories are MoonBit projects, and the traffic was not the
+ * traffic of an agent doing the author's task.
+ *
+ * THE FENCE RULE IS UNCHANGED. Nothing here weakens it: `moon` reached through
+ * PATH names no protected path, so the same rule now denies the same things
+ * while an installed compiler is usable. `/root/.cargo/bin` is already on
+ * PATH, which is exactly why docs/55's Rust repository never hit this -- the
+ * fence's effect was silently ECOSYSTEM-DEPENDENT, severe for a toolchain that
+ * needs its directory named and invisible for one that does not.
+ *
+ * Only directories that exist are added, so this is a fact about the container
+ * rather than a wish, and a missing toolchain stays a stated limitation.
+ */
+const TOOLCHAIN_BINS = ["/root/.moon/bin", "/root/.cargo/bin", "/root/.bun/bin", "/root/.local/bin"];
+
+export function pathWithToolchains(): string {
+  const have = process.env.PATH ?? "";
+  const on = new Set(have.split(":"));
+  const add = TOOLCHAIN_BINS.filter((d) => existsSync(d) && !on.has(d));
+  return add.length > 0 ? `${have}:${add.join(":")}` : have;
+}
+
 /** One run: a fresh copy of the clone, the hook wired, the agent let loose. */
 async function run(t: Task): Promise<Row> {
   const src = dirFor(t.repo);
@@ -636,6 +671,8 @@ async function run(t: Task): Promise<Row> {
           cwd: dir,
           env: {
             ...process.env,
+            // An installed toolchain the fence would otherwise hide. See above.
+            PATH: pathWithToolchains(),
             FINISH_LOG: ledger,
             FINISH_SANDBOX: dir,
             JEV_GATE: "1",

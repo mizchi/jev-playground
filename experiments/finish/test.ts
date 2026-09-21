@@ -40,7 +40,7 @@ import { pairedPermutation, permutation } from "../shared/thresholds.js";
 // `candidates`. In a file importing rosters from a dozen modules the bare name
 // would not say which one, and the two aliases above are what that costs.
 import { candidates as widenCandidates, reconcile } from "./src/widen.js";
-import { SWEEPS, harnessReach } from "./src/wild.js";
+import { SWEEPS, harnessReach, pathWithToolchains } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1698,6 +1698,59 @@ check("the paired test docs/56 pre-registered is exact, and its floor is returne
   eq(kept.diff, swapped.diff, "re-pairing cannot move the observed difference: ");
   eq(kept.p, 0.75, "deltas 9, 6, -6 against their own sign flips: ");
   eq(swapped.p, 0.25, "the same six numbers paired differently: ");
+});
+
+check("an installed toolchain is reachable without naming a path the fence denies", () => {
+  /**
+   * THE DEFECT THAT COST SIX RUNS. `/root/.moon/bin/moon` is installed in this
+   * container and `moon` was not on PATH, so the only way to invoke it named a
+   * `/root/` path -- which the fence denies. The agent worked it out and ran
+   * `export PATH="$PATH:/root/.moon/bin" && moon ...` in four of six runs, and
+   * was denied every time (`records/widened-fenced-toolchain.json`).
+   *
+   * The fence's effect was ECOSYSTEM-DEPENDENT and that is why it hid: it was
+   * invisible for `cargo`, already on PATH, and total for `moon`, which was
+   * not. So the property under test is not "PATH contains some string" -- it
+   * is **every toolchain binary present in this container can be invoked by
+   * bare name**, which is what makes the fence's rule uniform across
+   * ecosystems rather than a hidden per-language handicap.
+   */
+  const binaries = [
+    ["/root/.moon/bin/moon", "moon"],
+    ["/root/.cargo/bin/cargo", "cargo"],
+  ] as const;
+  const path = pathWithToolchains();
+  let present = 0;
+  for (const [abs, name] of binaries) {
+    if (!existsSync(abs)) continue;
+    present += 1;
+    const dirs = path.split(":");
+    ok(
+      dirs.some((d) => existsSync(resolve(d, name))),
+      `\`${name}\` is installed at ${abs} but not reachable by bare name, so using it requires naming a path the fence denies`,
+    );
+  }
+  ok(present > 0, "no toolchain found to check -- this test would pass vacuously");
+  // And the fence must still deny what it denied before: adding a directory to
+  // PATH may not become a way to widen what a command may name.
+  for (const d of path.split(":")) {
+    ok(!d.includes(".."), `a PATH entry with traversal would defeat the fence: ${d}`);
+  }
+  // The abandoned record must stay abandoned: its rows are a different
+  // instrument and pooling them would be the confound this all avoided.
+  const dead = resolve(import.meta.dirname, "records/widened-fenced-toolchain.json");
+  if (existsSync(dead)) {
+    const a = JSON.parse(readFileSync(dead, "utf8")) as { rows: unknown[]; supersededBy?: string };
+    ok(a.supersededBy !== undefined, "an abandoned record must say what supersedes it");
+    if (existsSync(SWEEPS.widened.record)) {
+      const live = JSON.parse(readFileSync(SWEEPS.widened.record, "utf8")) as { rows: { ms: number }[] };
+      const overlap = live.rows.length > 0 && a.rows.length > 0;
+      ok(
+        !overlap || live.rows.length !== a.rows.length || JSON.stringify(live.rows) !== JSON.stringify(a.rows),
+        "the live record is a copy of the abandoned one, so the discarded instrument is still being reported",
+      );
+    }
+  }
 });
 
 check("a write into a harness clone tree would be caught, and none has happened", () => {
