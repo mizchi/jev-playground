@@ -473,11 +473,13 @@ fn play_baseline(
 fn arena_fight(
   comp_a : Array[String],
   comp_b : Array[String],
+  level : Int,
   max_ticks : Int,
 ) -> Int {
   let g = @game.Game::with_comps(comp_a, comp_b)
   let arena = 9 // mid_mid: central, no tower, no base heal
   g.place_all(arena)
+  g.level_all(level)
   g.simulate_fight(arena, max_ticks).winner
 }
 
@@ -523,37 +525,56 @@ fn print_table(
 }
 
 ///|
+/// The teamfight round robin, once per level in `arena_levels`.
+///
+/// One table was enough while every archetype grew at the same rate. It is not
+/// any more: growth only acts above level 1, so a round robin fought at level 1
+/// reports that the draft's timing axis does nothing — not because it does
+/// nothing, but because the measurement cannot see it. Two tables make the
+/// axis readable, and a comp whose rank moves between them is a comp with a
+/// window rather than a rating.
 fn run_arena(max_ticks : Int) -> Unit {
   let comps = @game.tournament_comps
   let n = comps.length()
-  let wins = Array::make(n, 0)
-  let losses = Array::make(n, 0)
-  let draws = Array::make(n, 0)
-  let mut games = 0
-  for i in 0..<n {
-    for j in 0..<n {
-      if i == j {
-        continue
-      }
-      let w = arena_fight(comps[i].picks, comps[j].picks, max_ticks)
-      games += 1
-      if w == @game.TEAM_A {
-        wins[i] += 1
-        losses[j] += 1
-      } else if w == @game.TEAM_B {
-        wins[j] += 1
-        losses[i] += 1
-      } else {
-        draws[i] += 1
-        draws[j] += 1
+  for level in arena_levels {
+    let wins = Array::make(n, 0)
+    let losses = Array::make(n, 0)
+    let draws = Array::make(n, 0)
+    let mut games = 0
+    for i in 0..<n {
+      for j in 0..<n {
+        if i == j {
+          continue
+        }
+        let w = arena_fight(comps[i].picks, comps[j].picks, level, max_ticks)
+        games += 1
+        if w == @game.TEAM_A {
+          wins[i] += 1
+          losses[j] += 1
+        } else if w == @game.TEAM_B {
+          wins[j] += 1
+          losses[i] += 1
+        } else {
+          draws[i] += 1
+          draws[j] += 1
+        }
       }
     }
+    print_table(
+      "moba5 synergy — teamfight arena at level \{level}",
+      "5v5 to the death on one node, abilities on their timing rules, composition and level are the only variables",
+      wins,
+      losses,
+      draws,
+      games,
+    )
   }
-  print_table(
-    "moba5 synergy — teamfight arena", "5v5 to the death on one node, abilities on their timing rules, composition is the only variable",
-    wins, losses, draws, games,
-  )
 }
+
+///|
+/// The levels the arena reports. The ends of the curve: level 1 is where a high
+/// base attack is worth most, level 6 where growth has been paid out in full.
+let arena_levels : Array[Int] = [1, @game.MAX_LEVEL]
 
 // ----------------------------------------------------- the wording experiment
 
@@ -1961,7 +1982,12 @@ async fn run_draft(
       if i == j {
         continue
       }
-      let w = arena_fight(comps[i].picks, comps[j].picks, max_ticks)
+      let w = arena_fight(
+        comps[i].picks,
+        comps[j].picks,
+        @game.MAX_LEVEL,
+        max_ticks,
+      )
       if w == @game.TEAM_A {
         wins[i] += 1
         losses[j] += 1

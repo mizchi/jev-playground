@@ -30,6 +30,8 @@ pub const FIGHT_PER_BUCKET : Int = 4
 
 pub const FIGHT_TICKS : Int = 16
 
+pub const GROWTH_EVEN : Int = 12
+
 pub const HEAL_AT_BASE : Int = 30
 
 pub const ITEM_COST : Int = 350
@@ -229,6 +231,7 @@ pub(all) struct Ask {
   why : String
   floor : String
 }
+pub fn Ask::discriminates(Self) -> Bool
 
 pub struct Champ {
   id : Int
@@ -243,6 +246,7 @@ pub struct Champ {
   base_mr : Int
   frontline : Bool
   ranged : Bool
+  growth : Int
   ability : Ability
   cooldown : Int
   mut cd : Int
@@ -313,9 +317,11 @@ pub(all) struct Comp {
   picks : Array[String]
   note : String
 }
+pub fn Comp::base_attack(Self) -> Int
 pub fn Comp::has_cc(Self) -> Bool
 pub fn Comp::has_frontline(Self) -> Bool
 pub fn Comp::has_sustain(Self) -> Bool
+pub fn Comp::mean_growth(Self) -> Int
 pub fn Comp::mixed_damage(Self) -> Bool
 pub fn Comp::ranged_count(Self) -> Int
 
@@ -398,6 +404,7 @@ pub fn Game::lane_open(Self, Int, String) -> Bool
 pub fn Game::lane_under_pressure(Self, Int) -> (Int, Int)
 pub fn Game::legal_action_map(Self, Champ) -> Map[String, Action]
 pub fn Game::legal_actions(Self, Champ) -> Array[Action]
+pub fn Game::level_all(Self, Int) -> Unit
 pub fn Game::living(Self, Int) -> Array[Champ]
 pub fn Game::minion_front(Self, Int, String) -> Int
 pub fn Game::neediest_ally(Self, Champ) -> Champ?
@@ -466,6 +473,7 @@ pub(all) struct Kind {
   ranged : Bool
   ability : Ability
   cooldown : Int
+  growth : Int
 }
 pub fn Kind::dmg_type_name(Self) -> String
 

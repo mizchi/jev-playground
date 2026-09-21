@@ -139,6 +139,10 @@ pub struct Champ {
   frontline : Bool
   /// Ranged champions may `Poke` an adjacent node for half damage.
   ranged : Bool
+  /// Attack gained per level, in percent of `base_attack` — the archetype's,
+  /// so two champions with the same base attack can still be on opposite
+  /// sides of the level curve.
+  growth : Int
   ability : Ability
   /// The ability's cooldown length; `cd` is what is left of it.
   cooldown : Int
@@ -185,7 +189,7 @@ pub fn Champ::ability_ready(self : Champ) -> Bool {
 /// Attack after level scaling and items, before team buffs and mitigation.
 /// Buffs are team state, so the full number comes from `Game::raw_attack`.
 pub fn Champ::attack(self : Champ) -> Int {
-  let scaled = self.base_attack * (100 + 12 * (self.level - 1)) / 100
+  let scaled = self.base_attack * (100 + self.growth * (self.level - 1)) / 100
   let mut bonus = 0
   for key in self.items {
     match item_of(key) {
@@ -305,6 +309,7 @@ pub fn Champ::copy(self : Champ) -> Champ {
     base_mr: self.base_mr,
     frontline: self.frontline,
     ranged: self.ranged,
+    growth: self.growth,
     ability: self.ability,
     cooldown: self.cooldown,
     cd: self.cd,
@@ -505,6 +510,7 @@ pub fn Game::with_handicap(
       base_mr: k.mr,
       frontline: k.frontline,
       ranged: k.ranged,
+      growth: k.growth,
       ability: k.ability,
       cooldown: k.cooldown,
       cd: 0,
@@ -835,6 +841,28 @@ pub fn Game::living(self : Game, team : Int) -> Array[Champ] {
 pub fn Game::place_all(self : Game, node : Int) -> Unit {
   for c in self.champs {
     c.node = node
+  }
+}
+
+///|
+/// Put every champion at `level`, health and stats to match.
+///
+/// The arena needed this the moment growth became per-archetype: a round robin
+/// fought at level 1 cannot see a lever that only acts above level 1, so it was
+/// reporting that the timing axis did nothing when it was simply out of frame.
+pub fn Game::level_all(self : Game, level : Int) -> Unit {
+  let want = if level < 1 {
+    1
+  } else if level > MAX_LEVEL {
+    MAX_LEVEL
+  } else {
+    level
+  }
+  for c in self.champs {
+    c.xp = (want - 1) * LEVEL_XP
+    c.level = want
+    c.refresh_hp()
+    c.hp = c.max_hp
   }
 }
 

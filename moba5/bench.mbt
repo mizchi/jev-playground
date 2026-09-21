@@ -92,6 +92,49 @@ pub fn truth_accepts(truth : String, answer : String) -> Bool {
   cur.to_string() == answer
 }
 
+///|
+/// Whether this ask can be got wrong.
+///
+/// A choice question whose truth accepts every option is not a question: every
+/// policy scores 1.00 on it and the class row moves for a reason that has
+/// nothing to do with reading the state. `bench_wbtest`'s "a tie must not
+/// swallow the whole option list" refuses to ship one, and this is the shipping
+/// side of that test — the rules decide the truths, so a rules change can turn
+/// a discriminating question into a degenerate one, and did: giving archetypes
+/// their own growth rates made one derived fight so lopsided that all five
+/// focus orders ended identically.
+pub fn Ask::discriminates(self : Ask) -> Bool {
+  if self.form != "choice" {
+    return true
+  }
+  let mut accepted = 0
+  for o in self.options {
+    if truth_accepts(self.truth, o) {
+      accepted += 1
+    }
+  }
+  accepted < self.options.length()
+}
+
+///|
+/// Drop the asks that cannot be got wrong, scenario by scenario. A scenario
+/// left with no asks at all is dropped too.
+fn prune(scenarios : Array[Scenario]) -> Array[Scenario] {
+  let out : Array[Scenario] = []
+  for sc in scenarios {
+    let asks : Array[Ask] = []
+    for ask in sc.asks {
+      if ask.discriminates() {
+        asks.push(ask)
+      }
+    }
+    if asks.length() > 0 {
+      out.push({ name: sc.name, note: sc.note, state: sc.state, asks, })
+    }
+  }
+  out
+}
+
 // ------------------------------------------------------------------ builders
 
 ///|
@@ -1500,7 +1543,7 @@ pub fn fight_scenarios(wording : RetreatWording) -> Array[Scenario] {
   for i in 0..<cases.length() {
     out.push(sc_fight_case(cases[i], i, wording))
   }
-  out
+  prune(out)
 }
 
 // --------------------------------------------------------------- the suite
@@ -1544,10 +1587,11 @@ pub fn bench_suite() -> Array[Scenario] {
   // The `fight` class comes last and comes from the sweep, not from here: two
   // cases per bucket, so the head count is worth 0.50 on the class and any
   // score above chance is a read of the fight rather than of the head count.
+  let narrative = prune(out)
   for sc in fight_scenarios(TwoWay) {
-    out.push(sc)
+    narrative.push(sc)
   }
-  out
+  narrative
 }
 
 ///|

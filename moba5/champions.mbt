@@ -118,7 +118,23 @@ pub(all) struct Kind {
   ability : Ability
   /// Ticks before the ability can be used again.
   cooldown : Int
+  /// Attack gained per level, in percent of the base.
+  ///
+  /// Every archetype grew at the same 12% before this field existed, which
+  /// meant a higher base attack was better at every level and "when should we
+  /// fight" had no answer beyond "whenever we are ahead". Splitting the rate
+  /// makes the question real: a `bully` out-damages a `marksman` at level 1
+  /// and loses to it at level 6, so the same two teams have a window rather
+  /// than a ranking. `power_ratio` reads the difference, and the `power` class
+  /// is scored against it.
+  growth : Int
 }
+
+///|
+/// The rate every archetype grew at before growth was per-archetype. Kept as
+/// the neutral value so an archetype that is not making a timing claim reads
+/// as making none.
+pub const GROWTH_EVEN = 12
 
 ///|
 /// The roster. `classic` reproduces the 3v3 prototype's uniform champion
@@ -137,6 +153,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: false,
     ability: NoAbility,
+    growth: 12,
     cooldown: 0,
   },
   "marksman": {
@@ -150,6 +167,25 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: true,
     ability: Execute(10),
+    growth: 19,
+    cooldown: 4,
+  },
+  // The second bot laner, and the roster's clearest timing claim. It beats
+  // `marksman` at level 1 on raw attack and loses to it by level 6 (growth 5
+  // against 19), so "fight now or farm and fight later" has a right answer
+  // that depends on the tick rather than on the draft.
+  "bully": {
+    key: "bully",
+    slot: "bot",
+    dmg_type: DMG_PHYSICAL,
+    attack: 17,
+    max_hp: 105,
+    armor: 18,
+    mr: 14,
+    frontline: false,
+    ranged: true,
+    ability: Nuke(18),
+    growth: 5,
     cooldown: 4,
   },
   "mage": {
@@ -163,6 +199,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: true,
     ability: Aoe(13),
+    growth: 14,
     cooldown: 5,
   },
   "artillery": {
@@ -176,6 +213,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: true,
     ability: Aoe(17),
+    growth: 13,
     cooldown: 6,
   },
   "assassin": {
@@ -189,6 +227,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: false,
     ability: Nuke(24),
+    growth: 16,
     cooldown: 5,
   },
   "skirmisher": {
@@ -202,6 +241,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: false,
     ability: Execute(14),
+    growth: 13,
     cooldown: 4,
   },
   "jungler": {
@@ -215,6 +255,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: true,
     ranged: false,
     ability: Blink,
+    growth: 10,
     cooldown: 4,
   },
   "bruiser": {
@@ -228,6 +269,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: true,
     ranged: false,
     ability: Stun(1),
+    growth: 9,
     cooldown: 5,
   },
   "tank": {
@@ -241,6 +283,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: true,
     ranged: false,
     ability: Stun(2),
+    growth: 6,
     cooldown: 6,
   },
   "support": {
@@ -254,6 +297,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: false,
     ability: Heal(32),
+    growth: 8,
     cooldown: 4,
   },
   "enchanter": {
@@ -267,6 +311,7 @@ pub let kinds : Map[String, Kind] = {
     frontline: false,
     ranged: true,
     ability: Shield(38),
+    growth: 8,
     cooldown: 4,
   },
 }
@@ -421,11 +466,44 @@ pub let tournament_comps : Array[Comp] = [
     note: "no frontline, all magic",
   },
   {
+    name: "early",
+    picks: ["bully", "jungler", "assassin", "bully", "support"],
+    note: "high base attack, low growth — wants the fight now",
+  },
+  {
+    name: "late",
+    picks: ["tank", "skirmisher", "mage", "marksman", "enchanter"],
+    note: "low base attack, high growth — wants the fight at six",
+  },
+  {
     name: "classic",
     picks: ["classic", "classic", "classic", "classic", "classic"],
     note: "uniform control (the 3v3 prototype's champion, five of them)",
   },
 ]
+
+///|
+/// A composition's mean attack growth, in percent per level. The draft's timing
+/// axis: two comps with the same level-1 power and different growth do not have
+/// the same answer to "fight now or later".
+pub fn Comp::mean_growth(self : Comp) -> Int {
+  let mut sum = 0
+  for p in self.picks {
+    sum += kind_of(p).growth
+  }
+  sum / self.picks.length()
+}
+
+///|
+/// A composition's level-1 attack, summed. Read against `mean_growth`, the two
+/// say which side of the curve a draft sits on.
+pub fn Comp::base_attack(self : Comp) -> Int {
+  let mut sum = 0
+  for p in self.picks {
+    sum += kind_of(p).attack
+  }
+  sum
+}
 
 ///|
 /// Whether a composition fields a durable body.
