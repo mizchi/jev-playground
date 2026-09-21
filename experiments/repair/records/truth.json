@@ -1,0 +1,206 @@
+[
+  {
+    "task": "accumulate",
+    "sourceHash": 1846994681,
+    "candidates": 11,
+    "fixes": [],
+    "baseline": "failing test: counts\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: most common\nexpected: 'b'\nactual: 'a'\noperator: 'strictEqual'",
+    "ms": 1834
+  },
+  {
+    "task": "andor",
+    "sourceHash": 526482841,
+    "candidates": 19,
+    "fixes": [
+      "2:2"
+    ],
+    "baseline": "failing test: null\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'\nfailing test: undefined\nfailing test: all\nfailing test: first\nexpected: 2\nactual: ~",
+    "ms": 2957
+  },
+  {
+    "task": "append",
+    "sourceHash": 2270782553,
+    "candidates": 11,
+    "fixes": [
+      "2:1"
+    ],
+    "baseline": "failing test: returns the new array\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual: 2\noperator: 'deepStrictEqual'\nfailing test: does not mutate\nactual:",
+    "ms": 1840
+  },
+  {
+    "task": "await",
+    "sourceHash": 4029091785,
+    "candidates": 5,
+    "fixes": [
+      "2:0"
+    ],
+    "baseline": "failing test: awaits\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 2\noperator: 'strictEqual'\nfailing test: all\nexpected: 3\nactual: NaN",
+    "ms": 914
+  },
+  {
+    "task": "bounds",
+    "sourceHash": 3128215747,
+    "candidates": 16,
+    "fixes": [
+      "2:2"
+    ],
+    "baseline": "failing test: slice is exclusive\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: window",
+    "ms": 2564
+  },
+  {
+    "task": "clamp",
+    "sourceHash": 2668363078,
+    "candidates": 32,
+    "fixes": [
+      "6:8"
+    ],
+    "baseline": "failing test: clamps above\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 5\nactual: 9\noperator: 'strictEqual'\nfailing test: all\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+    "ms": 5115
+  },
+  {
+    "task": "dedup",
+    "sourceHash": 1333625754,
+    "candidates": 18,
+    "fixes": [
+      "5:2"
+    ],
+    "baseline": "failing test: keeps the first of each\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+    "ms": 2832
+  },
+  {
+    "task": "equals",
+    "sourceHash": 2183996808,
+    "candidates": 18,
+    "fixes": [
+      "2:0"
+    ],
+    "baseline": "failing test: number zero is not the string\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: false\nactual: true\noperator: 'strictEqual'",
+    "ms": 2903
+  },
+  {
+    "task": "guard",
+    "sourceHash": 2701828819,
+    "candidates": 15,
+    "fixes": [
+      "2:1"
+    ],
+    "baseline": "failing test: missing name\nerror: \"Cannot read properties of undefined (reading 'trim')\"\ncode: 'ERR_TEST_FAILURE'\nfailing test: describe falls back",
+    "ms": 2352
+  },
+  {
+    "task": "lastindex",
+    "sourceHash": 205017488,
+    "candidates": 17,
+    "fixes": [
+      "2:0"
+    ],
+    "baseline": "failing test: last\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 3\noperator: 'strictEqual'\nfailing test: one\nexpected: 9\nfailing test: rotate\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+    "ms": 2701
+  },
+  {
+    "task": "missing-return",
+    "sourceHash": 1194070087,
+    "candidates": 8,
+    "fixes": [
+      "2:0"
+    ],
+    "baseline": "failing test: doubles\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 8\noperator: 'strictEqual'\nfailing test: zero\nexpected: 0\nfailing test: sum of doubles\nexpected: 6\nactual: NaN",
+    "ms": 1334
+  },
+  {
+    "task": "negate",
+    "sourceHash": 1635393454,
+    "candidates": 14,
+    "fixes": [
+      "2:2"
+    ],
+    "baseline": "failing test: empty\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'\nfailing test: not empty\nexpected: false\nactual: true\nfailing test: first or\nexpected: 9",
+    "ms": 2383
+  },
+  {
+    "task": "normalise",
+    "sourceHash": 955747571,
+    "candidates": 17,
+    "fixes": [
+      "9:7",
+      "9:9",
+      "9:11"
+    ],
+    "baseline": "failing test: normalises by the max\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: scales",
+    "ms": 2796
+  },
+  {
+    "task": "sort",
+    "sourceHash": 4089214320,
+    "candidates": 21,
+    "fixes": [
+      "2:3"
+    ],
+    "baseline": "failing test: ascending\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'",
+    "ms": 3333
+  },
+  {
+    "task": "sum",
+    "sourceHash": 1006714668,
+    "candidates": 19,
+    "fixes": [
+      "3:0",
+      "3:1"
+    ],
+    "baseline": "failing test: sums\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 6\nactual: 3\noperator: 'strictEqual'\nfailing test: one\nexpected: 7\nactual: 0\nfailing test: mean\nexpected: 3\nactual: 1",
+    "ms": 3133
+  },
+  {
+    "task": "swap",
+    "sourceHash": 2386796006,
+    "candidates": 18,
+    "fixes": [
+      "2:2",
+      "5:3"
+    ],
+    "baseline": "failing test: inside\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: true\nactual: false\noperator: 'strictEqual'",
+    "ms": 2884
+  },
+  {
+    "task": "truthy",
+    "sourceHash": 3713880352,
+    "candidates": 15,
+    "fixes": [
+      "2:2"
+    ],
+    "baseline": "failing test: zero is a value\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 0\nactual: 9\noperator: 'strictEqual'",
+    "ms": 2472
+  },
+  {
+    "task": "two-bugs-b",
+    "sourceHash": 4209545838,
+    "candidates": 9,
+    "fixes": [],
+    "baseline": "failing test: title\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'Ada Lovelace'\nactual: 'Aada Llovelace'\noperator: 'strictEqual'\nfailing test: words\nexpected: 3\nactual: 2",
+    "ms": 1509
+  },
+  {
+    "task": "two-bugs-c",
+    "sourceHash": 4166769605,
+    "candidates": 11,
+    "fixes": [],
+    "baseline": "failing test: first page\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected:\nactual:\noperator: 'deepStrictEqual'\nfailing test: second page\nfailing test: page count rounds up\nexpected: 2\nactual: 1\noperator: 'strictEqual'\nfailing test: page of",
+    "ms": 1930
+  },
+  {
+    "task": "two-bugs-d",
+    "sourceHash": 1365196430,
+    "candidates": 5,
+    "fixes": [],
+    "baseline": "failing test: row\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 'a,b'\nactual: '\"a\";\"b\"'\noperator: 'strictEqual'\nfailing test: table\nexpected: |-\nactual: |-",
+    "ms": 884
+  },
+  {
+    "task": "two-bugs-e",
+    "sourceHash": 247208832,
+    "candidates": 6,
+    "fixes": [],
+    "baseline": "failing test: count\nerror: |-\ncode: 'ERR_ASSERTION'\nexpected: 3\nactual: 6\noperator: 'strictEqual'\nfailing test: backoff doubles\nexpected: 800\nactual: 300\nfailing test: retry under the cap\nexpected: true\nactual: false",
+    "ms": 1097
+  }
+]

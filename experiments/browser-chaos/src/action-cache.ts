@@ -18,7 +18,7 @@
  * appear to work and click whatever now happens to carry that index.
  *
  * What this is really measuring is narrower than "does caching help".
- * docs/29 found Jev's decisions stable across runs — identical picks,
+ * docs/61 found Jev's decisions stable across runs — identical picks,
  * identical token counts, on identical prompts. So on a deterministic
  * board an exact-key cache cannot change the answer; it can only change
  * the bill. The question worth asking is what happens when the page is

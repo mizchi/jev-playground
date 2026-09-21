@@ -137,7 +137,7 @@ function budgetVerdict(costs: StepCost[], thresholdMs: number): { step: string; 
  * The same two questions, but the second one is asked on its own, with
  * only the chosen step's numbers in the state.
  *
- * This is docs/26's finding turning up in a new place. Asking "which step,
+ * This is docs/58's finding turning up in a new place. Asking "which step,
  * and what is wrong with it" in one request leaves a join to the model:
  * the subsystem question says "for the step you chose", and the numbers
  * for that step are somewhere in an array of twelve. Doing the join in

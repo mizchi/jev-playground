@@ -1,5 +1,5 @@
 /**
- * Why does the choice collapse onto one route? (docs/27 §4.7)
+ * Why does the choice collapse onto one route? (docs/59 §4.7)
  *
  *   TYPESAFEAI_API_KEY=... npx tsx src/run-route-choice.ts [--repeat 3] [--verbose]
  *
@@ -74,7 +74,7 @@ const CONDITIONS: Condition[] = [
 
 /**
  * `--decompose`: why does `express-first` make the 3-step path MORE
- * likely (0.690 -> 0.888)? (docs/27 §4.8)
+ * likely (0.690 -> 0.888)? (docs/59 §4.8)
  *
  * Because "express-first" is not one factor. `data-probe-idx` is stamped
  * in document order, so `?exfirst=1` moves two things at once:
@@ -234,7 +234,7 @@ async function labelPosition(
 
 /**
  * `--long-list`: does §4.8's ordering effect survive a long list, and
- * does it depend on how far apart the two contenders are? (docs/27 §4.9)
+ * does it depend on how far apart the two contenders are? (docs/59 §4.9)
  *
  * §4.8 measured an ADJACENT pair holding 100% of the mass among 16
  * candidates. Two things could break at scale: the effect could be
@@ -463,7 +463,7 @@ async function longList(
 
 /**
  * `--filler-vocab`: why does adding 40 filler controls RAISE confidence
- * in the right one, 0.680 -> 0.897? (docs/27 §4.10)
+ * in the right one, 0.680 -> 0.897? (docs/59 §4.10)
  *
  * The 40 cannot be doing it by arithmetic — they take 0.000 of the mass
  * (§4.9), so they cannot move the ratio between the two contenders.
@@ -566,7 +566,7 @@ async function fillerVocab(
   //
   // The filler adds candidates AND page text together. Capture both
   // pages once and cross them: offering 16 while the screen describes 56
-  // is exactly what narrowing does (docs/30 §6.4), so this cell is not
+  // is exactly what narrowing does (docs/62 §6.4), so this cell is not
   // only a control — it is the retrieval question in miniature.
   const grab = async (query: string) => {
     const ctx = await browser.newContext();

@@ -15,7 +15,7 @@
     layer keeps swallowing every click. This is a real and common CSS
     mistake, and it is invisible in three ways at once — nothing renders,
     nothing is logged, and the page text is unchanged. Only the geometry
-    knows. See docs/25.
+    knows. See docs/57.
   */
   #tip-backdrop { position: fixed; inset: 0; z-index: 50; background: transparent; }
   #tip-card { position: fixed; right: 1rem; bottom: 1rem; z-index: 51;
@@ -82,7 +82,7 @@ const blank = {
 
 /*
   `?select=…` puts a shipping <select> on checkout-3 and makes Place order
-  depend on it, for docs/29. A dropdown is the one control whose action a
+  depend on it, for docs/61. A dropdown is the one control whose action a
   flat candidate list cannot express: "the shipping field" names the
   element but not the option, so a picker that only chooses elements has
   to guess the value. The gate is what makes the head load-bearing —
@@ -102,7 +102,7 @@ const SELECT_MODE = new URLSearchParams(location.search).get("select") || "";
 const SELECT = SELECT_MODE !== "";
 /*
   `?select=hostile` is the screen built to break speculative fan-out
-  (docs/29 §8 left it unrun). Every target head carries a trap that is
+  (docs/61 §8 left it unrun). Every target head carries a trap that is
   attractive on its own terms, so a head answered without knowing whether
   its operation won has something wrong to reach for:
 
@@ -134,7 +134,7 @@ const TWIN = SELECT_MODE === "twin";
 const HOSTILE = SELECT_MODE === "hostile" || TWIN;
 
 /*
-  `?slots=1` is the fixture for the two things docs/29 §9 left untested,
+  `?slots=1` is the fixture for the two things docs/61 §9 left untested,
   which turn out to be the same thing:
 
     - a USED head that is itself uncertain. On `hostile` and `twin` the
@@ -156,7 +156,7 @@ const HOSTILE = SELECT_MODE === "hostile" || TWIN;
 */
 /*
   `?clear=1` puts an already-filled, invalid discount code on checkout-3
-  and refuses the order while it is there, for docs/30 §6.7.
+  and refuses the order while it is there, for docs/62 §6.7.
 
   This is the one end-state a driver here cannot express. Playwright's
   `fill()` already replaces, so *changing* a value needs no clear — what
@@ -167,7 +167,7 @@ const HOSTILE = SELECT_MODE === "hostile" || TWIN;
   still a code, so the gate stays shut and the step looks like it worked.
 
   browser-use makes this explicit — `InputTextAction{index, text, clear}`,
-  where `text=""` with `clear=True` empties the field. docs/29 §8 met the
+  where `text=""` with `clear=True` empties the field. docs/61 §8 met the
   same gap from the other side: jev-ultrafast has no clear either, and its
   dropdown placeholder became an *accidental* one.
 */
@@ -230,13 +230,13 @@ const WRAPPING = [["", "No gift wrap"], ["kraft", "Kraft paper"],
   that changes internal state and the status line but never the hash, so
   it is invisible to novelty measured over URLs — which is what both
   chaosbringer's crawler and the pickers in docs/05 use. V8 coverage can
-  see them, which is the whole question docs/26 asks. Off by default so
+  see them, which is the whole question docs/58 asks. Off by default so
   the numbers in docs/05 keep reproducing.
 */
 const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
 
 /*
-  `?routes=1` gives the goal MORE THAN ONE PATH, for docs/27 §4.6.
+  `?routes=1` gives the goal MORE THAN ONE PATH, for docs/59 §4.6.
 
   Everything else in this app is a gated linear flow: the eight steps to
   `ordered=true` admit almost no choice, which is why five independent
@@ -264,7 +264,7 @@ const BRANCHES = new URLSearchParams(location.search).get("branches") === "1";
 const ROUTES = new URLSearchParams(location.search).get("routes") === "1";
 
 /*
-  Two knobs for docs/27 §4.7, which asks WHY the choice collapses onto
+  Two knobs for docs/59 §4.7, which asks WHY the choice collapses onto
   one route. They vary the two page-side candidate explanations
   independently, and both need the screen text and the candidate list to
   agree — which is why they live here rather than being faked in the
@@ -285,7 +285,7 @@ const CART_LABELS = EX_SWAP
   : { steps: "Proceed to checkout", express: "Express checkout" };
 
 /*
-  `?bug=NAME` breaks one thing on purpose, for docs/27: a generated test
+  `?bug=NAME` breaks one thing on purpose, for docs/59: a generated test
   is only worth keeping if it fails when the app does. Each mutation is
   the smallest edit that breaks one real behaviour, and the app keeps
   running so a shallow "replay the clicks" test still walks the whole
@@ -306,7 +306,7 @@ const BUG = new URLSearchParams(location.search).get("bug") || "";
 
 /*
   `?perf=1` attaches one performance problem to each of four steps, each
-  with a different signature, for docs/28. Which subsystem is at fault is
+  with a different signature, for docs/60. Which subsystem is at fault is
   known by construction, so a diagnosis can be graded — and `feedback` is
   there to be the one that should NOT be prioritised.
 
@@ -322,7 +322,7 @@ const BUG = new URLSearchParams(location.search).get("bug") || "";
 */
 const PERF = new URLSearchParams(location.search).get("perf") === "1";
 // `?fixed=add,checkout` turns individual problems back off, which is how
-// docs/28 verifies a diagnosis: apply the fix it named, measure again,
+// docs/60 verifies a diagnosis: apply the fix it named, measure again,
 // and a wrong diagnosis shows up as a number that did not move.
 const FIXED = new Set((new URLSearchParams(location.search).get("fixed") || "").split(",").filter(Boolean));
 const slow = (name) => PERF && !FIXED.has(name);
@@ -384,7 +384,7 @@ const decoys = (names) => names
   .join("");
 
 /*
-  `?wide=N` appends N filler controls to every screen, for docs/30's
+  `?wide=N` appends N filler controls to every screen, for docs/62's
   retrieval measurement. A candidate list of 10-17 is too small for
   "narrow it before asking" to mean anything; a real application's screen
   is 100+.
@@ -418,7 +418,7 @@ const FILLER_NOUNS = [
 ];
 
 /*
-  `?fillervocab=` swaps the noun pool, for docs/27 §4.10 — why does
+  `?fillervocab=` swaps the noun pool, for docs/59 §4.10 — why does
   adding 40 filler controls RAISE confidence in the right one (0.680 ->
   0.897)? The 40 cannot be doing it by arithmetic: they take 0.000 of
   the probability mass, so they cannot change the ratio between the two
@@ -662,7 +662,7 @@ function render() {
   //
   // `?fillerpos=before` puts it FIRST, which is the only way to test
   // scrolling: appended filler leaves every real control near the top and
-  // therefore always on screen, so docs/30 §6.4's viewport narrowing never
+  // therefore always on screen, so docs/62 §6.4's viewport narrowing never
   // has to give anything up. Prepending models a real page's long nav or
   // filter rail and pushes the flow below the fold.
   const body = view();
@@ -709,7 +709,7 @@ function wire() {
     if (!address.trim()) { update({ email: email.trim() }); return; }
     // `?bug=express` DROPS THE ADDRESS on this path only, the way
     // `?bug=order` drops the order. A dropped recording is what a
-    // positive test can catch; a removed guard is not (docs/27 §5-4, and
+    // positive test can catch; a removed guard is not (docs/59 §5-4, and
     // why `?bug=gate` is missed by both specs). The 3-step path records
     // the address in `#next2`, which this does not touch — so the same
     // bug is caught or missed purely by which route the spec took.
@@ -796,7 +796,7 @@ function wire() {
   // only difference is whether the click does anything.
   if (slow("feedback")) {
     // Deferred past the interaction on purpose: the work is real and the
-    // user never waits for it. docs/28's decoy.
+    // user never waits for it. docs/60's decoy.
     for (const b of document.querySelectorAll("#view button[data-decoy]")) {
       if (b.textContent.trim() === "Send feedback") {
         b.addEventListener("click", () => setTimeout(() => burnMainThread(200), 0));

@@ -1,0 +1,1 @@
+total uses a promise without awaiting it

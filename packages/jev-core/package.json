@@ -1,0 +1,12 @@
+{
+  "name": "@jev-playground/jev-core",
+  "version": "0.1.0",
+  "description": "The Jev client and the threshold policy helpers both routers share. No dependencies, and nothing host-specific.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "files": ["src", "README.md"],
+  "scripts": { "test": "tsx test.ts" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2" }
+}

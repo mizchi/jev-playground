@@ -1,0 +1,2 @@
+A generated file was hand-edited and is now wrong at one entry. The header says
+not to edit it by hand; scripts/gen.mjs regenerates it.

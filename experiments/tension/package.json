@@ -1,0 +1,16 @@
+{
+  "name": "jev-tension",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Is a game's tension visible in the confidence trajectory of Jev playing itself? (docs/35-tension.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

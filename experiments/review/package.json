@@ -1,0 +1,17 @@
+{
+  "name": "jev-review",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Does a code review get better when the mechanical metrics are handed to it? (docs/33-review.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "truth": "tsx src/truth.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

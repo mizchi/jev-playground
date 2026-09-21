@@ -5,11 +5,11 @@
  *
  * stagehand caches the observe→action mapping keyed on state, with a
  * threshold before a key is served and a `replay_failed` miss for a hit
- * that could not be applied. docs/30 §1 listed it as the last untried
+ * that could not be applied. docs/62 §1 listed it as the last untried
  * transfer candidate.
  *
  * The hypothesis to beat is deflationary, and it should be stated first
- * so the result cannot be dressed up. docs/29 found Jev's decisions
+ * so the result cannot be dressed up. docs/61 found Jev's decisions
  * stable across runs — same picks, same token counts, on identical
  * prompts. So on a deterministic board an exact-key cache **cannot**
  * change the answer. It can only change the bill, and only across runs,
@@ -23,7 +23,7 @@
  *      and can hit on a page that has changed underneath it.
  *   2. **What a stale hit does.** Recorded on one board, replayed on a
  *      mutated one, does the cache serve an action that no longer
- *      applies, and does the run still arrive? This is docs/27's
+ *      applies, and does the run still arrive? This is docs/59's
  *      mutation grading pointed at the cache: a cache is only trustworthy
  *      if it *fails* when the page changes.
  *
@@ -284,7 +284,7 @@ async function runPass(
     granularity,
     reachedGoal: seen.has(GOAL_STATE),
     // The URL is not the outcome. `?bug=order` reaches #/confirm without
-    // recording anything, which is docs/27's whole point.
+    // recording anything, which is docs/59's whole point.
     ordered: (stored as { ordered?: boolean }).ordered === true,
     steps: taken,
     served,

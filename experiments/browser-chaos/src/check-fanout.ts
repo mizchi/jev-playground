@@ -1,5 +1,5 @@
 /**
- * The parts of docs/29 that need no API key.
+ * The parts of docs/61 that need no API key.
  *
  *   npx tsx src/check-fanout.ts
  *
@@ -161,7 +161,7 @@ check("a dropdown yields one target per settable option", () => {
 });
 
 check("the placeholder is never a target", () => {
-  // docs/29's adversarial run found both arms naming it once shipping was
+  // docs/61's adversarial run found both arms naming it once shipping was
   // set: a target that unsets a satisfied requirement. `defaultOption`
   // always skipped it; `actionSpace` did not, which was an inconsistency
   // rather than a decision.
@@ -260,7 +260,7 @@ check("the remembering fallback reaches the last option in at most one step each
 });
 
 check("both fallbacks walk two options identically", () => {
-  // Why the two-option fixture hides all of this, and why docs/29 can
+  // Why the two-option fixture hides all of this, and why docs/61 can
   // report one `flat` row for `select=1` rather than running `flat-memo`
   // separately: with a single real alternative the two heuristics take
   // the same option in the same order, so the oscillation has nowhere to
@@ -289,7 +289,7 @@ check("a scroll is not offered until the caller says there is somewhere to go", 
 check("the sweep stops offering a direction once the bottom is reached", () => {
   // The oscillation this replaces: offering both directions makes the
   // position facts point each way in turn, and a driver ping-pongs
-  // forever without acting. docs/30 §6.5 measured 18 of 18 steps spent
+  // forever without acting. docs/62 §6.5 measured 18 of 18 steps spent
   // scrolling.
   const s = new ScrollSweep();
   s.observe("screen-a", 0, true);

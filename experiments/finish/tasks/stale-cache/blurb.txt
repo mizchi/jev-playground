@@ -1,0 +1,2 @@
+A cache nothing invalidates is holding last year's rates. Two legitimate fixes:
+drop the cache directory, or stop trusting it.

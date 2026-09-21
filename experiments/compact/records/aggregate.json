@@ -1,0 +1,387 @@
+{
+  "note": "TODO §1.7's stage 2: which command group is the goal asking about. One `choice` per transcript over the transcript's own command groups. The free arm is the goal's overlap with the command LABEL; `biggest` is the largest group. The label is the group holding `facts[].entryId`, so it is mechanical.",
+  "rows": [
+    {
+      "transcript": "most-tests",
+      "superlative": true,
+      "want": "test",
+      "candidates": [
+        "ls",
+        "test",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "test",
+        "confidence": 0.97,
+        "probabilities": {
+          "read": 0,
+          "count": 0.02,
+          "grep": 0,
+          "test": 0.97,
+          "wc": 0.01,
+          "tsc": 0,
+          "npm": 0,
+          "list": 0,
+          "ls": 0,
+          "git": 0
+        }
+      },
+      "free": "test",
+      "biggest": "read",
+      "ms": 414,
+      "maxIn": {
+        "test": {
+          "line": "ok   a 60-skill shortlist stays inside the byte budget",
+          "hit": false
+        },
+        "read": {
+          "line": "npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コストで決める filter",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "dropat-default",
+      "superlative": false,
+      "want": "read",
+      "candidates": [
+        "ls",
+        "read",
+        "git",
+        "grep",
+        "wc",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "read",
+        "confidence": 0.98,
+        "probabilities": {
+          "ls": 0,
+          "count": 0,
+          "tsc": 0,
+          "read": 0.99,
+          "npm": 0,
+          "git": 0,
+          "wc": 0,
+          "grep": 0.01,
+          "list": 0
+        }
+      },
+      "free": "read",
+      "biggest": "read",
+      "ms": 293,
+      "maxIn": {
+        "read": {
+          "line": "* 24,000,000 is $1.008 at $0.042/MTok. It is a round number chosen to be",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "longest-doc",
+      "superlative": true,
+      "want": "wc",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "wc",
+        "grep",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "wc",
+        "confidence": 1,
+        "probabilities": {
+          "git": 0,
+          "ls": 0,
+          "tsc": 0,
+          "wc": 1,
+          "read": 0,
+          "count": 0,
+          "npm": 0,
+          "grep": 0,
+          "list": 0
+        }
+      },
+      "free": "ls",
+      "biggest": "wc",
+      "ms": 230,
+      "maxIn": {
+        "wc": {
+          "line": "26453 total",
+          "hit": false
+        },
+        "ls": {
+          "line": "total 200",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "guard-cutoffs",
+      "superlative": false,
+      "want": "grep",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "grep",
+        "confidence": 0.68,
+        "probabilities": {
+          "count": 0,
+          "wc": 0,
+          "git": 0,
+          "ls": 0,
+          "tsc": 0,
+          "npm": 0,
+          "grep": 0.71,
+          "list": 0.01,
+          "read": 0.28
+        }
+      },
+      "free": "ls",
+      "biggest": "grep",
+      "ms": 107,
+      "maxIn": {
+        "grep": {
+          "line": "docs/findings.md:1266:**試したこと** TODO の「決定的なワークフローを生成してコーディングエージェントにする」を",
+          "hit": false
+        },
+        "ls": {
+          "line": "total 200",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "flag-registry",
+      "superlative": false,
+      "want": "pi.ts",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "pi.ts",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "pi.ts",
+        "confidence": 0.98,
+        "probabilities": {
+          "read": 0.01,
+          "count": 0,
+          "git": 0,
+          "ls": 0,
+          "grep": 0.01,
+          "list": 0,
+          "wc": 0,
+          "tsc": 0,
+          "pi.ts": 0.98,
+          "npm": 0
+        }
+      },
+      "free": "pi.ts",
+      "biggest": "read",
+      "ms": 151,
+      "maxIn": {
+        "pi.ts": {
+          "line": "* attempt and a hard 2500 ms budget (docs/18 §1(3)), and fires at a moment",
+          "hit": false
+        },
+        "read": {
+          "line": "npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コストで決める filter",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "biggest-source",
+      "superlative": true,
+      "want": "du",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "du",
+        "list",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "du",
+        "confidence": 0.65,
+        "probabilities": {
+          "count": 0,
+          "grep": 0,
+          "git": 0,
+          "du": 0.69,
+          "npm": 0,
+          "tsc": 0,
+          "read": 0.01,
+          "wc": 0.29,
+          "ls": 0.01,
+          "list": 0
+        }
+      },
+      "free": "ls",
+      "biggest": "read",
+      "ms": 141,
+      "maxIn": {
+        "du": {
+          "line": "* 24,000,000 is $1.008 at $0.042/MTok. It is a round number chosen to be",
+          "hit": false
+        },
+        "ls": {
+          "line": "total 200",
+          "hit": false
+        },
+        "read": {
+          "line": "npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コストで決める filter",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "scenario-count",
+      "superlative": false,
+      "want": "scenarios",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "list",
+        "scenarios",
+        "run",
+        "stub",
+        "sandbox",
+        "provider",
+        "harness",
+        "npm",
+        "tsc",
+        "count"
+      ],
+      "jev": {
+        "choice": "scenarios",
+        "confidence": 0.75,
+        "probabilities": {
+          "wc": 0.01,
+          "stub": 0,
+          "sandbox": 0,
+          "ls": 0,
+          "count": 0.01,
+          "npm": 0,
+          "tsc": 0,
+          "harness": 0.05,
+          "list": 0,
+          "run": 0,
+          "scenarios": 0.77,
+          "git": 0,
+          "provider": 0,
+          "read": 0.16,
+          "grep": 0
+        }
+      },
+      "free": "read",
+      "biggest": "read",
+      "ms": 141,
+      "maxIn": {
+        "scenarios": {
+          "line": "* at `contextWindow * startAt`, so 200,000 would need ~140,000 tokens of",
+          "hit": false
+        },
+        "read": {
+          "line": "npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コストで決める filter",
+          "hit": false
+        }
+      }
+    },
+    {
+      "transcript": "findings-links",
+      "superlative": true,
+      "want": "links",
+      "candidates": [
+        "ls",
+        "git",
+        "read",
+        "grep",
+        "wc",
+        "list",
+        "npm",
+        "tsc",
+        "links",
+        "scan",
+        "count"
+      ],
+      "jev": {
+        "choice": "grep",
+        "confidence": 0.48,
+        "probabilities": {
+          "count": 0.08,
+          "git": 0,
+          "npm": 0,
+          "scan": 0.01,
+          "grep": 0.53,
+          "list": 0,
+          "tsc": 0,
+          "ls": 0,
+          "links": 0.09,
+          "wc": 0,
+          "read": 0.28
+        }
+      },
+      "free": "count",
+      "biggest": "read",
+      "ms": 145,
+      "maxIn": {
+        "links": {
+          "line": "18 #29-コンテキストに入らない-skill-カタログから選ぶ",
+          "hit": true
+        },
+        "grep": {
+          "line": "docs/findings.md:1266:**試したこと** TODO の「決定的なワークフローを生成してコーディングエージェントにする」を",
+          "hit": false
+        },
+        "count": {
+          "line": "182",
+          "hit": false
+        },
+        "read": {
+          "line": "npx tsx experiments/task-filter/src/cli.ts --penalty 600             # 25: コストで決める filter",
+          "hit": false
+        }
+      }
+    }
+  ]
+}

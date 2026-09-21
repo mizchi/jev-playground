@@ -1,0 +1,16 @@
+{
+  "name": "jev-compact-eval",
+  "private": true,
+  "type": "module",
+  "description": "Does jev's deletion ranking beat the free ones? (docs/39)",
+  "scripts": {
+    "corpus": "tsx src/corpus.ts",
+    "run": "tsx src/run.ts",
+    "demo": "tsx src/report.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

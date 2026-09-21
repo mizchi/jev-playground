@@ -89,7 +89,7 @@ const BASE_MUTATIONS: { bug: string; isBug: boolean; what: string }[] = [
 
 /**
  * `--routes` points the generator at `?routes=1`, where the goal has
- * four route families instead of one gated line (docs/27 §4.6).
+ * four route families instead of one gated line (docs/59 §4.6).
  *
  * It adds one mutation, and the reason it is only added here is that it
  * is **route-specific**: `express` drops the address on the express page
@@ -209,7 +209,7 @@ async function trial(
       page,
       baseUrl: appUrl,
       steps: 20,
-      // The best policy from docs/25: never offer a control the geometry
+      // The best policy from docs/57: never offer a control the geometry
       // says cannot be clicked.
       policy: { name: "probe-prune", minConfidence: 0, mode: "probe-prune" },
       jev,

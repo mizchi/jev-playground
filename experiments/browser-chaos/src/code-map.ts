@@ -5,7 +5,7 @@
  * `code_not_yet_executed: ["applyPromoCode", ...]`. That reads like
  * guidance to a human, but the choice the picker is actually making is
  * over controls, and nothing connects the two — the join is left as an
- * exercise. docs/26 measures what that costs.
+ * exercise. docs/58 measures what that costs.
  *
  * This does the join in code instead, by name. It works on the fixture
  * because its handlers are named after their buttons, which is common but

@@ -43,7 +43,7 @@ export interface CandidateFacts {
   /**
    * The box's top edge in viewport coordinates, so an off-screen
    * candidate can be told apart from one that is merely off-screen
-   * *upwards*. `inViewport` alone cannot: docs/30 §6.4 narrows the offered
+   * *upwards*. `inViewport` alone cannot: docs/62 §6.4 narrows the offered
    * set to the viewport, and a driver that does that needs to know which
    * way to scroll before scrolling is worth offering.
    */
@@ -61,7 +61,7 @@ export interface ProbedCandidate {
   type: "click" | "input" | "select";
   /**
    * The dropdown's own options, as observed. Only a `select` has any.
-   * docs/29's SELECT head offers `index:option` pairs built from these, so
+   * docs/61's SELECT head offers `index:option` pairs built from these, so
    * a chosen value is always one the page already carried — the model
    * names an option, it never writes one.
    */
@@ -69,7 +69,7 @@ export interface ProbedCandidate {
   /** What the field holds right now; `""` for a button or link. */
   currentValue: string;
   /**
-   * Set by a caller that decided *which* option to take — docs/29's SELECT
+   * Set by a caller that decided *which* option to take — docs/61's SELECT
    * head does. Not part of the probe's output: the probe reports what is
    * on the page, this records a decision about it.
    */
@@ -78,7 +78,7 @@ export interface ProbedCandidate {
   /**
    * How a *generated test* should find this element later. The stamped
    * selector cannot go in a file: it is an attribute this probe wrote and
-   * the next step overwrites. docs/27 emits `#id` when there is one and
+   * the next step overwrites. docs/59 emits `#id` when there is one and
    * `getByRole(role, { name })` otherwise, which is also the difference
    * between a test that survives a renamed button and one that does not.
    */
@@ -124,7 +124,7 @@ const PROBE = `(() => {
     n += 1;
     const tag = el.tagName.toLowerCase();
     // A <select> is a field, but it is not a *fill* target: Playwright's
-    // fill() rejects it. docs/29 needs it as its own operation, so the two
+    // fill() rejects it. docs/61 needs it as its own operation, so the two
     // are separated here rather than at the call site.
     const isSelect = tag === "select";
     const isField = tag === "input" || tag === "textarea" || isSelect;

@@ -106,7 +106,7 @@ async function perform(page: Page, c: ProbedCandidate): Promise<{ ok: boolean; e
   try {
     const el = page.locator(c.selector).first();
     if (c.type === "select") {
-      // `chosenOption` is set by docs/29's SELECT head. Without one, fall
+      // `chosenOption` is set by docs/61's SELECT head. Without one, fall
       // back the same way the flat arm does — see `defaultOption`, which
       // documents why the placeholder has to be skipped.
       const value = c.chosenOption ?? defaultOption(c);
@@ -183,7 +183,7 @@ export function blocked(c: ProbedCandidate): boolean {
 
 /**
  * A note to attach to one candidate, or `null` for "nothing worth the
- * tokens". docs/25 attaches the geometry this way and docs/26 the
+ * tokens". docs/57 attaches the geometry this way and docs/58 the
  * never-executed code; both are the same move — put the fact next to the
  * choice it bears on, rather than in a list somewhere else in the state.
  */
@@ -205,7 +205,7 @@ interface AskContext {
   inert: string[];
   /**
    * Anything the caller wants in the state on top of the above, merged in
-   * as-is. docs/26 uses it for the never-executed function names; it is
+   * as-is. docs/58 uses it for the never-executed function names; it is
    * deliberately opaque here so a new hint does not need a new field.
    */
   extra?: Record<string, unknown>;
@@ -286,7 +286,7 @@ export interface RunOptions {
   jev: Jev;
   /**
    * What the run is for. A supplier when the goal itself depends on what
-   * has happened — docs/26's `in-goal` arm rewrites it each step from the
+   * has happened — docs/58's `in-goal` arm rewrites it each step from the
    * coverage so far. Resolved after `extraState`, so a supplier can read
    * whatever that just refreshed.
    */
@@ -308,7 +308,7 @@ export interface RunOptions {
   done?: (seen: ReadonlySet<string>) => boolean;
   /**
    * Skip the initial `goto`, because the caller has already loaded the
-   * page and needs the document kept. docs/26 needs this: a
+   * page and needs the document kept. docs/58 needs this: a
    * cross-document navigation restarts V8 coverage, and the function
    * inventory has to be taken before anything else runs scripts.
    */

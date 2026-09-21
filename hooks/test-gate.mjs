@@ -29,6 +29,9 @@ const opt = (n, d) => {
   const i = args.indexOf(`--${n}`);
   return i === -1 ? d : (args[i + 1] ?? d);
 };
+// Three, because docs/18's numbers are medians over three runs of each
+// command: enough to see whether a verdict is stable, cheap enough to run on
+// every change. Not a measured value.
 const REPEATS = Number.parseInt(opt("repeat", "3"), 10);
 const EXTRA = flag("allow-safe") ? ["--allow-safe"] : [];
 const POLICY = join(dirname(fileURLToPath(import.meta.url)), "policy.jev");

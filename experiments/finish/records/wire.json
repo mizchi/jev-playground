@@ -1,0 +1,19 @@
+{
+  "note": "Does the 300-skill catalogue reach the model's launch context. Tools are forbidden in the prompt and only Read is allowed, so a verbatim skill name in the reply cannot have come from the filesystem. The COUNT is self-reported and comes back off by one; the NAME is the evidence.",
+  "bare": {
+    "placed": 0,
+    "said": "16 skills are available to me.\n\nsession-start-hook\ndataviz\nartifact-design",
+    "fromCatalogue": [],
+    "ms": 5519
+  },
+  "all": {
+    "placed": 300,
+    "said": "**315 skills** are available to me.\n\nThree of them:\n\nacademy-guide\npython-testing-patterns\nworkflow-orchestration-patterns",
+    "fromCatalogue": [
+      "academy-guide",
+      "python-testing-patterns",
+      "workflow-orchestration-patterns"
+    ],
+    "ms": 26541
+  }
+}

@@ -1,0 +1,1 @@
+THREE bugs: the count is doubled, the backoff is linear not exponential, and the comparison is inverted

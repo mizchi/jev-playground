@@ -17,7 +17,9 @@ import { ESLint, Linter } from "eslint";
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { rules as adhocRules } from "./rules.mjs";
 import plugin from "../src/index.mjs";
 import { resetCacheMemo } from "../src/cache.mjs";
 import { collectUnits } from "../src/functions.mjs";
@@ -1047,6 +1049,48 @@ if (only !== "failsafe") {
       "two rules sharing one selector both get asked",
       two.messages.length === 2,
       JSON.stringify(two.messages.map((m) => m.message.slice(0, 40))),
+    );
+  }
+}
+
+// ---------------------------------------------------------------- docs/26
+
+// docs/26 reuses three of docs/24's sentences and says they are VERBATIM. A
+// sentence is a cache key, so "verbatim" is checkable rather than a claim: if
+// somebody edits either copy, this fails instead of the write-up quietly
+// becoming untrue. The root config is not part of the published package, so a
+// checkout without it skips.
+{
+  const here = dirname(fileURLToPath(import.meta.url));
+  const root = join(here, "..", "..", "..", "eslint.rules.mjs");
+  if (existsSync(root)) {
+    const repo = await import(pathToFileURL(root).href);
+    const mine = new Map(repo.rules.map((r) => [r.id, r]));
+    const reused = ["no-swallowed-catch", "no-string-built-query", "explicit-sort-comparator"];
+    for (const id of reused) {
+      const there = adhocRules.find((r) => r.id === id);
+      const here = mine.get(id);
+      check(
+        `docs/26 reuses \`${id}\`'s sentence verbatim`,
+        Boolean(there && here) && there.rule === here.rule,
+        `${JSON.stringify(here?.rule ?? null)?.slice(0, 40)} vs ${JSON.stringify(there?.rule ?? null)?.slice(0, 40)}`,
+      );
+    }
+    // Only one of the three had its note rewritten, and docs/26 §5 is about
+    // exactly that one. If a second note drifts, the section is wrong.
+    const rewritten = reused.filter((id) => {
+      const there = adhocRules.find((r) => r.id === id);
+      return (mine.get(id)?.note ?? null) !== (there?.note ?? null);
+    });
+    check(
+      "docs/26 rewrote exactly one of the three notes",
+      rewritten.length === 1 && rewritten[0] === "no-swallowed-catch",
+      rewritten.join(", ") || "none",
+    );
+    check(
+      "docs/26 retires two rules and ships the rest",
+      repo.retiredIds.size === 2 && repo.active.length === repo.rules.length - 2,
+      `${[...repo.retiredIds].join(", ")} | active ${repo.active.length} of ${repo.rules.length}`,
     );
   }
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@jev-playground/pi",
+  "private": true,
+  "type": "module",
+  "description": "This repository as a Pi agent. A workspace root holding two ALTERNATIVE profiles -- components/ (five separate extensions) and resident/ (jev-hermes alone) -- and the probe that measures which seam each one takes. Deliberately not a Pi package itself: it declares no `pi` key and has no extensions/ directory, so pointing pi at this directory loads nothing and cannot load both profiles at once. test.ts holds that in place.",
+  "workspaces": [
+    "components",
+    "resident"
+  ],
+  "scripts": {
+    "probe": "tsx probe.ts",
+    "test": "tsx test.ts",
+    "load": "tsx load.ts",
+    "collide": "tsx collide.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

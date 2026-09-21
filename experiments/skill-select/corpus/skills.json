@@ -1,0 +1,1090 @@
+{
+  "source": {
+    "repo": "mizchi/skills",
+    "rev": "aa223d8c85ba4313e2ec6fb9251cc65d46ed3291",
+    "path": "skill-selector/references/catalog.md"
+  },
+  "revs": {
+    "mizchi/skills": "aa223d8c85ba4313e2ec6fb9251cc65d46ed3291",
+    "mizchi/pkfire": "522232706a4cb4aeb6ab76a6749cf1d6676845b2",
+    "mizchi/similarity": "36568489d462aa70d383eab566345d525c0ad726",
+    "mizchi/actrun": "1db9aff5b364de6eacda68e3f2ce2238f9992272",
+    "mizchi/flaker": "274105c68e099adc7637c85f8ef9d7133362224f"
+  },
+  "unresolved": [
+    {
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-c-binding",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/tui.mbt/skills/tuimbt-practice",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/js.mbt/.claude/skills/mooncheat",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/moon-component/skill",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-refactoring",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-agent-guide",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/vibe-lang",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "ast-grep/agent-skill/ast-grep",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "npm-release (out-of-band)",
+      "reason": "not installable via public APM"
+    },
+    {
+      "install": "mizchi/mnemo/skills/codegen-apply-verify",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/d1-query-telemetry",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/vrt",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/mnemo-retrospective",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/mnemo-cmd",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/mnemo-article-to-skill",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/session/mnemo-session-journal",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/mnemo-skill-select",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/dotenvx-in-actions",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/mnemo/skills/worker-deploy-auto-rollback",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/security-review/skills/security-review",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/security-review/skills/security-review-whitebox",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/security-review/skills/security-review-blackbox",
+      "reason": "no readable SKILL.md in the clones"
+    },
+    {
+      "install": "mizchi/security-review/skills/security-review-exploit",
+      "reason": "no readable SKILL.md in the clones"
+    }
+  ],
+  "rows": [
+    {
+      "skill": "node-sqlite-vec",
+      "tier": "T1",
+      "install": "mizchi/skills/node-sqlite-vec",
+      "useWhen": "Project uses Node 24+ `node:sqlite` with `sqlite-vec` extension for vectors / RAG",
+      "section": "Languages / runtimes > Node.js / TypeScript",
+      "signals": "`package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `node_modules/`",
+      "description": "Use when setting up Node 24+ built-in `node:sqlite` with the loadable `sqlite-vec` extension for vector / RAG storage in TypeScript without `better-sqlite3`, or when debugging vec0 BigInt rowids, vitest hanging on sqlite-vec, `.ts` import errors under `node:sqlite`, or \"sqlite extension not loadable\". Covers extension loading, vitest incompatibility (use `node --test`), tsconfig flags, and CLI shebang. Trigger on `node:sqlite`, `sqlite-vec`, vec0 / vector storage even when the user does not name better-sqlite3.",
+      "descriptionFrom": "mizchi/skills/node-sqlite-vec/SKILL.md"
+    },
+    {
+      "skill": "pi-coding-agent",
+      "tier": "T1",
+      "install": "mizchi/skills/pi-coding-agent",
+      "useWhen": "Embedding `@mariozechner/pi-coding-agent` as a coding-agent runtime in Node scripts",
+      "section": "Languages / runtimes > Node.js / TypeScript",
+      "signals": "`package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `node_modules/`",
+      "description": "Use when embedding `@mariozechner/pi-coding-agent` as a coding-agent runtime in Node scripts, writing pi extensions (plugins) with `pi.registerTool` / `pi.registerCommand` / `pi.on`, packaging and `pi install` from npm/git, or picking between the SDK and `pi --mode rpc` for non-Node hosts. Covers session setup, the cwd × tools factory trap, TypeBox tool schemas, and the `peerDependencies` rule. Trigger on `pi-coding-agent`, `pi.registerTool`, `pi install`, or \"embed a coding agent into Node\" descriptions even when pi is not named.",
+      "descriptionFrom": "mizchi/skills/pi-coding-agent/SKILL.md"
+    },
+    {
+      "skill": "dotenvx",
+      "tier": "T1",
+      "install": "mizchi/skills/dotenvx",
+      "useWhen": "Repo uses or considers `dotenvx` for env-var encryption / multi-env",
+      "section": "Languages / runtimes > Node.js / TypeScript",
+      "signals": "`package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `node_modules/`",
+      "description": "Use when working with the `dotenvx` env-var management tool — encrypting .env files, juggling multiple environments (.env.production / .env.staging / .env.ci), committing encrypted secrets to git with `.env.vault` / `.env.keys` / `.env.encrypted`, or wiring dotenvx into GitHub Actions. Trigger on `.env.vault` / `.env.keys` / `dotenvx` commands or symptoms (env-var leak risk, env per-stage management, encrypted secrets workflow) even if the user does not say \"dotenvx\" by name.",
+      "descriptionFrom": "mizchi/skills/dotenvx/SKILL.md"
+    },
+    {
+      "skill": "opentelemetry",
+      "tier": "T1",
+      "install": "mizchi/skills/opentelemetry",
+      "useWhen": "Signal design (traces/metrics/logs), span naming, context propagation, sampling strategy, OTLP exporter config — read before writing any OTel code",
+      "section": "Languages / runtimes > Node.js / TypeScript",
+      "signals": "`package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `node_modules/`",
+      "description": "Platform-agnostic OpenTelemetry reference — signal selection (traces/metrics/logs), span design, context propagation (W3C TraceContext), sampling strategies, and OTLP exporter config. Use before writing any OTel instrumentation to get design decisions right. Platform-specific skills (otel-node, cloudflare-workers-otel-utels) layer on top of this.",
+      "descriptionFrom": "mizchi/skills/opentelemetry/SKILL.md"
+    },
+    {
+      "skill": "otel-node",
+      "tier": "T1",
+      "install": "mizchi/skills/otel-node",
+      "useWhen": "Node.js OTel SDK setup; esbuild ESM bundle silently drops `instrumentation-*` auto-instrumentation — use when spans don't arrive after bundling",
+      "section": "Languages / runtimes > Node.js / TypeScript",
+      "signals": "`package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `node_modules/`",
+      "description": "Node.js OpenTelemetry setup — SDK init, auto-instrumentation packages, and the esbuild ESM silent-failure gotcha (instrumentation-* packages produce no spans when bundled with esbuild --format=esm). Use when adding OTel to a Node.js/Hono/Express service or debugging missing spans after bundling. See opentelemetry for signal design decisions.",
+      "descriptionFrom": "mizchi/skills/otel-node/SKILL.md"
+    },
+    {
+      "skill": "moonbit-practice",
+      "tier": "T1",
+      "install": "mizchi/skills/moonbit-practice",
+      "useWhen": "Writing or reviewing MoonBit code (general best practices)",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "MoonBit code generation and packaging best practices. Use when writing MoonBit code to avoid common AI mistakes with syntax, tests, and benchmarks, or when defining and publishing a Wasm executable with SKILL.md for the MoonBit Skills Marketplace.",
+      "descriptionFrom": "mizchi/skills/moonbit-practice/SKILL.md"
+    },
+    {
+      "skill": "moonbit-js-binding",
+      "tier": "T1",
+      "install": "mizchi/skills/moonbit-js-binding",
+      "useWhen": "MoonBit project needs JS FFI (`extern \"js\"`) for browser / Node / npm packages",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "Write MoonBit bindings to JavaScript with `extern \"js\"`. Use for FFI declarations against browser/Node/Deno APIs or npm packages, wrapping JS objects in opaque types, bridging Promises (`async fn` / `Promise::wait()`), `moon.pkg` exports (esm/cjs/iife), and null/undefined at the JS boundary.",
+      "descriptionFrom": "mizchi/skills/moonbit-js-binding/SKILL.md"
+    },
+    {
+      "skill": "ts2moonbit-migration",
+      "tier": "T1",
+      "install": "mizchi/skills/ts2moonbit-migration",
+      "useWhen": "Porting an existing TypeScript package to MoonBit on the `js` target while keeping the published JS/`.d.ts` contract",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "Migrate a TypeScript codebase to MoonBit on the `js` target while keeping the same JavaScript API contract, using mizchi/js (JS/Web/Node bindings), mizchi/x (cross-target async backend: process/fs/http/ws), and mizchi/npm_typed (npm bindings). Use when porting a TS library, Node service, npm package, or Cloudflare Worker to MoonBit and the existing JS/TS consumers, `.d.ts`, and tests must keep working unchanged.",
+      "descriptionFrom": "mizchi/skills/ts2moonbit-migration/SKILL.md"
+    },
+    {
+      "skill": "moonbit-c-binding",
+      "tier": "T1",
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-c-binding",
+      "useWhen": "MoonBit project links a C library via native FFI",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "tuimbt-practice",
+      "tier": "T1",
+      "install": "mizchi/tui.mbt/skills/tuimbt-practice",
+      "useWhen": "Building terminal UI in MoonBit using `tui.mbt`",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "mooncheat",
+      "tier": "T1",
+      "install": "mizchi/js.mbt/.claude/skills/mooncheat",
+      "useWhen": "MoonBit cheatsheet for syntax / corelibrary lookups while writing `.mbt`",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "moon-component",
+      "tier": "T1",
+      "install": "mizchi/moon-component/skill",
+      "useWhen": "Using the `moon-component` CLI for MoonBit WIT / WebAssembly Component workflow",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "moonbit-refactoring",
+      "tier": "T2",
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-refactoring",
+      "useWhen": "Refactoring an existing MoonBit package idiomatically",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "moonbit-agent-guide",
+      "tier": "T3",
+      "install": "moonbitlang/moonbit-agent-guide/moonbit-agent-guide",
+      "useWhen": "First-time MoonBit project setup — moon tooling, layout conventions (one-time; skip once the project is bootstrapped)",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "vibe-scratch-workflow",
+      "tier": "T3",
+      "install": "mizchi/vibe-lang",
+      "useWhen": "`vibe-lang` scratch-db workflow — `vibe new` → `vibe shell-stdin --restore` → `finalize` / `normalize` / `apply` (repo-root SKILL.md; verify with `apm view`)",
+      "section": "Languages / runtimes > MoonBit",
+      "signals": "`moon.mod` / `moon.pkg` (DSL), the deprecated `moon.mod.json` / `moon.pkg.json`, `_build/`, `.mooncakes/`, `.mbtx` scripts",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "gleam-practice",
+      "tier": "T1",
+      "install": "mizchi/skills/gleam-practice",
+      "useWhen": "Building or reviewing Gleam projects on the Erlang target (Wisp + Mist, OTP)",
+      "section": "Languages / runtimes > Gleam",
+      "signals": "`gleam.toml`, `manifest.toml`, `.gleam_version`",
+      "description": "Use when writing or reviewing Gleam code on the Erlang target — especially Wisp + Mist HTTP services, OTP-based processes (gen_server / supervisor analogues), justfile workflows, gleeunit testing, `gleam format`, GitHub Actions CI, and performance measurement. Trigger on `gleam.toml`, `.gleam` files, or Erlang/BEAM-related symptoms even if the user does not say \"Gleam\" by name.",
+      "descriptionFrom": "mizchi/skills/gleam-practice/SKILL.md"
+    },
+    {
+      "skill": "pkfire",
+      "tier": "T0",
+      "install": "mizchi/pkfire/skills/pkfire",
+      "useWhen": "Adding, editing, or troubleshooting tasks in a project that uses `pkf` / `Taskfile.pkl`; choosing pkfire over just / Taskfile.yml",
+      "section": "Tooling / Infra > Build / task running",
+      "signals": "`justfile`, `devbox.json`, `flake.nix`, `Taskfile.yml`, `Taskfile.pkl`",
+      "description": "Explain, operate, and troubleshoot `pkf`, the pure-MoonBit CLI for the pkfire typed task runner, and author or maintain its `Taskfile.pkl` files. Use when a user asks what pkf is, wants to inspect or run a task graph, add cached tasks or services, model affected-file workflows, migrate from just/Make/Taskfile.yml, diagnose Pkl package or cache behavior, or change pkfire itself. This skill distinguishes the current MoonBit implementation from stale Go-era documentation and records the exact schema, action-key, service, and CLI contracts.",
+      "descriptionFrom": "mizchi/pkfire/skills/pkfire/SKILL.md"
+    },
+    {
+      "skill": "nix-setup",
+      "tier": "T1",
+      "install": "mizchi/skills/nix-setup",
+      "useWhen": "Reproducible dev environment via devbox (Nix-backed, default) or pure Nix flakes (cutting-edge customization). Includes per-language flake templates and a devbox.json template",
+      "section": "Tooling / Infra > Build / task running",
+      "signals": "`justfile`, `devbox.json`, `flake.nix`, `Taskfile.yml`, `Taskfile.pkl`",
+      "description": "Set up reproducible dev environments via devbox (Nix-backed) or pure Nix flakes. Templates for MoonBit, Rust, TypeScript+pnpm, Python+uv, Haskell, OCaml, OxCaml preloaded with just / ast-grep / apm. Covers devbox.json, buildNpmPackage, direnv, GitHub Actions, and bootstrapping in sandboxed envs (Claude Code web). Use when starting, adding, or troubleshooting a Nix or devbox setup.",
+      "descriptionFrom": "mizchi/skills/nix-setup/SKILL.md"
+    },
+    {
+      "skill": "justfile",
+      "tier": "T3",
+      "install": "mizchi/skills/justfile",
+      "useWhen": "Existing repo already uses `just` — respect as-is; for new repos prefer pkfire",
+      "section": "Tooling / Infra > Build / task running",
+      "signals": "`justfile`, `devbox.json`, `flake.nix`, `Taskfile.yml`, `Taskfile.pkl`",
+      "description": "Reference for the `just` command runner — justfile syntax and GitHub Actions integration. Use when an existing repo already has a `justfile` and tasks must be added, modified, or audited. For new mizchi-owned repos, prefer the `pkfire` skill (`Taskfile.pkl` + `pkf`) instead; justfile is kept only for compatibility with existing repos.",
+      "descriptionFrom": "mizchi/skills/justfile/SKILL.md"
+    },
+    {
+      "skill": "ast-grep-practice",
+      "tier": "T1",
+      "install": "mizchi/skills/ast-grep-practice",
+      "useWhen": "Operating ast-grep as a project lint tool (rules, fix, CI)",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Operate ast-grep as a project lint tool. Covers sgconfig.yml, fix/rewrite rules, constraints, transform, testing, and CI. Use when writing rules ast-grep can express but general-purpose linters cannot.",
+      "descriptionFrom": "mizchi/skills/ast-grep-practice/SKILL.md"
+    },
+    {
+      "skill": "ast-grep",
+      "tier": "T1",
+      "install": "ast-grep/agent-skill/ast-grep",
+      "useWhen": "Writing ast-grep rules / structural search (general guide)",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "check-similarity",
+      "tier": "T2",
+      "install": "mizchi/similarity/.claude/skills/check-similarity",
+      "useWhen": "Detect duplicate code via AST-based similarity; auto-selects per-language tool",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Detect duplicate code using AST-based similarity analysis. Auto-selects the right tool based on file types in the project (similarity-ts for TypeScript/JavaScript, similarity-py for Python, similarity-mbt for MoonBit, similarity-rs for Rust, etc).",
+      "descriptionFrom": "mizchi/similarity/.claude/skills/check-similarity/SKILL.md"
+    },
+    {
+      "skill": "check-similarity-mbt",
+      "tier": "T2",
+      "install": "mizchi/similarity/.claude/skills/check-similarity-mbt",
+      "useWhen": "Same, MoonBit (`.mbt`) only",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Detect duplicate MoonBit code using AST-based similarity analysis. Use when working with .mbt files and looking for code duplication, refactoring opportunities, or enforcing code quality.",
+      "descriptionFrom": "mizchi/similarity/.claude/skills/check-similarity-mbt/SKILL.md"
+    },
+    {
+      "skill": "check-similarity-py",
+      "tier": "T2",
+      "install": "mizchi/similarity/.claude/skills/check-similarity-py",
+      "useWhen": "Same, Python (`.py`) only",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Detect duplicate Python code using AST-based similarity analysis. Use when working with .py files and looking for code duplication or refactoring opportunities.",
+      "descriptionFrom": "mizchi/similarity/.claude/skills/check-similarity-py/SKILL.md"
+    },
+    {
+      "skill": "check-similarity-rs",
+      "tier": "T2",
+      "install": "mizchi/similarity/.claude/skills/check-similarity-rs",
+      "useWhen": "Same, Rust (`.rs`) only",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Detect duplicate Rust code using AST-based similarity analysis. Use when working with .rs files and looking for code duplication or refactoring opportunities.",
+      "descriptionFrom": "mizchi/similarity/.claude/skills/check-similarity-rs/SKILL.md"
+    },
+    {
+      "skill": "check-similarity-ts",
+      "tier": "T2",
+      "install": "mizchi/similarity/.claude/skills/check-similarity-ts",
+      "useWhen": "Same, TypeScript / JavaScript only",
+      "section": "Tooling / Infra > Static analysis / lint",
+      "signals": "`sgconfig.yml`, ad-hoc lint requirements that ESLint/biome can't express",
+      "description": "Detect duplicate TypeScript/JavaScript code using AST-based similarity analysis. Use when working with .ts/.tsx/.js/.jsx files and looking for code duplication or refactoring opportunities.",
+      "descriptionFrom": "mizchi/similarity/.claude/skills/check-similarity-ts/SKILL.md"
+    },
+    {
+      "skill": "gh-fix-ci",
+      "tier": "T1",
+      "install": "mizchi/skills/gh-fix-ci",
+      "useWhen": "Debugging or fixing failing GitHub Actions PR checks via `gh`",
+      "section": "Tooling / Infra > CI / GitHub Actions",
+      "signals": "`.github/workflows/`, failing PR checks",
+      "description": "Use when GitHub Actions PR checks are failing on a pull request and need to be diagnosed or fixed. Inspects checks / logs via `gh`, drafts a fix plan, and implements only after explicit approval. Trigger on red checks, failing workflow runs, `pr is failing CI` reports — even if the user does not name a specific check. Out of scope: external CI (e.g. Buildkite) — report only the details URL.",
+      "descriptionFrom": "mizchi/skills/gh-fix-ci/SKILL.md"
+    },
+    {
+      "skill": "actrun",
+      "tier": "T2",
+      "install": "mizchi/actrun/.claude/skills/actrun",
+      "useWhen": "Reference for the `actrun` CLI — local GitHub Actions runner; workflow proposal / parsing / execution support",
+      "section": "Tooling / Infra > Local CI runner",
+      "signals": "`actrun.toml`, running GitHub Actions workflows locally",
+      "description": "actrun (ローカル GitHub Actions ランナー) の使い方リファレンスとワークフロー実行支援。actrun コマンドの提案、ワークフロー解析、実行プラン確認を行う。",
+      "descriptionFrom": "mizchi/actrun/.claude/skills/actrun/SKILL.md"
+    },
+    {
+      "skill": "actrun-init",
+      "tier": "T2",
+      "install": "mizchi/actrun/.claude/skills/actrun-init",
+      "useWhen": "Introducing actrun to a project — install, `actrun.toml`, workflow adjustments",
+      "section": "Tooling / Infra > Local CI runner",
+      "signals": "`actrun.toml`, running GitHub Actions workflows locally",
+      "description": "プロジェクトに actrun を導入する。インストール、actrun.toml 設定、ワークフロー調整をガイドする。",
+      "descriptionFrom": "mizchi/actrun/.claude/skills/actrun-init/SKILL.md"
+    },
+    {
+      "skill": "actrun-debug",
+      "tier": "T2",
+      "install": "mizchi/actrun/.claude/skills/actrun-debug",
+      "useWhen": "Diagnosing actrun execution failures — log analysis, root-cause, fix suggestions",
+      "section": "Tooling / Infra > Local CI runner",
+      "signals": "`actrun.toml`, running GitHub Actions workflows locally",
+      "description": "actrun の実行失敗を診断する。ログ解析、エラー原因特定、修正提案を行う。",
+      "descriptionFrom": "mizchi/actrun/.claude/skills/actrun-debug/SKILL.md"
+    },
+    {
+      "skill": "cloudflare-deploy",
+      "tier": "T1",
+      "install": "mizchi/skills/cloudflare-deploy",
+      "useWhen": "Deploying to Cloudflare Workers / Pages — wrangler commands, secrets, custom domains",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "Deploy applications and infrastructure to Cloudflare using Workers, Pages, and related platform services. Use when the user asks to deploy, host, publish, or set up a project on Cloudflare.",
+      "descriptionFrom": "mizchi/skills/cloudflare-deploy/SKILL.md"
+    },
+    {
+      "skill": "workers-cd-rollback",
+      "tier": "T1",
+      "install": "mizchi/skills/cloudflare-workers-cd-rollback",
+      "useWhen": "Adding push-to-deploy + automatic rollback on smoke failure to a Workers GitHub Actions pipeline",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "GitHub Actions CD for a Cloudflare Worker with auto-rollback on smoke failure. Use when you want push-to-deploy with safety: capture pre-deploy version, deploy, smoke, rollback if smoke fails.",
+      "descriptionFrom": "mizchi/skills/cloudflare-workers-cd-rollback/SKILL.md"
+    },
+    {
+      "skill": "cloudflare-workers-otel-utels",
+      "tier": "T1",
+      "install": "mizchi/skills/cloudflare-workers-otel-utels",
+      "useWhen": "Adding OTLP tracing / metrics / logs and utels error tracking to a Worker without touching handler code",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "Cloudflare Worker telemetry at the fetch boundary — OTLP traces / metrics / logs + utels error tracking + D1 Proxy that emits slow-query warnings. Use when adding observability to a Worker without touching handler code.",
+      "descriptionFrom": "mizchi/skills/cloudflare-workers-otel-utels/SKILL.md"
+    },
+    {
+      "skill": "cloudflare-mbt-worker-bundle",
+      "tier": "T1",
+      "install": "mizchi/skills/cloudflare-mbt-worker-bundle",
+      "useWhen": "Bundling a Worker that combines a MoonBit moon-built JS module with a TypeScript entry via wrangler",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "Bundle a Cloudflare Worker that combines MoonBit core code with a TypeScript entry. Use when wrangler must ship a moon-built JS module alongside hand-written TS, with FFI rewrites and a post-build bundle check.",
+      "descriptionFrom": "mizchi/skills/cloudflare-mbt-worker-bundle/SKILL.md"
+    },
+    {
+      "skill": "cloudflare-access-app-setup",
+      "tier": "T3",
+      "install": "mizchi/skills/cloudflare-access-app-setup",
+      "useWhen": "Gating a Worker behind Cloudflare Access via API in one shot — app + email allowlist + service token",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "One-shot Cloudflare Access self-hosted application provisioning via the API — app + email allowlist policy + service token. Use when you want to gate a Worker behind Access without a full Pulumi stack.",
+      "descriptionFrom": "mizchi/skills/cloudflare-access-app-setup/SKILL.md"
+    },
+    {
+      "skill": "utels-project-bootstrap",
+      "tier": "T3",
+      "install": "mizchi/skills/utels-project-bootstrap",
+      "useWhen": "Registering a new utels.dev project and writing the returned ingest token into a wrangler secret in one shot",
+      "section": "Tooling / Infra > Cloudflare",
+      "signals": "`wrangler.toml`, Cloudflare account, Workers / Pages deploy",
+      "description": "One-shot helper for registering a utels.dev project and writing the returned ingest token straight into a wrangler secret. Use when wiring server-side error tracking for a Cloudflare Worker without leaking tokens through the shell.",
+      "descriptionFrom": "mizchi/skills/utels-project-bootstrap/SKILL.md"
+    },
+    {
+      "skill": "aws-github-oidc-scoped-role",
+      "tier": "T1",
+      "install": "mizchi/skills/aws-github-oidc-scoped-role",
+      "useWhen": "Wiring GitHub Actions to AWS via OIDC — `job_workflow_ref` scoping, Bedrock cross-region ARNs, `aws-marketplace` permissions, ReadOnlyAccess + Deny for AI agent roles",
+      "section": "Tooling / Infra > AWS",
+      "signals": "ECS / Fargate service, GitHub Actions → AWS OIDC, aws-vault MFA error",
+      "description": "OpenTofu/Terraform pattern for GitHub Actions OIDC trust with AWS IAM. Covers the non-obvious `job_workflow_ref` condition (vs just `sub` for repo+branch), the Bedrock inference profile ARN patterns, required `aws-marketplace` permissions alongside Bedrock, and the ReadOnlyAccess + explicit Deny pattern for AI agent roles. Use when wiring GitHub Actions to AWS via OIDC.",
+      "descriptionFrom": "mizchi/skills/aws-github-oidc-scoped-role/SKILL.md"
+    },
+    {
+      "skill": "aws-ecs-service-connect-ipv6",
+      "tier": "T3",
+      "install": "mizchi/skills/aws-ecs-service-connect-ipv6",
+      "useWhen": "ECS Service Connect alias resolves to IPv6 in IPv4-only Fargate task; `network is unreachable`",
+      "section": "Tooling / Infra > AWS",
+      "signals": "ECS / Fargate service, GitHub Actions → AWS OIDC, aws-vault MFA error",
+      "description": "Use when ECS Service Connect の DNS alias が IPv6 アドレスを返し、 IPv4-only の Fargate task から `network is unreachable` / `EAI_AGAIN` 等で接続できない問題に遭遇したとき。 OTel Collector → Tempo の OTLP gRPC、 Fargate → Service Connect の HTTP/gRPC 通信が突然失敗する症状が典型。 ECS / Fargate / Service Connect / OTLP / IPv6 dual-stack 関連の接続障害から起動して良い (user が原因を IPv6 と特定していなくても OK)。",
+      "descriptionFrom": "mizchi/skills/aws-ecs-service-connect-ipv6/SKILL.md"
+    },
+    {
+      "skill": "aws-vault-mfa-iam",
+      "tier": "T3",
+      "install": "mizchi/skills/aws-vault-mfa-iam",
+      "useWhen": "aws-vault session blocked by IAM MFA-required policy; `iam:*` rejected with `InvalidClientTokenId`",
+      "section": "Tooling / Infra > AWS",
+      "signals": "ECS / Fargate service, GitHub Actions → AWS OIDC, aws-vault MFA error",
+      "description": "Use when AWS account の IAM API が MFA 必須 policy で弾かれて、 `sts:GetCallerIdentity` は通るのに `iam:*` が `InvalidClientTokenId` で拒否されるとき、 または FIDO2 passkey で MFA が CLI から使えないとき。 aws-vault / aws-cli / MFA / passkey 関連で「アクセス拒否」 「token expired」 「IAM 操作のみ失敗」 等の症状から起動 (user が aws-vault を名指しでなくても OK)。",
+      "descriptionFrom": "mizchi/skills/aws-vault-mfa-iam/SKILL.md"
+    },
+    {
+      "skill": "aws-ecs-codedeploy-blue-green",
+      "tier": "T4",
+      "install": "mizchi/skills/aws-ecs-codedeploy-blue-green",
+      "useWhen": "Existing CodeDeploy blue/green setup that cannot be migrated — prefer ALB-native weighted routing for new setups",
+      "section": "Tooling / Infra > AWS",
+      "signals": "ECS / Fargate service, GitHub Actions → AWS OIDC, aws-vault MFA error",
+      "description": "ECS blue/green deployment patterns. Recommends ALB-native weighted target groups as the simpler default; covers CodeDeploy as a reference for teams that already use it or need pipeline-integrated rollback. Use when choosing or debugging ECS blue/green infrastructure.",
+      "descriptionFrom": "mizchi/skills/aws-ecs-codedeploy-blue-green/SKILL.md"
+    },
+    {
+      "skill": "k8s-crd-from-typed-schema",
+      "tier": "T3",
+      "install": "mizchi/skills/k8s-crd-from-typed-schema",
+      "useWhen": "Generating CRDs from a typed schema source (zod / TypeBox / Valibot) — Structural Schema dialect restrictions, `/status` subresource trap, metadata-prohibition rule",
+      "section": "Tooling / Infra > Kubernetes",
+      "signals": "`k8s/`, CRD YAML, zod/TypeBox/Valibot schema to CRD conversion",
+      "description": "Use when generating Kubernetes CustomResourceDefinitions from a typed schema source (zod / TypeBox / Valibot / json-schema). Covers the Structural Schema dialect's restrictions, the /status subresource trap, the metadata-prohibition rule, and plural inflection — the four pitfalls that bite on first attempt.",
+      "descriptionFrom": "mizchi/skills/k8s-crd-from-typed-schema/SKILL.md"
+    },
+    {
+      "skill": "conventional-changelog",
+      "tier": "T1",
+      "install": "mizchi/skills/conventional-changelog",
+      "useWhen": "Setting up or unifying a release flow with Conventional Commits + auto changelog",
+      "section": "Tooling / Infra > Release / changelog",
+      "signals": "`CHANGELOG.md`, release-please config, `.changeset/`, version-tag-driven release",
+      "description": "Reference for Conventional Commits and automatic CHANGELOG generation. Compares release-please / changesets / git-cliff / towncrier and covers commit format, Keep a Changelog, and semver tag practices. Use when setting up or unifying a release flow.",
+      "descriptionFrom": "mizchi/skills/conventional-changelog/SKILL.md"
+    },
+    {
+      "skill": "upstream-fix-and-pin",
+      "tier": "T3",
+      "install": "mizchi/skills/upstream-fix-and-pin",
+      "useWhen": "A dependency has a bug or missing feature; you need to pin a fork while waiting for upstream merge",
+      "section": "Tooling / Infra > Release / changelog",
+      "signals": "`CHANGELOG.md`, release-please config, `.changeset/`, version-tag-driven release",
+      "description": "自分の依存ライブラリにバグや欠けている機能があり、上流に PR を出して取り込まれるまで下流プロジェクトを動かしたいときの運用。git ref pin（branch HEAD SHA → merge SHA）、`link:` への退避判断、SHA 取り扱い、pnpm v10 の build script gating まで含む。",
+      "descriptionFrom": "mizchi/skills/upstream-fix-and-pin/SKILL.md"
+    },
+    {
+      "skill": "npm-release",
+      "tier": "T2",
+      "install": "(out-of-band)",
+      "useWhen": "Setting up npm publishing via release-please + OIDC. chezmoi-local; ask mizchi",
+      "section": "Tooling / Infra > Release / changelog",
+      "signals": "`CHANGELOG.md`, release-please config, `.changeset/`, version-tag-driven release",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "dep-lib-review",
+      "tier": "T1",
+      "install": "mizchi/skills/dep-lib-review",
+      "useWhen": "Auditing and updating library dependencies — patch/minor/major batching, CVE attack-vector triage, deprecated package detection, validation checklist",
+      "section": "Tooling / Infra > Dependency management",
+      "signals": "`pnpm outdated` results, security alert, major ecosystem release, annual maintenance",
+      "description": "Periodic dependency review for Node.js/pnpm projects — outdated package triage, security audit, update batching strategy (patch/minor/major), validation checklist. Run monthly or before major releases. Use when asked to review or update dependencies in a repo.",
+      "descriptionFrom": "mizchi/skills/dep-lib-review/SKILL.md"
+    },
+    {
+      "skill": "tech-trend-watch",
+      "tier": "T3",
+      "install": "mizchi/skills/tech-trend-watch",
+      "useWhen": "Annual tech-stack review using State of JS/CSS + Thoughtworks Tech Radar — satisfaction×usage matrix, ADOPT/TRIAL/ASSESS/HOLD mapping, migration roadmap",
+      "section": "Tooling / Infra > Dependency management",
+      "signals": "`pnpm outdated` results, security alert, major ecosystem release, annual maintenance",
+      "description": "Long-term technology stack review using State of JS, State of CSS, and Thoughtworks Technology Radar — satisfaction×usage matrix, ADOPT/TRIAL/ASSESS/HOLD mapping, P0–P3 migration priority. Use for annual stack audits, planning major migrations (jest→vitest, webpack→Vite, etc.), or on-demand replacement decisions. Not for general architecture design.",
+      "descriptionFrom": "mizchi/skills/tech-trend-watch/SKILL.md"
+    },
+    {
+      "skill": "sql-lint",
+      "tier": "T1",
+      "install": "mizchi/skills/sql-lint",
+      "useWhen": "Static lint pass on a sqlc-style SQL catalog — duplicate query names, missing semicolons, `SELECT *`, double-wildcard `LIKE`",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "Static lint for sqlc-style SQL catalogs. Catches duplicate query names, missing semicolons, SELECT *, double-wildcard LIKE, and other cheap-but-easy-to-miss mistakes. Optional sqlfluff integration for full style coverage.",
+      "descriptionFrom": "mizchi/skills/sql-lint/SKILL.md"
+    },
+    {
+      "skill": "sql-plan-audit",
+      "tier": "T1",
+      "install": "mizchi/skills/sql-plan-audit",
+      "useWhen": "`EXPLAIN QUERY PLAN` baseline diff on a sqlc catalog — detect new full-table SCANs or `TEMP B-TREE` sorts introduced by a PR",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "Run EXPLAIN QUERY PLAN against every query in a sqlc-style catalog and diff the plans against a baseline. Detects new full-table SCANs and TEMP B-TREE sort scans introduced by PRs. SQLite/D1-only today; engine extension noted below.",
+      "descriptionFrom": "mizchi/skills/sql-plan-audit/SKILL.md"
+    },
+    {
+      "skill": "sql-schema-audit",
+      "tier": "T1",
+      "install": "mizchi/skills/sql-schema-audit",
+      "useWhen": "Index coverage + N+1 review for a SQLite/D1 schema — unused indexes, unindexed scans, `for`-loop query calls",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "Index coverage and N+1 review aids for SQLite/D1 schemas with a sqlc catalog. Surfaces unused indexes (with FK CASCADE awareness so cascade-load-bearing indexes are not flagged), queries that scan tables without index help, and `for`-loops calling generated SQL fns.",
+      "descriptionFrom": "mizchi/skills/sql-schema-audit/SKILL.md"
+    },
+    {
+      "skill": "sql-security",
+      "tier": "T1",
+      "install": "mizchi/skills/sql-security",
+      "useWhen": "SQL injection screening in MoonBit / TS / Rust host code — flags template-literal / string-concat SQL builders",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "SQL injection screening for host code (MoonBit / TS / Rust) plus secretlint setup notes. Flags single-line template-literal or string-concat SQL builders, regardless of value source — the scanner is line-based and does NOT trace data flow, so a clean scan is not proof of safety (multi-line template literals are missed) and every hit needs a manual review or an explicit `// sql-security: ok` opt-out.",
+      "descriptionFrom": "mizchi/skills/sql-security/SKILL.md"
+    },
+    {
+      "skill": "sqlc-gen-moonbit-safety",
+      "tier": "T1",
+      "install": "mizchi/skills/sqlc-gen-moonbit-safety",
+      "useWhen": "Post-generation safety gate for `sqlc-gen-moonbit` + Cloudflare D1 — BigInt-bind hang (D1 1101) and placeholder mix checks",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "Post-generation safety checks for sqlc-gen-moonbit + Cloudflare D1. Use when a MoonBit Worker uses sqlc-gen-moonbit and you need to gate against BigInt-bind hangs (D1 1101) and SQL placeholder mix.",
+      "descriptionFrom": "mizchi/skills/sqlc-gen-moonbit-safety/SKILL.md"
+    },
+    {
+      "skill": "codegen-apply-verify",
+      "tier": "T3",
+      "install": "mizchi/mnemo/skills/codegen-apply-verify",
+      "useWhen": "Adding a `--verify` CI gate to any code-generation step — exits non-zero if generated output has drifted from committed patches",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "d1-query-telemetry",
+      "tier": "T3",
+      "install": "mizchi/mnemo/skills/d1-query-telemetry",
+      "useWhen": "Adding per-D1-query OTEL child spans and slow-query `console.warn` to a Cloudflare Worker via a transparent `Proxy` wrapper",
+      "section": "Tooling / Infra > SQL / Database",
+      "signals": "`sqlc.yaml`, `*.sql` query catalog, SQLite / D1 schema, `sqlc-gen-moonbit`",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "playwright-test",
+      "tier": "T1",
+      "install": "mizchi/skills/playwright-test",
+      "useWhen": "Primary for any Playwright project. Writing / reviewing E2E tests — no fixed waits, network triggers",
+      "section": "Testing / Browser",
+      "signals": "`playwright.config.*`, `e2e/`, image-diff requirements",
+      "description": "Best practices and reference for Playwright Test (E2E). Covers how to write tests, avoiding fixed waits, network triggers, DnD, shard/retry setup on GitHub Actions, and more. Use when writing, reviewing, or configuring CI for Playwright tests.",
+      "descriptionFrom": "mizchi/skills/playwright-test/SKILL.md"
+    },
+    {
+      "skill": "playwright-cli",
+      "tier": "T1",
+      "install": "mizchi/skills/playwright-cli",
+      "useWhen": "Secondary — add only when CI sharding, codegen, or one-off `screenshot/pdf` matters. Skip when test authoring is the only concern",
+      "section": "Testing / Browser",
+      "signals": "`playwright.config.*`, `e2e/`, image-diff requirements",
+      "description": "Use when running Playwright via terminal CLI — `npx playwright test` (test runner), `codegen` (interactive recording), `screenshot` / `pdf` (one-off captures), and CI sharding. NOT for agent-driven real-time browser control (use `claude-in-chrome` MCP tools for that).",
+      "descriptionFrom": "mizchi/skills/playwright-cli/SKILL.md"
+    },
+    {
+      "skill": "review-image",
+      "tier": "T2",
+      "install": "mizchi/skills/review-image",
+      "useWhen": "Reviewing screenshots / generated images via OpenRouter vision models, VRT prechecks",
+      "section": "Testing / Browser",
+      "signals": "`playwright.config.*`, `e2e/`, image-diff requirements",
+      "description": "Review screenshots or other images with OpenRouter vision models via bundled Deno scripts. Use for quick VRT sanity checks, invalid-image screening, or CI gates. `scripts/review-image.ts` returns freeform feedback; `scripts/review-image-ci.ts` returns strict `pass|fail` JSON and exits non-zero on fail.",
+      "descriptionFrom": "mizchi/skills/review-image/SKILL.md"
+    },
+    {
+      "skill": "vrt",
+      "tier": "T2",
+      "install": "mizchi/vrt",
+      "useWhen": "Visual Regression Testing + a11y semantic verification CLI (`vrt-test`, `vrt`, `vrt-update`, `vrt compare`, `vrt snapshot`, fix-loop, VLM model selection). Repo-root SKILL.md; verify with `apm view`",
+      "section": "Testing / Browser",
+      "signals": "`playwright.config.*`, `e2e/`, image-diff requirements",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "frontend-review-weekly",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-weekly",
+      "useWhen": "Orchestrator for the weekly AI review — dispatches all 8 domain skills and the 5 perspective sub-skills",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use for the weekly AI review. Orchestrates all frontend-review-* skills in order, dispatches the 5 perspective sub-skills in parallel, diffs against last week's KPIs, and produces a weekly report that feeds the ratchet.",
+      "descriptionFrom": "mizchi/skills/frontend-review-weekly/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-triage",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-triage",
+      "useWhen": "Initial frontend-review assessment (\"triage\", day-1) — scorecard, top-3 risks, app classification",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when starting a frontend review engagement or when the user asks for an initial assessment (\"triage\", \"day 0\", \"what's the state of this repo\"). Reads package.json, README, gh issues, and produces a scorecard covering lockfiles, TypeScript strictness, testing, CI, and known issues. Runs `scripts/audit-triage.sh`.",
+      "descriptionFrom": "mizchi/skills/frontend-review-triage/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-ci",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-ci",
+      "useWhen": "CI is slow (>10 min), flaky, or you want to optimize GitHub Actions for a frontend project",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when CI is slow (>10 min), flaky, or the user asks to optimize GitHub Actions for a frontend project. Analyzes `gh run list` history, identifies bottleneck steps, proposes sharding / cache / concurrency improvements. Runs `scripts/audit-ci.sh`.",
+      "descriptionFrom": "mizchi/skills/frontend-review-ci/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-hygiene",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-hygiene",
+      "useWhen": "Code-hygiene audit — TypeScript strictness, lint, dead code, duplication",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when assessing code quality hygiene — TypeScript strictness, lint violations, dead code, and duplication. Runs `audit-typescript.sh`, `audit-lint.sh`, `audit-similarity.sh`. Does NOT cover dependency freshness or CVE audit — use `frontend-review-deps` for that.",
+      "descriptionFrom": "mizchi/skills/frontend-review-hygiene/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-deps",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-deps",
+      "useWhen": "Dependency health — freshness, CVE triage with attack-vector weighting, Tier 1/2/3 library detection",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when auditing dependency health — outdated packages, CVE triage with attack-vector weighting, deprecated/declining library detection (trend-watch). Runs `audit-deps.sh` and `audit-trend-watch.sh`. Pairs with `frontend-review-security` for the full security picture.",
+      "descriptionFrom": "mizchi/skills/frontend-review-deps/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-testing",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-testing",
+      "useWhen": "Test-infrastructure audit — vitest coverage, playwright config, Testing Library usage, VRT setup",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when auditing test infrastructure — vitest coverage, playwright configuration, VRT setup, coverage merging. Produces recommendations for Week 2 testing phase. Runs `scripts/audit-coverage.sh`.",
+      "descriptionFrom": "mizchi/skills/frontend-review-testing/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-security",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-security",
+      "useWhen": "Frontend security review — HTML sinks, auth/token storage, route guards, env var exposure, AI self-pentest",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when conducting a frontend security review — static analysis (risky HTML patterns, env var exposure), authentication/authorization audit (token storage, route guards, logout), and AI self-penetration testing. Runs `scripts/audit-security.sh`. For CVE triage and deprecated library detection, use `frontend-review-deps`.",
+      "descriptionFrom": "mizchi/skills/frontend-review-security/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-state",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-state",
+      "useWhen": "State management architecture review — server/URL/form/UI classification, Jotai/Zustand/Redux anti-patterns",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when reviewing state management architecture — classifying state types (server/URL/form/UI), checking for over-globalization, Jotai/Zustand/Redux patterns, derived state, and logout/cache invalidation. Covers checklist 23-state-management.md.",
+      "descriptionFrom": "mizchi/skills/frontend-review-state/SKILL.md"
+    },
+    {
+      "skill": "frontend-review-performance",
+      "tier": "T1",
+      "install": "mizchi/skills/frontend-review-performance",
+      "useWhen": "Rendering performance review — profiler-first, memo correctness, virtual scroll, `useTransition`",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Use when reviewing React rendering performance — profiler-first diagnosis, memo/useCallback/useMemo correctness, virtual scroll, useTransition/useDeferredValue, and canvas/WebGL separation for data-heavy UIs. Covers checklist 24-rendering-performance.md.",
+      "descriptionFrom": "mizchi/skills/frontend-review-performance/SKILL.md"
+    },
+    {
+      "skill": "frontend-expert",
+      "tier": "T2",
+      "install": "mizchi/skills/frontend-expert",
+      "useWhen": "Frontend-architect perspective sub-skill (component design, state, DOM usage)",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Frontend architect perspective for the weekly review. Focuses on component design, state management, DOM usage, developer experience, and build configuration. Reads raw JSON from other audit scripts and produces an opinionated perspective report.",
+      "descriptionFrom": "mizchi/skills/frontend-expert/SKILL.md"
+    },
+    {
+      "skill": "frontend-ops-expert",
+      "tier": "T2",
+      "install": "mizchi/skills/frontend-ops-expert",
+      "useWhen": "Frontend-Ops perspective sub-skill (CI/CD, scheduler, KPI ratchet, release process)",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Frontend Ops specialist perspective for the weekly review. Focuses on CI/CD, Scheduler, KPI ratchet, release process, Renovate / Dependabot health.",
+      "descriptionFrom": "mizchi/skills/frontend-ops-expert/SKILL.md"
+    },
+    {
+      "skill": "performance-expert",
+      "tier": "T2",
+      "install": "mizchi/skills/performance-expert",
+      "useWhen": "Performance perspective sub-skill (bundle size, LCP / CLS / INP, avoidable work)",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Performance specialist perspective for the weekly review. Focuses on bundle size, LCP / CLS / INP, avoidable re-work, image and font optimization. Reads audit-bundle and audit-lighthouse raw output when available.",
+      "descriptionFrom": "mizchi/skills/performance-expert/SKILL.md"
+    },
+    {
+      "skill": "react-expert",
+      "tier": "T2",
+      "install": "mizchi/skills/react-expert",
+      "useWhen": "React-specialist perspective sub-skill (hooks, re-rendering, Suspense / RSC)",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "React specialist perspective for the weekly review. Focuses on hooks discipline, re-rendering, Suspense / RSC, and Context design. Opinionated on React idioms.",
+      "descriptionFrom": "mizchi/skills/react-expert/SKILL.md"
+    },
+    {
+      "skill": "security-expert",
+      "tier": "T2",
+      "install": "mizchi/skills/security-expert",
+      "useWhen": "Security-specialist perspective sub-skill (XSS / CSRF, authz boundaries, input validation)",
+      "section": "Testing / Browser > Frontend review (suite)",
+      "signals": "a frontend project where someone wants a structured review pass (CI / hygiene / deps / testing / security / state / performance / weekly cadence)",
+      "description": "Security specialist perspective for the weekly review. Focuses on XSS/CSRF, authorization boundaries, input validation, secrets handling, and dependency CVEs.",
+      "descriptionFrom": "mizchi/skills/security-expert/SKILL.md"
+    },
+    {
+      "skill": "flaker-setup",
+      "tier": "T1",
+      "install": "mizchi/flaker/skills/flaker-setup",
+      "useWhen": "Introducing `@mizchi/flaker` to a repo for flaky-test detection / GitHub Actions integration",
+      "section": "Reliability / Flakiness",
+      "signals": "",
+      "description": "Set up @mizchi/flaker on a new repository. Use when the user asks to introduce flaker, configure flaker.toml, integrate flaker into GitHub Actions, or \"start using flaker on this project\". Encodes the declarative apply-based onboarding flow for @mizchi/flaker 0.7.0+ (declarative apply model).",
+      "descriptionFrom": "mizchi/flaker/skills/flaker-setup/SKILL.md"
+    },
+    {
+      "skill": "flaker-management",
+      "tier": "T1",
+      "install": "mizchi/flaker/skills/flaker-management",
+      "useWhen": "Operating `@mizchi/flaker` after setup — day-to-day runs, sampling / quarantine review, KPI ratchet",
+      "section": "Reliability / Flakiness",
+      "signals": "",
+      "description": "Operate @mizchi/flaker after setup. Use when the user asks how to run flaker day-to-day, review sampling and flaky metrics, design advisory vs required CI gates, promote or demote Playwright E2E or VRT checks, tune PR time budgets, run nightly triage, or manage quarantine and `@flaky` tags in an OSS repository. Targets @mizchi/flaker 0.7.0+ (declarative apply model).",
+      "descriptionFrom": "mizchi/flaker/skills/flaker-management/SKILL.md"
+    },
+    {
+      "skill": "flaker-storage-cache-on-ci",
+      "tier": "T1",
+      "install": "mizchi/skills/flaker-storage-cache-on-ci",
+      "useWhen": "Persisting flaker's DuckDB storage across GitHub Actions runs via `actions/cache@v6`; debugging \"history vanished every run\"; adding a new ingest source",
+      "section": "Reliability / Flakiness",
+      "signals": "",
+      "description": "Persist flaker's DuckDB storage across GitHub Actions runs and feed it from multiple sources (vitest reports, custom adapter reports, etc.). Use when wiring `@mizchi/flaker` into a new repo's CI, adding a new ingest source to an existing flaker setup, or debugging why `flaker apply` / `flaker run --gate ...` \"lost its history\" between runs. Encodes the cache key shape, fetch-depth requirements, `--changed` derivation, and the import-step placement that internal flaker users converged on.",
+      "descriptionFrom": "mizchi/skills/flaker-storage-cache-on-ci/SKILL.md"
+    },
+    {
+      "skill": "formal-methods-reconciler",
+      "tier": "T1",
+      "install": "mizchi/skills/formal-methods-reconciler",
+      "useWhen": "Extract claims from docs/code/tests/config/logs, choose the smallest appropriate verifier/model checker/prover, and translate SAT/UNSAT/traces/proof failures into domain-language decisions and regression guards",
+      "section": "Formal Methods / Verification",
+      "signals": "user asks about formal methods, Z3, Alloy, TLA+, P, Dafny, MoonBit prove, Lean, Rocq, specs-vs-code reconciliation, config consistency, authz soundness, model checking, proof obligations, or turning counterexamples into domain-owner questions",
+      "description": "Use when reconciling software specs, docs, tests, configs, code, logs, or incidents with formal methods. Helps Codex extract claims, decide whether docs or implementation are the source of truth, choose an appropriate tool such as Z3, Alloy, TLA+, P, Dafny, MoonBit prove, Lean, Rocq, Why3, Verus, CBMC, Tamarin, or ProVerif, build the smallest useful model, run or plan verifier checks, and translate SAT/UNSAT, traces, proof failures, or proof obligations into domain-language questions and regression guards.",
+      "descriptionFrom": "mizchi/skills/formal-methods-reconciler/SKILL.md"
+    },
+    {
+      "skill": "apm-usage",
+      "tier": "T0",
+      "install": "mizchi/skills/apm-usage",
+      "useWhen": "Adding / removing / updating skills via APM (always pair with `skill-selector`)",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Reference for APM (Agent Package Manager) — apm.yml syntax, install / uninstall / update commands, target detection, lockfile workflow. Read when you need exact field names, but do NOT auto-invoke on every apm-related task; user prompts about projects with installed skills can be handled with general APM knowledge. Invoke explicitly when the user mentions APM by name, asks to author or audit an apm.yml, or runs into an unfamiliar APM command / error.",
+      "descriptionFrom": "mizchi/skills/apm-usage/SKILL.md"
+    },
+    {
+      "skill": "skill-finder",
+      "tier": "T2",
+      "install": "mizchi/skills/skill-finder",
+      "useWhen": "Cross-source survey + waxa eval gate when the catalog has no fit (Phase 2 of the selection flow)",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Use ONLY when the user explicitly asks to discover or evaluate a skill from OUTSIDE the curated catalog — e.g., \"find a Stripe skill\", \"is there a skill for X?\", \"evaluate this candidate before adopting\". Meta-skill, complementary to skill-selector: do NOT auto-invoke on routine apm-management, project-init, or catalog-resident requests. Cross-source survey across vetted registries (Anthropic official, claude-skill-registry, VoltAgent/awesome-agent-skills, ComposioHQ, Superpowers, GitHub topic) with a mandatory waxa-eval adoption gate.",
+      "descriptionFrom": "mizchi/skills/skill-finder/SKILL.md"
+    },
+    {
+      "skill": "waxa-eval",
+      "tier": "T2",
+      "install": "mizchi/skills/waxa-eval",
+      "useWhen": "Iterating on a skill's prompt with the waxa CLI — scenarios, graders, ledger, convergence",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Use when iterating on a skill''s prompt with the waxa CLI (https://github.com/mizchi/skills/tree/main/tools/waxa) — authoring scenarios, choosing graders, interpreting unclear-points, advancing a ledger, and judging convergence. Encodes the four-stage iteration pattern observed in real iter loops (structural fix → grader breadth → surface-form coverage → residual unclear) and the scenario-design pitfalls (blank-slate executor''s network limit, prompt expectation explicitness, regex coverage of Japanese/English surface forms). Meta-skill: do NOT auto-invoke for routine skill edits; fires only when the user explicitly runs waxa or asks for a skill-quality eval.",
+      "descriptionFrom": "mizchi/skills/waxa-eval/SKILL.md"
+    },
+    {
+      "skill": "optimizing-descriptions",
+      "tier": "T2",
+      "install": "mizchi/skills/optimizing-descriptions",
+      "useWhen": "Audit + rewrite SKILL.md `description` fields per agentskills.io framework + mizchi's two-track (Meta / Project) trigger policy",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Meta-skill for auditing and rewriting SKILL.md `description` fields per the agentskills.io optimizing-descriptions framework, layered with mizchi''s two-track trigger policy (Meta = explicit-invoke-only, Project = pushy auto-trigger). Invoke ONLY when the user explicitly asks to \"optimize a skill description,\" \"audit descriptions,\" or \"rewrite descriptions per agentskills.\" Do NOT auto-invoke after every SKILL.md edit; description tuning is a deliberate batch, not a per-edit reflex.",
+      "descriptionFrom": "mizchi/skills/optimizing-descriptions/SKILL.md"
+    },
+    {
+      "skill": "empirical-prompt-tuning",
+      "tier": "T2",
+      "install": "mizchi/skills/empirical-prompt-tuning",
+      "useWhen": "Iteratively improving an agent-facing instruction via subagent execution",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Methodology for iteratively improving agent-facing instructions (skills / slash commands / CLAUDE.md / code-gen prompts) via bias-free executor + two-sided evaluation (self-report + instruction-side metrics). Meta-skill, invoke ONLY when the user explicitly asks for an \"empirical\" eval of a prompt or skill, or for the Iter-0 description / body consistency check. Do NOT auto-invoke after every skill edit; this loop is operator-triggered by name.",
+      "descriptionFrom": "mizchi/skills/empirical-prompt-tuning/SKILL.md"
+    },
+    {
+      "skill": "retrospective-codify",
+      "tier": "T2",
+      "install": "mizchi/skills/retrospective-codify",
+      "useWhen": "Converting trial-and-error lessons into ast-grep rules / skills / CLAUDE.md rules",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "Pair \"what failed first\" with \"what finally worked\" and codify the should-have-known-it insight as an ast-grep rule, a skill, or a CLAUDE.md rule. Meta-skill: invoke ONLY when the user explicitly says \"codify today''s lessons,\" \"make it a skill,\" \"drop it into lint,\" or asks to extract a reusable rule from a trial-and-error fix. Do NOT auto-invoke at every task completion. Spares future-you (or another agent) the same trap.",
+      "descriptionFrom": "mizchi/skills/retrospective-codify/SKILL.md"
+    },
+    {
+      "skill": "extract-glossary",
+      "tier": "T2",
+      "install": "mizchi/skills/extract-glossary",
+      "useWhen": "Extracting domain-specific terms / repo implementation maps / onboarding Mermaid diagrams from one or more repos / GitHub orgs",
+      "section": "Process / Meta > Skill / prompt authoring",
+      "signals": "",
+      "description": "指定されたリポジトリ、複数リポジトリ、または GitHub organization から、ドメイン固有の専門用語、業界用語、社内・プロダクト用語、リポジトリ実装マップ、技術構成、オンボーディング向け Mermaid 構成図を抽出・生成するときに使う。ユーザーが「用語集を作る」「ドメイン辞書を作る」「オンボーディング資料にする」「repo/org を見て専門用語をまとめる」「AI が再確認しなくてよい知識ベースを作る」と依頼したら起動する。",
+      "descriptionFrom": "mizchi/skills/extract-glossary/SKILL.md"
+    },
+    {
+      "skill": "chezmoi-management",
+      "tier": "T2",
+      "install": "mizchi/skills/chezmoi-management",
+      "useWhen": "Touching mizchi's chezmoi-managed dotfiles (`~/.claude/`, `~/.config/`, `~/.zshrc`)",
+      "section": "Process / Meta > Personal / dotfiles",
+      "signals": "",
+      "description": "Meta-skill for mizchi's chezmoi dotfiles. Invoke ONLY when the user explicitly asks to manage / diff / apply chezmoi sources, add a skill to dotfiles, audit the APM vs chezmoi boundary, or initialize a new machine. Covers source location, diff/apply flow, skill addition, pre-push (pkfire + secretlint). Do NOT auto-invoke when the task only happens to touch a path under ~/.claude/, ~/.config/, or ~/.zshrc — consult only on explicit dotfile-management intent.",
+      "descriptionFrom": "mizchi/skills/chezmoi-management/SKILL.md"
+    },
+    {
+      "skill": "mizchi-blog-style",
+      "tier": "T2",
+      "install": "mizchi/skills/mizchi-blog-style",
+      "useWhen": "Drafting a blog post to be published as mizchi (zenn / dev.to). Style + AI-smell detection",
+      "section": "Process / Meta > Writing / publishing",
+      "signals": "",
+      "description": "Japanese-language style guide and AI-tone detection rubric for mizchi-authored blog posts (zenn / dev.to). Includes a subagent dispatch procedure that scores a draft on two axes — looks-like-mizchi vs sounds-AI-generated. Use after drafting an article during the style-matching revision loop.",
+      "descriptionFrom": "mizchi/skills/mizchi-blog-style/SKILL.md"
+    },
+    {
+      "skill": "tech-article-reproducibility",
+      "tier": "T2",
+      "install": "mizchi/skills/tech-article-reproducibility",
+      "useWhen": "Final reproducibility check on a tech article draft before publication",
+      "section": "Process / Meta > Writing / publishing",
+      "signals": "",
+      "description": "Evaluate the reproducibility of technical articles. Dispatch a subagent to simulate a first-time reader reproducing the work locally and list missing information. Use as the final check on a draft before publication.",
+      "descriptionFrom": "mizchi/skills/tech-article-reproducibility/SKILL.md"
+    },
+    {
+      "skill": "translate-programming-language",
+      "tier": "T3",
+      "install": "mizchi/skills/translate-programming-language",
+      "useWhen": "Porting modules / services / APIs between programming languages with behavior parity",
+      "section": "Process / Meta > Migration / porting",
+      "signals": "",
+      "description": "Plan and execute language-to-language server or application migrations with behavior parity. Use when porting modules, services, APIs, or runtimes between programming languages; generating source-runtime oracles and fixtures; generating migrated parity tests; detecting runtime, standard-library, serialization, numeric, encoding, time, regex, or protocol differences; building temporary compatibility layers; accumulating migration knowledge; benchmarking; shadow testing; canarying; or planning cutover and rollback.",
+      "descriptionFrom": "mizchi/skills/translate-programming-language/SKILL.md"
+    },
+    {
+      "skill": "ts2moonbit-migration",
+      "tier": "T3",
+      "install": "mizchi/skills/ts2moonbit-migration",
+      "useWhen": "The TypeScript → MoonBit special case of the above (also listed under MoonBit)",
+      "section": "Process / Meta > Migration / porting",
+      "signals": "",
+      "description": "Migrate a TypeScript codebase to MoonBit on the `js` target while keeping the same JavaScript API contract, using mizchi/js (JS/Web/Node bindings), mizchi/x (cross-target async backend: process/fs/http/ws), and mizchi/npm_typed (npm bindings). Use when porting a TS library, Node service, npm package, or Cloudflare Worker to MoonBit and the existing JS/TS consumers, `.d.ts`, and tests must keep working unchanged.",
+      "descriptionFrom": "mizchi/skills/ts2moonbit-migration/SKILL.md"
+    },
+    {
+      "skill": "mnemo-retrospective",
+      "tier": "T1",
+      "install": "mizchi/mnemo/skills/mnemo-retrospective",
+      "useWhen": "Capturing a task-completion retrospective — at the end of a substantial coding / debug / research / deploy task when a reusable lesson was learned",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "mnemo-cmd",
+      "tier": "T2",
+      "install": "mizchi/mnemo/skills/mnemo-cmd",
+      "useWhen": "Using the `mnemo` command entrypoint to inspect and mutate mnemo memory / sessions / skills / prompts",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "mnemo-article-to-skill",
+      "tier": "T2",
+      "install": "mizchi/mnemo/skills/mnemo-article-to-skill",
+      "useWhen": "Turning an article, blog post, paper, or pasted long-form note into a hosted mnemo skill draft",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "mnemo-session-journal",
+      "tier": "T2",
+      "install": "mizchi/mnemo/skills/session/mnemo-session-journal",
+      "useWhen": "`mnemo` for creating / appending / inspecting / resolving / searching session records",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "mnemo-skill-select",
+      "tier": "T2",
+      "install": "mizchi/mnemo/skills/mnemo-skill-select",
+      "useWhen": "Selecting agent skills from hosted mnemo (list / search uploaded skills, then load matching local)",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "dotenvx-in-actions",
+      "tier": "T3",
+      "install": "mizchi/mnemo/skills/dotenvx-in-actions",
+      "useWhen": "Sourcing secrets in GitHub Actions from a dotenvx-encrypted `.env` committed to the repo — gated by a single repo secret (private key)",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "worker-deploy-auto-rollback",
+      "tier": "T3",
+      "install": "mizchi/mnemo/skills/worker-deploy-auto-rollback",
+      "useWhen": "GitHub Actions manual-trigger CD for a Cloudflare Worker with automatic rollback on smoke failure",
+      "section": "Process / Meta > Memory / session (mnemo)",
+      "signals": "agent needs persistent cross-session memory or session journaling; `mnemo` CLI on PATH",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "security-review",
+      "tier": "T2",
+      "install": "mizchi/security-review/skills/security-review",
+      "useWhen": "Orchestrator — runs the three sub-skills in order",
+      "section": "Process / Meta > Security review (suite)",
+      "signals": "user asks for a security review of a web application repository",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "security-review-whitebox",
+      "tier": "T2",
+      "install": "mizchi/security-review/skills/security-review-whitebox",
+      "useWhen": "Static + source-code review with language-appropriate scanners",
+      "section": "Process / Meta > Security review (suite)",
+      "signals": "user asks for a security review of a web application repository",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "security-review-blackbox",
+      "tier": "T2",
+      "install": "mizchi/security-review/skills/security-review-blackbox",
+      "useWhen": "OWASP ZAP baseline + optional authenticated active scan against a localhost target",
+      "section": "Process / Meta > Security review (suite)",
+      "signals": "user asks for a security review of a web application repository",
+      "description": "",
+      "descriptionFrom": ""
+    },
+    {
+      "skill": "security-review-exploit",
+      "tier": "T2",
+      "install": "mizchi/security-review/skills/security-review-exploit",
+      "useWhen": "Confirming whitebox hypotheses via live HTTP probes or PoC",
+      "section": "Process / Meta > Security review (suite)",
+      "signals": "user asks for a security review of a web application repository",
+      "description": "",
+      "descriptionFrom": ""
+    }
+  ]
+}

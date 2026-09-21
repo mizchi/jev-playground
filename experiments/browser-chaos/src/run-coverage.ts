@@ -40,7 +40,7 @@ import { serve } from "./serve.mjs";
 
 /**
  * The same names, but stated as what the run is FOR rather than as a
- * fact beside the goal. docs/26 §5: a feasibility fact belongs on the
+ * fact beside the goal. docs/58 §5: a feasibility fact belongs on the
  * candidate, a desirability fact has to out-argue the goal — so put it
  * in the goal.
  */

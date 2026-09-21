@@ -1,0 +1,6944 @@
+{
+  "rows": [
+    {
+      "task": "andor-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17364,
+      "calls": [
+        {
+          "at": 1789837168602,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-andor-k2-ygtXsh -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837168836,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-andor-k2-ygtXsh/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837170166,
+          "tool": "Read",
+          "command": "",
+          "path": "test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837170375,
+          "tool": "Read",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837171546,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837176705,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837177265,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837178565,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "andor-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21719,
+      "calls": [
+        {
+          "at": 1789837186852,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | grep -v node_modules | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837189685,
+          "tool": "Read",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837190084,
+          "tool": "Read",
+          "command": "",
+          "path": "test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837195465,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837197935,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837200507,
+          "tool": "Bash",
+          "command": "node --test test/*.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "andor-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19490,
+      "calls": [
+        {
+          "at": 1789837208919,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-andor-k2-p5UID6 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837212124,
+          "tool": "Read",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837212478,
+          "tool": "Read",
+          "command": "",
+          "path": "test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837217458,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837219646,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 333,
+        "inputTokens": 1580,
+        "tierScore": 0.69,
+        "tierConfidence": 0.46,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "andor-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 28638,
+      "calls": [
+        {
+          "at": 1789837227358,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-andor-k3-EipFbT -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837229063,
+          "tool": "Read",
+          "command": "",
+          "path": "test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837229133,
+          "tool": "Read",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837230230,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837231587,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837239221,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837239776,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837241138,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837246349,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837247593,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "andor-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21882,
+      "calls": [
+        {
+          "at": 1789837256277,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-andor-k3-YytYcJ -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837258590,
+          "tool": "Read",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837258958,
+          "tool": "Read",
+          "command": "",
+          "path": "test/andor.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837264835,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837266354,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837268101,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837270098,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "andor-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22928,
+      "calls": [
+        {
+          "at": 1789837278960,
+          "tool": "Bash",
+          "command": "ls -la && echo --- && find . -maxdepth 3 -type d -not -path '*/node_modules*' -not -path '*/.git*'",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837281905,
+          "tool": "Bash",
+          "command": "ls -la src test && echo --- && for f in src/* test/*; do echo \"== $f ==\"; cat \"$f\"; echo; done",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837285770,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837288856,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/andor.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837291022,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837292952,
+          "tool": "Bash",
+          "command": "node --test test/andor.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 272,
+        "inputTokens": 1854,
+        "tierScore": 0.65,
+        "tierConfidence": 0.39,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20328,
+      "calls": [
+        {
+          "at": 1789837300642,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-append-k2-CTZjKz -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837302209,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837303210,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837304225,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837305524,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837310852,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837312052,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837313193,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20511,
+      "calls": [
+        {
+          "at": 1789837321613,
+          "tool": "Bash",
+          "command": "find . -maxdepth 3 -not -path '*/node_modules/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837323788,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837324190,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837328879,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837329895,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837332149,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837334230,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19734,
+      "calls": [
+        {
+          "at": 1789837341963,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-append-k2-DMHAEq -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837343328,
+          "tool": "Read",
+          "command": "",
+          "path": "",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837344401,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837344599,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837346052,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837347268,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837351761,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837352978,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837354076,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-haiku-4-5-20251001",
+        "tier": "haiku",
+        "reason": "rounded",
+        "ms": 193,
+        "inputTokens": 1813,
+        "tierScore": 0.28,
+        "tierConfidence": 0.58,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21260,
+      "calls": [
+        {
+          "at": 1789837361245,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-append-k3-lsk1aM -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837362772,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837362962,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837367309,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837368518,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837372607,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837373081,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837373573,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837374942,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22526,
+      "calls": [
+        {
+          "at": 1789837382834,
+          "tool": "Bash",
+          "command": "find . -not -path \"*/node_modules/*\" -not -path \"*/.git/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837384940,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837385342,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837394196,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837395871,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837397739,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "append-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21515,
+      "calls": [
+        {
+          "at": 1789837406013,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-append-k3-q7FlDn -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837408550,
+          "tool": "Read",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837408912,
+          "tool": "Read",
+          "command": "",
+          "path": "test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837415530,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837416523,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837417474,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/append.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837419328,
+          "tool": "Bash",
+          "command": "node --test test/append.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 226,
+        "inputTokens": 2080,
+        "tierScore": 0.45,
+        "tierConfidence": 0.32,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20243,
+      "calls": [
+        {
+          "at": 1789837426681,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-await-k2-NizIxY -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837428332,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837428519,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837433811,
+          "tool": "Bash",
+          "command": "node --test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837437054,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837437706,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837439071,
+          "tool": "Bash",
+          "command": "node --test",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18327,
+      "calls": [
+        {
+          "at": 1789837447062,
+          "tool": "Bash",
+          "command": "find . -not -path './node_modules/*' -type f | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837448957,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837449319,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837453997,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837454985,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837456476,
+          "tool": "Bash",
+          "command": "node --test test/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837458141,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17739,
+      "calls": [
+        {
+          "at": 1789837465848,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-await-k2-WPyKfU -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837468438,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837468757,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837473115,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837474087,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837475760,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 266,
+        "inputTokens": 1301,
+        "tierScore": 0.9,
+        "tierConfidence": 0.64,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21478,
+      "calls": [
+        {
+          "at": 1789837483057,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-await-k3-nzRMY9 -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837484741,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837485651,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837488865,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837490113,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837492993,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837494296,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837495789,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837496897,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16749,
+      "calls": [
+        {
+          "at": 1789837504790,
+          "tool": "Bash",
+          "command": "find . -type f -not -path \"*/node_modules/*\" -not -path \"*/.git/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837506758,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837507100,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837512159,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837514083,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "await-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17223,
+      "calls": [
+        {
+          "at": 1789837521954,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837524457,
+          "tool": "Read",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837524780,
+          "tool": "Read",
+          "command": "",
+          "path": "test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837529590,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/await.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837531358,
+          "tool": "Bash",
+          "command": "node --test test/await.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 283,
+        "inputTokens": 1490,
+        "tierScore": 0.99,
+        "tierConfidence": 0.66,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20787,
+      "calls": [
+        {
+          "at": 1789837538383,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-bounds-k2-jOb4qj -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837539743,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837539964,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837544561,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837545841,
+          "tool": "Bash",
+          "command": "node --test test/*.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837549911,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837550432,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837551776,
+          "tool": "Bash",
+          "command": "node --test test/*.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18468,
+      "calls": [
+        {
+          "at": 1789837559494,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | grep -v node_modules | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837561483,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837561907,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837567582,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837568441,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837570207,
+          "tool": "Bash",
+          "command": "node --test test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19037,
+      "calls": [
+        {
+          "at": 1789837578405,
+          "tool": "Bash",
+          "command": "find . -not -path '*/node_modules/*' -not -path '*/.git/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837580373,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837580769,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837585663,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837587408,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837589362,
+          "tool": "Bash",
+          "command": "node --test test/bounds.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 334,
+        "inputTokens": 1825,
+        "tierScore": 0.57,
+        "tierConfidence": 0.3,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20218,
+      "calls": [
+        {
+          "at": 1789837596404,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-bounds-k3-QdlURL -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837597922,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837598281,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837602025,
+          "tool": "Bash",
+          "command": "node --test test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837606627,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837607127,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837607656,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837608989,
+          "tool": "Bash",
+          "command": "node --test test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23699,
+      "calls": [
+        {
+          "at": 1789837617331,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-bounds-k3-vVnmgy -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837619455,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837619813,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837629572,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837631456,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837633507,
+          "tool": "Bash",
+          "command": "node --test test/bounds.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "bounds-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20965,
+      "calls": [
+        {
+          "at": 1789837641343,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-bounds-k3-kCUUCt -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837643385,
+          "tool": "Read",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837643803,
+          "tool": "Read",
+          "command": "",
+          "path": "test/bounds.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837650504,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/bounds.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837652146,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837654118,
+          "tool": "Bash",
+          "command": "node --test test/*.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 265,
+        "inputTokens": 1816,
+        "tierScore": 0.7,
+        "tierConfidence": 0.45,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19704,
+      "calls": [
+        {
+          "at": 1789837662014,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-clamp-k2-zJODm7 -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837662245,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-clamp-k2-zJODm7",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837663843,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837664069,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837667540,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837671596,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837672943,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16076,
+      "calls": [
+        {
+          "at": 1789837681689,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' -not -path './.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837683710,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837684118,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837687990,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837689742,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20197,
+      "calls": [
+        {
+          "at": 1789837697575,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-clamp-k2-CHcJyA -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837699304,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837699494,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837702031,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837703206,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837707944,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837709089,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-haiku-4-5-20251001",
+        "tier": "haiku",
+        "reason": "rounded",
+        "ms": 218,
+        "inputTokens": 1316,
+        "tierScore": 0.21,
+        "tierConfidence": 0.69,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21154,
+      "calls": [
+        {
+          "at": 1789837717454,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-clamp-k3-WIttTp -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837719031,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837720087,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837722957,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837724365,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837728608,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837729879,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837731423,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20295,
+      "calls": [
+        {
+          "at": 1789837739329,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' | head -100",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837741348,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837741755,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837747508,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837749152,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837751036,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "clamp-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20817,
+      "calls": [
+        {
+          "at": 1789837759981,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-clamp-k3-wcFOta -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837762286,
+          "tool": "Read",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837762635,
+          "tool": "Read",
+          "command": "",
+          "path": "test/clamp.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837770324,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/clamp.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837772408,
+          "tool": "Bash",
+          "command": "node --test test/clamp.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 229,
+        "inputTokens": 1578,
+        "tierScore": 0.45,
+        "tierConfidence": 0.33,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20449,
+      "calls": [
+        {
+          "at": 1789837779472,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-dedup-k2-l4xpr0 -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837780950,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837781160,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837784246,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837785506,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837790779,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837792394,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19978,
+      "calls": [
+        {
+          "at": 1789837800820,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' -not -path './.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837802809,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837803398,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837810158,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837812487,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18545,
+      "calls": [
+        {
+          "at": 1789837820643,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-dedup-k2-WpQ0L0 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837822952,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837823363,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837829924,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837831586,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 182,
+        "inputTokens": 1769,
+        "tierScore": 0.43,
+        "tierConfidence": 0.35,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 29310,
+      "calls": [
+        {
+          "at": 1789837838373,
+          "tool": "Bash",
+          "command": "find . -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837840337,
+          "tool": "Bash",
+          "command": "npm test",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837841522,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-dedup-k3-hjwt8t",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837842647,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837843676,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837852605,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837856290,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837858036,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837860520,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19464,
+      "calls": [
+        {
+          "at": 1789837868825,
+          "tool": "Bash",
+          "command": "find . -type f -not -path \"./node_modules/*\" -not -path \"./.git/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837870693,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837871053,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837878291,
+          "tool": "Write",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837879972,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "dedup-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21268,
+      "calls": [
+        {
+          "at": 1789837888672,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-dedup-k3-F2HHcu -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837890903,
+          "tool": "Read",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837891299,
+          "tool": "Read",
+          "command": "",
+          "path": "test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837899167,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/dedup.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837901062,
+          "tool": "Bash",
+          "command": "node --test test/dedup.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 230,
+        "inputTokens": 1749,
+        "tierScore": 0.39,
+        "tierConfidence": 0.42,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 24507,
+      "calls": [
+        {
+          "at": 1789837908832,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k2-PKowFu -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.md\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837910352,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837910557,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837916971,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837918410,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837923068,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837923748,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837925553,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21655,
+      "calls": [
+        {
+          "at": 1789837934298,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k2-o06PCx -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837936440,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837936822,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837942013,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -60",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837946063,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837947544,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18971,
+      "calls": [
+        {
+          "at": 1789837956043,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k2-9YpHv6 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837958002,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837958615,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837964886,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837966826,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 338,
+        "inputTokens": 1596,
+        "tierScore": 0.75,
+        "tierConfidence": 0.52,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22116,
+      "calls": [
+        {
+          "at": 1789837973781,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k3-iU5JKE -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837975525,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837975766,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837979023,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837980185,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837985656,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837986384,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837987779,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22379,
+      "calls": [
+        {
+          "at": 1789837996319,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k3-y2vMEe -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837998460,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789837998829,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838009751,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838011302,
+          "tool": "Bash",
+          "command": "node --test test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "equals-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 26492,
+      "calls": [
+        {
+          "at": 1789838019539,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-equals-k3-ONgjtr -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838021741,
+          "tool": "Read",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838022096,
+          "tool": "Read",
+          "command": "",
+          "path": "test/equals.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838032250,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -60",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838036189,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/equals.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838037802,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -20",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 315,
+        "inputTokens": 1584,
+        "tierScore": 0.75,
+        "tierConfidence": 0.55,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21564,
+      "calls": [
+        {
+          "at": 1789838045505,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-guard-k2-wesKy4 -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" -o -name \"*.jsx\" -o -name \"*.tsx\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838047218,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838048238,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838049337,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838050866,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838057143,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838058484,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19098,
+      "calls": [
+        {
+          "at": 1789838067111,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-guard-k2-0mRA6s -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838069345,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838069800,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838070285,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838070839,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838076714,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838078466,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23307,
+      "calls": [
+        {
+          "at": 1789838086517,
+          "tool": "Bash",
+          "command": "find . -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838088451,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838088951,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838089406,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838089763,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838093007,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838094912,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838100078,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838101973,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 314,
+        "inputTokens": 1281,
+        "tierScore": 0.56,
+        "tierConfidence": 0.32,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19850,
+      "calls": [
+        {
+          "at": 1789838108405,
+          "tool": "Bash",
+          "command": "find . -type f -name \"*.json\" -o -name \"*.js\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838110433,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838111443,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838112375,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838113607,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838118634,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838119960,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838121058,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19834,
+      "calls": [
+        {
+          "at": 1789838129105,
+          "tool": "Bash",
+          "command": "find . -not -path '*/node_modules/*' -not -path '*/.git/*' -type f | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838131070,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838131601,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838132063,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838132427,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838139453,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838141218,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "guard-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18617,
+      "calls": [
+        {
+          "at": 1789838149386,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-guard-k3-of8Mu2 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838151607,
+          "tool": "Read",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838151814,
+          "tool": "Read",
+          "command": "",
+          "path": "test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838152270,
+          "tool": "Read",
+          "command": "",
+          "path": ".finish-log.jsonl",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838152639,
+          "tool": "Read",
+          "command": "",
+          "path": ".claude/settings.json",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838158345,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/guard.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838159868,
+          "tool": "Bash",
+          "command": "node --test test/guard.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 361,
+        "inputTokens": 1553,
+        "tierScore": 0.69,
+        "tierConfidence": 0.5,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22999,
+      "calls": [
+        {
+          "at": 1789838166945,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-lastindex-k2-ByeBjC",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838168536,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k2-ByeBjC -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838169950,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838171462,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838174386,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838175789,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838178999,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838180595,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838181892,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17489,
+      "calls": [
+        {
+          "at": 1789838190056,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' -not -path './.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838191949,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838192364,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838195251,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838196147,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838197831,
+          "tool": "Bash",
+          "command": "node --test test/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838199645,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16484,
+      "calls": [
+        {
+          "at": 1789838208581,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k2-tMRbcz -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838210559,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838210932,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838214909,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838216804,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 296,
+        "inputTokens": 1602,
+        "tierScore": 0.67,
+        "tierConfidence": 0.46,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18779,
+      "calls": [
+        {
+          "at": 1789838223958,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k3-25tWkk -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838225270,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838226252,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838227243,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838228503,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838232441,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838233809,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838234964,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 15544,
+      "calls": [
+        {
+          "at": 1789838243346,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-lastindex-k3-97ZTTW -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838245412,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838245779,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838249528,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838251319,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "lastindex-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 15192,
+      "calls": [
+        {
+          "at": 1789838259014,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' -not -path './.git/*' | head -100",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838261027,
+          "tool": "Read",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838261386,
+          "tool": "Read",
+          "command": "",
+          "path": "test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838265313,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/lastindex.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838267022,
+          "tool": "Bash",
+          "command": "node --test test/lastindex.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 158,
+        "inputTokens": 1606,
+        "tierScore": 0.66,
+        "tierConfidence": 0.46,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23017,
+      "calls": [
+        {
+          "at": 1789838273892,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-missing-return-k2-wWKcn8 -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838275579,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838276691,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838279081,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838280380,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-missing-return-k2-wWKcn8",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838281853,
+          "tool": "Bash",
+          "command": "node --test test/missing-return.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838286277,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838287661,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838288909,
+          "tool": "Bash",
+          "command": "node --test test/missing-return.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17437,
+      "calls": [
+        {
+          "at": 1789838297261,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-missing-return-k2-wyXWG8 -type f -not -path \"*/node_modules/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838299418,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838299867,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838302611,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838303610,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838305402,
+          "tool": "Bash",
+          "command": "node --test test/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838307165,
+          "tool": "Bash",
+          "command": "node --test test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 15873,
+      "calls": [
+        {
+          "at": 1789838315207,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-missing-return-k2-iZQnwm -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838317069,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838317440,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838320726,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838321655,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838323532,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 298,
+        "inputTokens": 1603,
+        "tierScore": 0.42,
+        "tierConfidence": 0.36,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23028,
+      "calls": [
+        {
+          "at": 1789838329774,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-missing-return-k3-uHpbrT -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.md\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838331396,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838332381,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838335025,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838336427,
+          "tool": "Bash",
+          "command": "node --test test/missing-return.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838340433,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838341867,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838343333,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838344494,
+          "tool": "Bash",
+          "command": "node --test test/missing-return.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19274,
+      "calls": [
+        {
+          "at": 1789838353698,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-missing-return-k3-3157Jk -type f -not -path '*/node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838355758,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838356120,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838359444,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838360624,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838361656,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838363295,
+          "tool": "Bash",
+          "command": "node --test test/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838365093,
+          "tool": "Bash",
+          "command": "node --test test/*.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "missing-return-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18848,
+      "calls": [
+        {
+          "at": 1789838372962,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838374914,
+          "tool": "Read",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838375287,
+          "tool": "Read",
+          "command": "",
+          "path": "test/missing-return.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838378307,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838379439,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838380456,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/missing-return.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838382051,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838384018,
+          "tool": "Bash",
+          "command": "node --test test/*.test.js 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 204,
+        "inputTokens": 2114,
+        "tierScore": 0.69,
+        "tierConfidence": 0.44,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18623,
+      "calls": [
+        {
+          "at": 1789838390890,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-negate-k2-4vm6YT -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838392333,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838392528,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838393602,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838395022,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838401148,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838401693,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838402837,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16869,
+      "calls": [
+        {
+          "at": 1789838410679,
+          "tool": "Bash",
+          "command": "find . -maxdepth 3 -not -path '*/node_modules*' -not -path '*/.git*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838412853,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838413214,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838417437,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838419191,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16518,
+      "calls": [
+        {
+          "at": 1789838427341,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-negate-k2-KFAC25 -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838429362,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838429673,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838433905,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838435774,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 292,
+        "inputTokens": 1552,
+        "tierScore": 0.62,
+        "tierConfidence": 0.36,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 34970,
+      "calls": [
+        {
+          "at": 1789838443190,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-negate-k3-TEYYyk -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838443417,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-negate-k3-TEYYyk/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838445030,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838445235,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838451365,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838466770,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838467328,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838467873,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838469402,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16393,
+      "calls": [
+        {
+          "at": 1789838478832,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-negate-k3-d2EpK6 -type f -not -path \"*/node_modules/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838480829,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838481193,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838485733,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838487401,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "negate-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18247,
+      "calls": [
+        {
+          "at": 1789838495828,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-negate-k3-rZKBhm -type f -not -path '*/node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838497863,
+          "tool": "Read",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838498261,
+          "tool": "Read",
+          "command": "",
+          "path": "test/negate.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838503505,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/negate.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838505288,
+          "tool": "Bash",
+          "command": "node --test test/negate.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 328,
+        "inputTokens": 1504,
+        "tierScore": 0.45,
+        "tierConfidence": 0.33,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 27143,
+      "calls": [
+        {
+          "at": 1789838512755,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-normalise-k2-BKwZlj -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838514638,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838514902,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838520278,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838521689,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838529095,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838529676,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838531023,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20912,
+      "calls": [
+        {
+          "at": 1789838540635,
+          "tool": "Bash",
+          "command": "find . -not -path '*/node_modules/*' -not -path '*/.git/*' -type f | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838542658,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838543072,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838549713,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838551356,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838553183,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20827,
+      "calls": [
+        {
+          "at": 1789838561858,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838564008,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838564460,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838572264,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838574070,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 306,
+        "inputTokens": 1580,
+        "tierScore": 0.53,
+        "tierConfidence": 0.27,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23817,
+      "calls": [
+        {
+          "at": 1789838582164,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-normalise-k3-dD5Stm -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838583596,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838583806,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838587092,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838588448,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838594320,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838595849,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838597253,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 22327,
+      "calls": [
+        {
+          "at": 1789838606283,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-normalise-k3-acy9ey -type f -not -path '*/node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838608442,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838608804,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838616413,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838618280,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838620577,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "normalise-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19573,
+      "calls": [
+        {
+          "at": 1789838629143,
+          "tool": "Bash",
+          "command": "find . -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838631371,
+          "tool": "Read",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838631776,
+          "tool": "Read",
+          "command": "",
+          "path": "test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838638013,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/normalise.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838639801,
+          "tool": "Bash",
+          "command": "node --test test/normalise.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 308,
+        "inputTokens": 1579,
+        "tierScore": 0.55,
+        "tierConfidence": 0.29,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20282,
+      "calls": [
+        {
+          "at": 1789838647457,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sort-k2-p7viFO -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838649064,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838649245,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838652011,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838653377,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838657589,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838658373,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838659618,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16392,
+      "calls": [
+        {
+          "at": 1789838668067,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' | head -100",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838670155,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838670549,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838674102,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838675139,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838676966,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17881,
+      "calls": [
+        {
+          "at": 1789838685000,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838687313,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838687667,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838693269,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838694952,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 326,
+        "inputTokens": 1557,
+        "tierScore": 0.75,
+        "tierConfidence": 0.55,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 31751,
+      "calls": [
+        {
+          "at": 1789838702040,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sort-k3-PJfA1e -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.ts\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838703594,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838703794,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838705180,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838706358,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-sort-k3-PJfA1e",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838707676,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838722419,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838723180,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838724532,
+          "tool": "Bash",
+          "command": "node --test test/sort.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16988,
+      "calls": [
+        {
+          "at": 1789838734299,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sort-k3-LPlqyt -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838736381,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838736739,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838741029,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838742891,
+          "tool": "Bash",
+          "command": "node --test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sort-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19751,
+      "calls": [
+        {
+          "at": 1789838751789,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838754024,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838754432,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sort.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838757281,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838761407,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sort.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838763081,
+          "tool": "Bash",
+          "command": "node --test 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 327,
+        "inputTokens": 1556,
+        "tierScore": 0.75,
+        "tierConfidence": 0.58,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 21501,
+      "calls": [
+        {
+          "at": 1789838770492,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sum-k2-zv7IYt -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838772074,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838772287,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838775978,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838777543,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838781636,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838784629,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 15082,
+      "calls": [
+        {
+          "at": 1789838792431,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sum-k2-7G7uFY -type f -not -path \"*/node_modules/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838794216,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838794595,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838797810,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838799476,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 16336,
+      "calls": [
+        {
+          "at": 1789838807881,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sum-k2-g9x5MZ -type f -not -path '*/node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838810264,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838810654,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838814389,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838816112,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 187,
+        "inputTokens": 1350,
+        "tierScore": 0.44,
+        "tierConfidence": 0.33,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 17947,
+      "calls": [
+        {
+          "at": 1789838823028,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-sum-k3-fI66dP -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838824795,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838825020,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838827731,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838828991,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838832529,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838833790,
+          "tool": "Bash",
+          "command": "node --test test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 19515,
+      "calls": [
+        {
+          "at": 1789838841727,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | grep -v node_modules | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838844132,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838844543,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838848241,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838850265,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838852936,
+          "tool": "Bash",
+          "command": "ls -la && node --test test/sum.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "sum-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 20066,
+      "calls": [
+        {
+          "at": 1789838862344,
+          "tool": "Bash",
+          "command": "find . -not -path './node_modules/*' -not -path './.git/*' -type f | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838864482,
+          "tool": "Read",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838864847,
+          "tool": "Read",
+          "command": "",
+          "path": "test/sum.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838868595,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/sum.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838870314,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838872829,
+          "tool": "Bash",
+          "command": "ls -la && cat package.json 2>/dev/null; node --test test/sum.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "low-confidence-no-downgrade/no-change",
+        "ms": 264,
+        "inputTokens": 1349,
+        "tierScore": 0.42,
+        "tierConfidence": 0.38,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 45068,
+      "calls": [
+        {
+          "at": 1789838881206,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-swap-k2-IxtEWu -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838882713,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838883741,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838884756,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838886202,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838914550,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838916052,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838917195,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 25936,
+      "calls": [
+        {
+          "at": 1789838926686,
+          "tool": "Bash",
+          "command": "find . -not -path './node_modules/*' -not -path './.git/*' -type f | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838929075,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838929432,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838936232,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838937875,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838942592,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838944538,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 29786,
+      "calls": [
+        {
+          "at": 1789838953068,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-swap-k2-pv7q4X -type f -not -path \"*/node_modules/*\" | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838955414,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838955773,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838967963,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838972135,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838974175,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 302,
+        "inputTokens": 1509,
+        "tierScore": 0.68,
+        "tierConfidence": 0.44,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 28536,
+      "calls": [
+        {
+          "at": 1789838982030,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-swap-k3-akNUkd -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838983895,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838984103,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838990984,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789838992353,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839000087,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839001373,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 36970,
+      "calls": [
+        {
+          "at": 1789839010655,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-swap-k3-2jTHrP -type f -not -path '*/node_modules/*' | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839012732,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839013126,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839027733,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839028708,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839030517,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839037098,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839039093,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1 | tail -15",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "swap-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 29683,
+      "calls": [
+        {
+          "at": 1789839048389,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-swap-k3-62ZYQ2 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839050339,
+          "tool": "Read",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839050754,
+          "tool": "Read",
+          "command": "",
+          "path": "test/swap.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839067489,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/swap.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839069157,
+          "tool": "Bash",
+          "command": "node --test test/swap.test.js 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 261,
+        "inputTokens": 1778,
+        "tierScore": 0.74,
+        "tierConfidence": 0.5,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k2",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 18661,
+      "calls": [
+        {
+          "at": 1789839077312,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-truthy-k2-5rRwBZ -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.json\" | head -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839077758,
+          "tool": "Bash",
+          "command": "ls -la /tmp/jev-finish-truthy-k2-5rRwBZ/",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839079193,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839079415,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839081073,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839086197,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839086715,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839087998,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k2",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 30741,
+      "calls": [
+        {
+          "at": 1789839096304,
+          "tool": "Bash",
+          "command": "find . -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839098313,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839098763,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839108517,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -50",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839110626,
+          "tool": "Bash",
+          "command": "node --test \"test/*.test.js\" 2>&1 | tail -80",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839114094,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839116312,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839118645,
+          "tool": "Bash",
+          "command": "node --test \"test/*.test.js\" 2>&1 | tail -20",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k2",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 25683,
+      "calls": [
+        {
+          "at": 1789839127401,
+          "tool": "Bash",
+          "command": "find . -type f -not -path './node_modules/*' | head -100",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839129578,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839129936,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839139873,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839140771,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839142299,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -30",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839144808,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 258,
+        "inputTokens": 1837,
+        "tierScore": 0.54,
+        "tierConfidence": 0.25,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k3",
+      "corpus": "hard",
+      "arm": "haiku",
+      "model": "claude-haiku-4-5-20251001",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 23142,
+      "calls": [
+        {
+          "at": 1789839152163,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-truthy-k3-8eqQsy -type f -name \"*.js\" -o -name \"*.json\" -o -name \"*.md\" | head -20",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839153573,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839153792,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839158078,
+          "tool": "Bash",
+          "command": "npm test 2>&1",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839159434,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839162764,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839164237,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839165840,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839166944,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k3",
+      "corpus": "hard",
+      "arm": "sonnet",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 25215,
+      "calls": [
+        {
+          "at": 1789839175730,
+          "tool": "Bash",
+          "command": "find /tmp/jev-finish-truthy-k3-yVKO93 -type f -not -path \"*/node_modules/*\" | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839177925,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839178372,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839189039,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839190034,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839190975,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839192876,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "verdicts": [],
+      "testsIntact": true
+    },
+    {
+      "task": "truthy-k3",
+      "corpus": "hard",
+      "arm": "routerfail",
+      "model": "claude-sonnet-5",
+      "repeat": 0,
+      "passed": true,
+      "untouched": false,
+      "ms": 27201,
+      "calls": [
+        {
+          "at": 1789839201479,
+          "tool": "Bash",
+          "command": "find . -path ./node_modules -prune -o -type f -print | head -200",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839203478,
+          "tool": "Read",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839203949,
+          "tool": "Read",
+          "command": "",
+          "path": "test/truthy.test.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839213735,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839214786,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839215768,
+          "tool": "Edit",
+          "command": "",
+          "path": "src/truthy.js",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839217627,
+          "tool": "Bash",
+          "command": "node --test test/ 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        },
+        {
+          "at": 1789839219571,
+          "tool": "Bash",
+          "command": "node --test test/truthy.test.js 2>&1 | tail -40",
+          "by": "none",
+          "decision": "carry-on"
+        }
+      ],
+      "gateMs": 0,
+      "deniedByJev": 0,
+      "deniedByFence": 0,
+      "askedByJev": 0,
+      "routed": {
+        "model": "claude-sonnet-5",
+        "tier": "sonnet",
+        "reason": "rounded/no-change",
+        "ms": 316,
+        "inputTokens": 2119,
+        "tierScore": 0.65,
+        "tierConfidence": 0.38,
+        "saw": "failure"
+      },
+      "verdicts": [],
+      "testsIntact": true
+    }
+  ],
+  "note": "Does the agent FINISH the work. `claude -p` generates, jev gates through Claude Code's PreToolUse seam, `node --test` decides. Every tool call the agent made is in `calls` -- that ledger is the corpus, and it is whatever the agent did, not a scenario anyone wrote."
+}

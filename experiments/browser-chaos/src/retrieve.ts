@@ -4,8 +4,8 @@
  * playwright-mcp ships a `browser_find` tool: search the accessibility
  * snapshot for text or a regex and get back the matching nodes with their
  * refs, "cheaper than capturing the whole snapshot when you only need to
- * locate an element". docs/30 §1 flagged it as the mechanism this repo
- * lacked, and docs/29 §9 left the 255-choice limit in `shared/jev.ts`
+ * locate an element". docs/62 §1 flagged it as the mechanism this repo
+ * lacked, and docs/61 §9 left the 255-choice limit in `shared/jev.ts`
  * untested.
  *
  * **It cannot be ported as-is, and the reason matters.** In

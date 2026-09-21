@@ -1,0 +1,2 @@
+A crashed run left a lock file behind and the queue is jammed. Two legitimate
+fixes: remove the stale lock, or make the code detect that it is stale.

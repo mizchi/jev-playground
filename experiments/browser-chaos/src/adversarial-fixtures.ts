@@ -1,5 +1,5 @@
 /**
- * The boards docs/29 §8 uses to attack the speculation, and the graders
+ * The boards docs/61 §8 uses to attack the speculation, and the graders
  * that say what a wrong pick was.
  *
  * Separate from `run-adversarial.ts` so `check-fanout.ts` can test the

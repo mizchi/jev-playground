@@ -3,7 +3,7 @@
  *
  *   TYPESAFEAI_API_KEY=… npx tsx src/run-ablation.ts [--runs 2] [--steps 16] [--verbose]
  *
- * docs/25, 26 and 29 each measured one technique against a bare baseline
+ * docs/57, 26 and 29 each measured one technique against a bare baseline
  * and each found a win. None of them was ever measured *next to* another,
  * so three separate "+N" results have been sitting in the docs with no
  * evidence that they add up — and a real reason to think they might not.
@@ -47,7 +47,7 @@ interface Arm {
   /** Attach the geometry to the candidates that are offered. */
   tell: boolean;
   /**
-   * Offer only what is on screen. docs/30 §6.4's recommendation, which
+   * Offer only what is on screen. docs/62 §6.4's recommendation, which
    * the offline recall sweep could only test against a scripted correct
    * action — this is whether a driver restricted that way still arrives.
    */
@@ -62,7 +62,7 @@ interface Arm {
   /**
    * Offer CLEAR. Without it "this field must end up empty" cannot be
    * expressed at all, because `fillValue` derives a non-empty string from
-   * the description every time — see docs/30 §6.7.
+   * the description every time — see docs/62 §6.7.
    */
   clear?: boolean;
 }
@@ -141,9 +141,9 @@ interface ArmResult {
    * Every step's confidence, so narrowing can be checked against the
    * threshold side and not only against goal/steps/tokens.
    *
-   * docs/27 §4.10 measured that offering fewer candidates than the page
+   * docs/59 §4.10 measured that offering fewer candidates than the page
    * describes costs confidence, which is exactly what `viewport` does —
-   * and docs/25 and §3.2 both route on confidence, so "accuracy
+   * and docs/57 and §3.2 both route on confidence, so "accuracy
    * unchanged" does not settle it. §6.4's original table had no such
    * column, which is why the side effect went unnoticed.
    */
@@ -439,7 +439,7 @@ async function main(): Promise<void> {
   const verbose = process.argv.includes("--verbose");
   const jev = new Jev();
   const srv = await serve();
-  // `--wide` swaps the board and the arms: docs/30 §3 is the overlay
+  // `--wide` swaps the board and the arms: docs/62 §3 is the overlay
   // ablation, §6.4 is the retrieval question, and they need different
   // pages to be about anything.
   const wide = process.argv.includes("--wide");

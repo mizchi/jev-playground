@@ -18,7 +18,7 @@
  * - A heading can contain a markdown link, and only its *text* is part of
  *   the slug: `## A. ... → [07](07-escalation.md)` slugs without the URL.
  * - Link syntax inside a code span or a fenced block is documentation,
- *   not a link. docs/30's findings block quotes the very pattern this
+ *   not a link. docs/62's findings block quotes the very pattern this
  *   script matches, and the first version reported it as broken.
  * - Link targets resolve relative to the linking file, so the same report
  *   is `25-...md` from inside docs/ and `docs/25-...md` from the root.

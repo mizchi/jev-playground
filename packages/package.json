@@ -1,0 +1,12 @@
+{
+  "name": "@jev-playground/packages",
+  "private": true,
+  "description": "Workspace root for the publishable packages. Kept inside packages/ rather than at the repository root so the existing experiments, which are installed one at a time with `npm --prefix`, are untouched.",
+  "workspaces": [
+    "*"
+  ],
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.85.1",
+    "@types/node": "^26.6.1"
+  }
+}

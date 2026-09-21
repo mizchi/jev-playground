@@ -1,5 +1,5 @@
 /**
- * The experiment docs/29 §8 said it had not run: try to break the
+ * The experiment docs/61 §8 said it had not run: try to break the
  * speculation.
  *
  *   TYPESAFEAI_API_KEY=… npx tsx src/run-adversarial.ts \
@@ -8,7 +8,7 @@
  * The boards and their trap graders live in `adversarial-fixtures.ts`,
  * which `check-fanout.ts` tests without a browser.
  *
- * docs/29 compared `fanout` against `sequential` on outcomes and found
+ * docs/61 compared `fanout` against `sequential` on outcomes and found
  * them identical. That is weak evidence for two reasons, and this fixes
  * both:
  *
@@ -18,7 +18,7 @@
  *      every head of every fan-out is compared against the same head
  *      asked alone with the operation given as a decided fact.
  *
- *   2. **The board was easy.** On the docs/29 fixture the operation was
+ *   2. **The board was easy.** On the docs/61 fixture the operation was
  *      obvious at almost every step, so there was little for speculation
  *      to get wrong. `hostile` contests it: a required empty field beside
  *      an optional empty one, a shipping dropdown beside a gift-wrap
@@ -33,7 +33,7 @@
  *      discriminator is page state that the GOAL never mentions, so
  *      neither the criteria nor the goal carry the answer.
  *
- * Two more controls, neither of which docs/29 ran:
+ * Two more controls, neither of which docs/61 ran:
  *
  *   - **Operation perturbation.** The operation head is also asked with
  *     nothing else in the request. Fan-out puts four questions in one

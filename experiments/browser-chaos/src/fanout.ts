@@ -209,7 +209,7 @@ export function actionSpace(
       // Two options are dropped. The current value, because re-selecting
       // it is a guaranteed no-op. And the empty-valued one, because it is
       // a placeholder rather than a value — offering it as a target is
-      // offering "unset this field", and docs/29's adversarial run caught
+      // offering "unset this field", and docs/61's adversarial run caught
       // both arms taking that bait: with shipping already on `express`,
       // the speculative and conditioned SELECT heads both named the
       // placeholder at 0.5-0.7 confidence, agreeing on a target that
@@ -359,7 +359,7 @@ function operationCriteria(space: ActionSpace): Record<string, string> {
 
 /**
  * The operation question, built once so every arm asks it identically.
- * docs/29 §4's comparison is only worth anything if the two arms differ
+ * docs/61 §4's comparison is only worth anything if the two arms differ
  * in what surrounds this question and not in the question itself.
  */
 function operationQuestion(space: ActionSpace, state: FanoutState): Question {
@@ -379,7 +379,7 @@ export interface HeadAnswer {
 /**
  * The operation head with nothing else in the request.
  *
- * The control for a question docs/29 did not ask: fan-out puts three or
+ * The control for a question docs/61 did not ask: fan-out puts three or
  * four questions in one request, and the model sees all of them. If the
  * mere presence of the target heads moves the operation distribution,
  * then "identical decisions" was luck on an easy board rather than a
@@ -428,7 +428,7 @@ export async function askTargetConditioned(
 
 /**
  * Every head of one fan-out request, including the ones the operation did
- * not name. docs/29 only ever read the winner; the losers are where the
+ * not name. docs/61 only ever read the winner; the losers are where the
  * speculation would show up, because on the next step a loser becomes the
  * winner.
  */

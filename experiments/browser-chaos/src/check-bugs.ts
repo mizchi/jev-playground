@@ -3,7 +3,7 @@
  *
  * This walks the happy path by id, which is the strongest a hand-written
  * test could be, and records what each variant does. It is also the oracle
- * docs/27 measures generated tests against: a mutation that this script
+ * docs/59 measures generated tests against: a mutation that this script
  * cannot tell apart from the clean app is one no test could catch, and
  * grading a generator against it would be unfair.
  */
@@ -277,7 +277,7 @@ async function main() {
 
     // ---- ?routes=1: four route families, and a route-specific bug ------
     console.log("");
-    console.log("  ?routes=1 — more than one path to the goal (docs/27 §4.6)");
+    console.log("  ?routes=1 — more than one path to the goal (docs/59 §4.6)");
     const ROUTES = `${url}?routes=1`;
     const families: [("products" | "buynow"), ("steps" | "express")][] = [
       ["products", "steps"], ["products", "express"],

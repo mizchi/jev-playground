@@ -1,0 +1,29 @@
+{
+  "name": "jev-guard",
+  "version": "0.1.0",
+  "description": "Ask Jev whether an agent's next action needs permission. The docs/18 battery as a library, a CLI and a Pi extension.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": ["pi-package", "pi-extension", "jev", "typesafe", "guardrail", "permissions"],
+  "main": "./src/guard.ts",
+  "exports": { ".": "./src/guard.ts", "./pi": "./src/pi.ts" },
+  "bin": { "jev-guard": "./src/cli.ts" },
+  "pi": { "extensions": ["./src/pi.ts"] },
+  "files": ["src", "README.md"],
+  "engines": { "node": ">=22.19.0" },
+  "scripts": { "test": "tsx test.ts" },
+  "dependencies": { "@jev-playground/jev-core": "*" },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-ai": { "optional": true },
+    "@earendil-works/pi-coding-agent": { "optional": true }
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

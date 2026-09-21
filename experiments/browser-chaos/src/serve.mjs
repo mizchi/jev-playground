@@ -10,7 +10,7 @@ const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 export function serve(port = 0) {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
-    // Synthesized rather than committed: docs/28 needs a few hundred KB
+    // Synthesized rather than committed: docs/60 needs a few hundred KB
     // on the wire, and a blob that size does not belong in the repo.
     // ?kb= sizes it; the body is incompressible-ish filler.
     if (url.pathname === "/ballast.txt") {

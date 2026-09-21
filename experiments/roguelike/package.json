@@ -1,0 +1,17 @@
+{
+  "name": "jev-roguelike",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Real NetHack 3.6.7 driven by Jev: can judgment read an ASCII map, and can it play? (docs/34-roguelike.md)",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/run.ts --replay",
+    "run": "tsx src/run.ts",
+    "walk": "tsx src/walk.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

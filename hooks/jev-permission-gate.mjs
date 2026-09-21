@@ -55,6 +55,8 @@
  *        --timeout MS  latency budget, default 2500
  *        --log PATH    append one JSON line per decision, for auditing
  *        --dry-run     print the decision to stderr, emit no decision
+ *        --unattended-ask block|defer
+ *                      what an `ask` becomes when no human can answer it
  */
 import { appendFileSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -71,9 +73,56 @@ const opt = (name, fallback) => {
   return i === -1 ? fallback : (args[i + 1] ?? fallback);
 };
 
+/**
+ * The latency budget, and a budget rather than a measurement: docs/18 measured
+ * the gate at a median of 329 ms and a p90 of 394 ms, so 2500 leaves about six
+ * times the p90 before the hook gives up and defers. One attempt, no retries
+ * (see `ask` below). docs/26's `measured-number-has-a-source` rule reported
+ * this line, and the report was right: the number had no provenance anywhere
+ * near it.
+ */
 const TIMEOUT_MS = Number.parseInt(opt("timeout", "2500"), 10);
 const ALLOW_SAFE = flag("allow-safe");
 const DRY_RUN = flag("dry-run");
+/**
+ * Restore the pre-docs/43 behaviour: send an `ask` rationale to
+ * `systemMessage` only, where the model cannot read it.
+ *
+ * This flag exists ONLY so the measurement that changed the default stays
+ * replayable. docs/43 §5.2 measured what the old shape cost a headless agent
+ * ("A hook requires confirmation to run the Bash command", and it stopped), and
+ * a before/after that cannot be re-run is an anecdote. Nothing should pass it
+ * in production.
+ */
+const QUIET_ASK = flag("quiet-ask");
+/**
+ * What an `ask` becomes when there is nobody to ask.
+ *
+ * `jev-guard` has modelled this since docs/18 -- `GuardConfig.attended` and
+ * `unattendedAsk: "block" | "allow"` -- and THIS HOOK NEVER EXPOSED IT. So it
+ * always emitted `ask`, and docs/43 §5.1 measured what the host then does with
+ * one: a headless `claude -p` refuses the command outright ("A hook requires
+ * confirmation to run the Bash command"), which the CLI's own PreModelSwitch
+ * contract states as well ("a headless session refuses instead").
+ *
+ * That makes the shipped default a BLOCK BY ACCIDENT rather than by policy --
+ * the one outcome nobody chose. docs/43 §4b measured its price: the gate spoke
+ * on 8 of 869 commands a real agent needed, and 2 of the 6 runs it spoke in
+ * failed as a result.
+ *
+ *   ask (default)  unchanged. Correct when a human is attached.
+ *   block          say `deny` and say why. Same outcome as today on a headless
+ *                  agent, but chosen, and carrying a reason the agent can read.
+ *   defer          emit nothing, which the contract defines as "no decision,
+ *                  apply the normal permission flow".
+ *
+ * NOTE THAT `defer` DOES NOT WIDEN, which is why it is the interesting one.
+ * Principle 1 above is that this gate never returns `allow`, because `allow`
+ * overrides the permission rules the user configured. Deferring is the
+ * opposite of overriding them: it hands the decision back. The host's own
+ * rules then apply, which is exactly what `verdict === ALLOW` already does.
+ */
+const UNATTENDED_ASK = opt("unattended-ask", "ask");
 const LOG_PATH = opt("log", "");
 const DENY_MAX = { allow: ALLOW, ask: ASK, deny: DENY }[opt("deny-max", "deny")] ?? DENY;
 const MODEL = opt("model", "jev-latest");
@@ -431,14 +480,51 @@ async function main() {
   // Without it, a safe verdict defers and the normal flow decides.
   if (verdict === ALLOW && !ALLOW_SAFE) defer(`rated safe in ${elapsed}ms; not widening`);
 
-  const out = { hookEventName: "PreToolUse", permissionDecision: VERDICT_NAME[verdict] };
-  if (verdict === ASK) {
-    // The contract says to omit the reason for `ask`; the rationale still
-    // belongs in the transcript.
-    out.systemMessage = explanation;
-  } else {
-    out.permissionDecisionReason = explanation;
+  // THE REASON GOES IN `permissionDecisionReason` FOR EVERY VERDICT, and this
+  // used to be conditional. The old code sent `ask` rationales to
+  // `systemMessage` only, with the comment "the contract says to omit the
+  // reason for `ask`".
+  //
+  // THE CONTRACT DOES NOT SAY THAT. The CLI documents
+  // `permissionDecisionReason` as "Reason for the permission decision
+  // (PreToolUse only)" with no verdict restriction, and its schema carries
+  // `permissionDecision` and `permissionDecisionReason` as independent
+  // optionals.
+  //
+  // And the cost of the old behaviour was measured, both ways, on a real
+  // headless agent (docs/43 §5.2):
+  //
+  //   deny + permissionDecisionReason   the agent quoted the reason back
+  //                                     accurately and explained what it could
+  //                                     not do
+  //   ask  + systemMessage only         the agent said "A hook requires
+  //                                     confirmation to run the Bash command"
+  //                                     and stopped
+  //
+  // A blocked agent that is not told what was wrong cannot route around the
+  // block -- and on a headless session `ask` IS a block: the CLI's own
+  // PreModelSwitch contract says "ask asks the user to confirm (a headless
+  // session refuses instead)", which docs/43 §5.1 measured independently.
+  //
+  // `systemMessage` stays as well on an `ask`, because that is where a HUMAN
+  // reads it; the two fields have two audiences and the rationale is for both.
+  // An `ask` nobody can answer is resolved here rather than left to the host to
+  // turn into a refusal it never chose.
+  if (verdict === ASK && UNATTENDED_ASK === "defer") {
+    defer(`rated ask in ${elapsed}ms; no human to ask, so the host's own rules apply`);
   }
+
+  const decision = verdict === ASK && UNATTENDED_ASK === "block" ? VERDICT_NAME[DENY] : VERDICT_NAME[verdict];
+  const out = {
+    hookEventName: "PreToolUse",
+    permissionDecision: decision,
+    permissionDecisionReason:
+      verdict === ASK && UNATTENDED_ASK === "block"
+        ? `${explanation}. No human is attached to confirm, so this is a refusal rather than a prompt.`
+        : explanation,
+  };
+  if (decision === VERDICT_NAME[ASK]) out.systemMessage = explanation;
+  if (QUIET_ASK && decision === VERDICT_NAME[ASK]) delete out.permissionDecisionReason;
   process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
   process.exit(0);
 }
