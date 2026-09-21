@@ -105,6 +105,17 @@ asking the API again answers a different one
 
 ## Pi
 
+```sh
+pi install ./packages/jev-guard      # from the repository root
+pi install ./pi/components           # or all five components at once
+```
+
+**Not from npm.** This repository's packages are unpublished, and `jev-guard`
+on npm is [leepokai/jev-guard](https://github.com/leepokai/jev-guard) — a
+different author's guard. A local path is the only spelling that installs this
+one; `pi/README.md` has the assembled form, and `cd pi && npm run load` checks
+both lines above against Pi's own resolver.
+
 `/jev-guard` shows what was asked, what was free, what was blocked, and what
 the session has cost. `/jev-guard off` stops it.
 

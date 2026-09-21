@@ -1,8 +1,9 @@
 /**
  * DOES PI ITSELF LOAD THIS? Asked of Pi's own resource loader, not of a stub.
  *
- *   tsx load.ts              both profiles, one after the other
- *   tsx load.ts components   just that one
+ *   tsx load.ts              the six packages on their own, then both profiles
+ *   tsx load.ts components   just that profile
+ *   tsx load.ts packages     just the per-package recipe the READMEs print
  *
  * No API key and no agent session. `DefaultResourceLoader` is what Pi's
  * startup constructs, and pointing it at a throwaway `agentDir` whose
@@ -41,7 +42,7 @@ import { DefaultResourceLoader } from "@earendil-works/pi-coding-agent";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { PROFILES, type Profile } from "./seams.js";
+import { ALL, PROFILES, type Profile } from "./seams.js";
 
 export interface Loaded {
   /** Entry basenames, as Pi resolved them from the package. */
@@ -65,7 +66,19 @@ interface PiExtension {
  * machine it runs on is not a verification.
  */
 export async function loadProfile(p: Profile): Promise<Loaded> {
-  const dir = resolve(import.meta.dirname, p.dir);
+  return loadPath(resolve(import.meta.dirname, p.dir));
+}
+
+/**
+ * Hand Pi any directory the way `pi install <path>` does, and report what it
+ * resolved.
+ *
+ * Split out from `loadProfile` so the recipe the PACKAGE READMEs print can be
+ * checked too: `pi install ./packages/jev-guard` is a local-path install of a
+ * package whose own `pi` key names one extension, which is a different code
+ * path from a profile that names five.
+ */
+export async function loadPath(dir: string): Promise<Loaded> {
   const agentDir = mkdtempSync(resolve(tmpdir(), "jev-pi-load-"));
   mkdirSync(agentDir, { recursive: true });
   writeFileSync(resolve(agentDir, "settings.json"), `${JSON.stringify({ packages: [dir] })}\n`);
@@ -89,11 +102,41 @@ export async function loadProfile(p: Profile): Promise<Loaded> {
   };
 }
 
+/**
+ * Every workspace package, installed on its own.
+ *
+ * This is the recipe the package READMEs print, and it needs its own check
+ * because two of them used to print `pi install npm:<name>` instead -- which
+ * resolves, on npm, to a DIFFERENT author's package for `jev-guard`,
+ * `jev-model-router` and `jev-compact`, and to a 404 for the rest. A recipe
+ * that installs somebody else's code looks exactly like one that works.
+ */
+async function packages(): Promise<number> {
+  let bad = 0;
+  for (const c of ALL) {
+    const dir = resolve(import.meta.dirname, "..", c.pkg);
+    const { found, notFromPackage, errors } = await loadPath(dir);
+    // A package's own `pi` key names one extension: its `src/pi.ts`.
+    const good = found.length === 1 && errors.length === 0 && notFromPackage.length === 0;
+    if (!good) bad += 1;
+    console.log(
+      `${good ? "ok  " : "FAIL"} ${c.pkg.padEnd(30)} ${found.join(", ") || "(nothing)"}` +
+        `${notFromPackage.length > 0 ? ` NOT VIA THE PI KEY: ${notFromPackage.join(", ")}` : ""}`,
+    );
+    for (const e of errors) console.log(`       error: ${e}`);
+  }
+  return bad;
+}
+
 async function main(): Promise<void> {
   const only = process.argv[2];
   let bad = 0;
+  if (only === undefined || only === "packages") {
+    console.log("\n`pi install ./packages/<name>` -- one package at a time, the README recipe\n");
+    bad += await packages();
+  }
   for (const p of PROFILES) {
-    if (only && p.dir !== only) continue;
+    if (only !== undefined && only !== p.dir) continue;
     const { found, notFromPackage, errors } = await loadProfile(p);
     const want = p.components.map((c) => c.name).sort();
     const same = found.join(",") === want.join(",");

@@ -88,8 +88,19 @@ without spending anything.
 ## As a Pi extension
 
 ```sh
-pi install npm:jev-model-router
+pi install ./packages/jev-model-router      # from the repository root
+pi install ./pi/components                  # or all five components at once
 ```
+
+> **`pi install npm:jev-model-router` was here and it was wrong.** That name on
+> npm is [rajdhakad9826/jev-router](https://github.com/rajdhakad9826/jev-router)
+> — a different author's router — so the line installed somebody else's package
+> and looked like it had worked. This repository's packages are **not
+> published**: `jev-guard`, `jev-model-router` and `jev-compact` are taken by
+> other people, and `jev-skill-router`, `jev-orchestrator`, `jev-hermes` and
+> `@jev-playground/jev-core` are 404. A local path is the only spelling that
+> installs *this* component, and `pi/README.md` has the assembled form of all
+> of them. Both lines above are checked by `cd pi && npm run load`.
 
 **This extension ships its defaults and nothing else.** An earlier version of
 this section showed a `~/.pi/agent/settings.json` block with a `jevModelRouter`

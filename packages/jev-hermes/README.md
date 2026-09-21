@@ -135,6 +135,19 @@ usable for a round trip it cannot save.
 
 ## Pi
 
+```sh
+pi install ./packages/jev-hermes   # from the repository root
+pi install ./pi/resident           # the same thing as a profile, with pi/'s map
+```
+
+**Not from npm** — this repository's packages are unpublished and
+`npm:jev-hermes` is a 404, so a local path is the only spelling that installs
+it. And **do not install this alongside the five separate components**: this
+extension covers all five, the guard included, so both together put two
+permission gates on every tool call. `pi/README.md` measures that collision and
+`cd pi && npm run load` checks both lines above. The `pi -e` form below loads it
+for **one run** without installing.
+
 Configuration is **flags**, because pi has no other mechanism:
 `ExtensionFactory` is `(pi: ExtensionAPI) => void` — one argument — and
 `ExtensionAPI` exposes `registerFlag`/`getFlag` and no settings reader at all.

@@ -134,6 +134,16 @@ surfaced instead.
 
 ## Pi
 
+```sh
+pi install ./packages/jev-orchestrator   # from the repository root
+pi install ./pi/components               # or all five components at once
+```
+
+**Not from npm** — this repository's packages are unpublished and `npm:jev-orchestrator`
+is a 404, so a local path is the only spelling that installs it. `pi/README.md`
+has the assembled form; `cd pi && npm run load` checks both lines above.
+The `pi -e` form further down loads it for **one run** without installing.
+
 Two ways in, and the default is the second:
 
 | | when |

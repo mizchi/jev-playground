@@ -139,6 +139,17 @@ deletion costs least.
 
 ## Pi
 
+```sh
+pi install ./packages/jev-compact    # from the repository root
+pi install ./pi/components           # or all five components at once
+```
+
+**Not from npm.** This repository's packages are unpublished, and `jev-compact`
+on npm is [aleksvega/fast-jev-compaction](https://github.com/aleksvega/fast-jev-compaction)
+— a different author's compactor. A local path is the only spelling that
+installs this one; `pi/README.md` has the assembled form, and
+`cd pi && npm run load` checks both lines above against Pi's own resolver.
+
 Two hooks, and the claim is that the first makes the second unnecessary:
 
 | hook | what it does |

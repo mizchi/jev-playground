@@ -21,7 +21,7 @@
  *   different guard than the one this repository measured. Every jev
  *   dependency must be a `file:` path.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { ALL, COMPONENTS, PROFILES, RESIDENT, type Component } from "./seams.js";
 import { entriesOn, overlap, probe, recorder, type Registered } from "./probe.js";
@@ -212,6 +212,54 @@ const tests = [
         ok(pkgName in deps, `pi/${p.dir} loads ${c.name} but does not depend on ${pkgName}`);
       }
     }
+  }),
+
+  check("no document tells anyone to install these from npm", () => {
+    /**
+     * THE SAME BUG, ONE LAYER OUT. `pi/` refuses a version range in its own
+     * dependencies, and that did nothing about the two package READMEs that
+     * printed `pi install npm:jev-model-router` and `pi install
+     * npm:jev-skill-router`. The first installs
+     * `rajdhakad9826/jev-router` -- a different author's router -- and looks
+     * like it worked; the second 404s.
+     *
+     * So the check is over the whole repository's markdown, and it is over
+     * every name this repository ships rather than the three that happen to
+     * be taken today: a name that 404s now can be registered by anyone
+     * tomorrow, which turns a broken recipe into a silently wrong one.
+     *
+     * IT LOOKS INSIDE FENCED CODE BLOCKS ONLY, and that is the discriminator
+     * rather than a loophole. The hazard is a line somebody copies and runs,
+     * and the first version of this check -- which matched anywhere -- failed
+     * on the two READMEs for quoting the bad recipe in the sentence that says
+     * it was wrong. Naming a mistake has to stay sayable; offering it does
+     * not.
+     */
+    const ours = new Set(ALL.map((c) => c.from.replace(/\/pi$/, "")));
+    ours.add("@jev-playground/jev-core");
+    const offenders: string[] = [];
+    /** Only what is inside ``` fences: the lines a reader copies. */
+    const runnable = (src: string): string =>
+      [...src.matchAll(/^```[^\n]*\n([\s\S]*?)^```/gm)].map((m) => m[1]).join("\n");
+    const scan = (dir: string, depth = 0): void => {
+      if (depth > 4) return;
+      for (const entry of readdirSync(dir)) {
+        if (entry === "node_modules" || entry === ".git" || entry.startsWith("_")) continue;
+        const p = resolve(dir, entry);
+        if (statSync(p).isDirectory()) scan(p, depth + 1);
+        else if (entry.endsWith(".md")) {
+          for (const m of runnable(readFileSync(p, "utf8")).matchAll(/npm:(@?[\w./@-]+)/g)) {
+            if (ours.has(m[1])) offenders.push(`${p.replace(`${REPO}/`, "")}: npm:${m[1]}`);
+          }
+        }
+      }
+    };
+    scan(REPO);
+    eq(
+      offenders.join(" | "),
+      "",
+      "a document offers an npm install for a package this repository does not own on npm: ",
+    );
   }),
 
   check("the Pi core packages stay peer dependencies, unbundled", () => {

@@ -12,8 +12,9 @@
 ```bash
 cd pi && npm install         # 6 パッケージをローカルから symlink する。1 回だけ
 npm run probe                # どの拡張がどの seam を取るか、実測。API キー不要
-npm test                     # 10 件。API キー不要
+npm test                     # 11 件。API キー不要
 npm run load                 # Pi 自身の resolver に読ませる(こちらは Pi の実物を起動)
+npm run load -- packages     # パッケージ README のレシピだけ、6 本とも
 ```
 
 ## 1. 2 つのプロファイルは**排他**です
@@ -83,8 +84,16 @@ pi install ./pi/resident     # 両方入れてはいけません(理由は §2)
 | `jev-compact@0.2.0` | [aleksvega/fast-jev-compaction](https://github.com/aleksvega/fast-jev-compaction) —— 別人の compactor |
 | `jev-skill-router` / `jev-orchestrator` / `jev-hermes` / `@jev-playground/jev-core` | **404**(このリポジトリのものは未公開) |
 
-**つまり各パッケージ README の `pi install npm:jev-model-router` は、このリポジトリのものを入れません。**
-3 つは別人のパッケージが入り、残り 4 つは 404 になります(§5)。
+**`npm:` の綴りは、このリポジトリのものを入れません** ——
+3 つは別人のパッケージが入り、残り 4 つは 404 になります。
+
+> **ここは最初「各パッケージ README にその行が在る」と書いていました。数えたら 2 本でした。**
+> `jev-model-router` と `jev-skill-router` の 2 本だけが `npm:` を印字していて、
+> `jev-hermes` と `jev-orchestrator` は **`pi -e` のローカルパス**(正しい)、
+> `jev-guard` と `jev-compact` は**install 行そのものが無い**状態でした。
+> **6 本とも直してあります** —— 2 本は `npm:` を差し替え、4 本には
+> **実測したローカルパスのレシピ**を足しました(`npm run load` が 6 本とも確認します)。
+> **合計ではなく行を読む、を自分の README で 1 回破った形です。**
 
 だから `pi/*/package.json` の依存は**すべて `file:../../packages/...`** で、
 **バージョン範囲を書いたらテストが落ちます**。
@@ -144,9 +153,14 @@ export { default } from "jev-guard/pi";
   上の表は「そうなったら何が 2 回走るか」を seam から**読んだもの**で、
   2 つ入れて確認したものではありません。
   防いでいるのは構造(別パッケージ・`pi/` 自身は非パッケージ)とテストです。
-- **`pi install npm:...` を直していません。** 6 つのパッケージ README にはその行が在り、
-  §3 のとおり**3 つは別人のパッケージを入れます**。
-  直し方は「公開する」か「行を消す」かで、**どちらもこのディレクトリの外の判断**なので触っていません。
+- **パッケージ README のレシピは直しましたが、「公開する」方は選んでいません。**
+  6 本とも**ローカルパスのレシピ**(`npm run load` が 6 本とも Pi の resolver で確認)にしました。
+  **公開は選択肢として潰れています** —— `jev-guard` / `jev-model-router` / `jev-compact` の
+  名前は既に他人のものなので、**公開するなら別の名前**になり、それは
+  このディレクトリの外の判断です。
+  同じ間違いが戻らないように、**コードブロックの中に `npm:<このリポジトリの名前>` が在ったら
+  テストが落ちます**(散文で「これは間違いだった」と書くのは通ります —— 危険なのは
+  コピペできる行だけなので)。
 - **`pi list` は個々の拡張を列挙しません。** 入っているかは `npm run load` で確かめてください
   (`pi config` は TUI のみ)。
 - **Pi のバージョンは 1 つでしか試していません** —— `@earendil-works/pi-coding-agent` **0.85.1**。
