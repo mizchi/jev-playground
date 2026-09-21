@@ -36,6 +36,10 @@ import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js"
 // fanout.ts's harvest, and wild.ts exports one too.
 import { corpus as wildCorpus, fencePrefixes, headMatch, matched, promptFor, sectionKey, tasksIn } from "./src/wild.js";
 import { permutation } from "../shared/thresholds.js";
+// Aliased for reading, not to dodge a clash -- nothing else here exports
+// `candidates`. In a file importing rosters from a dozen modules the bare name
+// would not say which one, and the two aliases above are what that costs.
+import { candidates as widenCandidates, reconcile } from "./src/widen.js";
 
 let pass = 0;
 let fail = 0;
@@ -1643,6 +1647,43 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
   ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
+});
+
+check("the widening record holds exactly the rows its rules name", () => {
+  /**
+   * The check that caught a row nobody selected. `widen.ts` resumes by
+   * carrying prior rows forward, so a name the rule stops producing survives
+   * every later run -- and one did: the first `candidates` regex cut
+   * `protobuf.js` to `protobuf`, `dcodeIO/protobuf` turned out to exist,
+   * cloned, harvested clean, and left 57 rows for a rule selecting 56.
+   *
+   * Three sibling typos failed to clone, so a clone failure was the only
+   * signal, and it does not cover the case where the wrong name is real. This
+   * does: re-derive both rosters and diff them against the record.
+   */
+  const rec = JSON.parse(readFileSync(resolve(import.meta.dirname, "records/widen.json"), "utf8")) as {
+    rows: { repo: string; source: "packages" | "account" }[];
+  };
+  for (const source of ["packages", "account"] as const) {
+    const rule = widenCandidates(source).rows.map((c) => c.repo).sort();
+    const rows = rec.rows.filter((r) => r.source === source).map((r) => r.repo).sort();
+    ok(rule.length > 0, `the \`${source}\` rule must name something`);
+    eq(rows.length, rule.length, `\`${source}\`: rows recorded vs rows the rule names: `);
+    const stray = rows.filter((r) => !rule.includes(r));
+    eq(stray.join(","), "", `\`${source}\`: rows the rule does not name: `);
+    eq(new Set(rows).size, rows.length, `\`${source}\`: distinct repositories recorded: `);
+  }
+  // And the pruning is a function, not a hand edit, so it is testable.
+  const residue = [
+    { repo: "dcodeIO/protobuf", source: "packages" as const },
+    ...rec.rows.filter((r) => r.source === "packages").slice(0, 2),
+  ] as never[];
+  const { rows: kept, dropped } = reconcile(residue, "packages");
+  eq(dropped.join(","), "dcodeIO/protobuf", "reconcile must drop the unnamed row: ");
+  eq(kept.length, 2, "and keep the ones the rule names: ");
+  // A row of the OTHER source is not this rule's to judge.
+  const other = reconcile([{ repo: "mizchi/vlmkit", source: "account" } as never], "packages");
+  eq(other.dropped.length, 0, "reconciling one source must not drop the other's rows: ");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
