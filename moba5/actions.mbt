@@ -185,9 +185,9 @@ pub fn Game::legal_actions(self : Game, c : Champ) -> Array[Action] {
       out.push(PlaceWard(n))
     }
   }
-  if c.node == base_of(c.team) && c.items.length() < ITEM_SLOTS {
+  if c.node == base_of(c.team) {
     for it in items {
-      if c.gold >= it.cost {
+      if c.can_buy(it.key) {
         out.push(Buy(it.key))
       }
     }
@@ -324,7 +324,23 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
       "ward \{node_name(n)} — vision of it and its neighbours for \{WARD_TTL} ticks (\{c.wards} ward(s) left)"
     Buy(key) =>
       match item_of(key) {
-        Some(it) => "buy \{it.key} for \{it.cost}: \{it.note}"
+        Some(it) => {
+          let price = c.price_of(key)
+          let full = item_total_cost(key)
+          let head = if price < full {
+            // The discount is the point of having bought the component, so it
+            // is stated rather than left for the reader to work out.
+            "buy \{it.key} for \{price} (\{full} from nothing; the component in hand covers the rest)"
+          } else {
+            "buy \{it.key} for \{price}"
+          }
+          let slots = if it.builds_from.is_empty() {
+            ""
+          } else {
+            "; consumes \{it.builds_from.join(" + ")}"
+          }
+          "\{head}\{slots}: \{it.note}"
+        }
         None => "buy \{key}"
       }
     Recall => "teleport home and heal (gives up this position)"

@@ -15,7 +15,10 @@
 /// - **Itemisation.** Gold buys armor, magic resist, health, attack or
 ///   penetration. The right buy depends on what the enemy team actually deals,
 ///   which the observation shows, so the correct answer is knowable and — see
-///   `bench.mbt` — checkable against the simulator.
+///   `bench.mbt` — checkable against the simulator. The shop has two tiers:
+///   a component is cheap and arrives sooner, a completed item consumes its
+///   components and is worth more per gold, so "this now or that later" is a
+///   decision as well as "which stat".
 
 ///|
 pub const DMG_PHYSICAL = 0
@@ -34,6 +37,11 @@ pub const MAX_LEVEL = 6
 ///|
 /// How many items a champion can hold. Three 350-gold buys is about what a
 /// winning lane affords, so the shop is a real budget and not a formality.
+///
+/// Components share those three slots, which is what makes the upper tier a
+/// commitment rather than a free upgrade: two components waiting to become
+/// one `bulwark` occupy two thirds of the bag while they wait. Combining is
+/// slot-neutral, so a full bag can still be upgraded — see `Champ::slots_after`.
 pub const ITEM_SLOTS = 3
 
 ///|
@@ -340,9 +348,14 @@ pub fn Kind::dmg_type_name(self : Kind) -> String {
 /// A purchasable item. `pen` reduces the resist that matters against this
 /// champion's damage type, which is the only answer to a target whose resist is
 /// so high that raw attack is being thrown away.
+///
+/// `builds_from` names the components this item consumes. A component lists
+/// none, and is the only reason `cost` and `item_total_cost` differ: `cost` is
+/// what the counter charges once the components are in hand.
 pub(all) struct Item {
   key : String
   cost : Int
+  builds_from : Array[String]
   atk : Int
   armor : Int
   mr : Int
@@ -352,15 +365,82 @@ pub(all) struct Item {
 }
 
 ///|
-/// Everything costs the same, so a buy is a pure choice of *what the enemy is
-/// doing to us* rather than an affordability puzzle.
-pub const ITEM_COST = 350
+/// A component's price, and what every one-component item charges to combine.
+/// Their sum is `ITEM_COST`, so the five items that existed before the shop had
+/// tiers still cost exactly what they did.
+pub const COMPONENT_COST = 150
 
 ///|
+pub const COMBINE_COST = 200
+
+///|
+/// The price of a one-component item from nothing. Named because the benchmark
+/// and the baselines both use it as "one item's worth of gold".
+pub const ITEM_COST : Int = COMPONENT_COST + COMBINE_COST
+
+///|
+/// The price of a two-component item from nothing.
+pub const BIG_ITEM_COST : Int = 2 * COMPONENT_COST + 250
+
+///|
+/// The shop, in two tiers.
+///
+/// A component is available sooner and a completed item is worth more per
+/// gold, which is the trade the build path exists to create: 3 attack at tick
+/// 12 or 8 attack at tick 20, and the answer depends on what happens between
+/// them. `edge` and `bulwark` push that further — nearly twice the stats per
+/// gold, for a champion patient enough to save through a fight.
 pub let items : Array[Item] = [
+  // ---- components
+  {
+    key: "sword",
+    cost: COMPONENT_COST,
+    builds_from: [],
+    atk: 3,
+    armor: 0,
+    mr: 0,
+    hp: 0,
+    pen: 0,
+    note: "+3 attack — a component; builds into blade, pierce or edge",
+  },
+  {
+    key: "hide",
+    cost: COMPONENT_COST,
+    builds_from: [],
+    atk: 0,
+    armor: 18,
+    mr: 0,
+    hp: 0,
+    pen: 0,
+    note: "+18 armor — a component; builds into plate or bulwark",
+  },
+  {
+    key: "silk",
+    cost: COMPONENT_COST,
+    builds_from: [],
+    atk: 0,
+    armor: 0,
+    mr: 18,
+    hp: 0,
+    pen: 0,
+    note: "+18 magic resist — a component; builds into cloak or bulwark",
+  },
+  {
+    key: "ruby",
+    cost: COMPONENT_COST,
+    builds_from: [],
+    atk: 0,
+    armor: 0,
+    mr: 0,
+    hp: 30,
+    pen: 0,
+    note: "+30 health — a component; builds into belt",
+  },
+  // ---- completed, one component
   {
     key: "blade",
-    cost: ITEM_COST,
+    cost: COMBINE_COST,
+    builds_from: ["sword"],
     atk: 8,
     armor: 0,
     mr: 0,
@@ -370,7 +450,8 @@ pub let items : Array[Item] = [
   },
   {
     key: "pierce",
-    cost: ITEM_COST,
+    cost: COMBINE_COST,
+    builds_from: ["sword"],
     atk: 2,
     armor: 0,
     mr: 0,
@@ -380,7 +461,8 @@ pub let items : Array[Item] = [
   },
   {
     key: "plate",
-    cost: ITEM_COST,
+    cost: COMBINE_COST,
+    builds_from: ["hide"],
     atk: 0,
     armor: 45,
     mr: 0,
@@ -390,7 +472,8 @@ pub let items : Array[Item] = [
   },
   {
     key: "cloak",
-    cost: ITEM_COST,
+    cost: COMBINE_COST,
+    builds_from: ["silk"],
     atk: 0,
     armor: 0,
     mr: 45,
@@ -400,13 +483,37 @@ pub let items : Array[Item] = [
   },
   {
     key: "belt",
-    cost: ITEM_COST,
+    cost: COMBINE_COST,
+    builds_from: ["ruby"],
     atk: 0,
     armor: 0,
     mr: 0,
     hp: 80,
     pen: 0,
     note: "+80 health — works against both damage types, but less per gold than the matching resist",
+  },
+  // ---- completed, two components
+  {
+    key: "edge",
+    cost: 250,
+    builds_from: ["sword", "sword"],
+    atk: 18,
+    armor: 0,
+    mr: 0,
+    hp: 0,
+    pen: 0,
+    note: "+18 attack — half again the attack of two blades for the same gold, if you can wait for it",
+  },
+  {
+    key: "bulwark",
+    cost: 250,
+    builds_from: ["hide", "silk"],
+    atk: 0,
+    armor: 30,
+    mr: 30,
+    hp: 40,
+    pen: 0,
+    note: "+30 armor, +30 magic resist and +40 health — the answer to a team doing BOTH kinds of damage, where a single resist is half wasted",
   },
 ]
 
@@ -418,6 +525,43 @@ pub fn item_of(key : String) -> Item? {
     }
   }
   None
+}
+
+///|
+/// The full price of `key` from an empty inventory: its own cost plus every
+/// component's.
+///
+/// One level deep, because the shop is: `item_tree_is_two_deep` in
+/// `shop_wbtest.mbt` checks that rather than leaving it to be assumed, which
+/// is cheaper than making this recursive over data that cannot be cyclic.
+pub fn item_total_cost(key : String) -> Int {
+  match item_of(key) {
+    Some(it) => {
+      let mut total = it.cost
+      for comp in it.builds_from {
+        total += match item_of(comp) {
+          Some(c) => c.cost
+          None => 0
+        }
+      }
+      total
+    }
+    None => 0
+  }
+}
+
+///|
+/// Everything `key` builds into, for the shop listing and for a baseline
+/// deciding whether the component it can afford is on the way to the item it
+/// wants.
+pub fn item_builds_into(key : String) -> Array[String] {
+  let out = []
+  for it in items {
+    if it.builds_from.contains(key) {
+      out.push(it.key)
+    }
+  }
+  out
 }
 
 // ------------------------------------------------------------- compositions

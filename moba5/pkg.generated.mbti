@@ -16,7 +16,13 @@ pub const BARON_TICKS : Int = 12
 
 pub const BARON_VALUE : Int = 200
 
+pub const BIG_ITEM_COST : Int = 550
+
 pub const B_BASE : Int = 1
+
+pub const COMBINE_COST : Int = 200
+
+pub const COMPONENT_COST : Int = 150
 
 pub const CS_GOLD : Int = 6
 
@@ -166,7 +172,11 @@ pub fn hops(Int, Int) -> Int
 
 pub fn is_brush(Int) -> Bool
 
+pub fn item_builds_into(String) -> Array[String]
+
 pub fn item_of(String) -> Item?
+
+pub fn item_total_cost(String) -> Int
 
 pub let items : Array[Item]
 
@@ -318,16 +328,21 @@ pub struct Champ {
 }
 pub fn Champ::ability_ready(Self) -> Bool
 pub fn Champ::alive(Self) -> Bool
+pub fn Champ::apply_buy(Self, String) -> Unit
 pub fn Champ::armor(Self) -> Int
 pub fn Champ::attack(Self) -> Int
 pub fn Champ::can_act(Self) -> Bool
+pub fn Champ::can_buy(Self, String) -> Bool
 pub fn Champ::copy(Self) -> Self
+pub fn Champ::count_of(Self, String) -> Int
 pub fn Champ::effective_hp(Self) -> Int
 pub fn Champ::gain_xp(Self, Int) -> Unit
 pub fn Champ::hp_cap(Self) -> Int
 pub fn Champ::mr(Self) -> Int
 pub fn Champ::pen(Self) -> Int
+pub fn Champ::price_of(Self, String) -> Int
 pub fn Champ::refresh_hp(Self) -> Unit
+pub fn Champ::slots_after(Self, String) -> Int
 
 pub(all) struct CoherenceReport {
   n : Int
@@ -493,6 +508,7 @@ pub fn Game::retreat_scores(Self, Int, Int, Int) -> (Int, Int)
 pub fn Game::retreat_truth(Self, Int, Int, Int) -> String
 pub fn Game::rift_element(Self) -> String
 pub fn Game::ripe_here(Self, Int, Int) -> Int
+pub fn Game::shop_pick(Self, Champ) -> String?
 pub fn Game::siege_target(Self, Int) -> Int
 pub fn Game::simulate_fight(Self, Int, Int) -> FightResult
 pub fn Game::simulate_fight_focus(Self, Int, Int, Int, Int) -> FightResult
@@ -526,6 +542,7 @@ pub fn Game::with_handicap(Array[String], Array[String], Int, Int) -> Self
 pub(all) struct Item {
   key : String
   cost : Int
+  builds_from : Array[String]
   atk : Int
   armor : Int
   mr : Int

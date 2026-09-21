@@ -214,12 +214,27 @@ fn enemy_options(
 
 ///|
 /// Option names and descriptions for the shop.
-fn item_options() -> (Array[String], Array[String]) {
+fn item_options(c : Champ) -> (Array[String], Array[String]) {
   let names = []
   let descs = []
   for it in items {
+    // Only what this champion could actually buy. Offering `edge` to a
+    // champion with 390 gold would break the rule the whole action space is
+    // built on — the choices offered ARE the legal moves — and would also make
+    // the question unanswerable in the one way that does not show up in a
+    // score, since the oracle skips a purchase the tick would refuse.
+    if !c.can_buy(it.key) {
+      continue
+    }
+    let price = c.price_of(it.key)
+    let full = item_total_cost(it.key)
+    let paid = if price < full {
+      "\{price} gold (\{full} from nothing; you are holding a component)"
+    } else {
+      "\{price} gold"
+    }
     names.push(it.key)
-    descs.push(it.note)
+    descs.push("\{paid} — \{it.note}")
   }
   (names, descs)
 }
@@ -791,19 +806,25 @@ fn ask_fog_count(g : Game, team : Int) -> Ask {
 /// Every item is bought on a copy and the fight played out.
 fn ask_item(g : Game, champ_id : Int, node : Int) -> Ask {
   let c = g.champs[champ_id]
-  let (inames, idescs) = item_options()
+  let (inames, idescs) = item_options(c)
   let asked = "\{c.name} (\{c.kind}, level \{c.level}, hp \{c.hp}/\{c.max_hp}, armor \{c.armor()}, magic resist \{c.mr()}, deals \{if c.dmg_type == DMG_PHYSICAL { "physical" } else { "magic" }})"
   {
     key: "item_for_\{c.role}",
     class_: "item",
     form: "choice",
     tier: "rules",
-    instructions: "A 5v5 is about to start on \{node_name(node)} and \{asked} has exactly one item's worth of gold. Which item should it buy? The enemies you can see are in the state; armor only reduces physical damage, magic resist only reduces magic damage, and penetration reduces whichever of those applies to this champion's own damage.",
+    instructions: "A 5v5 is about to start on \{node_name(node)} and \{asked} has \{c.gold} gold. Which item should it buy? Every option below is priced at what this champion would actually pay, and only the ones it can afford are listed. Components are cheap and build into completed items, which are worth more per gold; the fight is starting now, so stats that arrive later are worth nothing. The enemies you can see are in the state; armor only reduces physical damage, magic resist only reduces magic damage, and penetration reduces whichever of those applies to this champion's own damage.",
     options: inames,
     descriptions: idescs,
     truth: g.best_item(champ_id, node, 16),
     why: "bought each item on a copy, then played the fight out; this one left us the most bodies and health",
-    floor: g.counter_item(c),
+    // What the strong baseline would actually put on the counter, which since
+    // the shop grew tiers is not the same as the item it wants: `counter_item`
+    // names the want and `shop_pick` names the purchase.
+    floor: match g.shop_pick(c) {
+      Some(k) => k
+      None => g.counter_item(c)
+    },
   }
 }
 

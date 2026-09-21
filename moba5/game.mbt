@@ -264,6 +264,107 @@ pub fn Champ::ability_ready(self : Champ) -> Bool {
   self.ability != NoAbility && self.cd == 0
 }
 
+// --------------------------------------------------------------- the counter
+//
+// Buying is one rule in three places — the legal move, the description of it,
+// and the tick that resolves it — plus a fourth, the oracle that prices the
+// `item` class by buying each item on a copy. Components made those four
+// disagreeable, so the arithmetic lives here and all four call it.
+
+///|
+/// How many of `key` this champion is holding.
+pub fn Champ::count_of(self : Champ, key : String) -> Int {
+  let mut n = 0
+  for held in self.items {
+    if held == key {
+      n += 1
+    }
+  }
+  n
+}
+
+///|
+/// What this champion would pay for `key` right now: the combine cost, plus
+/// the full price of every component it does not already hold. Holding a
+/// component is the discount, which is the whole of what a build path is.
+pub fn Champ::price_of(self : Champ, key : String) -> Int {
+  match item_of(key) {
+    Some(it) => {
+      let mut price = it.cost
+      let used : Map[String, Int] = Map([])
+      for comp in it.builds_from {
+        let already = used.get(comp).unwrap_or(0)
+        // Each component in the recipe is matched against a *different* copy
+        // of it in the inventory: `edge` needs two swords, and one sword in
+        // the bag pays for one of them.
+        if self.count_of(comp) > already {
+          used[comp] = already + 1
+        } else {
+          price += item_total_cost(comp)
+        }
+      }
+      price
+    }
+    None => 0
+  }
+}
+
+///|
+/// Item slots this champion would be using after buying `key`: the components
+/// the purchase consumes come back out of the bag, so upgrading a component is
+/// slot-neutral and a champion with full slots can still combine.
+pub fn Champ::slots_after(self : Champ, key : String) -> Int {
+  match item_of(key) {
+    Some(it) => {
+      let mut freed = 0
+      let used : Map[String, Int] = Map([])
+      for comp in it.builds_from {
+        let already = used.get(comp).unwrap_or(0)
+        if self.count_of(comp) > already {
+          used[comp] = already + 1
+          freed += 1
+        }
+      }
+      self.items.length() - freed + 1
+    }
+    None => self.items.length()
+  }
+}
+
+///|
+/// Whether this champion could buy `key` if it were standing at base.
+pub fn Champ::can_buy(self : Champ, key : String) -> Bool {
+  match item_of(key) {
+    Some(_) =>
+      self.gold >= self.price_of(key) && self.slots_after(key) <= ITEM_SLOTS
+    None => false
+  }
+}
+
+///|
+/// Take the gold, consume the components, hand over the item. Assumes
+/// `can_buy`; the callers check it.
+pub fn Champ::apply_buy(self : Champ, key : String) -> Unit {
+  match item_of(key) {
+    Some(it) => {
+      self.gold -= self.price_of(key)
+      for comp in it.builds_from {
+        // Remove one copy, not every copy: two swords in the bag and a recipe
+        // wanting one leaves a sword behind.
+        for i in 0..<self.items.length() {
+          if self.items[i] == comp {
+            self.items.remove(i) |> ignore
+            break
+          }
+        }
+      }
+      self.items.push(key)
+      self.refresh_hp()
+    }
+    None => ()
+  }
+}
+
 ///|
 /// Attack after level scaling and items, before team buffs and mitigation.
 /// Buffs are team state, so the full number comes from `Game::raw_attack`.
@@ -1241,11 +1342,18 @@ pub fn Game::structure_hp(self : Game, team : Int) -> Int {
 ///|
 /// Total gold earned by a team, spent or not — the economy line a real client
 /// shows, and the cheapest single read of who is ahead.
+///
+/// Items are counted at what they cost, which stopped being one number when
+/// the shop grew tiers: an inventory of three components and one of three
+/// completed items are the same length and not the same lead.
 pub fn Game::team_gold(self : Game, team : Int) -> Int {
   let mut total = 0
   for c in self.champs {
     if c.team == team {
-      total += c.gold + c.items.length() * ITEM_COST
+      total += c.gold
+      for key in c.items {
+        total += item_total_cost(key)
+      }
     }
   }
   total
@@ -1645,17 +1753,10 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
         events.push("\{c.name} recalled")
       }
       Some(Buy(key)) =>
-        if c.node == base_of(c.team) && c.items.length() < ITEM_SLOTS {
-          match item_of(key) {
-            Some(it) =>
-              if c.gold >= it.cost {
-                c.gold -= it.cost
-                c.items.push(it.key)
-                c.refresh_hp()
-                events.push("\{c.name} bought \{it.key}")
-              }
-            None => ()
-          }
+        if c.node == base_of(c.team) && c.can_buy(key) {
+          let paid = c.price_of(key)
+          c.apply_buy(key)
+          events.push("\{c.name} bought \{key} for \{paid}")
         }
       Some(PlaceWard(n)) =>
         if c.wards > 0 && (n == c.node || adjacency[c.node].contains(n)) {

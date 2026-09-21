@@ -482,11 +482,15 @@ pub fn Game::best_item(
   for it in items {
     let g = self.copy()
     let c = g.champs[champ_id]
-    if c.items.length() >= ITEM_SLOTS {
+    // Through `can_buy`/`apply_buy`, so the answer is a purchase the tick
+    // would also have allowed: it pays this champion's price, consumes the
+    // components it is holding, and is skipped when it cannot afford it. An
+    // oracle that simply pushed the key onto the bag would answer "edge" to a
+    // champion with 200 gold.
+    if !c.can_buy(it.key) {
       continue
     }
-    c.items.push(it.key)
-    c.refresh_hp()
+    c.apply_buy(it.key)
     names.push(it.key)
     scores.push(g.simulate_fight(node, max_ticks).score_for(me.team))
   }

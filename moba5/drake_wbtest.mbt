@@ -339,12 +339,14 @@ test "a drake is worth more the closer either team is to the soul" {
 /// So this asserts about played games rather than about constructed states: it
 /// is the only test here that would have failed.
 test "drakes are contested and a soul is reachable in a played game" {
-  let pairs = [
-    ("meta", "dive"),
-    ("poke", "bruisers"),
-    ("late", "early"),
-    ("meta", "poke"),
-  ]
+  let pairs = []
+  for i in 0..<tournament_comps.length() {
+    for j in 0..<tournament_comps.length() {
+      if i != j {
+        pairs.push((tournament_comps[i].name, tournament_comps[j].name))
+      }
+    }
+  }
   let mut best_stacks = 0
   let mut souls = 0
   let mut games_with_a_drake = 0
@@ -373,15 +375,20 @@ test "drakes are contested and a soul is reachable in a played game" {
       souls += 1
     }
   }
-  // Every one of these games sees the river fought over.
-  assert_eq(games_with_a_drake, pairs.length())
-  // Somebody gets past a single stack, so the rotation's second element and
-  // the stacking are both reached by play and not only by assignment.
+  // Nearly every game sees the river fought over. Not all of them: a game the
+  // `classic` control loses in thirty ticks never gets there, and six of these
+  // seventy-two end before the second drake spawns. Three quarters is far
+  // above that and far below the standing veto this test was written to catch,
+  // which produced one drake per game whatever the matchup.
+  assert_true(games_with_a_drake * 4 >= pairs.length() * 3)
+  // Somebody gets past a single stack, so the rotation's second element is
+  // reached by play and not only by assignment.
   assert_true(best_stacks >= 2)
-  // And a soul is actually won somewhere in four games. If this is the
-  // assertion that breaks, the mechanic has gone back to being decoration:
-  // check the objective values against `FREE_TOWER_VALUE` and the Baron timer
-  // before touching the number.
+  // And a soul is actually awarded. It happens in two of these seventy-two,
+  // which is about the rate souls happen at in the game this is modelled on
+  // and is the assertion to look at first if this test ever fails: check
+  // `objective_value` against `FREE_TOWER_VALUE`, and the Baron timer, before
+  // touching the number.
   assert_true(souls >= 1)
 }
 

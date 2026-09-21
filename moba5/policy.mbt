@@ -341,8 +341,10 @@ pub fn scripted_action(g : Game, c : Champ) -> Action {
       }
     }
   }
-  // Full pockets and no fight here: go and spend them.
-  if c.gold >= ITEM_COST &&
+  // Full pockets and no fight here: go and spend them. The weak bot's measure
+  // of "full" is the cheapest thing in the shop, which is a component — it
+  // buys early and badly, which is its job.
+  if c.gold >= COMPONENT_COST &&
     c.items.length() < ITEM_SLOTS &&
     g.champs_at(c.node, foe).is_empty() &&
     legal.contains(Recall) {
@@ -499,6 +501,56 @@ pub fn Game::counter_item(self : Game, c : Champ) -> String {
 }
 
 ///|
+/// What this champion should actually put on the counter, given that the thing
+/// it wants may cost more than it is holding.
+///
+/// Four steps, in the order a player takes them:
+///
+/// 1. the bigger item on the path, when it is affordable — `bulwark` for a
+///    frontliner taking both kinds of damage, `edge` for a carry that already
+///    has a sword in the bag and is half-paid for it;
+/// 2. otherwise the item `counter_item` named, when THAT is affordable. This
+///    step is the one worth spelling out: skipping an affordable completed
+///    item to buy a component of a dearer one was the first version of this
+///    function, and it cost the `item` class two of its six — the fight was
+///    starting and the floor bought a hide;
+/// 3. otherwise a component on the way, because a component is stats now and
+///    the discount later;
+/// 4. otherwise nothing, since an item off the path is a slot spent on the
+///    wrong stat and the gold keeps.
+pub fn Game::shop_pick(self : Game, c : Champ) -> String? {
+  let want = self.counter_item(c)
+  let bigger = if want == "belt" && c.frontline {
+    // `belt` is the answer to a team doing both kinds of damage and `bulwark`
+    // is the better one: 30 and 30 beats 45 and nothing when half of what we
+    // take is the other kind, and it carries the health as well.
+    "bulwark"
+  } else if want == "blade" && c.count_of("sword") > 0 {
+    // Already on the path and half-paid: `edge` is 18 attack where two blades
+    // would be 16 for the same gold.
+    "edge"
+  } else {
+    want
+  }
+  if c.can_buy(bigger) {
+    return Some(bigger)
+  }
+  if c.can_buy(want) {
+    return Some(want)
+  }
+  match item_of(bigger) {
+    Some(it) =>
+      for comp in it.builds_from {
+        if c.count_of(comp) == 0 && c.can_buy(comp) {
+          return Some(comp)
+        }
+      }
+    None => ()
+  }
+  None
+}
+
+///|
 /// The strong baseline. Acts on the team plan, fights only when the fight is
 /// worth it, and spends abilities, wards and gold on purpose.
 pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
@@ -511,9 +563,13 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
   let here_enemies = g.champs_at(c.node, foe)
   let here_allies = g.champs_at(c.node, c.team)
 
-  // At base: buy the counter-item, and only then walk back out.
-  if c.node == base && c.items.length() < ITEM_SLOTS {
-    let want = g.counter_item(c)
+  // At base: buy the counter-item, or a component on the way to it, and only
+  // then walk back out.
+  if c.node == base {
+    let want = match g.shop_pick(c) {
+      Some(k) => k
+      None => ""
+    }
     for a in legal {
       if a == Buy(want) {
         return a
@@ -613,10 +669,12 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
   if low && !on_objective && legal.contains(Recall) {
     return Recall
   }
-  if c.gold >= ITEM_COST &&
-    c.items.length() < ITEM_SLOTS &&
-    !on_objective &&
-    legal.contains(Recall) {
+  // Go home when there is something to buy, rather than when the pocket holds
+  // one item's worth. Since the shop grew tiers those are different questions:
+  // a champion with 200 gold and a sword in the bag can afford the blade that
+  // sword builds into, and a champion with 340 and three completed items can
+  // afford nothing at all.
+  if !on_objective && g.shop_pick(c) is Some(_) && legal.contains(Recall) {
     return Recall
   }
 
