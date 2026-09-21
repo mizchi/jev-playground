@@ -911,11 +911,17 @@ pub fn Game::team_level(self : Game, team : Int) -> Int {
 /// about the enemy.
 pub fn Game::vision(self : Game, team : Int) -> Array[Bool] {
   let seen = Array::make(N_NODES, false)
+  // Standing on a node always reveals it, brush included — that is what
+  // walking in buys. Reaching a NEIGHBOUR reveals it only if it is not brush:
+  // vision does not cross into cover, which is the whole of the rule and the
+  // reason a ward in a brush is worth a turn.
   for c in self.champs {
     if c.team == team && c.alive() {
       seen[c.node] = true
       for n in adjacency[c.node] {
-        seen[n] = true
+        if !is_brush(n) {
+          seen[n] = true
+        }
       }
     }
   }
@@ -926,9 +932,14 @@ pub fn Game::vision(self : Game, team : Int) -> Array[Bool] {
   }
   for w in self.wards {
     if w.team == team && w.ttl > 0 {
+      // A ward sees the node it sits in whatever that node is — a ward in a
+      // brush is the counter-play to the brush — and its neighbours under the
+      // same rule as a champion's.
       seen[w.node] = true
       for n in adjacency[w.node] {
-        seen[n] = true
+        if !is_brush(n) {
+          seen[n] = true
+        }
       }
     }
   }

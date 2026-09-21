@@ -111,6 +111,41 @@ pub let adjacency : Array[Array[Int]] = [
 ]
 
 ///|
+/// Whether a node is brush: vision does not reach into it from outside.
+///
+/// Every other node is seen by standing next to it, which made the map's
+/// unlit half a formality — a jungler crossing it was visible to both lanes it
+/// ran between, so there was nowhere to wait and nothing a ward bought that
+/// standing nearby did not. Brush is the rule that makes the space real, and
+/// it is asymmetric on purpose: **from inside a brush you see out normally,
+/// and from outside you see nothing of it**. That is what an ambush is, and it
+/// is why a ward placed in one is worth a turn.
+///
+/// The four jungle quadrants are the brush here. In a game with a plane the
+/// brush is a patch inside the jungle; in a graph the quadrant IS the patch
+/// you wait in, and it already sits between the lanes it threatens, so the
+/// decision it creates — "their jungler could be in there, do I push up" —
+/// is the same one. The river is deliberately NOT brush: both teams need to
+/// see an objective's pit to plan around its timer, and hiding it would turn
+/// the macro question into a coin flip.
+pub fn is_brush(node : Int) -> Bool {
+  node_lane[node] == "jungle"
+}
+
+///|
+/// Every brush node, in id order. For the observation, and for the tests that
+/// check the set is neither empty nor the whole map.
+pub let brush_nodes : Array[Int] = {
+  let out : Array[Int] = []
+  for i in 0..<N_NODES {
+    if is_brush(i) {
+      out.push(i)
+    }
+  }
+  out
+}
+
+///|
 /// What one tick of farming pays at a node, in gold. Lane minions are safe but
 /// thin; a jungle camp pays better and is off-lane, which is the trade that
 /// makes a jungler a distinct role rather than a fourth laner.

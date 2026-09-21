@@ -379,6 +379,10 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     }
   }
   let (worst_lane, worst_ticks) = self.lane_under_pressure(team)
+  let brush_list = []
+  for n in brush_nodes {
+    brush_list.push(Json(node_names[n]))
+  }
 
   Json({
     "game": Json(
@@ -436,6 +440,10 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     "map": Json(
       "Each lane runs a_base - a2_LANE - a1_LANE - mid_LANE - b1_LANE - b2_LANE - b_base. a_jg_top and a_jg_bot touch team A's lanes and the river; b_jg_top and b_jg_bot do the same for team B. riv_top (Baron) touches mid_top, mid_mid and both top jungles; riv_bot (Dragon) touches mid_bot, mid_mid and both bottom jungles.",
     ),
+    "brush_rule": Json(
+      "The four jungle nodes are BRUSH. Standing next to a brush shows you nothing inside it, and standing IN one shows you the nodes around it as normal — so a champion waiting in a brush is invisible to everyone outside it, and can see who is walking past. A ward placed in a brush is the only way to watch it from outside. Every node listed under nodes_you_are_blind_to could be holding enemies; a brush next to a lane you are pushing is where they would be.",
+    ),
+    "brush_nodes": Json(brush_list),
   })
 }
 

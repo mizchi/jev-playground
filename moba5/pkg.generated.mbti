@@ -98,6 +98,8 @@ pub fn bench_suite() -> Array[Scenario]
 
 pub fn blink_targets(Int) -> Array[Int]
 
+pub let brush_nodes : Array[Int]
+
 pub fn camp_gold(Int) -> Int
 
 pub fn camp_xp(Int) -> Int
@@ -121,6 +123,8 @@ pub fn fight_scenarios(RetreatWording) -> Array[Scenario]
 pub fn forced_overlap(Int, Int, Int) -> Int
 
 pub fn hops(Int, Int) -> Int
+
+pub fn is_brush(Int) -> Bool
 
 pub fn item_of(String) -> Item?
 
