@@ -609,3 +609,91 @@ export function permutation(
   }
   return { diff: observed, p: extreme / maxSplits, splits: maxSplits, exact: false };
 }
+
+export interface Paired {
+  /** The observed mean of `a - b` across the pairs. */
+  diff: number;
+  /** Two-sided p from enumerating every sign flip. */
+  p: number;
+  /** Pairs that were not ties. A tie carries no sign and is dropped. */
+  n: number;
+  /** How many sign assignments were considered, `2^n` when exact. */
+  splits: number;
+  exact: boolean;
+  /** How many pairs had `a > b`. Reported because a p hides the direction. */
+  wins: number;
+  /** The best p this many pairs can produce: `2 / 2^n`, the instrument's floor. */
+  floor: number;
+}
+
+/**
+ * An exact two-sided PAIRED permutation test -- every sign flip enumerated.
+ *
+ * PRE-REGISTERED, and the timestamp matters more than the code: this was
+ * written and committed while docs/56's sweep was still running and before any
+ * of its numbers existed. A test chosen after seeing the data is a test
+ * chosen to produce an answer, which is the defect this programme keeps
+ * finding in its own reports.
+ *
+ * WHY PAIRED, AND WHY DOCS/55 COULD NOT BE. docs/55's `- [x]` comparison had 5
+ * open runs against 8 done ones drawn from two sections of one file, so
+ * nothing paired a specific open task with a specific done one and
+ * `permutation` above is the right instrument for it. docs/56's sample is
+ * built as pairs by construction -- one open and one done item from the SAME
+ * section of the same file of the same repository, 16 of them, one per
+ * repository. That is what a paired test needs, and pairing is the whole
+ * reason the sample was drawn that way.
+ *
+ * Under the null the tick is exchangeable WITHIN a pair, so each pair's
+ * difference could equally have carried the opposite sign. With 16 pairs
+ * there are 2^16 = 65,536 assignments and the entire distribution is
+ * enumerable, so no sampling and no distributional assumption is needed.
+ *
+ * TIES ARE DROPPED, which lowers `n` and RAISES the floor: two runs that made
+ * exactly the same number of calls say nothing about the direction, and
+ * counting them as evidence either way would be counting a non-observation.
+ *
+ * `floor` is `2 / 2^n` -- the smallest two-sided p this many pairs can reach,
+ * because the two all-same-sign assignments are always at least as extreme as
+ * anything observed. At 16 pairs that is 0.0000305; at 5 pairs it is 0.0625,
+ * so a "p > 0.05" from five pairs is the instrument and not a finding. It is
+ * returned rather than left for a reader to work out, because docs/55 §5
+ * needed exactly this number to keep its null honest.
+ */
+export function pairedPermutation(
+  pairs: readonly { a: number; b: number }[],
+  maxSplits = 1 << 22,
+): Paired {
+  const deltas = pairs.map((p) => p.a - p.b).filter((d) => Math.abs(d) > 1e-12);
+  const n = deltas.length;
+  if (n === 0) {
+    return { diff: Number.NaN, p: Number.NaN, n: 0, splits: 0, exact: false, wins: 0, floor: Number.NaN };
+  }
+  const observed = mean(deltas);
+  const wins = deltas.filter((d) => d > 0).length;
+  const atLeast = (d: number): boolean => Math.abs(d) >= Math.abs(observed) - 1e-12;
+  const total = 2 ** n;
+  const floor = 2 / total;
+  if (total <= maxSplits) {
+    let extreme = 0;
+    for (let mask = 0; mask < total; mask += 1) {
+      let sum = 0;
+      for (let i = 0; i < n; i += 1) sum += (mask >> i) & 1 ? -deltas[i] : deltas[i];
+      if (atLeast(sum / n)) extreme += 1;
+    }
+    return { diff: observed, p: extreme / total, n, splits: total, exact: true, wins, floor };
+  }
+  // Too many pairs to enumerate. Sampled with a fixed seed, and says so.
+  let state = 1;
+  const rnd = (): number => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x1_0000_0000;
+  };
+  let extreme = 0;
+  for (let s = 0; s < maxSplits; s += 1) {
+    let sum = 0;
+    for (let i = 0; i < n; i += 1) sum += rnd() < 0.5 ? -deltas[i] : deltas[i];
+    if (atLeast(sum / n)) extreme += 1;
+  }
+  return { diff: observed, p: extreme / maxSplits, n, splits: maxSplits, exact: false, wins, floor };
+}

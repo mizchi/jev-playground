@@ -1,0 +1,2319 @@
+{
+  "note": "Does widening docs/55's roster produce a corpus? The candidates are the distinct GitHub repositories behind the packages docs/49 harvested, so the list is a rule over an existing corpus rather than a set chosen for this question. Clone and count only: no API key, no agent.",
+  "rule": "every distinct GitHub repository named by the `repository` field of a package in records/scripts.json (docs/49's harvest), read from the copy already in node_modules",
+  "rows": [
+    {
+      "repo": "aws/aws-sdk-js-crypto-helpers",
+      "via": [
+        "@aws-crypto/crc32"
+      ],
+      "cloned": true,
+      "head": "d174c9d140211c414ce261a17ebb15c583ba05d0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "aws/aws-sdk-js-v3",
+      "via": [
+        "@aws-sdk/client-bedrock-runtime",
+        "@aws-sdk/core",
+        "@aws-sdk/credential-provider-env",
+        "@aws-sdk/credential-provider-http",
+        "@aws-sdk/credential-provider-ini",
+        "@aws-sdk/credential-provider-login",
+        "@aws-sdk/credential-provider-node",
+        "@aws-sdk/credential-provider-process",
+        "@aws-sdk/credential-provider-sso",
+        "@aws-sdk/credential-provider-web-identity",
+        "@aws-sdk/eventstream-handler-node",
+        "@aws-sdk/middleware-eventstream",
+        "@aws-sdk/middleware-websocket",
+        "@aws-sdk/nested-clients",
+        "@aws-sdk/signature-v4-multi-region",
+        "@aws-sdk/token-providers",
+        "@aws-sdk/types",
+        "@aws-sdk/util-locate-window",
+        "@aws-sdk/xml-builder"
+      ],
+      "cloned": true,
+      "head": "d6b94db8f4a00cc452dbe0aacb247e8ece3897ea",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "awslabs/aws-lambda-invoke-store",
+      "via": [
+        "@aws/lambda-invoke-store"
+      ],
+      "cloned": true,
+      "head": "453ddec62ed06703ec00602a696bd21f061af35d",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "awslabs/smithy-typescript",
+      "via": [
+        "@smithy/is-array-buffer",
+        "@smithy/util-buffer-from",
+        "@smithy/util-utf8"
+      ],
+      "cloned": true,
+      "head": "596456b8cbdad74494a83f57e937b2491434b80b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "badlogic/clipboard",
+      "via": [
+        "@mariozechner/clipboard"
+      ],
+      "cloned": true,
+      "head": "3a0f58eb7250a9a46ad77863bc4618eee099a248",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "beatgammit/base64-js",
+      "via": [
+        "base64-js"
+      ],
+      "cloned": true,
+      "head": "303e81353e21339da09adb1e2fc0da74626bd8b2",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "bowser-js/bowser",
+      "via": [
+        "bowser"
+      ],
+      "cloned": true,
+      "head": "c1208b4a56ced2fcc1e03b017d067989e72bfd3a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "brianloveswords/node-jwa",
+      "via": [
+        "jwa"
+      ],
+      "cloned": true,
+      "head": "1b54a3b01eac95bd9250f1477b5380ae98532734",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "Brightspace/node-ecdsa-sig-formatter",
+      "via": [
+        "ecdsa-sig-formatter"
+      ],
+      "cloned": true,
+      "head": "858e622c746a4ca6e77e83242597c15beba33746",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "dchest/fast-sha256-js",
+      "via": [
+        "fast-sha256"
+      ],
+      "cloned": true,
+      "head": "3aef11eb8222f819dc255996d86ba976f205dca2",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "debug-js/debug",
+      "via": [
+        "debug"
+      ],
+      "cloned": true,
+      "head": "f405ade8a4b7a0dc353e0f7390c1be90060f3621",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "earendil-works/pi",
+      "via": [
+        "@earendil-works/chord",
+        "@earendil-works/pi-agent-core",
+        "@earendil-works/pi-ai",
+        "@earendil-works/pi-coding-agent",
+        "@earendil-works/pi-tui"
+      ],
+      "cloned": true,
+      "head": "c7cdb460aa8a0cebef3446c4166729b8a0d97ead",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "evanw/esbuild",
+      "via": [
+        "esbuild"
+      ],
+      "cloned": true,
+      "head": "f6058f8364fe7ab91ca57a83e02577ed74c9cae4",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "feross/safe-buffer",
+      "via": [
+        "safe-buffer"
+      ],
+      "cloned": true,
+      "head": "bc5ead0f17e0da69bb97f727d19787778b738acc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "goinstant/buffer-equal-constant-time",
+      "via": [
+        "buffer-equal-constant-time"
+      ],
+      "cloned": true,
+      "head": "c4f462b812870d3bf16606e6fdcf4e04da005a1e",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "googleapis/google-cloud-node-core",
+      "via": [
+        "gaxios",
+        "gcp-metadata",
+        "google-auth-library",
+        "google-logging-utils"
+      ],
+      "cloned": true,
+      "head": "76ba85a7f55c6e82943008b4eceb07a0f58b39e1",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "googleapis/js-genai",
+      "via": [
+        "@google/genai"
+      ],
+      "cloned": true,
+      "head": "f97113fbbd59f79178be1878c3096899cc1e4ec0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "isaacs/isexe",
+      "via": [
+        "isexe"
+      ],
+      "cloned": true,
+      "head": "2e7df7dabc4f68e88cf6b32b9029225ba52c6b0c",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "isaacs/node-graceful-fs",
+      "via": [
+        "graceful-fs"
+      ],
+      "cloned": true,
+      "head": "f7a43701434b3e8f1c3c9fe9df972330de8b7ecb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "isaacs/node-lru-cache",
+      "via": [
+        "lru-cache"
+      ],
+      "cloned": true,
+      "head": "7e71a1f3babdc68dfbadde91f28eaeea919dad9b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "isaacs/node-which",
+      "via": [
+        "which"
+      ],
+      "cloned": true,
+      "head": "2009c9dce0e9b0dae024192731987df752c6b4f0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "jimmywarting/FormData",
+      "via": [
+        "formdata-polyfill"
+      ],
+      "cloned": true,
+      "head": "820421ba9ee291cbf6b1b21aaa14ae1846d7c66c",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "juliangruber/balanced-match",
+      "via": [
+        "balanced-match"
+      ],
+      "cloned": true,
+      "head": "1c781ffdd29e5c4840221e6bf1f201ce316de600",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "justmoon/node-extend",
+      "via": [
+        "extend"
+      ],
+      "cloned": true,
+      "head": "91f405025821e071192e49e73368890d4275178f",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "kaelzhang/node-ignore",
+      "via": [
+        "ignore"
+      ],
+      "cloned": true,
+      "head": "821765efdf7752b186a03ed0450d9ee013cee099",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "kpdecker/jsdiff",
+      "via": [
+        "diff"
+      ],
+      "cloned": true,
+      "head": "bb6a976facc89cbd7daa8b5dd29bac864310ea89",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "markedjs/marked",
+      "via": [
+        "marked"
+      ],
+      "cloned": true,
+      "head": "7f7a49670c14acc6f11efcb18ecc69d17962477a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "MattiasBuelens/web-streams-polyfill",
+      "via": [
+        "web-streams-polyfill"
+      ],
+      "cloned": true,
+      "head": "c195d07523404e56c45aebb96419590b0cc7390a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "microsoft/TypeScript",
+      "via": [
+        "typescript"
+      ],
+      "cloned": true,
+      "head": "f29aeb9f825d96feea27841f3f7342dbf0df68a8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "moxystudio/node-cross-spawn",
+      "via": [
+        "cross-spawn"
+      ],
+      "cloned": true,
+      "head": "77cd97f3ca7b62c904a63a698fc4a79bf41977d0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "moxystudio/node-proper-lockfile",
+      "via": [
+        "proper-lockfile"
+      ],
+      "cloned": true,
+      "head": "9f8c303c91998e8404a911dc11c54029812bca69",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "NaturalIntelligence/fast-xml-builder",
+      "via": [
+        "fast-xml-builder"
+      ],
+      "cloned": true,
+      "head": "87912ce19cf2cbfc50be8fc023b4184be2c15f81",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "NaturalIntelligence/fast-xml-parser",
+      "via": [
+        "fast-xml-parser"
+      ],
+      "cloned": true,
+      "head": "bb2ec6ce4bfc3f62d621df6e6bf2b3152965175a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "NaturalIntelligence/path-expression-matcher",
+      "via": [
+        "path-expression-matcher"
+      ],
+      "cloned": true,
+      "head": "2f933682011d047b6c62d37376f2f433d3f02826",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "NaturalIntelligence/strnum",
+      "via": [
+        "strnum"
+      ],
+      "cloned": true,
+      "head": "117d6a5f59fbb8f29d2f88c0c292d7dc44d67a7f",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "NaturalIntelligence/xml-naming",
+      "via": [
+        "xml-naming"
+      ],
+      "cloned": true,
+      "head": "0330d0cfa57ee483a834c474b2d0a4f0449ee81d",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "nodable/val-parsers",
+      "via": [
+        "@nodable/entities"
+      ],
+      "cloned": true,
+      "head": "d2070d76a8ba07e6c7fa142caeb51ffd756e47eb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "node-fetch/fetch-blob",
+      "via": [
+        "fetch-blob"
+      ],
+      "cloned": true,
+      "head": "a1a182e5978811407bef4ea1632b517567dda01f",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "node-fetch/node-fetch",
+      "via": [
+        "node-fetch"
+      ],
+      "cloned": true,
+      "head": "8b3320d2a7c07bce4afc6b2bf6c3bbddda85b01f",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "nodejs/undici",
+      "via": [
+        "undici"
+      ],
+      "cloned": true,
+      "head": "7ce2cc15bc9e59baf48362cdf2af1415937d2258",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "npm/hosted-git-info",
+      "via": [
+        "hosted-git-info"
+      ],
+      "cloned": true,
+      "head": "8c3bebb5e42142b7bce06b085b4c1bd1adba7371",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "promplate/partial-json-parser-js",
+      "via": [
+        "partial-json"
+      ],
+      "cloned": true,
+      "head": "86fd4bcbff1e32f80dd33e62318221702905a8f0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "sidorares/json-bigint",
+      "via": [
+        "json-bigint"
+      ],
+      "cloned": true,
+      "head": "8208aa1352eba252b60756672ab7c17f300d6ccd",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "smithy-lang/smithy-typescript",
+      "via": [
+        "@smithy/core",
+        "@smithy/credential-provider-imds",
+        "@smithy/fetch-http-handler",
+        "@smithy/node-http-handler",
+        "@smithy/signature-v4",
+        "@smithy/types"
+      ],
+      "cloned": true,
+      "head": "596456b8cbdad74494a83f57e937b2491434b80b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "StableLib/stablelib",
+      "via": [
+        "@stablelib/base64"
+      ],
+      "cloned": true,
+      "head": "fc5ed95550b1deba7fa2f1418a174fa003546465",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "standard-webhooks/standard-webhooks",
+      "via": [
+        "standardwebhooks"
+      ],
+      "cloned": true,
+      "head": "7537d2a2d3d52d8f2e0ecd12527af4a9307fd81b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "ThomasAribart/json-schema-to-ts",
+      "via": [
+        "json-schema-to-ts"
+      ],
+      "cloned": true,
+      "head": "5a7fcd43cf26ab25bd9bb0fb4084327c31a41c90",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "ThomasAribart/ts-algebra",
+      "via": [
+        "ts-algebra"
+      ],
+      "cloned": true,
+      "head": "f5c78d0a03e4b68dfd299c1fe24296e41dad12f8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "tim-kos/node-retry",
+      "via": [
+        "retry"
+      ],
+      "cloned": true,
+      "head": "11efd6e4e896e06b7873df4f6e187c1e6dd2cf1b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "TooTallNate/node-data-uri-to-buffer",
+      "via": [
+        "data-uri-to-buffer"
+      ],
+      "cloned": true,
+      "head": "4826df1a041d6d641fc46604edc50f5b2c7dc13d",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "TooTallNate/proxy-agents",
+      "via": [
+        "agent-base",
+        "https-proxy-agent"
+      ],
+      "cloned": true,
+      "head": "4813885d3f4e2ff837878ceffdba656a71dc31f0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "websockets/ws",
+      "via": [
+        "ws"
+      ],
+      "cloned": true,
+      "head": "73e03eb35b1a84a3b28f906bab6a359231660695",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "dcodeIO/long.js",
+      "via": [
+        "long"
+      ],
+      "cloned": true,
+      "head": "e1bcb4f65096465b69f0fd67e68fc2a79a67ade9",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "dcodeIO/protobuf.js",
+      "via": [
+        "@protobufjs/aspromise",
+        "@protobufjs/float"
+      ],
+      "cloned": true,
+      "head": "0ad9a28adec14a7f181333b59454ee5e96f41e14",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "highlightjs/highlight.js",
+      "via": [
+        "highlight.js"
+      ],
+      "cloned": true,
+      "head": "fc3f06392f189354eed922973635ab9e9268b983",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "MikeMcl/bignumber.js",
+      "via": [
+        "bignumber.js"
+      ],
+      "cloned": true,
+      "head": "02109ca2749538d57551cdcc7e38585db111b4bb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0,
+      "source": "packages"
+    },
+    {
+      "repo": "mizchi/vibe-lang",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "71f6cce2b1c527901caaa6428b969189c2a1e914",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/vlmkit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "ecb56080795e32b978a6a261afc716663cbb7ab4",
+      "trackedFiles": 2,
+      "open": 138,
+      "done": 398,
+      "matchedSections": 10
+    },
+    {
+      "repo": "mizchi/moonlight",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "205080e447d677a593a4f62b647b66739c24065a",
+      "trackedFiles": 2,
+      "open": 5,
+      "done": 11,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/ts.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "e98d1b84ec1719e4be656c8738623f302a652160",
+      "trackedFiles": 1,
+      "open": 22,
+      "done": 337,
+      "matchedSections": 7
+    },
+    {
+      "repo": "mizchi/jev-lint",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8e282625ec8dab205f80599c77ed778daec25275",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/jev-test-filter",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "01319cdc2bb897a91b90c5c1685359332a66bc21",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/jev-lexer",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "cafe79f4d1f5391215ea15bc44676abfae70deef",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/crater",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "e7f8a0a6082e6b74e866ba530dbfb689c1ecf98e",
+      "trackedFiles": 2,
+      "open": 36,
+      "done": 30,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/skills",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a3f2f1bac20fc500c2688ffe6ca4ce048d0cfedc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/chaosbringer",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "b85ec8ffdb43bf8c49066842be95bb20d1e80d35",
+      "trackedFiles": 1,
+      "open": 1,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/gfx-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "1aec97a83ab1e7d0c924c400f0e5494f8ac3c1ca",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/jev-gomoku",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "82b3afdc7632b30c110266b975b09e2040906fba",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/actrun",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "1db9aff5b364de6eacda68e3f2ce2238f9992272",
+      "trackedFiles": 1,
+      "open": 5,
+      "done": 136,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/markdown.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "aceffd2190b38a9175165ad894581f1040c92e4d",
+      "trackedFiles": 2,
+      "open": 8,
+      "done": 24,
+      "matchedSections": 1
+    },
+    {
+      "repo": "mizchi/admiral",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a7f2091aef75dd7cb748c5a0de662487cba686b4",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/prdt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f1405009a931b841148acdf1964436653eb82bcb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/sample-webapp-2026",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "1e79eaf528b803b30d22f9f6c22b64fef3249305",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/uneffect",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "318409a52ef36dad60b3235faaab2a2355b01e00",
+      "trackedFiles": 1,
+      "open": 72,
+      "done": 1346,
+      "matchedSections": 10
+    },
+    {
+      "repo": "mizchi/webnn-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "fd8520d46301f8f27a513efa58f0a6a9ad548a12",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/js.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8c9e27de7c81ab3ebf3a9cbe75590c7349317e0c",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/npm_typed.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6ccdbbb9b03c0cfc6a6a9969e6ea8427ba14d5d0",
+      "trackedFiles": 3,
+      "open": 0,
+      "done": 8,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/formal-methods-playground",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "d5dc0265705ce2ca0b5bb2f7fcec3ad13d67be55",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/luna.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "874f0f34e77d6800cd9aab611b0a441d9d8d3ffe",
+      "trackedFiles": 1,
+      "open": 35,
+      "done": 9,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/cloudflare.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "575da27df27e0342813143ed17cce470960fbf73",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/converge_audit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "cf04e73c3c4f78a602b3fe9282e58229587a7a30",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/veri",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "78d658b7434649b43e755e765462494690a072af",
+      "trackedFiles": 1,
+      "open": 6,
+      "done": 38,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/kagura",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6aebda9021437a0029138466550256d09a477e36",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/odenctl",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "bdcceb155d90ba3260f4a5ae4ad681ee334335b6",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mizchi",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "92b17aab1a12080e57092ac374058390adbcbe5f",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mars.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "ff4485e0309a8532d03002eb588ab06dcd252848",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/x",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "d75653b21707eb2c791b2465d1613f98115b8114",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/playwright.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6146e6bf110a781a1d934ece77e7016f1c548e5c",
+      "trackedFiles": 1,
+      "open": 19,
+      "done": 25,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/tui.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "e6a361f0887b89e821c5eae5b8fe99160e770bdc",
+      "trackedFiles": 1,
+      "open": 2,
+      "done": 4,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/three-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "bcb6352abf2cc620184f1c1d75a857e523a60cdc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wit.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "fc295ef817ebd453ae23c315e5f9ccb15e7d4415",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/modeling-playground",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "aa7ab3ea9ed08e457b574547e27f4b0c8e463f04",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/v8.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f985cb4d38c4260b0e3009e01b0245118b294f7f",
+      "trackedFiles": 2,
+      "open": 0,
+      "done": 32,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/jsimd",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2cf51e8885314764dcb44b6469899d95f204b148",
+      "trackedFiles": 1,
+      "open": 24,
+      "done": 61,
+      "matchedSections": 5
+    },
+    {
+      "repo": "mizchi/pkl-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2027c68c9021310d75ff6108104375f6a0a0713f",
+      "trackedFiles": 2,
+      "open": 206,
+      "done": 98,
+      "matchedSections": 1
+    },
+    {
+      "repo": "mizchi/pixel-lab",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "acde9682e9d3a6b8712e1781d4c57c3bb969eb97",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/sprawlens",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c6d84040ae216bad6d7c0adab5440f9f6e1ee4f2",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/pkfire",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "522232706a4cb4aeb6ab76a6749cf1d6676845b2",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/nn",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f65798d19a0fae5b84dc338ebd6e948e7b903c88",
+      "trackedFiles": 2,
+      "open": 10,
+      "done": 19,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/cst.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "ccdda46202b6261dc47bf4e9138d278fcca1c398",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/similarity.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a9084efcd92372bbf02264a1fddcb8291bce6bdc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/process_pool.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "71820694749182ecb78fc90bd72c09e696ab6d3c",
+      "trackedFiles": 2,
+      "open": 0,
+      "done": 2,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/sqlc_gen_moonbit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8fa8213b1b4eb33325e5c5045d330daf11eade2d",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 4,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moonbit-gardening",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c451956859fbc2bcd1856dc716ff3bfee2bf4f5b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/canvas-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "67c41c584f96b601c141eabc735e1b3b30717ab1",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/llm",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8ff08f81f8ecaa5b1b22c94b16a121d151455efa",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/glfw-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6254324deec5e42cb102b83da6effdb0f9a8dc1a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/font",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "59ffb553b04d4334326ed073e562c430d23685ee",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/svg",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "ffe61008bd2bdf7913c78ee614e159e1b2e812a3",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moon-component",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "67741d56c1f87007253708165834d3f9c98867f4",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/brotli",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "45a96c8ee14c2c47c8bfbe51f47853722d0d14f7",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moonbit_jsonschema",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c58c2433df573960e432c5f9061dfe57b40169a1",
+      "trackedFiles": 1,
+      "open": 2,
+      "done": 3,
+      "matchedSections": 1
+    },
+    {
+      "repo": "mizchi/moonix",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "0bc244bafd565f2db5a10a20a16f5646124c9b2c",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 11,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wite",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f14cf61ad484992d8a7aaeb932efc317146d0bec",
+      "trackedFiles": 2,
+      "open": 18,
+      "done": 83,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/lsp.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "36edcd68e37efeeb83de2f3d4d5645b07822d657",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/syntree.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "0492c077be93ff5aa3b51a53e0f0ebc17f025844",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/numbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "328c89315d8130ddf76d5226d3323fec3ec92839",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/blas",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "9ff8fe8795d9159543671dcc2fcd6a8789eefdc7",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/semver.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c1a84c256d22a39630e08c177a3ff04da558b350",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/vfs",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "b3c4f6cdbfe30903d145017254e2e39a45eba8f3",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/layout",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2f914f599d49cb4b57a25242015098e485813671",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/image-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "970745aa1c8d02439a6ab458b9761a4feb2c3e93",
+      "trackedFiles": 1,
+      "open": 7,
+      "done": 12,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/zlib.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a9cb969b1c89616bd3ad33104e98ad0e2079c30b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/dspec",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a7dde632a6d79d747608749043fb247b53fd76c7",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/meandb",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a089dbc38ad4e11fc6463d3f294ea4c30b392124",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/quint-connect-moonbit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a8e24e3ed972c40e453dcba6dcb8fa8c025a3bfc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/converge",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "373b0b0d2217065f4209202d39ca89c4e7bfc73a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moomaid",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "47eac210ee2ff31245e2fb0145f14aabb27c72b5",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/rkyv-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c43572f953dd760dc473579e82eb1b15a656667b",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/effectts-vs-moonbit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2821c6bd849780e6d9100c720394a0c881e5b3fb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/vite-plugin-moonbit",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "77d0c496c4edcd5aa35c040389d7268268363eb5",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/folddown",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6ccb1d8f9b6bda8b34134e8e42eecf39163894b1",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mayo",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "5d626a1f5fa567654d51295ca392332348430547",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/simd",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6d9ddf8750007b93274afefce04305a0b58e1049",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/hermes-reports",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "5653a9d1798369c5f99e5b461439b6e44d554e30",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/helix-wasm",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "4af434e42b9080249d81da268ade7c324676b363",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/pixelmatch",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2722c80d7ae3da6fcdcd92e52f6477200da012bb",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/css",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "13df751b0664177444a760e12ca1056697686c40",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moon-pprof",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "bb91eaa8bf35df975b3e3d67b12965202cf5ed39",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/project-template",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a2c901661492da663d5a011d18f8b8d534eb7f89",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/playwright-playground",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8d2a6c4893b988bd11beb177d5d8429e4c872c25",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/pkspec",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "0d4540b29bfd9bd8eb1b3a9635e5d7306d2116e3",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/chezmoi-dotfiles",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "66b3021f2b6c28eeeab854336d64a8d2bd1246dc",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/lightbringer",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "b0a061f38832b489e843b55eceacb17bedecf1c0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/differentiable_ecs",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "459645ef30860a0b95839053ca4401f6842fd7ca",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/experimental_crypto",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "d5a3c7005515a02fd9a0260cffaae7b738e69f6b",
+      "trackedFiles": 1,
+      "open": 15,
+      "done": 55,
+      "matchedSections": 3
+    },
+    {
+      "repo": "mizchi/ripple",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a207cc54480420f28255056b9974bb0ea6061188",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/ts-fuzzing",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8171122d383e2c8775e4d2fa42d4bd34e9be7063",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/cloudflare-starterkit-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "44f2a826f35fc0a5ae39bb59e4f38fd97c91c83d",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/k1c",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "80e2568696a4b655b74296f2699e5ce25b17c90c",
+      "trackedFiles": 1,
+      "open": 12,
+      "done": 47,
+      "matchedSections": 2
+    },
+    {
+      "repo": "mizchi/webdriver.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "7e96345163a7a16b69878341e949e83cfb399287",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 19,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moonbit-template",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2b214cc0f58f299ed34a7dca099b683fd322bd82",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/flaker",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "274105c68e099adc7637c85f8ef9d7133362224f",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 44,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/ast_printer.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "80aae42a45f82dc156953a689e1ad1397f7940d3",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/sandbox.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c7368c9546bff9052a02a52786cf0110a9c45540",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/jq",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "81a3123b5dfb886dde01ee1dd05f28c7f124dda4",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/nom.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "87edfed53f4b6a86f6848b82d833bdbe7eeaf8f9",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/dicord.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "545466b39aee623a6925628a25983746ef22ac5c",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wacon",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "b9e04f165ca3d3843602999b7223a5da3d23c437",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/tornado",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "83e41426ac518d1f012ce4fade2b215f1cc7f589",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/audio-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f57bffe7dea9d41173784ea6abba13fd5a8454a2",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 15,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wasmtime.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "cebb845269ac732a417af6dd2294c672a41a9cad",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/parquet",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "86fe2c0c8b60dec3086fe51befac99175fc7a580",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/sqlite.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2758ae427e2afd640bfe9c5a24885bdf0efaf0ad",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mwac",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6671cd23c1dcd1d21f5ed8818182f45ff28fa0d0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/similarity",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "36568489d462aa70d383eab566345d525c0ad726",
+      "trackedFiles": 1,
+      "open": 10,
+      "done": 1,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/libghostty-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "03585019806f4b521d047ce63324bec6e8872ef0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/libghostty",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "03585019806f4b521d047ce63324bec6e8872ef0",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/try_mbtp",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "5249c95b590186f27a466991e5e71187cebb015e",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/s3",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "fb526cf625afa670db04119c5db2e2fb206e6faa",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/bitflow",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "186faa4b0682849314f2ab6f1381e803bea9cd43",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/starlint",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "a3121dbd41ce8598a64c34416b42524be618bdaa",
+      "trackedFiles": 1,
+      "open": 20,
+      "done": 13,
+      "matchedSections": 1
+    },
+    {
+      "repo": "mizchi/browser-push-test",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "801f5432ad1f585ea67f64106aebcf61f5a6bdc8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mbt-blockly",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "229f91a25f9f70d1ec4c18a2341b32cb20e24859",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mbt_rs",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "532a98f9bbf10177a6178f583c0448583f138d36",
+      "trackedFiles": 1,
+      "open": 12,
+      "done": 12,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/ast_printer",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "8c3c2ad16d19b61a5f0a985469a4065bb35762a8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/threads-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "924ceabca548f55bfbd3cdcfc5a4cfdd710e5887",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 38,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/repro_abort_size",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "697bdfa9a85da4c442699975d2a16f8cfb2c1dd9",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/signals.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "aef6d02ee0190ca0d2a28ba66f6c89fc18edb93e",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/test-elixir",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "36b826e23fc813eeff54853d13276d57fd23236e",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/terrain",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "185d14f46e54746fd2b03bfc240312016a3c469f",
+      "trackedFiles": 1,
+      "open": 0,
+      "done": 24,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/differencial_ecs",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "43ca8528d86681994e508785c782e9532c8492a1",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/tomate",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "2487f936921c9735520de4f2c3e719f64bce9454",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moonbit-runner-assets",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "b15d8b3d315c80a545767bbcf0df653dd93d717a",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/whisper-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "4507ac5013667f2c4d06f5b1a9c08534b736bb4d",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/rlm-dspy",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "505fa07d0990af2e66c7a90971aeb71ba326d387",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/mbts",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "4a877ec6ec9ddd4d0594d6f08ed9beda3076fd57",
+      "trackedFiles": 2,
+      "open": 1,
+      "done": 33,
+      "matchedSections": 1
+    },
+    {
+      "repo": "mizchi/whenwords-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "6a369e9eba100e525aacf6e432c8cdd4144185d6",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wasi_interface",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "f8a737628eadaa33b4eb572bda5becbaa9e4c6fe",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/oci_wasm",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "289cace45af7f551814853fc9e2985de5ee7d59c",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wasi.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "770c2222ce021283d9b86ef55f4286c8e852db0e",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/tempfile.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "18dac89e6f2efc9de76d0915b2223c0c9d4ddae8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/codegen.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "c931268950d986e78724530f3d99dfc5a90cb5d8",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/discord-cf-mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "70236b31809ed520cc6345da542d93f3ee6f16a6",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/wit-bindgen.mbt",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "e37b56c742c1a424a3a26b20c0469f1c38304083",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/moonc-js",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": "ec5630beb24bef21bb467fad09021485ecef6340",
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    },
+    {
+      "repo": "mizchi/lsp",
+      "source": "account",
+      "via": [],
+      "cloned": true,
+      "head": null,
+      "trackedFiles": 0,
+      "open": 0,
+      "done": 0,
+      "matchedSections": 0
+    }
+  ]
+}

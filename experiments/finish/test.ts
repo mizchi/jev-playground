@@ -34,8 +34,13 @@ import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
 // ALIASED for the same reason as INTENT_ARMS above: `corpus` is already
 // fanout.ts's harvest, and wild.ts exports one too.
-import { corpus as wildCorpus, fencePrefixes, headMatch, matched, promptFor, sectionKey, tasksIn } from "./src/wild.js";
-import { permutation } from "../shared/thresholds.js";
+import { corpus as wildCorpus, fencePrefixes, headMatch, matched, pairGaps, pairs, promptFor, sectionKey, tasksIn, type Task } from "./src/wild.js";
+import { pairedPermutation, permutation } from "../shared/thresholds.js";
+// Aliased for reading, not to dodge a clash -- nothing else here exports
+// `candidates`. In a file importing rosters from a dozen modules the bare name
+// would not say which one, and the two aliases above are what that costs.
+import { candidates as widenCandidates, reconcile } from "./src/widen.js";
+import { SWEEPS, harnessReach, pathWithToolchains } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1450,33 +1455,41 @@ check("every fenced command lands in a named class, so the table cannot lose one
    * for. So the table is derived from the command text now, and this is the
    * guard: a fenced command that no prefix matches would silently vanish from
    * a table whose total is printed separately.
+   *
+   * EVERY SWEEP'S RECORD, not just docs/55's. The widened sweep's very first
+   * pair produced 5 fence denials in one run -- as many as docs/55's whole
+   * 23-run sweep -- in repositories whose toolchains nothing here has seen.
+   * A prefix class that does not cover them is exactly what this guards, so
+   * checking one record and calling it covered would miss the case it is for.
    */
-  const p = resolve(import.meta.dirname, "records/wild.json");
-  if (!existsSync(p)) {
-    console.log("       (no records/wild.json yet -- the sweep has not run here)");
-    return;
-  }
-  const rec = JSON.parse(readFileSync(p, "utf8")) as {
-    rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
-  };
-  const fenced = rec.rows.flatMap((r) => r.calls).filter((c) => c.by === "fence");
-  eq(
-    fenced.length,
-    rec.rows.reduce((n, r) => n + r.fenced, 0),
-    "the per-row fence counts and the labelled ledger rows disagree: ",
-  );
-  for (const c of fenced) {
-    const got = fencePrefixes(c.command ?? "");
-    ok(
-      got.length > 0,
-      `a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+  let checked = 0;
+  for (const [name, sweep] of Object.entries(SWEEPS)) {
+    if (!existsSync(sweep.record)) continue;
+    const rec = JSON.parse(readFileSync(sweep.record, "utf8")) as {
+      rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
+    };
+    if (rec.rows.length === 0) continue;
+    checked += 1;
+    const fenced = rec.rows.flatMap((r) => r.calls).filter((c) => c.by === "fence");
+    eq(
+      fenced.length,
+      rec.rows.reduce((n, r) => n + r.fenced, 0),
+      `\`${name}\`: the per-row fence counts and the labelled ledger rows disagree: `,
     );
-    // And the fence's own rule must be the thing being classified.
-    ok(
-      got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
-      `classified a path the fence does not protect: ${got.join(",")}`,
-    );
+    for (const c of fenced) {
+      const got = fencePrefixes(c.command ?? "");
+      ok(
+        got.length > 0,
+        `\`${name}\`: a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+      );
+      // And the fence's own rule must be the thing being classified.
+      ok(
+        got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
+        `\`${name}\`: classified a path the fence does not protect: ${got.join(",")}`,
+      );
+    }
   }
+  if (checked === 0) console.log("       (no sweep record with rows yet -- nothing has run here)");
 });
 
 check("the clones' revisions are measured against the roster, never assumed equal", () => {
@@ -1643,6 +1656,240 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   // 1287, so a "p < 0.001" at this n would be the instrument, not the finding.
   ok(split.p >= 1 / 1287 - 1e-12, `the floor is 1/1287, got ${split.p}`);
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
+});
+
+check("the paired test docs/56 pre-registered is exact, and its floor is returned", () => {
+  /**
+   * PRE-REGISTERED: written and asserted while docs/56's sweep was still
+   * running, before any of its numbers existed. Two controls, because a test
+   * that cannot fail is not a test.
+   */
+  const flat = pairedPermutation([
+    { a: 5, b: 4 }, { a: 4, b: 5 }, { a: 6, b: 5 }, { a: 5, b: 6 },
+    { a: 7, b: 6 }, { a: 6, b: 7 }, { a: 8, b: 7 }, { a: 7, b: 8 },
+  ]);
+  ok(flat.p > 0.5, `pairs that cancel must not be significant, got p = ${flat.p}`);
+  eq(flat.wins, 4, "half the pairs go each way: ");
+  const same = pairedPermutation(Array.from({ length: 16 }, (_, i) => ({ a: 100 + i, b: i })));
+  eq(same.n, 16, "sixteen non-tied pairs: ");
+  eq(same.splits, 65_536, "every sign flip of 16 pairs must be enumerated: ");
+  ok(same.exact, "and reported as exact");
+  eq(same.wins, 16, "all sixteen in one direction: ");
+  // THE FLOOR, which is the number that keeps a null honest.
+  ok(Math.abs(same.floor - 2 / 65_536) < 1e-12, `the floor at 16 pairs is 2/65536, got ${same.floor}`);
+  ok(same.p >= same.floor - 1e-12, `no result may beat the floor, got ${same.p}`);
+  eq(same.p, same.floor, "all-one-direction must land exactly on the floor: ");
+  // TIES CARRY NO SIGN, so they lower n and RAISE the floor.
+  const tied = pairedPermutation([{ a: 3, b: 3 }, { a: 9, b: 1 }, { a: 8, b: 2 }]);
+  eq(tied.n, 2, "the tie is dropped rather than counted as evidence: ");
+  eq(tied.floor, 2 / 4, "and dropping it raises the floor to 1/2: ");
+  ok(Number.isNaN(pairedPermutation([{ a: 1, b: 1 }]).p), "all ties must not produce a p");
+  ok(Number.isNaN(pairedPermutation([]).p), "no pairs must not produce a p");
+  /**
+   * AND IT IS GENUINELY PAIRED, which is subtler than it looks. Re-pairing
+   * the same numbers cannot move the observed statistic at all -- mean(a - b)
+   * is `(sum a - sum b) / n`, and both sums are fixed. What re-pairing moves
+   * is the NULL DISTRIBUTION, because the sign flips act on the deltas. So
+   * the p changes while the difference does not, and a test whose p did not
+   * change here would be ignoring the pairing it claims to use.
+   */
+  const kept = pairedPermutation([{ a: 10, b: 1 }, { a: 8, b: 2 }, { a: 3, b: 9 }]);
+  const swapped = pairedPermutation([{ a: 10, b: 9 }, { a: 8, b: 1 }, { a: 3, b: 2 }]);
+  eq(kept.diff, swapped.diff, "re-pairing cannot move the observed difference: ");
+  eq(kept.p, 0.75, "deltas 9, 6, -6 against their own sign flips: ");
+  eq(swapped.p, 0.25, "the same six numbers paired differently: ");
+});
+
+check("an installed toolchain is reachable without naming a path the fence denies", () => {
+  /**
+   * THE DEFECT THAT COST SIX RUNS. `/root/.moon/bin/moon` is installed in this
+   * container and `moon` was not on PATH, so the only way to invoke it named a
+   * `/root/` path -- which the fence denies. The agent worked it out and ran
+   * `export PATH="$PATH:/root/.moon/bin" && moon ...` in four of six runs, and
+   * was denied every time (`records/widened-fenced-toolchain.json`).
+   *
+   * The fence's effect was ECOSYSTEM-DEPENDENT and that is why it hid: it was
+   * invisible for `cargo`, already on PATH, and total for `moon`, which was
+   * not. So the property under test is not "PATH contains some string" -- it
+   * is **every toolchain binary present in this container can be invoked by
+   * bare name**, which is what makes the fence's rule uniform across
+   * ecosystems rather than a hidden per-language handicap.
+   */
+  const binaries = [
+    ["/root/.moon/bin/moon", "moon"],
+    ["/root/.cargo/bin/cargo", "cargo"],
+  ] as const;
+  const path = pathWithToolchains();
+  let present = 0;
+  for (const [abs, name] of binaries) {
+    if (!existsSync(abs)) continue;
+    present += 1;
+    const dirs = path.split(":");
+    ok(
+      dirs.some((d) => existsSync(resolve(d, name))),
+      `\`${name}\` is installed at ${abs} but not reachable by bare name, so using it requires naming a path the fence denies`,
+    );
+  }
+  ok(present > 0, "no toolchain found to check -- this test would pass vacuously");
+  // And the fence must still deny what it denied before: adding a directory to
+  // PATH may not become a way to widen what a command may name.
+  for (const d of path.split(":")) {
+    ok(!d.includes(".."), `a PATH entry with traversal would defeat the fence: ${d}`);
+  }
+  // The abandoned record must stay abandoned: its rows are a different
+  // instrument and pooling them would be the confound this all avoided.
+  const dead = resolve(import.meta.dirname, "records/widened-fenced-toolchain.json");
+  if (existsSync(dead)) {
+    const a = JSON.parse(readFileSync(dead, "utf8")) as { rows: unknown[]; supersededBy?: string };
+    ok(a.supersededBy !== undefined, "an abandoned record must say what supersedes it");
+    if (existsSync(SWEEPS.widened.record)) {
+      const live = JSON.parse(readFileSync(SWEEPS.widened.record, "utf8")) as { rows: { ms: number }[] };
+      const overlap = live.rows.length > 0 && a.rows.length > 0;
+      ok(
+        !overlap || live.rows.length !== a.rows.length || JSON.stringify(live.rows) !== JSON.stringify(a.rows),
+        "the live record is a copy of the abandoned one, so the discarded instrument is still being reported",
+      );
+    }
+  }
+});
+
+check("a write into a harness clone tree would be caught, and none has happened", () => {
+  /**
+   * THE NUMBER THAT DECIDES WHETHER A RECORD IS STILL TRUSTWORTHY.
+   *
+   * `src/gate.mjs`'s docblock says the fence denies anything naming a path
+   * outside the sandbox. Its rule is `/home/` and `/root/` only, because
+   * "`/tmp`, `/usr`, `/opt` and friends are read-only traffic in practice" --
+   * and the harness puts every sandbox AND every clone tree under `/tmp`. The
+   * widened sweep walked straight into it: 12 calls read
+   * `/tmp/jev-wild-clones/mizchi-flaker`, docs/55's clone of a repository that
+   * is not in the widened roster.
+   *
+   * A read pollutes one run's traffic. A WRITE corrupts the tree every later
+   * run of that repository copies from, which would make the record after it
+   * untrustworthy without anything saying so. So the write count is asserted
+   * at zero, and the detector is checked against a synthetic row -- an
+   * assertion that only ever sees clean input proves nothing.
+   */
+  const synth = {
+    rows: [
+      { calls: [{ tool: "Bash", command: `cat ${SWEEPS.wild.clones}/o-r/src/x.mbt` }] },
+      { calls: [{ tool: "Write", path: `${SWEEPS.widened.clones}/o-r/TODO.md` }] },
+      { calls: [{ tool: "Bash", command: "cat ./src/x.mbt && ls /usr/lib" }] },
+      // Named three times in one command: one call, not three.
+      { calls: [{ tool: "Bash", command: `ls ${SWEEPS.wild.clones}/o-r; cd ${SWEEPS.wild.clones}/o-r; find ${SWEEPS.wild.clones}/o-r` }] },
+    ],
+  } as never;
+  const probe = harnessReach(synth);
+  eq(probe.calls, 3, "three of the four calls name a clone tree: ");
+  eq(probe.writes, 1, "and the detector must see the write tool among them: ");
+  eq(probe.byTree.find((t) => t.tree.endsWith("o-r"))?.calls ?? 0, 2, "per call, not per match: ");
+  // Now the real records: reads are a stated limit, a write is not acceptable.
+  for (const [name, sweep] of Object.entries(SWEEPS)) {
+    if (!existsSync(sweep.record)) continue;
+    const rec = JSON.parse(readFileSync(sweep.record, "utf8")) as { rows: { calls: { tool: string }[] }[] };
+    const got = harnessReach(rec as never);
+    eq(got.writes, 0, `\`${name}\`: a run wrote into a harness clone tree, so every later run of that repo copied a polluted tree: `);
+  }
+});
+
+check("the widened sample is one pair per repository, and nothing peeks at the text", () => {
+  /**
+   * THE SAMPLING RULE IS THE RESULT, so it is pinned here and was committed
+   * before the sweep ran. On a synthetic corpus, so it holds whether or not
+   * the clones are on disk.
+   *
+   * `big` has three matched sections and 40 done items; `small` has one
+   * matched section. A proportional sample would be `big` four times over.
+   */
+  const t = (repo: string, file: string, section: string, line: number, state: "open" | "done"): Task => ({
+    repo, rev: "deadbeef", file, section, line, state,
+    text: `${state} item at ${line} which is long enough to clear the floor`,
+  });
+  const synth: Task[] = [
+    // `big`: three matched sections, and one that holds no open item at all.
+    ...[10, 11, 12].map((l) => t("o/big", "TODO.md", "A", l, "open")),
+    ...[13, 14].map((l) => t("o/big", "TODO.md", "A", l, "done")),
+    t("o/big", "TODO.md", "B", 30, "done"), t("o/big", "TODO.md", "B", 31, "open"),
+    t("o/big", "docs/x.md", "C", 5, "open"), t("o/big", "docs/x.md", "C", 6, "done"),
+    ...[50, 51, 52].map((l) => t("o/big", "TODO.md", "NoOpen", l, "done")),
+    // `small`: one matched section. And `none`, which has no ticked item.
+    t("o/small", "TODO.md", "S", 9, "done"), t("o/small", "TODO.md", "S", 4, "open"),
+    t("o/none", "TODO.md", "N", 1, "open"),
+  ];
+  const one = pairs(1, synth);
+  eq(one.length, 2, "one pair is two tasks: ");
+  eq(one[0].state, "open", "the open arm comes first, so a cut sweep ends on whole pairs: ");
+  eq(one[1].state, "done", "and the done arm second: ");
+  // ROUND-ROBIN: the second pair must be the OTHER repository, not `big` again.
+  const two = pairs(2, synth);
+  eq(two[0].repo, "o/big", "repositories in name order: ");
+  eq(two[2].repo, "o/small", "one section each before any repository gets a second: ");
+  // The section with no open item cannot enter, and neither can `o/none`.
+  const many = pairs(99, synth);
+  ok(!many.some((x) => x.section === "NoOpen"), "a section with no open item is not a matched pair");
+  ok(!many.some((x) => x.repo === "o/none"), "a repository with nothing ticked cannot contribute");
+  eq(many.length, 8, "three matched sections in `big` plus one in `small`, both arms: ");
+  eq(many.filter((x) => x.state === "open").length, 4, "balanced by construction -- open: ");
+  eq(many.filter((x) => x.state === "done").length, 4, "and done: ");
+  // Every emitted pair really shares a section, which is the whole claim.
+  for (let i = 0; i + 1 < many.length; i += 2) {
+    eq(sectionKey(many[i]), sectionKey(many[i + 1]), `pair ${i / 2} must share a section key: `);
+  }
+  // FILE ORDER, then line: `docs/x.md` §C before `TODO.md` §A within `big`.
+  eq(pairs(99, synth).filter((x) => x.repo === "o/big")[0].file, "docs/x.md", "sections in file order: ");
+  // FIRST item by line in each arm, not first in document order: §S's open is
+  // at line 4 and appears after its done item at line 9 in the input.
+  const s = many.filter((x) => x.repo === "o/small");
+  eq(s[0].line, 4, "the open arm takes the lowest line: ");
+  eq(s[1].line, 9, "and so does the done arm: ");
+  // DETERMINISTIC, and independent of the text: shuffling the words in every
+  // task must not move a single selection.
+  const scrambled = synth.map((x) => ({ ...x, text: [...x.text].reverse().join("") }));
+  eq(
+    pairs(99, scrambled).map((x) => `${x.repo}:${x.line}`).join(","),
+    many.map((x) => `${x.repo}:${x.line}`).join(","),
+    "the rule must not read the task text: ",
+  );
+  // And the gap report is the pair's own line distance.
+  eq(pairGaps(pairs(1, synth))[0].gap, 1, "§C's two items are one line apart: ");
+});
+
+check("the widening record holds exactly the rows its rules name", () => {
+  /**
+   * The check that caught a row nobody selected. `widen.ts` resumes by
+   * carrying prior rows forward, so a name the rule stops producing survives
+   * every later run -- and one did: the first `candidates` regex cut
+   * `protobuf.js` to `protobuf`, `dcodeIO/protobuf` turned out to exist,
+   * cloned, harvested clean, and left 57 rows for a rule selecting 56.
+   *
+   * Three sibling typos failed to clone, so a clone failure was the only
+   * signal, and it does not cover the case where the wrong name is real. This
+   * does: re-derive both rosters and diff them against the record.
+   */
+  const rec = JSON.parse(readFileSync(resolve(import.meta.dirname, "records/widen.json"), "utf8")) as {
+    rows: { repo: string; source: "packages" | "account" }[];
+  };
+  for (const source of ["packages", "account"] as const) {
+    const rule = widenCandidates(source).rows.map((c) => c.repo).sort();
+    const rows = rec.rows.filter((r) => r.source === source).map((r) => r.repo).sort();
+    ok(rule.length > 0, `the \`${source}\` rule must name something`);
+    eq(rows.length, rule.length, `\`${source}\`: rows recorded vs rows the rule names: `);
+    const stray = rows.filter((r) => !rule.includes(r));
+    eq(stray.join(","), "", `\`${source}\`: rows the rule does not name: `);
+    eq(new Set(rows).size, rows.length, `\`${source}\`: distinct repositories recorded: `);
+  }
+  // And the pruning is a function, not a hand edit, so it is testable.
+  const residue = [
+    { repo: "dcodeIO/protobuf", source: "packages" as const },
+    ...rec.rows.filter((r) => r.source === "packages").slice(0, 2),
+  ] as never[];
+  const { rows: kept, dropped } = reconcile(residue, "packages");
+  eq(dropped.join(","), "dcodeIO/protobuf", "reconcile must drop the unnamed row: ");
+  eq(kept.length, 2, "and keep the ones the rule names: ");
+  // A row of the OTHER source is not this rule's to judge.
+  const other = reconcile([{ repo: "mizchi/vlmkit", source: "account" } as never], "packages");
+  eq(other.dropped.length, 0, "reconciling one source must not drop the other's rows: ");
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
