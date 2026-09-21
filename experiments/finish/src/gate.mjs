@@ -102,6 +102,38 @@ const base = {
 const sandbox = process.env.FINISH_SANDBOX ? resolve(process.env.FINISH_SANDBOX) : null;
 
 /**
+ * THE HARNESS'S OWN DIRECTORIES, supplied by the caller.
+ *
+ * `FINISH_FENCE_ROOTS` is a colon-separated list of directories that belong to
+ * the harness rather than to the agent -- the clone trees every run copies
+ * from, and the parent of every run's sandbox. A path under one of them, and
+ * not under this run's own sandbox, is denied.
+ *
+ * WHY THE CALLER HAS TO SAY. The old rule covered `/home/` and `/root/` and
+ * skipped `/tmp` on the reasoning that "/tmp, /usr, /opt and friends are
+ * read-only traffic in practice". That was false by construction: the harness
+ * keeps its clone trees AND every sandbox under `/tmp`, so the trees each run
+ * copies from were reachable and writable by the agent being measured -- the
+ * exact failure this fence exists to prevent. docs/56 measured it at 12 reads
+ * and 0 writes before it was fixed.
+ *
+ * But `/tmp` cannot simply be added to the list above, because the sandbox
+ * itself lives there: a blanket `/tmp` rule would deny the agent its own
+ * working directory. Which `/tmp` subtrees are the harness's is knowledge only
+ * the harness has, so it passes them in. UNSET MEANS THE OLD BEHAVIOUR, which
+ * is deliberate and is not a default anybody should rely on: `wild.ts` always
+ * sets it, and a test asserts that it does. It is unset for exactly one
+ * reason -- a sweep that was already running when this was written keeps the
+ * fence it started with, because an instrument that differs between arms is
+ * this experiment's own named confound.
+ */
+const harnessRoots = (process.env.FINISH_FENCE_ROOTS ?? "")
+  .split(":")
+  .map((d) => d.trim())
+  .filter((d) => d.length > 0)
+  .map((d) => resolve(d));
+
+/**
  * Paths the command names that are outside the sandbox.
  *
  * Deliberately crude and deliberately strict: this is a safety device, not a
@@ -114,10 +146,17 @@ function outsideSandbox(text) {
   if (!sandbox || !text) return null;
   for (const m of text.matchAll(/(?:^|[\s"'=(:])(\/[^\s"';:)|&]*)/g)) {
     const path = m[1];
-    // /tmp, /usr, /opt and friends are read-only traffic in practice; what
-    // matters is the repository and the home directory.
+    // The home directories: the repository being written about lives under one.
     if (path.startsWith("/home/") || path.startsWith("/root/")) {
       if (!resolve(path).startsWith(sandbox)) return path;
+    }
+    // The harness's own state, wherever the caller says it is. Checked with a
+    // path-boundary test rather than a bare prefix, so `/tmp/jev-wild-clones`
+    // does not also shield a sibling named `/tmp/jev-wild-clones-other`.
+    const abs = resolve(path);
+    if (abs === sandbox || abs.startsWith(`${sandbox}/`)) continue;
+    for (const root of harnessRoots) {
+      if (abs === root || abs.startsWith(`${root}/`)) return path;
     }
   }
   if (/(^|[\s"'=(])\.\.\//.test(text)) return "..";
