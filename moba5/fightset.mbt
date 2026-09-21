@@ -99,7 +99,7 @@ pub fn FightCase::count_favours_us(self : FightCase) -> Bool {
 /// as "we do not win it", which is exactly what the question asks.
 pub fn FightCase::bucket(self : FightCase) -> String {
   let g = self.build()
-  let we_win = g.simulate_fight(self.node, 16).winner == TEAM_A
+  let we_win = g.simulate_fight(self.node, FIGHT_TICKS).winner == TEAM_A
   if self.count_favours_us() {
     if we_win {
       "count_right_win"

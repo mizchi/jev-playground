@@ -134,6 +134,54 @@ pub fn Game::simulate_opening(
 }
 
 ///|
+/// The two sides of "commit or break off", priced over `horizon` ticks: what
+/// the position is worth to `team` if the bodies it has on `node` swing, and
+/// what it is worth if they walk home instead.
+///
+/// This lives here rather than inside the question that asks it, because two
+/// things need the same number: the `retreat` class's truth, and the coherence
+/// analysis that puts that truth next to the `fight` class's. A second copy of
+/// the pricing would make "the truths disagree" unreadable — it could always
+/// be the copies disagreeing.
+pub fn Game::retreat_scores(
+  self : Game,
+  node : Int,
+  team : Int,
+  horizon : Int,
+) -> (Int, Int) {
+  let commit = self.fight_actions(node)
+  let back : Map[Int, Action] = Map([])
+  for c in self.champs_at(node, team) {
+    let away = step_toward(c.node, base_of(team))
+    back[c.id] = if away != c.node { Move(away) } else { Hold }
+  }
+  (
+    self.simulate_opening(team, commit, horizon),
+    self.simulate_opening(team, back, horizon),
+  )
+}
+
+///|
+/// Which of the two prices better, as the `retreat` class's truth:
+/// `"fight_now"`, `"walk_away"`, or both when they price the same.
+pub fn retreat_pick(commit : Int, away : Int) -> String {
+  tied_best(["fight_now", "walk_away"], [commit, away])
+}
+
+///|
+/// The same, priced from the position: one call for a caller that does not
+/// need the two numbers.
+pub fn Game::retreat_truth(
+  self : Game,
+  node : Int,
+  team : Int,
+  horizon : Int,
+) -> String {
+  let (commit, away) = self.retreat_scores(node, team, horizon)
+  retreat_pick(commit, away)
+}
+
+///|
 /// A fight in which `champ_id`'s first action is forced and everything else is
 /// the all-in. Used to price a cooldown: spend it on tick one, or hold it.
 pub fn Game::simulate_fight_opening(

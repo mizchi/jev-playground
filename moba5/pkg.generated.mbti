@@ -28,6 +28,8 @@ pub const EXECUTE_PCT : Int = 35
 
 pub const FIGHT_PER_BUCKET : Int = 4
 
+pub const FIGHT_TICKS : Int = 16
+
 pub const HEAL_AT_BASE : Int = 30
 
 pub const ITEM_COST : Int = 350
@@ -53,6 +55,8 @@ pub const PUSH_TO_TOWER : Int = 3
 pub const REGEN_PCT : Int = 6
 
 pub const RESPAWN_BASE : Int = 4
+
+pub const RETREAT_HORIZON : Int = 8
 
 pub const RIV_BOT : Int = 21
 
@@ -96,6 +100,10 @@ pub fn camp_gold(Int) -> Int
 
 pub fn camp_xp(Int) -> Int
 
+pub fn coherence_report(Recorded) -> CoherenceReport
+
+pub fn coherence_rows() -> Array[CoherenceRow]
+
 pub fn comp_by_name(String) -> Array[String]
 
 pub fn enemy_of(Int) -> Int
@@ -103,6 +111,8 @@ pub fn enemy_of(Int) -> Int
 pub fn fight_bucket_census() -> Map[String, Int]
 
 pub let fight_buckets : Array[String]
+
+pub fn forced_overlap(Int, Int, Int) -> Int
 
 pub fn hops(Int, Int) -> Int
 
@@ -128,15 +138,25 @@ pub fn node_name(Int) -> String
 
 pub let node_names : Array[String]
 
+pub fn pair_census(Array[Bool], Array[Bool]) -> Pairing
+
+pub fn pairing_bounds(Array[CoherenceRow], Recorded) -> PairingBounds
+
 pub fn power_level(Int) -> Int
 
 pub let power_rubric : Array[String]
+
+pub let recorded_run : Recorded
+
+pub fn retreat_pick(Int, Int) -> String
 
 pub let roles : Array[String]
 
 pub fn scripted_action(Game, Champ) -> Action
 
 pub fn scripted_team_actions(Game, Int) -> Map[Int, Action]
+
+pub fn sign_test(Int, Int) -> Double
 
 pub fn smart_action(Game, Champ, Plan) -> Action
 
@@ -247,6 +267,39 @@ pub fn Champ::mr(Self) -> Int
 pub fn Champ::pen(Self) -> Int
 pub fn Champ::refresh_hp(Self) -> Unit
 
+pub(all) struct CoherenceReport {
+  n : Int
+  truth : Pairing
+  truth_relaxed : Pairing
+  model_false : Int
+  model_commit : Int
+  model_paired : Int
+  model_forced : Int
+  model_pairs_unallowed : Int
+  model_pairs_unallowed_relaxed : Int
+  bounds : PairingBounds
+  strict_hits : Int
+  relaxed_hits : Int
+  strict_const : Int
+  relaxed_const : Int
+  strict_relaxed_agree : Int
+}
+
+pub(all) struct CoherenceRow {
+  name : String
+  bucket : String
+  note : String
+  win_strict : Bool
+  win_relaxed : Bool
+  our_deaths : Int
+  their_deaths : Int
+  retreat : String
+  commit_score : Int
+  away_score : Int
+}
+pub fn CoherenceRow::commit_ok(Self) -> Bool
+pub fn CoherenceRow::truth_pairs(Self) -> Bool
+
 pub(all) struct Comp {
   name : String
   picks : Array[String]
@@ -285,6 +338,7 @@ pub(all) struct FightResult {
   winner : Int
 }
 pub fn FightResult::score_for(Self, Int) -> Int
+pub fn FightResult::trade_not_lost(Self, Int) -> Bool
 
 pub struct Game {
   champs : Array[Champ]
@@ -347,6 +401,8 @@ pub fn Game::render(Self) -> String
 pub fn Game::replay_frame(Self) -> Json
 pub fn Game::replay_meta(Self, String, String, Array[String], Array[String], Int) -> Json
 pub fn Game::replay_result(Self, Int) -> Json
+pub fn Game::retreat_scores(Self, Int, Int, Int) -> (Int, Int)
+pub fn Game::retreat_truth(Self, Int, Int, Int) -> String
 pub fn Game::siege_target(Self, Int) -> Int
 pub fn Game::simulate_fight(Self, Int, Int) -> FightResult
 pub fn Game::simulate_fight_focus(Self, Int, Int, Int, Int) -> FightResult
@@ -417,11 +473,39 @@ pub struct Neutral {
 pub fn Neutral::alive(Self) -> Bool
 pub fn Neutral::copy(Self) -> Self
 
+pub(all) struct Pairing {
+  both : Int
+  first_only : Int
+  second_only : Int
+  neither : Int
+}
+pub fn Pairing::ceiling(Self) -> Int
+pub fn Pairing::first_total(Self) -> Int
+pub fn Pairing::floor(Self) -> Int
+pub fn Pairing::second_total(Self) -> Int
+pub fn Pairing::total(Self) -> Int
+
+pub(all) struct PairingBounds {
+  arrangements : Int
+  consistent : Bool
+  lo_p : Double
+  hi_p : Double
+  lo_at : String
+  hi_at : String
+}
+
 pub(all) struct Plan {
   goto : Array[Int]
   rally : Int
   why : String
   hold_lane : Int
+}
+
+pub(all) struct Recorded {
+  what : String
+  fight_false : Array[Bool]
+  commit_count : Int
+  paired : Int
 }
 
 pub(all) struct Scenario {

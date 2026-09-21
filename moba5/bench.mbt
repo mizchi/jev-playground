@@ -199,9 +199,20 @@ fn champ_named(g : Game, name : String) -> Int {
 // way and a class's rows are comparable across scenarios.
 
 ///|
+/// How long a fight is played out for before its result is read. Long enough
+/// that a 5v5 resolves, short enough that it is still one fight.
+pub const FIGHT_TICKS = 16
+
+///|
+/// How far forward the `retreat` truth prices the two options. Named because
+/// the answer is a property of this number as much as of the position, and
+/// because the coherence analysis has to price them the same way.
+pub const RETREAT_HORIZON = 8
+
+///|
 /// `fight` — does committing on this node win the fight outright? Played out.
 fn ask_fight(g : Game, node : Int, team : Int) -> Ask {
-  let r = g.simulate_fight(node, 16)
+  let r = g.simulate_fight(node, FIGHT_TICKS)
   let won = r.winner == team
   let mine = g.champs_at(node, team).length()
   let theirs = g.champs_at(node, enemy_of(team)).length()
@@ -246,7 +257,7 @@ fn ask_focus(g : Game, node : Int, team : Int, note : String) -> Ask {
     instructions: "In that fight on \{node_name(node)}, which enemy champion should our team focus its attacks on first? A hit aimed at one of their backline lands on their frontline instead, while their frontline is alive.\{note}",
     options: names,
     descriptions: descs,
-    truth: g.best_focus_names(node, team, 16),
+    truth: g.best_focus_names(node, team, FIGHT_TICKS),
     why: "played the fight out once per focus target and kept the order that left us the most bodies and health",
     // The floor hits the softest body it can reach, which is what focus fire
     // means and what a durable frontline is drafted to punish.
@@ -258,14 +269,7 @@ fn ask_focus(g : Game, node : Int, team : Int, note : String) -> Ask {
 /// `retreat` — commit on this node, or break off? Priced over a short horizon
 /// with both sides on the strong baseline afterwards.
 fn ask_retreat(g : Game, node : Int, team : Int) -> Ask {
-  let commit = g.fight_actions(node)
-  let back : Map[Int, Action] = Map([])
-  for c in g.champs_at(node, team) {
-    let away = step_toward(c.node, base_of(team))
-    back[c.id] = if away != c.node { Move(away) } else { Hold }
-  }
-  let s_commit = g.simulate_opening(team, commit, 8)
-  let s_back = g.simulate_opening(team, back, 8)
+  let (s_commit, s_back) = g.retreat_scores(node, team, RETREAT_HORIZON)
   {
     key: "commit_or_disengage",
     class_: "retreat",
@@ -276,11 +280,11 @@ fn ask_retreat(g : Game, node : Int, team : Int) -> Ask {
     descriptions: [
       "Commit to the fight on this node with the bodies we have there", "Break off toward our base and come back on better terms",
     ],
-    truth: tied_best(["fight_now", "walk_away"], [s_commit, s_back]),
-    why: "eight ticks forward with both sides on the strong baseline: fighting scored \{s_commit}, walking away scored \{s_back}",
+    truth: retreat_pick(s_commit, s_back),
+    why: "\{RETREAT_HORIZON} ticks forward with both sides on the strong baseline: fighting scored \{s_commit}, walking away scored \{s_back}",
     // The floor commits exactly when it would win the fight outright, which
     // ignores everything the position is worth afterwards.
-    floor: if g.fight_is_won(node, team, 16) {
+    floor: if g.fight_is_won(node, team, FIGHT_TICKS) {
       "fight_now"
     } else {
       "walk_away"
@@ -313,8 +317,8 @@ fn ask_ability(g : Game, node : Int, champ_id : Int) -> Ask {
     Aoe(_) | Heal(_) | Shield(_) => Some(Cast(c.ability, -1))
     NoAbility | Blink => None
   }
-  let now = g.simulate_fight_opening(node, champ_id, now_action, 16)
-  let held = g.simulate_fight_opening(node, champ_id, None, 16)
+  let now = g.simulate_fight_opening(node, champ_id, now_action, FIGHT_TICKS)
+  let held = g.simulate_fight_opening(node, champ_id, None, FIGHT_TICKS)
   let spend = now.score_for(team) > held.score_for(team)
   {
     key: "spend_\{c.ability.name()}_now",

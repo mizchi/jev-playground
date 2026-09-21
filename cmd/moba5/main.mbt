@@ -35,6 +35,9 @@ struct Opts {
   tournament : Bool
   /// Round-robin the named comps as pure 5v5 teamfights. No API key.
   arena : Bool
+  /// Put the `fight` and `retreat` truths side by side over the derived fight
+  /// states, against one recorded run. No API key.
+  coherence : Bool
   /// Ask Jev to draft from the raw archetype stats, against the empirical
   /// arena.
   draft : Bool
@@ -541,6 +544,120 @@ fn run_arena(max_ticks : Int) -> Unit {
     "moba5 synergy — teamfight arena", "5v5 to the death on one node, abilities on their timing rules, composition is the only variable",
     wins, losses, draws, games,
   )
+}
+
+///|
+/// `--coherence`: the two questions the benchmark asks about the same node,
+/// put side by side. TODO §1.12 items 1 and 3, neither of which needs the API.
+///
+/// Item 1 is a count: how often the rules themselves make "we do not win this
+/// fight" and "swing anyway" both correct. Item 3 moves the fight question's
+/// threshold — "we win outright" against "we do not lose the body trade" —
+/// and scores the same answers against both.
+///
+/// The model's side is a recorded run rather than a live one, which is the
+/// point: the analysis is a property of the rules plus one recorded draw, so
+/// it reruns for free and says the same thing.
+fn run_coherence() -> Unit {
+  let rows = @game.coherence_rows()
+  let rec = @game.recorded_run
+  let rep = @game.coherence_report(rec)
+  @report.header(
+    "moba5 coherence — two questions about the same node",
+    "\{rep.n} derived fight states: the rules' own answers, and one recorded run. No API",
+  )
+  println("  1. What the rules themselves allow")
+  println("")
+  println(
+    "  \{@report.pad("state", 26)}\{@report.pad("win outright", 14)}\{@report.pad("trade not lost", 16)}\{@report.pad("deaths", 8)}retreat truth",
+  )
+  @report.rule(80)
+  for r in rows {
+    let yn = fn(b : Bool) -> String { if b { "yes" } else { "no" } }
+    println(
+      "  \{@report.pad(r.name, 26)}\{@report.pad(yn(r.win_strict), 14)}\{@report.pad(yn(r.win_relaxed), 16)}\{@report.pad("\{r.our_deaths}/\{r.their_deaths}", 8)}\{r.retreat}  (\{r.commit_score} vs \{r.away_score})",
+    )
+  }
+  println("")
+  let t = rep.truth
+  println(
+    "  the rules say \"we do not win\" in \{t.first_total()} of \{rep.n} states and prefer committing in \{t.second_total()}",
+  )
+  println(
+    "  both at once in \{t.both} — the margins allow \{t.floor()} to \{t.ceiling()}, so this count carries information",
+  )
+  println("")
+  println("  2. The recorded run, laid over the same states")
+  println("")
+  println("  \{rec.what}")
+  println(
+    "  it answered \"we do not win\" in \{rep.model_false} of \{rep.n} and \"fight now\" in \{rep.model_commit},",
+  )
+  println(
+    "  and paired the two in \{rep.model_paired} — but \{rep.model_false} + \{rep.model_commit} - \{rep.n} = \{rep.model_forced} states MUST pair them.",
+  )
+  if rep.model_paired == rep.model_forced {
+    println(
+      "  the \{rep.model_paired} is exactly that floor: it is the two margins restated, not evidence about the pair.",
+    )
+  }
+  println("")
+  println(
+    "  what does survive: the rules allow the pair in only \{t.both} states, so at least",
+  )
+  println(
+    "  \{rep.model_pairs_unallowed} of the run's \{rep.model_paired} pairs are ones the rules do not accept — \{rep.model_pairs_unallowed_relaxed} under the",
+  )
+  println(
+    "  looser reading of winning, so the bound is not an artefact of where that threshold sits.",
+  )
+  let b = rep.bounds
+  if b.consistent {
+    println(
+      "  sign test on the discordant states, over all \{b.arrangements} arrangement(s) the run's",
+    )
+    println(
+      "  totals permit (\{b.lo_at} .. \{b.hi_at} model-only/truth-only): p = \{@report.d3(b.lo_p)} .. \{@report.d3(b.hi_p)}",
+    )
+  } else {
+    println(
+      "  the recorded totals do not agree with each other; nothing to test.",
+    )
+  }
+  println("")
+  println("  3. Moving the fight question's threshold")
+  println("")
+  let strict_edge = rep.strict_hits - rep.strict_const
+  let relaxed_edge = rep.relaxed_hits - rep.relaxed_const
+  // The rubber stamp's score IS the number of states the definition calls a
+  // loss, because it answers "we do not win" to all of them — so the run is
+  // read against that column and not against half.
+  println(
+    "  \{@report.pad("definition of winning", 28)}\{@report.pad("we lose it", 12)}\{@report.pad("the run", 10)}\{@report.pad("rubber stamp", 14)}edge",
+  )
+  @report.rule(80)
+  println(
+    "  \{@report.pad("we win outright", 28)}\{@report.pad("\{rep.strict_const}/\{rep.n}", 12)}\{@report.pad("\{rep.strict_hits}/\{rep.n}", 10)}\{@report.pad("\{rep.strict_const}/\{rep.n}", 14)}+\{strict_edge}",
+  )
+  println(
+    "  \{@report.pad("we do not lose the trade", 28)}\{@report.pad("\{rep.relaxed_const}/\{rep.n}", 12)}\{@report.pad("\{rep.relaxed_hits}/\{rep.n}", 10)}\{@report.pad("\{rep.relaxed_const}/\{rep.n}", 14)}+\{relaxed_edge}",
+  )
+  println("")
+  println(
+    "  the two definitions agree about \{rep.strict_relaxed_agree} of \{rep.n} states.",
+  )
+  if strict_edge == relaxed_edge {
+    println(
+      "  the edge over the rubber stamp is the same under both, so the threshold is not where the",
+    )
+    println("  run's answers are: loosening the question does not rescue them.")
+  } else {
+    println(
+      "  the edge over the rubber stamp moves with the threshold, so the definition is part of the",
+    )
+    println("  score.")
+  }
+  println("")
 }
 
 ///|
@@ -1334,6 +1451,11 @@ async fn main {
         long="draft",
         about="Ask the model to rank the comps from raw archetype stats, against the empirical arena.",
       ),
+      @argparse.FlagArg(
+        "coherence",
+        long="coherence",
+        about="Put the fight and retreat truths side by side over the derived fight states, against one recorded run. Needs no API key.",
+      ),
     ],
     options=[
       @argparse.OptionArg(
@@ -1443,6 +1565,7 @@ async fn main {
     verbose: matches.flags.get("verbose").unwrap_or(false),
     tournament: matches.flags.get("tournament").unwrap_or(false),
     arena: matches.flags.get("arena").unwrap_or(false),
+    coherence: matches.flags.get("coherence").unwrap_or(false),
     draft: matches.flags.get("draft").unwrap_or(false),
     bench: matches.flags.get("bench").unwrap_or(false),
     dry: matches.flags.get("dry").unwrap_or(false),
@@ -1454,7 +1577,10 @@ async fn main {
   }
   // The arena, the tournament and a dry benchmark are simulator-only: they
   // need neither a team policy nor a key.
-  let offline = opts.tournament || opts.arena || (opts.bench && opts.dry)
+  let offline = opts.tournament ||
+    opts.arena ||
+    opts.coherence ||
+    (opts.bench && opts.dry)
   if !offline && !opts.bench && !opts.draft {
     for kind in [opts.team_a, opts.team_b] {
       if kind != "jev" && kind != "scripted" && kind != "smart" {
@@ -1501,7 +1627,10 @@ async fn run(opts : Opts) -> Unit {
   if opts.tournament {
     run_tournament(opts.baseline, opts.max_ticks)
   }
-  if opts.arena || opts.tournament {
+  if opts.coherence {
+    run_coherence()
+  }
+  if opts.arena || opts.tournament || opts.coherence {
     return
   }
   let client = if opts.base_url == "https://api.typesafe.ai" {

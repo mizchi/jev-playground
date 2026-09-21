@@ -384,6 +384,23 @@ pub fn Game::fight_is_won(
 }
 
 ///|
+/// The looser reading of the same fight: `team` does not LOSE it — no more of
+/// its bodies go down than the enemy's. A trade both sides survive counts,
+/// and so does one where everybody dies.
+///
+/// This exists because "we win this fight" has two defensible meanings and the
+/// benchmark asks only the strict one. `coherence.mbt` puts the two side by
+/// side over the same states, which is the only way to tell an answer that is
+/// wrong from an answer to the other question.
+pub fn FightResult::trade_not_lost(self : FightResult, team : Int) -> Bool {
+  if team == TEAM_A {
+    self.a_deaths <= self.b_deaths
+  } else {
+    self.b_deaths <= self.a_deaths
+  }
+}
+
+///|
 /// The focus order that leaves `team` best off, chosen by playing the fight out
 /// once per candidate. Returns the champion id, or -1 when there is nothing to
 /// focus. This is the ground truth the `focus` benchmark class is scored
