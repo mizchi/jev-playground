@@ -57,6 +57,25 @@ pub const RESPAWN_BASE = 4
 pub const MINION_DAMAGE = 4
 
 ///|
+/// Gold for one minion taken with a last hit, and the experience with it.
+///
+/// `Farm` used to pay a flat camp whether or not there was anything in the
+/// lane to kill, which made it a faucet rather than a skill: a policy could
+/// not be wrong about farming, only about where it stood. Paying per minion
+/// taken puts the genre's first decision back — **the wave is worth gold only
+/// to whoever lands the killing blow, and a minion your own wave finishes is
+/// gold nobody gets.**
+pub const CS_GOLD = 6
+
+///|
+pub const CS_XP = 7
+
+///|
+/// How many minions a lane holds ripe at once. One comes low each tick, so the
+/// cap is how long the lane will wait for you: past it the wave has moved on.
+pub const CS_RIPE_CAP = 3
+
+///|
 /// How lopsided a lane's minion wave must get before it reaches a structure by
 /// itself, and how far the pressure can accumulate.
 pub const PUSH_TO_TOWER = 3
@@ -163,6 +182,12 @@ pub struct Champ {
   mut kills : Int
   mut deaths : Int
   mut assists : Int
+  /// Minions taken with a last hit. Gold follows from it, so this is the laning
+  /// phase's score and what the `cs` class is marked against.
+  mut cs : Int
+  /// Minions this champion let its own wave finish — the price of every tick it
+  /// spent on something else, counted rather than inferred.
+  mut cs_lost : Int
   /// Item keys, at most `ITEM_SLOTS` of them.
   items : Array[String]
   /// Unplaced wards in hand.
@@ -326,6 +351,8 @@ pub fn Champ::copy(self : Champ) -> Champ {
     kills: self.kills,
     deaths: self.deaths,
     assists: self.assists,
+    cs: self.cs,
+    cs_lost: self.cs_lost,
     items,
     wards: self.wards,
   }
@@ -433,6 +460,11 @@ pub struct Game {
   /// Minion pressure per lane, indexed as `lanes`. Positive means team A's
   /// wave is ahead in that lane.
   push : Array[Int]
+  /// Minions ripe for a last hit, indexed by `ripe_index(lane, team)`. One
+  /// comes low in each lane each tick and the lane holds at most
+  /// `CS_RIPE_CAP`; whatever is ripe at the start of a tick and is not taken
+  /// during it is finished by its own side's wave and paid to nobody.
+  ripe : Array[Int]
   /// Permanent Dragon stacks, indexed by team id (slot 0 unused).
   dragons : Array[Int]
   /// Ticks of Baron buff left, indexed by team id.
@@ -527,6 +559,8 @@ pub fn Game::with_handicap(
       kills: 0,
       deaths: 0,
       assists: 0,
+      cs: 0,
+      cs_lost: 0,
       items: [],
       wards: WARD_CHARGES,
     }
@@ -623,6 +657,7 @@ pub fn Game::with_handicap(
     neutrals,
     wards: [],
     push: [0, 0, 0],
+    ripe: Array::make(lanes.length() * 3, 0),
     dragons: [0, 0, 0],
     baron: [0, 0, 0],
     tick: 0,
@@ -662,6 +697,13 @@ pub fn Game::copy(self : Game) -> Game {
     neutrals,
     wards,
     push: [self.push[0], self.push[1], self.push[2]],
+    ripe: {
+      let r = Array::make(self.ripe.length(), 0)
+      for i in 0..<self.ripe.length() {
+        r[i] = self.ripe[i]
+      }
+      r
+    },
     dragons: [0, self.dragons[1], self.dragons[2]],
     baron: [0, self.baron[1], self.baron[2]],
     tick: self.tick,
@@ -703,6 +745,34 @@ pub fn Game::lane_open(self : Game, team : Int, lane : String) -> Bool {
     }
   }
   true
+}
+
+///|
+/// How many minions `team` could last-hit at `node` this tick. 0 off-lane.
+///
+/// The number a laning decision turns on, so it is one call rather than an
+/// index computation repeated at every site that needs it.
+pub fn Game::ripe_here(self : Game, node : Int, team : Int) -> Int {
+  let ri = ripe_index(node_lane[node], team)
+  if ri < 0 {
+    0
+  } else {
+    self.ripe[ri]
+  }
+}
+
+///|
+/// Where a lane's ripe-minion count for a team lives in `ripe`.
+///
+/// Per lane AND per team, because a last hit is taken from the enemy's wave:
+/// the two sides of a lane have separate minions to kill and separate gold to
+/// lose, which is why a lane can be held by one side and farmed by both.
+pub fn ripe_index(lane : String, team : Int) -> Int {
+  let li = lane_index(lane)
+  if li < 0 {
+    return -1
+  }
+  li * 3 + team
 }
 
 ///|
@@ -1176,6 +1246,14 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
   for i in 0..<self.champs.length() {
     pre_stunned[i] = self.champs[i].stunned > 0
   }
+  // What was ripe before anybody acted. A minion that was already low when the
+  // tick began and is still low when it ends was finished by its own side, and
+  // that is the miss; a minion that only came low during this tick is not yet
+  // anybody's to lose.
+  let ripe_before = Array::make(self.ripe.length(), 0)
+  for i in 0..<self.ripe.length() {
+    ripe_before[i] = self.ripe[i]
+  }
 
   // Movement, recalls and purchases first, so combat happens where champions
   // end up and with the items they just bought.
@@ -1372,13 +1450,27 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
           note_top(neutral_top, idx, c.id, d)
         }
       }
-      // Farming pays the full camp on top of the passive trickle every
-      // champion in a lane gets, and — see the minion phase — shoves the wave.
-      Some(Farm) =>
-        if camp_gold(c.node) > 0 {
+      // Farming a LANE takes whatever is ripe there: the last hit is the
+      // gold, so a tick spent farming an empty wave pays nothing and a tick
+      // spent elsewhere leaves the ripe minions to be finished by our own
+      // side. A jungle camp is still a flat camp — the jungler's trade is
+      // where it farms, not whether it lands the blow.
+      Some(Farm) => {
+        let lane = node_lane[c.node]
+        let ri = ripe_index(lane, c.team)
+        if ri >= 0 {
+          let took = self.ripe[ri]
+          if took > 0 {
+            self.ripe[ri] = 0
+            c.cs += took
+            c.gold += took * CS_GOLD
+            c.gain_xp(took * CS_XP)
+          }
+        } else if camp_gold(c.node) > 0 {
           c.gold += camp_gold(c.node)
           c.gain_xp(camp_xp(c.node))
         }
+      }
       _ => ()
     }
   }
@@ -1633,6 +1725,46 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
             }
           None => ()
         }
+      }
+    }
+  }
+
+  // The minions nobody last-hit. Whatever was ripe when the tick began and is
+  // still ripe now was finished by its own side's wave: that gold is gone, and
+  // it is charged to the champions who were standing in the lane and chose
+  // something else. This is the exact price of a trade, a poke or a rotation,
+  // and `cs_lost` is what the `cs` class reads.
+  for lane in lanes {
+    for team in [TEAM_A, TEAM_B] {
+      let ri = ripe_index(lane, team)
+      // Who of ours is standing in this lane. It decides what happens to the
+      // minions nobody last-hit, and the two cases are different plays:
+      //
+      // - **Somebody is there and spent the tick otherwise** (a poke, a trade,
+      //   an ability) — their own wave finishes the low minions and the gold is
+      //   gone. That is the exact price of the trade, charged to whoever was
+      //   standing there.
+      // - **Nobody is there** — the minions keep fighting and the wave stacks
+      //   up to the cap. Leaving a lane to gank and coming back to a full wave
+      //   is a play, not a loss, which is why the cap exists at all.
+      let present : Array[Champ] = []
+      for c in self.champs {
+        if c.alive() && c.team == team && node_lane[c.node] == lane {
+          present.push(c)
+        }
+      }
+      if present.length() > 0 {
+        let missed = @cmp.minimum(ripe_before[ri], self.ripe[ri])
+        if missed > 0 {
+          self.ripe[ri] -= missed
+          for c in present {
+            c.cs_lost += missed
+          }
+        }
+      }
+      // Then one more comes low, up to the cap.
+      if self.ripe[ri] < CS_RIPE_CAP {
+        self.ripe[ri] += 1
       }
     }
   }

@@ -191,6 +191,9 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
           "kills": Json(c.kills),
           "deaths": Json(c.deaths),
           "assists": Json(c.assists),
+          "minions_killed": Json(c.cs),
+          "minions_let_die": Json(c.cs_lost),
+          "minions_ripe_here": Json(self.ripe_here(c.node, c.team)),
           "hops_to_enemy_nexus": Json(hops(c.node, enemy_base)),
           "hops_to_home": Json(hops(c.node, own_base)),
         }),
@@ -322,6 +325,12 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
         "state": Json(verdict),
         "we_hold_the_wave_here": Json(self.has_wave(team, lanes[li])),
         "they_hold_the_wave_here": Json(self.has_wave(foe, lanes[li])),
+        "minions_we_could_last_hit": Json(
+          self.ripe[ripe_index(lanes[li], team)],
+        ),
+        "minions_they_could_last_hit": Json(
+          self.ripe[ripe_index(lanes[li], foe)],
+        ),
         "our_front_target": Json(
           match self.lane_front(team, lanes[li]) {
             -1 => "nothing left"
@@ -393,6 +402,9 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     ),
     "rules": Json(
       "One action per champion per tick. Moving is one node; a blink is two. Ranged champions can poke an adjacent node for half damage and take nothing back. Abilities have cooldowns; a stun removes the target's next turn outright. Recalling teleports home, heals, and restocks wards; out of combat a champion regenerates slowly on the spot. Gold buys items at base, experience buys levels, and both raise your stats.",
+    ),
+    "last_hit_rule": Json(
+      "Gold from a minion goes to whoever lands the killing blow. Each lane brings one more minion low per tick for each side, up to \{CS_RIPE_CAP}; `Farm` in a lane takes every minion that is low RIGHT NOW for \{CS_GOLD} gold and \{CS_XP} xp each, and farming a lane with nothing low pays nothing. Anything left low at the end of a tick is finished by our own wave and paid to nobody — so a tick spent poking, trading or rotating costs exactly the gold that was sitting there, and `minions_let_die` counts what that has come to.",
     ),
     "minion_rule": Json(
       "Farming a lane shoves its wave one step toward the enemy. A structure does NOT shoot a champion whose own team holds that lane's wave — the minions are what it shoots instead — so a champion alone under a tower with no wave loses that trade, and the same champion behind a wave takes the tower down. A wave shoved far enough chips the enemy TOWER on its own, but minions never damage a nexus: closing the game needs champions standing in their base. A lane both teams have left drifts back to even.",

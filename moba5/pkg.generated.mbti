@@ -16,6 +16,12 @@ pub const BARON_TICKS : Int = 12
 
 pub const B_BASE : Int = 1
 
+pub const CS_GOLD : Int = 6
+
+pub const CS_RIPE_CAP : Int = 3
+
+pub const CS_XP : Int = 7
+
 pub const DMG_MAGIC : Int = 1
 
 pub const DMG_PHYSICAL : Int = 0
@@ -164,6 +170,8 @@ pub let retreat3_wordings : Array[RetreatWording]
 
 pub fn retreat_pick(Int, Int) -> String
 
+pub fn ripe_index(String, Int) -> Int
+
 pub let roles : Array[String]
 
 pub fn scripted_action(Game, Champ) -> Action
@@ -267,6 +275,8 @@ pub struct Champ {
   mut kills : Int
   mut deaths : Int
   mut assists : Int
+  mut cs : Int
+  mut cs_lost : Int
   items : Array[String]
   mut wards : Int
 }
@@ -371,6 +381,7 @@ pub struct Game {
   neutrals : Array[Neutral]
   wards : Array[Ward]
   push : Array[Int]
+  ripe : Array[Int]
   dragons : Array[Int]
   baron : Array[Int]
   mut tick : Int
@@ -429,6 +440,7 @@ pub fn Game::replay_meta(Self, String, String, Array[String], Array[String], Int
 pub fn Game::replay_result(Self, Int) -> Json
 pub fn Game::retreat_scores(Self, Int, Int, Int) -> (Int, Int)
 pub fn Game::retreat_truth(Self, Int, Int, Int) -> String
+pub fn Game::ripe_here(Self, Int, Int) -> Int
 pub fn Game::siege_target(Self, Int) -> Int
 pub fn Game::simulate_fight(Self, Int, Int) -> FightResult
 pub fn Game::simulate_fight_focus(Self, Int, Int, Int, Int) -> FightResult

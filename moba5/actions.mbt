@@ -294,12 +294,17 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
         None => "attack the monster here"
       }
     Farm => {
-      let head = "farm here for +\{camp_gold(c.node)} gold and +\{camp_xp(c.node)} xp"
       let lane = node_lane[c.node]
       if lane_index(lane) >= 0 {
-        "\{head}, and SHOVE the \{lane} lane wave one step toward them\{if self.has_wave(c.team, lane) { " (we already hold this lane)" } else { " — this is how a tower here becomes attackable without it shooting back" }}"
+        let ripe = self.ripe_here(c.node, c.team)
+        let pay = if ripe == 0 {
+          "nothing is low enough to last-hit here right now, so this pays 0 gold"
+        } else {
+          "last-hit \{ripe} minion(s) for +\{ripe * CS_GOLD} gold and +\{ripe * CS_XP} xp"
+        }
+        "\{pay}, and SHOVE the \{lane} lane wave one step toward them\{if self.has_wave(c.team, lane) { " (we already hold this lane)" } else { " — this is how a tower here becomes attackable without it shooting back" }}"
       } else {
-        "\{head} (a jungle camp: safe, but no lane pressure)"
+        "farm here for +\{camp_gold(c.node)} gold and +\{camp_xp(c.node)} xp (a jungle camp: safe, but no lane pressure)"
       }
     }
     PlaceWard(n) =>

@@ -501,11 +501,19 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
     }
   }
 
-  // No fight here. Poke whatever is next door: it is damage for nothing.
-  for a in legal {
-    if a is Poke(_) {
-      return a
+  // No fight here. Remember the poke that is available: it used to be taken
+  // straight away, but a poke is no longer free, and whether the wave is worth
+  // more than the poke is decided below — once the plan has had its say about
+  // where this champion should be standing.
+  let poke : Action? = {
+    let mut found = None
+    for a in legal {
+      if a is Poke(_) {
+        found = Some(a)
+        break
+      }
     }
+    found
   }
 
   // Reset while there is no fight to lose by leaving — and go home to SPEND,
@@ -581,6 +589,24 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
     if next != c.node && legal.contains(Move(next)) {
       return Move(next)
     }
+  }
+  // The plan is satisfied, so now the lane's economy decides. Standing in a
+  // lane and spending the tick on anything but the wave leaves the low minions
+  // to our own side at `CS_GOLD` each, so take the gold when there is gold on
+  // the floor and poke when there is not.
+  //
+  // The order matters, and getting it wrong was instructive: checking this
+  // BEFORE the movement above made every champion standing in a lane farm
+  // instead of rotating, so `simulate_macro` scored every plan identically
+  // (1197 against 1197 against 1197) and two macro questions became questions
+  // whose every answer was correct. A baseline that ignores the plan is not a
+  // baseline for a plan.
+  if g.ripe_here(c.node, c.team) > 0 && legal.contains(Farm) {
+    return Farm
+  }
+  match poke {
+    Some(a) => return a
+    None => ()
   }
   if legal.contains(Farm) {
     return Farm
