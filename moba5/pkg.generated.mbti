@@ -1,0 +1,566 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/jev-playground/moba5"
+
+// Values
+pub const ASSIST_GOLD : Int = 60
+
+pub const A_BASE : Int = 0
+
+pub const BARON_ATK_PCT : Int = 25
+
+pub const BARON_HP : Int = 340
+
+pub const BARON_STRUCT_PCT : Int = 40
+
+pub const BARON_TICKS : Int = 12
+
+pub const B_BASE : Int = 1
+
+pub const DMG_MAGIC : Int = 1
+
+pub const DMG_PHYSICAL : Int = 0
+
+pub const DRAGON_ATK_PCT : Int = 7
+
+pub const DRAGON_HP : Int = 210
+
+pub const EXECUTE_PCT : Int = 35
+
+pub const FIGHT_PER_BUCKET : Int = 4
+
+pub const FIGHT_TICKS : Int = 16
+
+pub const HEAL_AT_BASE : Int = 30
+
+pub const ITEM_COST : Int = 350
+
+pub const ITEM_SLOTS : Int = 3
+
+pub const KILL_GOLD : Int = 160
+
+pub const KILL_XP : Int = 45
+
+pub const LEVEL_XP : Int = 55
+
+pub const MAX_LEVEL : Int = 6
+
+pub const MINION_DAMAGE : Int = 4
+
+pub const N_NODES : Int = 23
+
+pub const PUSH_CAP : Int = 5
+
+pub const PUSH_TO_TOWER : Int = 3
+
+pub const REGEN_PCT : Int = 6
+
+pub const RESPAWN_BASE : Int = 4
+
+pub const RETREAT_HORIZON : Int = 8
+
+pub const RIV_BOT : Int = 21
+
+pub const RIV_TOP : Int = 20
+
+pub const SHIELD_TTL : Int = 3
+
+pub const STRUCT_ARMOR : Int = 20
+
+pub const STRUCT_MR : Int = 20
+
+pub const TEAM_A : Int = 1
+
+pub const TEAM_B : Int = 2
+
+pub const TOWER_DAMAGE : Int = 26
+
+pub const WARD_CHARGES : Int = 2
+
+pub const WARD_TTL : Int = 8
+
+pub fn ability_support(Champ) -> Int
+
+pub let action_kinds : Array[String]
+
+pub let adjacency : Array[Array[Int]]
+
+pub fn balanced_fight_cases(Int) -> Array[FightCase]
+
+pub fn base_of(Int) -> Int
+
+pub fn baseline_team_actions(Game, Int, String) -> Map[Int, Action]
+
+pub let bench_classes : Array[String]
+
+pub fn bench_suite() -> Array[Scenario]
+
+pub fn blink_targets(Int) -> Array[Int]
+
+pub fn camp_gold(Int) -> Int
+
+pub fn camp_xp(Int) -> Int
+
+pub fn coherence_report(Recorded) -> CoherenceReport
+
+pub fn coherence_rows() -> Array[CoherenceRow]
+
+pub fn comp_by_name(String) -> Array[String]
+
+pub fn discordance(Array[Bool], Array[Bool]) -> Discordance
+
+pub fn enemy_of(Int) -> Int
+
+pub fn fight_bucket_census() -> Map[String, Int]
+
+pub let fight_buckets : Array[String]
+
+pub fn fight_scenarios(RetreatWording) -> Array[Scenario]
+
+pub fn forced_overlap(Int, Int, Int) -> Int
+
+pub fn hops(Int, Int) -> Int
+
+pub fn item_of(String) -> Item?
+
+pub let items : Array[Item]
+
+pub fn kind_of(String) -> Kind
+
+pub let kinds : Map[String, Kind]
+
+pub fn lane_index(String) -> Int
+
+pub let lanes : Array[String]
+
+pub fn neutral_soon(Game) -> Array[Int]
+
+pub fn node_id(String) -> Int
+
+pub let node_lane : Array[String]
+
+pub fn node_name(Int) -> String
+
+pub let node_names : Array[String]
+
+pub fn pair_census(Array[Bool], Array[Bool]) -> Pairing
+
+pub fn pairing_bounds(Array[CoherenceRow], Recorded) -> PairingBounds
+
+pub fn pairing_exact(Array[CoherenceRow], Array[Bool], Array[Bool]) -> Discordance
+
+pub fn power_level(Int) -> Int
+
+pub let power_rubric : Array[String]
+
+pub let recorded_run : Recorded
+
+pub let retreat3_wordings : Array[RetreatWording]
+
+pub fn retreat_pick(Int, Int) -> String
+
+pub let roles : Array[String]
+
+pub fn scripted_action(Game, Champ) -> Action
+
+pub fn scripted_team_actions(Game, Int) -> Map[Int, Action]
+
+pub fn sign_test(Int, Int) -> Double
+
+pub fn smart_action(Game, Champ, Plan) -> Action
+
+pub fn smart_team_actions(Game, Int) -> Map[Int, Action]
+
+pub fn step_toward(Int, Int) -> Int
+
+pub fn step_toward_prefer(Int, Int, Int) -> Int
+
+pub fn team_name(Int) -> String
+
+pub fn tied_best(Array[String], Array[Int]) -> String
+
+pub let tournament_comps : Array[Comp]
+
+pub fn truth_accepts(String, String) -> Bool
+
+pub fn ward_spots(Int) -> Array[Int]
+
+// Errors
+
+// Types and methods
+pub(all) enum Ability {
+  NoAbility
+  Nuke(Int)
+  Aoe(Int)
+  Stun(Int)
+  Heal(Int)
+  Shield(Int)
+  Execute(Int)
+  Blink
+} derive(Eq)
+pub fn Ability::describe(Self) -> String
+pub fn Ability::name(Self) -> String
+
+pub(all) enum Action {
+  Move(Int)
+  Blink(Int)
+  AttackChamp(Int)
+  Poke(Int)
+  Cast(Ability, Int)
+  AttackStructure
+  AttackNeutral
+  Farm
+  PlaceWard(Int)
+  Buy(String)
+  Recall
+  Hold
+} derive(Eq)
+pub fn Action::kind_name(Self) -> String
+pub fn Action::to_string(Self) -> String
+
+pub(all) struct Ask {
+  key : String
+  class_ : String
+  form : String
+  tier : String
+  instructions : String
+  options : Array[String]
+  descriptions : Array[String]
+  truth : String
+  why : String
+  floor : String
+}
+
+pub struct Champ {
+  id : Int
+  name : String
+  team : Int
+  role : String
+  kind : String
+  dmg_type : Int
+  base_attack : Int
+  base_hp : Int
+  base_armor : Int
+  base_mr : Int
+  frontline : Bool
+  ranged : Bool
+  ability : Ability
+  cooldown : Int
+  mut cd : Int
+  mut hp : Int
+  mut max_hp : Int
+  mut shield : Int
+  mut shield_ttl : Int
+  mut stunned : Int
+  mut node : Int
+  mut gold : Int
+  mut xp : Int
+  mut level : Int
+  mut respawn : Int
+  mut kills : Int
+  mut deaths : Int
+  mut assists : Int
+  items : Array[String]
+  mut wards : Int
+}
+pub fn Champ::ability_ready(Self) -> Bool
+pub fn Champ::alive(Self) -> Bool
+pub fn Champ::armor(Self) -> Int
+pub fn Champ::attack(Self) -> Int
+pub fn Champ::can_act(Self) -> Bool
+pub fn Champ::copy(Self) -> Self
+pub fn Champ::effective_hp(Self) -> Int
+pub fn Champ::gain_xp(Self, Int) -> Unit
+pub fn Champ::hp_cap(Self) -> Int
+pub fn Champ::mr(Self) -> Int
+pub fn Champ::pen(Self) -> Int
+pub fn Champ::refresh_hp(Self) -> Unit
+
+pub(all) struct CoherenceReport {
+  n : Int
+  truth : Pairing
+  truth_relaxed : Pairing
+  model_false : Int
+  model_commit : Int
+  model_paired : Int
+  model_forced : Int
+  model_pairs_unallowed : Int
+  model_pairs_unallowed_relaxed : Int
+  bounds : PairingBounds
+  strict_hits : Int
+  relaxed_hits : Int
+  strict_const : Int
+  relaxed_const : Int
+  strict_relaxed_agree : Int
+}
+
+pub(all) struct CoherenceRow {
+  name : String
+  bucket : String
+  note : String
+  win_strict : Bool
+  win_relaxed : Bool
+  our_deaths : Int
+  their_deaths : Int
+  retreat : String
+  commit_score : Int
+  away_score : Int
+}
+pub fn CoherenceRow::commit_ok(Self) -> Bool
+pub fn CoherenceRow::truth_pairs(Self) -> Bool
+
+pub(all) struct Comp {
+  name : String
+  picks : Array[String]
+  note : String
+}
+pub fn Comp::has_cc(Self) -> Bool
+pub fn Comp::has_frontline(Self) -> Bool
+pub fn Comp::has_sustain(Self) -> Bool
+pub fn Comp::mixed_damage(Self) -> Bool
+pub fn Comp::ranged_count(Self) -> Int
+
+pub(all) struct Discordance {
+  first_only : Int
+  second_only : Int
+  agree : Int
+  p : Double
+}
+
+pub(all) struct FightCase {
+  comp_a : String
+  comp_b : String
+  node : Int
+  n_a : Int
+  n_b : Int
+  level_a : Int
+  level_b : Int
+  hp_a : Int
+  hp_b : Int
+}
+pub fn FightCase::bucket(Self) -> String
+pub fn FightCase::build(Self) -> Game
+pub fn FightCase::count_favours_us(Self) -> Bool
+pub fn FightCase::describe(Self) -> String
+
+pub(all) struct FightResult {
+  a_standing : Int
+  b_standing : Int
+  a_hp : Int
+  b_hp : Int
+  a_deaths : Int
+  b_deaths : Int
+  ticks : Int
+  winner : Int
+}
+pub fn FightResult::score_for(Self, Int) -> Int
+pub fn FightResult::trade_not_lost(Self, Int) -> Bool
+
+pub struct Game {
+  champs : Array[Champ]
+  structures : Array[Structure]
+  neutrals : Array[Neutral]
+  wards : Array[Ward]
+  push : Array[Int]
+  dragons : Array[Int]
+  baron : Array[Int]
+  mut tick : Int
+  mut winner : Int
+  log : Array[String]
+}
+pub fn Game::ability_damage(Self, Champ, Champ) -> Int
+pub fn Game::ability_play(Self, Champ) -> Action?
+pub fn Game::backline_pick(Self, Int, Int) -> Champ?
+pub fn Game::best_diver_names(Self, Int, Int) -> String
+pub fn Game::best_focus(Self, Int, Int, Int) -> Int
+pub fn Game::best_focus_names(Self, Int, Int, Int) -> String
+pub fn Game::best_item(Self, Int, Int, Int) -> String
+pub fn Game::buff_pct(Self, Int) -> Int
+pub fn Game::cc_pick(Self, Int, Int) -> Champ?
+pub fn Game::champs_at(Self, Int, Int) -> Array[Champ]
+pub fn Game::copy(Self) -> Self
+pub fn Game::counter_item(Self, Champ) -> String
+pub fn Game::damage_to(Self, Champ, Int, Int) -> Int
+pub fn Game::damage_to_champ(Self, Champ, Champ) -> Int
+pub fn Game::damage_to_structure(Self, Champ) -> Int
+pub fn Game::defend_target(Self, Int) -> Int
+pub fn Game::describe_action(Self, Champ, Action) -> String
+pub fn Game::dive_is_clean(Self, Int, Int, Int) -> Bool
+pub fn Game::fight_action(Self, Champ) -> Action
+pub fn Game::fight_actions(Self, Int) -> Map[Int, Action]
+pub fn Game::fight_actions_focus(Self, Int, Int, Int) -> Map[Int, Action]
+pub fn Game::fight_is_won(Self, Int, Int, Int) -> Bool
+pub fn Game::focus_pick(Self, Int, Int) -> Champ?
+pub fn Game::guarded_target(Self, Champ, Int) -> Champ
+pub fn Game::has_ward(Self, Int, Int) -> Bool
+pub fn Game::has_wave(Self, Int, String) -> Bool
+pub fn Game::lane_front(Self, Int, String) -> Int
+pub fn Game::lane_open(Self, Int, String) -> Bool
+pub fn Game::lane_under_pressure(Self, Int) -> (Int, Int)
+pub fn Game::legal_action_map(Self, Champ) -> Map[String, Action]
+pub fn Game::legal_actions(Self, Champ) -> Array[Action]
+pub fn Game::living(Self, Int) -> Array[Champ]
+pub fn Game::minion_front(Self, Int, String) -> Int
+pub fn Game::neediest_ally(Self, Champ) -> Champ?
+pub fn Game::neutral_at(Self, Int) -> Neutral?
+pub fn Game::new() -> Self
+pub fn Game::nexus_exposed(Self, Int) -> Bool
+pub fn Game::objective_target(Self, Int) -> Int
+pub fn Game::observation(Self, Int, Memory) -> Json
+pub fn Game::over_reason(Self) -> String
+pub fn Game::physical_share(Self, Int) -> Int
+pub fn Game::place_all(Self, Int) -> Unit
+pub fn Game::position_score(Self, Int) -> Int
+pub fn Game::power_ratio(Self, Int) -> Int
+pub fn Game::raw_attack(Self, Champ) -> Int
+pub fn Game::render(Self) -> String
+pub fn Game::replay_frame(Self) -> Json
+pub fn Game::replay_meta(Self, String, String, Array[String], Array[String], Int) -> Json
+pub fn Game::replay_result(Self, Int) -> Json
+pub fn Game::retreat_scores(Self, Int, Int, Int) -> (Int, Int)
+pub fn Game::retreat_truth(Self, Int, Int, Int) -> String
+pub fn Game::siege_target(Self, Int) -> Int
+pub fn Game::simulate_fight(Self, Int, Int) -> FightResult
+pub fn Game::simulate_fight_focus(Self, Int, Int, Int, Int) -> FightResult
+pub fn Game::simulate_fight_opening(Self, Int, Int, Action?, Int) -> FightResult
+pub fn Game::simulate_macro(Self, Int, Array[Int], Int) -> Int
+pub fn Game::simulate_opening(Self, Int, Map[Int, Action], Int) -> Int
+pub fn Game::softest_at(Self, Int, Int) -> Champ?
+pub fn Game::step(Self, Map[Int, Action]) -> Unit
+pub fn Game::structure_at(Self, Int) -> Structure?
+pub fn Game::structure_attackable(Self, Structure) -> Bool
+pub fn Game::structure_hp(Self, Int) -> Int
+pub fn Game::team_gold(Self, Int) -> Int
+pub fn Game::team_level(Self, Int) -> Int
+pub fn Game::team_plan(Self, Int) -> Plan
+pub fn Game::team_power(Self, Int) -> Int
+pub fn Game::ticks_under_tower(Self, Champ) -> Int
+pub fn Game::tower_shoots(Self, Structure, Champ) -> Bool
+pub fn Game::turn_message(Self, Int, Memory) -> Json
+pub fn Game::visible_enemies(Self, Int) -> Array[Champ]
+pub fn Game::visible_physical_share(Self, Int) -> Int
+pub fn Game::vision(Self, Int) -> Array[Bool]
+pub fn Game::wards_of(Self, Int) -> Array[Ward]
+pub fn Game::with_comps(Array[String], Array[String]) -> Self
+pub fn Game::with_handicap(Array[String], Array[String], Int, Int) -> Self
+
+pub(all) struct Item {
+  key : String
+  cost : Int
+  atk : Int
+  armor : Int
+  mr : Int
+  hp : Int
+  pen : Int
+  note : String
+}
+
+pub(all) struct Kind {
+  key : String
+  slot : String
+  dmg_type : Int
+  attack : Int
+  max_hp : Int
+  armor : Int
+  mr : Int
+  frontline : Bool
+  ranged : Bool
+  ability : Ability
+  cooldown : Int
+}
+pub fn Kind::dmg_type_name(Self) -> String
+
+pub struct Memory {
+  last_seen_node : Array[Int]
+  last_seen_tick : Array[Int]
+  last_seen_hp : Array[Int]
+}
+pub fn Memory::new() -> Self
+pub fn Memory::observe(Self, Game, Int) -> Unit
+
+pub struct Neutral {
+  node : Int
+  key : String
+  mut hp : Int
+  max_hp : Int
+  mut spawn_in : Int
+  respawn_ticks : Int
+}
+pub fn Neutral::alive(Self) -> Bool
+pub fn Neutral::copy(Self) -> Self
+
+pub(all) struct Pairing {
+  both : Int
+  first_only : Int
+  second_only : Int
+  neither : Int
+}
+pub fn Pairing::ceiling(Self) -> Int
+pub fn Pairing::first_total(Self) -> Int
+pub fn Pairing::floor(Self) -> Int
+pub fn Pairing::second_total(Self) -> Int
+pub fn Pairing::total(Self) -> Int
+
+pub(all) struct PairingBounds {
+  arrangements : Int
+  consistent : Bool
+  lo_p : Double
+  hi_p : Double
+  lo_at : String
+  hi_at : String
+}
+
+pub(all) struct Plan {
+  goto : Array[Int]
+  rally : Int
+  why : String
+  hold_lane : Int
+}
+
+pub(all) struct Recorded {
+  what : String
+  fight_false : Array[Bool]
+  commit_count : Int
+  paired : Int
+}
+
+pub(all) enum RetreatWording {
+  TwoWay
+  ThreePlain
+  ThreeFlat
+  ThreeTilted
+  ThreeReordered
+} derive(Eq)
+pub fn RetreatWording::arm_name(Self) -> String
+pub fn RetreatWording::is_three_way(Self) -> Bool
+
+pub(all) struct Scenario {
+  name : String
+  note : String
+  state : Json
+  asks : Array[Ask]
+}
+pub fn Scenario::ask_count(Self) -> Int
+
+pub struct Structure {
+  node : Int
+  team : Int
+  lane : String
+  tier : Int
+  mut hp : Int
+  max_hp : Int
+}
+pub fn Structure::alive(Self) -> Bool
+pub fn Structure::copy(Self) -> Self
+pub fn Structure::is_nexus(Self) -> Bool
+pub fn Structure::kind_name(Self) -> String
+
+pub struct Ward {
+  node : Int
+  team : Int
+  mut ttl : Int
+}
+pub fn Ward::copy(Self) -> Self
+
+// Type aliases
+
+// Traits
