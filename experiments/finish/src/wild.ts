@@ -3,8 +3,16 @@
  *
  *   tsx src/wild.ts --repos     clone the roster and count what it yields. No key.
  *   tsx src/wild.ts --tasks     print the harvested tasks, with provenance. No key.
- *   TYPESAFEAI_API_KEY=... tsx src/wild.ts    run the agent on each task
- *   tsx src/wild.ts --report    from the record
+ *   tsx src/wild.ts --report    from the record. No key.
+ *   tsx src/wild.ts --fence     the fence's denials, with their neighbours. No key.
+ *   tsx src/wild.ts --heads     what the clones are at, against the roster. No key.
+ *   tsx src/wild.ts --sections  backfill the author's heading onto old rows. No key.
+ *   TYPESAFEAI_API_KEY=... tsx src/wild.ts              the open arm
+ *   TYPESAFEAI_API_KEY=... tsx src/wild.ts --matched    the `- [x]` control arm
+ *
+ * `--state`, `--repo` and `--limit` narrow what a sweep runs; `--matched` is
+ * the control arm and picks the done items that share a markdown section with
+ * an open one, which is the only pairing this corpus supports (§4).
  *
  * WHY THIS EXISTS. Four reports converged on one missing thing, from four
  * directions:
@@ -58,7 +66,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { basename, resolve } from "node:path";
-import { quantile } from "../../shared/thresholds.js";
+import { permutation, quantile } from "../../shared/thresholds.js";
 
 const RECORDS = resolve(import.meta.dirname, "../records");
 const PATH_ = resolve(RECORDS, "wild.json");
@@ -79,6 +87,8 @@ export interface Task {
   text: string;
   /** `open` is `- [ ]`; `done` is `- [x]`, the author's own answer. */
   state: "open" | "done";
+  /** The nearest preceding markdown heading. The unit `--matched` matches on. */
+  section: string;
 }
 
 export interface Call {
@@ -104,6 +114,16 @@ export interface Row {
   state: "open" | "done";
   file: string;
   line: number;
+  /**
+   * The markdown section the author wrote the item under.
+   *
+   * On the row and not only on the task, so the `- [x]` comparison is
+   * replayable from the record alone: `--matched`'s pairing is by section,
+   * and reading it back out of the clones would make the comparison depend
+   * on a checkout that may be gone. `--sections` backfills rows recorded
+   * before this field existed.
+   */
+  section?: string;
   /** Did the repository ship its own CLAUDE.md / .claude? The agent reads them. */
   hadClaudeMd: boolean;
   hadSettings: boolean;
@@ -281,7 +301,29 @@ export function tasksIn(repo: string, rev: string, dir: string): Task[] {
      * than at the totals.
      */
     if (!/^\s*[-*]\s\[[xX]\]\s/m.test(text)) continue;
+    /**
+     * THE NEAREST PRECEDING HEADING, because the `- [x]` comparison needs a
+     * matching unit and the file supplies a better one than I could.
+     *
+     * Taking the first N done items in file order gets `actrun/TODO.md`'s
+     * opening `## Goals` and `## Design Principles` -- "Use GitHub Docs as
+     * the source of truth for specifications" -- which are ticked statements
+     * of intent, not work anyone did. Comparing those against the open items
+     * (`concurrency` enforcement, `S007`) would measure the KIND OF SENTENCE
+     * and report it as an effect of the checkbox.
+     *
+     * The section fixes that without any judgement from me: the five open
+     * items in `actrun` sit in exactly two sections, and those same two
+     * sections hold eight ticked items -- adjacent lines, same list, same
+     * author, same form. `--matched` is that selection.
+     */
+    let section = "(no heading)";
     text.split("\n").forEach((raw, i) => {
+      const heading = raw.match(/^(#{1,6})\s+(.+?)\s*$/);
+      if (heading) {
+        section = heading[2].trim();
+        return;
+      }
       const m = raw.match(/^\s*[-*]\s\[([ xX])\]\s+(.+?)\s*$/);
       if (!m) return;
       const body = m[2].replace(/`/g, "").trim();
@@ -293,6 +335,7 @@ export function tasksIn(repo: string, rev: string, dir: string): Task[] {
         line: i + 1,
         text: body,
         state: m[1] === " " ? "open" : "done",
+        section,
       });
     });
   }
@@ -304,6 +347,29 @@ export function corpus(): Task[] {
     const dir = dirFor(repo);
     return existsSync(dir) ? tasksIn(repo, rev, dir) : [];
   });
+}
+
+/** A task's section, as an identity: repository, file, heading. */
+export const sectionKey = (t: Pick<Task, "repo" | "file" | "section">): string =>
+  `${t.repo}\u0000${t.file}\u0000${t.section}`;
+
+/**
+ * THE `- [x]` CONTROL ARM: done items that share a section with an open one.
+ *
+ * The comparison the corpus can actually support. Sweeping the first N done
+ * items instead gets `actrun/TODO.md`'s `## Goals` and `## Design
+ * Principles` -- ticked statements of intent, not work -- and any difference
+ * measured against the open items would be the kind of sentence rather than
+ * the tick. Sharing a section makes the two arms adjacent lines of one list.
+ *
+ * It is a rule and not a selection of mine, which is the point: `--tasks`
+ * prints what it returns, and `test.ts` checks that every task it returns is
+ * done and has an open neighbour.
+ */
+export function matched(): Task[] {
+  const all = corpus();
+  const openSections = new Set(all.filter((t) => t.state === "open").map(sectionKey));
+  return all.filter((t) => t.state === "done" && openSections.has(sectionKey(t)));
 }
 
 // --------------------------------------------------------------------- the run
@@ -338,6 +404,7 @@ async function run(t: Task): Promise<Row> {
     state: t.state,
     file: t.file,
     line: t.line,
+    section: t.section,
     hadClaudeMd: false,
     hadSettings: false,
     calls: [],
@@ -562,8 +629,21 @@ function tasksSection(): void {
   }
 }
 
+/**
+ * THE CORPUS IS THE OPEN ARM. The done runs are a control and are counted
+ * separately, here and in §2.
+ *
+ * This section and the next describe the population that answers §2.1, and
+ * pooling the `- [x]` control into them moved the report's central number
+ * without saying so: adding the eight control runs took "the gate speaks on
+ * 6.3% of commands" to 5.5%, and the verb distribution with it. docs/43 and
+ * docs/49 are single populations, so the row that compares to them has to be
+ * one too. The control arm gets its own row, and §4 is where the two are
+ * actually compared.
+ */
 function trafficSection(rec: Record_): void {
-  const rows = rec.rows;
+  const rows = rec.rows.filter((r) => r.state === "open");
+  const control = rec.rows.filter((r) => r.state === "done");
   const calls = rows.flatMap((r) => r.calls);
   const bash = calls.filter((c) => c.tool === "Bash" && c.command);
   console.log("\n## 1. What real traffic looks like\n");
@@ -573,10 +653,16 @@ function trafficSection(rec: Record_): void {
       "every command without changing what the agent does** (docs/44 §4.3 measured that a gate which " +
       "speaks changes which route the agent takes; this is the route it takes on its own).\n",
   );
+  if (control.length > 0) {
+    console.log(
+      `Plus **${control.length} control runs** on the author's own \`- [x]\` items, ` +
+        `**counted separately everywhere in this report** and compared against the open arm in §4.\n`,
+    );
+  }
   console.log("| | tool calls per run | Bash per run |");
   console.log("| --- | --- | --- |");
   for (const state of ["open", "done"] as const) {
-    const g = rows.filter((r) => r.state === state);
+    const g = rec.rows.filter((r) => r.state === state);
     if (g.length === 0) continue;
     console.log(
       `| \`${state}\` (${g.length} runs) | median **${quantile(g.map((r) => r.calls.length), 0.5)}** ` +
@@ -650,7 +736,10 @@ export function fencePrefixes(command: string): string[] {
 }
 
 function gateSection(rec: Record_): void {
-  const lines = rec.rows.flatMap((r) => r.gate);
+  // The open arm, for the same reason as §1: the row that compares to docs/43
+  // and docs/49 has to be one population, and the control arm moved it.
+  const lines = rec.rows.filter((r) => r.state === "open").flatMap((r) => r.gate);
+  const controlLines = rec.rows.filter((r) => r.state === "done").flatMap((r) => r.gate);
   if (lines.length === 0) {
     console.log("\n**The gate recorded nothing.** Check `JEV_GATE_LOG`.\n");
     return;
@@ -668,6 +757,16 @@ function gateSection(rec: Record_): void {
   );
   console.log("| docs/43 (my sandboxes, my planted bugs) | 978 | 12 (1.2%) | 0.05 | 0.48 |");
   console.log("| docs/49 (published `npm run` scripts) | 568 | 137 (24.1%) | 0.31 | — |");
+  if (controlLines.length > 0) {
+    const cSpoke = controlLines.filter((g) => g.verdict === "ask" || g.verdict === "deny");
+    const cScores = controlLines.map(score).filter((x) => !Number.isNaN(x));
+    console.log(
+      `| *the \`- [x]\` control arm, §4* | *${controlLines.length}* | ` +
+        `*${cSpoke.length}* (*${pct(cSpoke.length, controlLines.length)}*) | ` +
+        `*${cScores.length > 0 ? quantile(cScores, 0.5).toFixed(2) : "—"}* | ` +
+        `*${cScores.length > 0 ? quantile(cScores, 0.99).toFixed(2) : "—"}* |`,
+    );
+  }
   console.log(
     "\n**docs/43's 1.2% and docs/49's 24.1% were the two ends of the same open question**: the first " +
       "was agent traffic in a corpus I wrote, the second was a corpus I did not write but was not " +
@@ -712,7 +811,12 @@ function gateSection(rec: Record_): void {
 const DELEGATION = new Set(["Task", "Agent"]);
 
 function fanoutSection(rec: Record_): void {
-  const calls = rec.rows.flatMap((r) => r.calls);
+  // The open arm, as in §1 and §2. Pooling the control arm here took the
+  // delegation count from 12 of 1,268 to 17 of 1,955 and the runs from 7 of
+  // 15 to 11 of 23 -- a claim about a corpus, quietly restated over two.
+  const open = rec.rows.filter((r) => r.state === "open");
+  const control = rec.rows.filter((r) => r.state === "done");
+  const calls = open.flatMap((r) => r.calls);
   const task = calls.filter((c) => DELEGATION.has(c.tool));
   console.log("\n## 3. Did the agent ever fan out?\n");
   console.log(
@@ -721,11 +825,11 @@ function fanoutSection(rec: Record_): void {
       "work was small -- and left this as the open half: **the 0 was an agent's choice, and nothing " +
       "had observed an agent choosing differently.** `Task` is in the list here for the same reason.\n",
   );
-  const runsWith = rec.rows.filter((r) => r.calls.some((c) => DELEGATION.has(c.tool)));
+  const runsWith = open.filter((r) => r.calls.some((c) => DELEGATION.has(c.tool)));
   console.log(
     `**${task.length} of ${calls.length} tool calls are delegations** ` +
       `(recorded as ${[...new Set(task.map((c) => `\`${c.tool}\``))].join(" / ") || "—"}), across ` +
-      `**${runsWith.length} of ${rec.rows.length} runs.** ` +
+      `**${runsWith.length} of ${open.length} runs.** ` +
       (task.length === 0
         ? "**Still zero.** On real repositories, on their authors' own work items, with the tool " +
           "available and nothing stopping it, this agent does not delegate. **That is now measured " +
@@ -768,9 +872,136 @@ function fanoutSection(rec: Record_): void {
   }
 }
 
+/**
+ * THE `- [x]` CONTROL ARM, against the open items it sits beside.
+ *
+ * docs/55 shipped without this and named it as the gap: the 181 ticked items
+ * were "a second population with a known property" that nothing had swept.
+ * The property is the author's own answer -- the work is already in the
+ * repository -- so an agent handed one should find it done, and how its
+ * traffic differs from the open arm is the question.
+ *
+ * THE COMPARISON IS RESTRICTED TO SECTIONS THAT HOLD BOTH CLASSES, and that
+ * restriction is the whole design. The corpus does not match itself:
+ * `actrun/TODO.md` has 136 done against 5 open, `similarity/TODO.md` 1
+ * against 10, `flaker/TODO.md` 44 against none. Comparing all 15 open runs
+ * against a done arm would compare mostly-similarity against
+ * only-actrun and report the repository as an effect of the checkbox. Inside
+ * a shared section the two arms are adjacent lines of one list, same author,
+ * same form.
+ *
+ * THE TEST IS AN EXACT PERMUTATION TEST on the difference in means, because
+ * nothing pairs a particular open task with a particular done one and five
+ * points do not support a distributional assumption. It enumerates every way
+ * to relabel the runs, so it assumes only that the labels were exchangeable
+ * under the null.
+ */
+function comparisonSection(rec: Record_): void {
+  const withSection = rec.rows.filter((r) => r.section !== undefined);
+  const key = (r: Row): string => `${r.repo}\u0000${r.file}\u0000${r.section}`;
+  const openKeys = new Set(withSection.filter((r) => r.state === "open").map(key));
+  const doneKeys = new Set(withSection.filter((r) => r.state === "done").map(key));
+  const shared = [...openKeys].filter((k) => doneKeys.has(k));
+  console.log("\n## 4. The `- [x]` arm, against the open items it sits beside\n");
+  if (shared.length === 0) {
+    console.log(
+      "**Not measurable from this record.** No markdown section holds runs of both classes, so " +
+        "any open-against-done difference would also be a difference of repository or of section. " +
+        "`--matched` selects the done items that share a section with an open one; run it first.\n",
+    );
+    return;
+  }
+  const open = withSection.filter((r) => r.state === "open" && shared.includes(key(r)));
+  const done = withSection.filter((r) => r.state === "done" && shared.includes(key(r)));
+  const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+  console.log(
+    `**${plural(open.length, "open run", "open runs")} against ${plural(done.length, "done one", "done ones")}**, ` +
+      `in ${plural(shared.length, "section", "sections")} holding both:\n`,
+  );
+  console.log("| section | open | done |");
+  console.log("| --- | --- | --- |");
+  for (const k of shared) {
+    const [repo, file, section] = k.split("\u0000");
+    console.log(
+      `| \`${repo}\` \`${file}\` — ${section} | ${open.filter((r) => key(r) === k).length} | ` +
+        `${done.filter((r) => key(r) === k).length} |`,
+    );
+  }
+  const edits = (r: Row): number => r.calls.filter((c) => c.tool === "Edit" || c.tool === "Write").length;
+  const spoke = (r: Row): number => r.gate.filter((g) => g.verdict !== "allow").length;
+  const metrics: { name: string; of: (r: Row) => number; lower: string }[] = [
+    { name: "tool calls", of: (r) => r.calls.length, lower: "less work" },
+    { name: "Bash commands", of: (r) => r.calls.filter((c) => c.tool === "Bash").length, lower: "less work" },
+    { name: "**edits (`Edit` + `Write`)**", of: edits, lower: "**changed less**" },
+    { name: "the gate spoke", of: spoke, lower: "less to judge" },
+    { name: "seconds", of: (r) => Math.round(r.ms / 1000), lower: "finished sooner" },
+  ];
+  console.log("\n| per run | open (median) | done (median) | diff of means | exact p | splits |");
+  console.log("| --- | --- | --- | --- | --- | --- |");
+  for (const m of metrics) {
+    const a = open.map(m.of);
+    const b = done.map(m.of);
+    const t = permutation(a, b);
+    console.log(
+      `| ${m.name} | ${quantile(a, 0.5)} | ${quantile(b, 0.5)} | ${t.diff > 0 ? "+" : ""}` +
+        `${t.diff.toFixed(1)} | **${t.p.toFixed(3)}**${t.exact ? "" : " (sampled)"} | ${t.splits} |`,
+    );
+  }
+  /**
+   * PER SECTION, because the pooled row above is a cancellation and not a
+   * null. The design pairs by section, so this is the breakdown the design
+   * supports, and the two sections move in OPPOSITE directions on every
+   * metric -- which is the whole reason the pooled difference is near zero.
+   * Neither reaches 0.05, and `Tier 2` cannot: its floor is one relabelling
+   * in ten.
+   */
+  console.log("\n| section | per run | open | done | diff | exact p | floor |");
+  console.log("| --- | --- | --- | --- | --- | --- | --- |");
+  for (const k of shared) {
+    const section = k.split("\u0000")[2];
+    const o = open.filter((r) => key(r) === k);
+    const d = done.filter((r) => key(r) === k);
+    for (const m of metrics) {
+      const t = permutation(o.map(m.of), d.map(m.of));
+      console.log(
+        `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
+          `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
+      );
+    }
+  }
+  const signs = shared.map((k) => {
+    const o = open.filter((r) => key(r) === k);
+    const d = done.filter((r) => key(r) === k);
+    return metrics.map((m) => Math.sign(permutation(o.map(m.of), d.map(m.of)).diff));
+  });
+  if (signs.length === 2) {
+    const flipped = metrics.filter((_, i) => signs[0][i] !== 0 && signs[0][i] === -signs[1][i]);
+    const same = metrics.filter((_, i) => signs[0][i] !== 0 && signs[0][i] === signs[1][i]);
+    if (flipped.length > same.length) {
+      console.log(
+        `\n**${flipped.length} of the ${metrics.length} measures flip sign between the two sections** ` +
+          `(${flipped.map((m) => m.name.replace(/\*/g, "")).join(", ")})` +
+          `${same.length > 0 ? `; ${same.map((m) => m.name.replace(/\*/g, "")).join(", ")} does not` : ""}. ` +
+          "So the pooled row above is not one population behaving alike -- it is two sections " +
+          "disagreeing about the direction, and pooling cancels them. Neither section's own p " +
+          "clears 0.05 and the smaller one cannot, so this is a consistent pattern that no test " +
+          "at this size can establish.\n",
+      );
+    }
+  }
+  const capped = (rs: Row[]): string => `${rs.filter((r) => r.exit === null).length} of ${rs.length}`;
+  console.log(
+    `\n**Hit the 600 s cap**: ${capped(open)} open, ${capped(done)} done. ` +
+      `**The floor on this test is ${(1 / permutation(open.map(edits), done.map(edits)).splits).toFixed(4)}** ` +
+      `(one relabelling of ${permutation(open.map(edits), done.map(edits)).splits}), and clearing 0.05 needs the ` +
+      "observed split to be among the most extreme few per cent -- so this arm can only detect a " +
+      "large difference, and a p above 0.05 here is not evidence that the classes behave alike.\n",
+  );
+}
+
 function limits(rec: Record_): void {
   const tasks = corpus();
-  console.log("\n## 4. Honest limits\n");
+  console.log("\n## 5. Honest limits\n");
   console.log(
     `- **Eight of the nine repositories are one author's or are skill collections.** docs/30's roster ` +
       "was assembled to test skill selection, so it is heavy on `.claude/skills` repositories that " +
@@ -842,6 +1073,7 @@ function report(rec: Record_): void {
   trafficSection(rec);
   gateSection(rec);
   fanoutSection(rec);
+  comparisonSection(rec);
   limits(rec);
 }
 
@@ -911,12 +1143,76 @@ async function main(): Promise<void> {
     console.log("");
     return;
   }
+  /**
+   * `--sections`: put the author's heading on rows recorded before the field
+   * existed, from the same pinned clone the run used.
+   *
+   * Needed because the 15 open rows predate the `- [x]` comparison, and the
+   * comparison pairs by section. It matches on provenance -- repo, file, line
+   * -- and touches nothing else, so it cannot rewrite a measured number.
+   */
+  if (argv.includes("--sections")) {
+    const rec = load();
+    const byKey = new Map(corpus().map((t) => [`${t.repo}\u0000${t.file}\u0000${t.line}`, t.section]));
+    let filled = 0;
+    let missing = 0;
+    for (const row of rec.rows) {
+      if (row.section !== undefined) continue;
+      const found = byKey.get(`${row.repo}\u0000${row.file}\u0000${row.line}`);
+      if (found === undefined) {
+        missing += 1;
+        continue;
+      }
+      row.section = found;
+      filled += 1;
+    }
+    console.log(`  filled ${filled} of ${rec.rows.length} rows; ${missing} not found in the corpus`);
+    if (missing > 0) console.log("  (a missing row means its clone is absent -- run `--repos` first)");
+    if (filled > 0 && existsSync(PATH_)) {
+      writeFileSync(PATH_, `${JSON.stringify(rec, null, 2)}\n`);
+      console.log(`  wrote ${basename(PATH_)} (nothing but \`section\` changed)\n`);
+    }
+    return;
+  }
   if (argv.includes("--report")) {
     report(load());
     return;
   }
   const only = argv.includes("--state") ? argv[argv.indexOf("--state") + 1] : null;
   const limit = argv.includes("--limit") ? Number.parseInt(argv[argv.indexOf("--limit") + 1], 10) : Infinity;
+  /**
+   * `--repo`, because the `- [x]` comparison has to be matched and the corpus
+   * will not match itself.
+   *
+   * The two classes are distributed nothing like each other:
+   * `actrun/TODO.md` has 136 done against 5 open, `similarity/TODO.md` has 1
+   * against 10, and `flaker/TODO.md` has 44 against none. Sweeping `--state
+   * done --limit 10` without this flag takes the first ten in roster order,
+   * which is ten `flaker` tasks -- a repository with no open counterpart at
+   * all, so the result would compare done-in-flaker against open-in-
+   * similarity and call the difference a property of the checkbox.
+   *
+   * With it, the comparison is `actrun` against `actrun`, same file, same
+   * kind of sentence, and the only thing that differs is whether the author
+   * had ticked it.
+   */
+  const repoOnly = argv.includes("--repo") ? argv[argv.indexOf("--repo") + 1] : null;
+  /**
+   * `--matched`: the done items that share a section with an open item.
+   *
+   * This is the `- [x]` control arm, and the selection is a rule rather than
+   * a pick of mine. It yields 8 tasks, all in `actrun` -- five in `P6:
+   * Remaining GitHub Actions Features` beside three open ones, three in
+   * `Tier 2: Workflow Semantics` beside two. `similarity` contributes nothing
+   * because its three sections holding open items hold no ticked item at all,
+   * and `flaker`'s 44 done items are in sections with no open counterpart.
+   *
+   * Everything else about the run is left identical to the open arm -- same
+   * prompt, same 600 s cap, same gate in `--dry-run` -- because the only
+   * thing that may differ between the arms is the author's tick.
+   */
+  const matchedOnly = argv.includes("--matched");
+  const matchedKeys = new Set(matchedOnly ? matched().map((t) => `${sectionKey(t)}\u0000${t.line}`) : []);
   /**
    * RESUME, because a sweep that cannot resume loses everything to one bug.
    *
@@ -929,7 +1225,10 @@ async function main(): Promise<void> {
   const had = existsSync(PATH_) ? load().rows : [];
   const key = (r: { repo: string; file: string; line: number }): string => `${r.repo}\u0000${r.file}\u0000${r.line}`;
   const done_ = new Set(had.map(key));
-  const all = corpus().filter((t) => (only ? t.state === only : true));
+  const all = corpus()
+    .filter((t) => (only ? t.state === only : true))
+    .filter((t) => (repoOnly ? t.repo === repoOnly || basename(t.repo) === repoOnly : true))
+    .filter((t) => (matchedOnly ? matchedKeys.has(`${sectionKey(t)}\u0000${t.line}`) : true));
   const tasks = all.filter((t) => !done_.has(key(t))).slice(0, limit);
   const at = heads();
   if (all.length === 0) throw new Error("no tasks -- run `--repos` first to clone");
