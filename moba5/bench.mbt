@@ -293,6 +293,115 @@ fn ask_retreat(g : Game, node : Int, team : Int) -> Ask {
 }
 
 ///|
+/// Which wording of the retreat question a derived fight scenario carries.
+///
+/// Every variant below asks the same decision and is scored against the same
+/// truth; they differ only in the prose the options are offered with, and in
+/// one case only in the order they are listed. That is the point: a share of
+/// answers that moves between them was a property of my sentences, and a
+/// share that does not was a property of the position.
+pub(all) enum RetreatWording {
+  /// `fight_now` / `walk_away`. What `bench_suite` ships.
+  TwoWay
+  /// Three options, described as the first three-way measurement described
+  /// them. Two asymmetries sit in that prose: **the middle option is the only
+  /// one whose description argues for it** ("the trade is still worth more to
+  /// us than backing off"), and **walking away is described in half the words
+  /// the two swings get**.
+  ThreePlain
+  /// Three options in the same shape and roughly the same length, each stating
+  /// only its condition. The two swings are described in the words
+  /// `noul_criteria` already uses for the `fight` question's two sides, so the
+  /// two questions in the request describe the same outcomes identically —
+  /// and no option argues for itself.
+  ThreeFlat
+  /// Three options with the argument moved OFF the middle one and onto walking
+  /// away. If the middle option's share is a property of its sentence, this is
+  /// where it drops.
+  ThreeTilted
+  /// `ThreePlain`'s sentences, listed walk-away first and the middle meaning
+  /// last. "The middle option" is both the elaborated one and the second one;
+  /// this separates those, so a share that survives the prose variants but
+  /// moves here was position and not prose.
+  ThreeReordered
+} derive(Eq)
+
+///|
+/// The arm name this wording is recorded under. `ThreePlain` keeps the name
+/// the first measurement's log used, because it is the same question — one
+/// label per wording across every recorded run.
+pub fn RetreatWording::arm_name(self : RetreatWording) -> String {
+  match self {
+    TwoWay => "two_way"
+    ThreePlain => "three_way"
+    ThreeFlat => "three_flat"
+    ThreeTilted => "three_tilted"
+    ThreeReordered => "three_reordered"
+  }
+}
+
+///|
+/// Whether this wording splits the commit side in two.
+pub fn RetreatWording::is_three_way(self : RetreatWording) -> Bool {
+  self != TwoWay
+}
+
+///|
+/// The four three-option wordings, in report order, baseline first.
+pub let retreat3_wordings : Array[RetreatWording] = [
+  ThreePlain,
+  ThreeFlat,
+  ThreeTilted,
+  ThreeReordered,
+]
+
+///|
+/// The options and their descriptions, per wording.
+fn retreat3_options(wording : RetreatWording) -> (Array[String], Array[String]) {
+  let win = "win_and_fight"
+  let lose = "lose_but_fight"
+  let away = "walk_away"
+  match wording {
+    ThreeFlat =>
+      (
+        [win, lose, away],
+        [
+          "Swing. When the fight ends, at least one of ours is standing on the node and none of theirs is",
+          "Swing. When the fight ends, at least one of theirs is standing on the node",
+          "Do not swing. Our champions on this node step back toward our own base this tick",
+        ],
+      )
+    ThreeTilted =>
+      (
+        [win, lose, away],
+        [
+          "Swing, and we win this fight outright: every one of them off the node with at least one of ours standing",
+          "Swing even though we do not win it outright: some of them are still standing when it ends",
+          "Break off toward our base — the position that buys us is worth more to us than this fight is now",
+        ],
+      )
+    ThreeReordered =>
+      (
+        [away, win, lose],
+        [
+          "Break off toward our base and come back on better terms", "Swing, and we win this fight outright: every one of them off the node with at least one of ours standing",
+          "Swing even though we do not win it outright — the trade is still worth more to us than backing off",
+        ],
+      )
+    // `ThreePlain`, and `TwoWay` never reaches here.
+    _ =>
+      (
+        [win, lose, away],
+        [
+          "Swing, and we win this fight outright: every one of them off the node with at least one of ours standing",
+          "Swing even though we do not win it outright — the trade is still worth more to us than backing off",
+          "Break off toward our base and come back on better terms",
+        ],
+      )
+  }
+}
+
+///|
 /// `retreat3` — the same decision with the same oracle, split three ways.
 ///
 /// `ask_retreat` offers `fight_now` against `walk_away`, and a model that says
@@ -304,33 +413,50 @@ fn ask_retreat(g : Game, node : Int, team : Int) -> Ask {
 /// state it instead of having it inferred:
 ///
 /// - picking the MIDDLE option means the two-option question was too coarse;
-/// - picking `win_and_fight` right after answering `fight` with `false` is a
-///   contradiction inside one request, with no wording left to blame.
+/// - picking `win_and_fight` right after answering `fight` with `false`
+///   disagrees with the same request's own answer about the same fight.
+///
+/// The second reading was written here as "a contradiction with no wording left
+/// to blame", and **measuring the wordings took that away**: the share splits
+/// 56% / 59% / 74% / 100% across the four variants below, and one of them
+/// produces no such disagreement at all. There was wording left to blame. What
+/// survived every variant is the pair of near-constant margins, not the split.
 ///
 /// The oracle is `ask_retreat`'s, unchanged — the same two scores over the same
 /// horizon — with the commit side labelled by whether the fight is won
 /// outright, which is `ask_fight`'s truth. So the two questions cannot disagree
 /// by construction, and whatever the model does with them is the measurement.
 /// docs/56 §4 and TODO §1.12 item 2 report what it did.
-fn ask_retreat3(g : Game, node : Int, team : Int) -> Ask {
+///
+/// `wording` picks which of the described variants is asked. The first
+/// measurement found the middle option chosen in 73% of the states where the
+/// model said it loses the fight and swung anyway — and **that share could be
+/// a property of the one sentence describing it**, which is the failure the
+/// `fight` question already demonstrated once (rewriting its two sides as
+/// mirror images moved the class score 0.50 → 0.63). So the variants exist to
+/// price the sentence.
+fn ask_retreat3(
+  g : Game,
+  node : Int,
+  team : Int,
+  wording : RetreatWording,
+) -> Ask {
   let (s_commit, s_back) = g.retreat_scores(node, team, RETREAT_HORIZON)
   let won = g.fight_is_won(node, team, FIGHT_TICKS)
   let commit_name = if won { "win_and_fight" } else { "lose_but_fight" }
+  let (options, descriptions) = retreat3_options(wording)
   {
     key: "commit_or_disengage_3",
     class_: "retreat3",
     form: "choice",
     tier: "score",
     instructions: "What should the champions we have on \{node_name(node)} do this tick? Swinging can be right whether or not the fight itself is winnable, so say which it is.",
-    options: ["win_and_fight", "lose_but_fight", "walk_away"],
-    descriptions: [
-      "Swing, and we win this fight outright: every one of them off the node with at least one of ours standing",
-      "Swing even though we do not win it outright — the trade is still worth more to us than backing off",
-      "Break off toward our base and come back on better terms",
-    ],
+    options,
+    descriptions,
     // Exactly `ask_retreat`'s truth with its commit side named: the same two
     // scores decide whether to swing, and `ask_fight`'s truth decides which
-    // swing it is.
+    // swing it is. Independent of how the options are worded or ordered,
+    // which is what makes the variants comparable.
     truth: tied_best([commit_name, "walk_away"], [s_commit, s_back]),
     why: "\{RETREAT_HORIZON} ticks forward with both sides on the strong baseline: fighting scored \{s_commit}, walking away scored \{s_back}; the fight itself is \{if won { "won" } else { "not won" }} outright",
     // The floor has no concept of "worth it anyway": it commits exactly when
@@ -1328,10 +1454,15 @@ fn sc_split_pressure() -> Scenario {
 /// The bucket is in the scenario's name so the report shows the balance, and
 /// it never reaches the model — a request carries only the state and the
 /// question text.
-/// `three_way` swaps the two-option `retreat` question for the three-option
-/// `retreat3` one and changes nothing else, which is what makes the two
-/// suites a paired A/B on the wording rather than two different measurements.
-fn sc_fight_case(case_ : FightCase, index : Int, three_way : Bool) -> Scenario {
+/// `wording` swaps the two-option `retreat` question for one of the
+/// three-option `retreat3` wordings and changes nothing else, which is what
+/// makes any two of these suites a paired A/B on the wording rather than two
+/// different measurements.
+fn sc_fight_case(
+  case_ : FightCase,
+  index : Int,
+  wording : RetreatWording,
+) -> Scenario {
   let g = case_.build()
   let (state, _) = observe(g, TEAM_A)
   {
@@ -1347,8 +1478,8 @@ fn sc_fight_case(case_ : FightCase, index : Int, three_way : Bool) -> Scenario {
       // out "walk away", so answering "walk away" to everything scored 0.83
       // and the class could not tell a model from a rubber stamp. Half of
       // these fights are ones we win, so asking here balances it.
-      if three_way {
-        ask_retreat3(g, case_.node, TEAM_A)
+      if wording.is_three_way() {
+        ask_retreat3(g, case_.node, TEAM_A, wording)
       } else {
         ask_retreat(g, case_.node, TEAM_A)
       },
@@ -1359,15 +1490,15 @@ fn sc_fight_case(case_ : FightCase, index : Int, three_way : Bool) -> Scenario {
 ///|
 /// The derived fight states as their own suite, in either retreat wording.
 ///
-/// `bench_suite` appends the two-option arm; the wording experiment asks both
-/// and compares them state by state. Both arms are built from the same
+/// `bench_suite` appends the two-option arm; the wording experiments ask
+/// several and compare them state by state. Every arm is built from the same
 /// `balanced_fight_cases`, so the states, their names and every other question
 /// in the request are identical and the retreat wording is the only difference.
-pub fn fight_scenarios(three_way : Bool) -> Array[Scenario] {
+pub fn fight_scenarios(wording : RetreatWording) -> Array[Scenario] {
   let out : Array[Scenario] = []
   let cases = balanced_fight_cases(FIGHT_PER_BUCKET)
   for i in 0..<cases.length() {
-    out.push(sc_fight_case(cases[i], i, three_way))
+    out.push(sc_fight_case(cases[i], i, wording))
   }
   out
 }
@@ -1413,7 +1544,7 @@ pub fn bench_suite() -> Array[Scenario] {
   // The `fight` class comes last and comes from the sweep, not from here: two
   // cases per bucket, so the head count is worth 0.50 on the class and any
   // score above chance is a read of the fight rather than of the head count.
-  for sc in fight_scenarios(false) {
+  for sc in fight_scenarios(TwoWay) {
     out.push(sc)
   }
   out

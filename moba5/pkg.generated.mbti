@@ -114,7 +114,7 @@ pub fn fight_bucket_census() -> Map[String, Int]
 
 pub let fight_buckets : Array[String]
 
-pub fn fight_scenarios(Bool) -> Array[Scenario]
+pub fn fight_scenarios(RetreatWording) -> Array[Scenario]
 
 pub fn forced_overlap(Int, Int, Int) -> Int
 
@@ -153,6 +153,8 @@ pub fn power_level(Int) -> Int
 pub let power_rubric : Array[String]
 
 pub let recorded_run : Recorded
+
+pub let retreat3_wordings : Array[RetreatWording]
 
 pub fn retreat_pick(Int, Int) -> String
 
@@ -520,6 +522,16 @@ pub(all) struct Recorded {
   commit_count : Int
   paired : Int
 }
+
+pub(all) enum RetreatWording {
+  TwoWay
+  ThreePlain
+  ThreeFlat
+  ThreeTilted
+  ThreeReordered
+} derive(Eq)
+pub fn RetreatWording::arm_name(Self) -> String
+pub fn RetreatWording::is_three_way(Self) -> Bool
 
 pub(all) struct Scenario {
   name : String

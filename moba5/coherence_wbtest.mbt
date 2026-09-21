@@ -45,16 +45,24 @@ test "the coherence rows carry the benchmark's own truths" {
 }
 
 ///|
-/// The three-option wording is the SAME decision, priced the same way.
+/// EVERY three-option wording is the SAME decision, priced the same way.
 ///
-/// This is what makes the wording an A/B rather than two measurements: if the
-/// reworded question's truth could disagree with the two-option one about
+/// This is what makes the wordings an A/B rather than several measurements: if
+/// a reworded question's truth could disagree with the two-option one about
 /// whether to swing, or with the `fight` question about whether the fight is
 /// won, then a model's answers moving between arms would tell us nothing about
-/// the model.
-test "the three-way retreat wording asks the same question" {
-  let two = fight_scenarios(false)
-  let three = fight_scenarios(true)
+/// the model. The variants differ in prose and in one case in option order,
+/// and this test is what says so.
+test "every three-way retreat wording asks the same question" {
+  for wording in retreat3_wordings {
+    check_three_way(wording)
+  }
+}
+
+///|
+fn check_three_way(wording : RetreatWording) -> Unit raise {
+  let two = fight_scenarios(TwoWay)
+  let three = fight_scenarios(wording)
   assert_eq(two.length(), three.length())
   let mut checked = 0
   for i in 0..<two.length() {
@@ -76,6 +84,13 @@ test "the three-way retreat wording asks the same question" {
     for ask in three[i].asks {
       if ask.class_ == "retreat3" {
         b_retreat = ask.truth
+      }
+      // The reworded question keeps its key, its class and its instructions,
+      // so only the options and their prose differ.
+      if ask.class_ == "retreat3" {
+        assert_eq(ask.key, "commit_or_disengage_3")
+        assert_eq(ask.options.length(), 3)
+        assert_eq(ask.descriptions.length(), 3)
       }
       // Every other question is identical to the two-option arm's.
       if ask.class_ != "retreat3" {
@@ -117,6 +132,111 @@ test "the three-way retreat wording asks the same question" {
     )
   }
   assert_eq(checked, 4 * FIGHT_PER_BUCKET)
+}
+
+///|
+/// The wordings differ in the way each is supposed to differ.
+///
+/// The previous test says the arms ask the same question; this one says they
+/// ask it differently, which is the other half of an A/B. A copy-paste that
+/// left two arms identical would make the experiment report "the wording does
+/// not matter" for free, and nothing in the numbers would show it.
+test "the wordings differ in the way each is meant to" {
+  fn opts_of(w : RetreatWording) -> (Array[String], Array[String]) {
+    retreat3_options(w)
+  }
+
+  fn spread(descs : Array[String]) -> Int {
+    let mut lo = 1 << 28
+    let mut hi = 0
+    for d in descs {
+      if d.length() < lo {
+        lo = d.length()
+      }
+      if d.length() > hi {
+        hi = d.length()
+      }
+    }
+    hi - lo
+  }
+
+  let (plain_opts, plain_descs) = opts_of(ThreePlain)
+  // Every arm offers the same three options, so only the prose and the order
+  // can differ.
+  for w in retreat3_wordings {
+    let (o, d) = opts_of(w)
+    assert_eq(o.length(), 3)
+    assert_eq(d.length(), 3)
+    for name in plain_opts {
+      assert_true(o.contains(name))
+    }
+    for s in d {
+      assert_true(s.length() > 20)
+    }
+  }
+  // `ThreeReordered` is the SAME sentences in a different order: every option
+  // keeps the description it had, so the arm changes order and nothing else.
+  let (re_opts, re_descs) = opts_of(ThreeReordered)
+  assert_true(re_opts != plain_opts)
+  for i in 0..<plain_opts.length() {
+    let mut found = false
+    for k in 0..<re_opts.length() {
+      if re_opts[k] == plain_opts[i] {
+        found = true
+        assert_eq(re_descs[k], plain_descs[i])
+      }
+    }
+    assert_true(found)
+  }
+  // And it moves the middle meaning out of the middle, which is the confound
+  // it exists to separate.
+  assert_eq(plain_opts[1], "lose_but_fight")
+  assert_true(re_opts[1] != "lose_but_fight")
+  // `ThreeFlat` and `ThreeTilted` reword the middle option.
+  for w in [ThreeFlat, ThreeTilted] {
+    let (o, d) = opts_of(w)
+    for i in 0..<o.length() {
+      if o[i] == "lose_but_fight" {
+        assert_true(d[i] != plain_descs[1])
+      }
+    }
+  }
+  // `ThreeFlat` is flat: its three descriptions are closer in length than the
+  // baseline's, where walking away is described in half the words the two
+  // swings get.
+  let (_, flat_descs) = opts_of(ThreeFlat)
+  assert_true(spread(flat_descs) < spread(plain_descs))
+  assert_true(
+    plain_descs[2].length() * 2 <
+    plain_descs[0].length() + plain_descs[1].length(),
+  )
+  // And the asymmetry that matters is not length but argument: in the baseline
+  // exactly one option's prose says it is worth more than the alternative, and
+  // it is the middle one. That sentence is what the 73% might be a property
+  // of, so the variants move it.
+  let mut plain_args = 0
+  for i in 0..<plain_opts.length() {
+    if plain_descs[i].contains("worth more") {
+      plain_args += 1
+      assert_eq(plain_opts[i], "lose_but_fight")
+    }
+  }
+  assert_eq(plain_args, 1)
+  // `ThreeFlat` gives the argument to nobody.
+  for d in flat_descs {
+    assert_false(d.contains("worth more"))
+  }
+  // `ThreeTilted` gives it to walking away instead — the same sentence shape,
+  // on the option that loses it in the baseline.
+  let (tilt_opts, tilt_descs) = opts_of(ThreeTilted)
+  let mut tilt_args = 0
+  for i in 0..<tilt_opts.length() {
+    if tilt_descs[i].contains("worth more") {
+      tilt_args += 1
+      assert_eq(tilt_opts[i], "walk_away")
+    }
+  }
+  assert_eq(tilt_args, 1)
 }
 
 ///|

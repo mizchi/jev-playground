@@ -91,9 +91,11 @@ third exist because the first kind of bug is not the kind that bites:
   and means nothing;
 - **the coherence analysis** (`coherence_wbtest.mbt`) — that its rows carry the
   benchmark's own `fight` and `retreat` truths rather than a second copy of the
-  pricing, that the reworded three-option question is the same question with
-  the same oracle, that the sign test matches values worked out by hand, and
-  that a count equal to its forced overlap is recognised as one. The last of
-  those is the check that turned the report's "13 of 16 contradict" into a
-  weaker and correct claim; the wording one is what makes the two arms an A/B
-  rather than two different measurements.
+  pricing, that every reworded three-option question is the same question with
+  the same oracle, **that the rewordings differ in the way each is meant to**,
+  that the sign test matches values worked out by hand, and that a count equal
+  to its forced overlap is recognised as one. The forced-overlap check is what
+  turned the report's "13 of 16 contradict" into a weaker and correct claim;
+  the two wording checks are the halves of an A/B — one says the arms ask the
+  same question, the other says they ask it differently, and without the
+  second a copy-paste would report "the wording does not matter" for free.

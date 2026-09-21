@@ -7,22 +7,26 @@
 /// like a result. These tests are what stop either from being published.
 
 ///|
-/// Every scenario the CLI can send: the suite, plus the wording experiment's
-/// three-option arm. The arm is the same sixteen states with one question
-/// reworded, and a class has to hold up in whichever of the two asks it —
-/// otherwise the arm would be the one place a broken question could hide.
+/// Every scenario the CLI can send: the suite, plus every three-option arm of
+/// the wording experiments. Each arm is the same sixteen states with one
+/// question reworded, and a class has to hold up in whichever arm asks it —
+/// otherwise an arm would be the one place a broken question could hide.
 fn all_scenarios() -> Array[Scenario] {
   let out = bench_suite()
-  for sc in fight_scenarios(true) {
-    out.push(sc)
+  for wording in retreat3_wordings {
+    for sc in fight_scenarios(wording) {
+      out.push(sc)
+    }
   }
   out
 }
 
 ///|
-/// The same, as questions, once each. The arm repeats the suite's `fight`,
-/// `focus` and `power` questions verbatim, and counting those twice would make
-/// a class look twice as large as it is.
+/// The same, as questions, once each. Every arm repeats the suite's `fight`,
+/// `focus` and `power` questions verbatim, and counting those again would make
+/// a class look several times as large as it is. Only the first arm's
+/// `retreat3` survives the dedupe, which is what the class-level tests want:
+/// the arms differ in prose, not in truth.
 fn all_asks() -> Array[Ask] {
   let out : Array[Ask] = []
   let seen : Array[String] = []

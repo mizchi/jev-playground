@@ -173,11 +173,12 @@ replay-moba5-coherence: moon-build
     moon run --target native cmd/moba5 -- --coherence --from-answers moba5/runs/wording.jsonl
 
 # @inputs: moba5/** cmd/moba5/** moba5/runs/**
-# @cost: 0.3
+# @cost: 0.4
 # Re-derive docs/56 §1.12 item 2 from the recorded answers: the retreat question
-# as two options and as three, over the same sixteen states, no API
+# as two options and as three, and then the three options described four ways
 replay-moba5-wording: moon-build
     moon run --target native cmd/moba5 -- --from-answers moba5/runs/wording.jsonl
+    moon run --target native cmd/moba5 -- --from-answers moba5/runs/descriptions.jsonl
 
 # ---------------------------------------------------------------- JS checks
 

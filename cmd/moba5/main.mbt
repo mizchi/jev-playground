@@ -40,6 +40,9 @@ struct Opts {
   coherence : Bool
   /// Ask the derived fight states under both retreat wordings and compare.
   wording : Bool
+  /// Ask the three-option question under all four of its wordings, to price
+  /// the sentences rather than the options.
+  descriptions : Bool
   /// Where to write the per-answer log, or where to read one back from.
   answers : String
   /// Re-derive the wording comparison from a committed answers log. No API key.
@@ -649,9 +652,20 @@ fn split_lines(s : String) -> Array[String] {
 }
 
 ///|
-/// The two arms, in report order. `two_way` is the wording the benchmark
-/// ships; `three_way` splits its commit option in two.
-let wording_arms : Array[String] = ["two_way", "three_way"]
+/// The arms a recorded log holds, in the order they first appear in it.
+///
+/// Derived from the data rather than hard-coded, so one log can hold two arms
+/// and another four, and both replay. The first arm is the baseline every
+/// other one is compared against.
+fn arms_in(answers : Array[Answer]) -> Array[String] {
+  let out : Array[String] = []
+  for a in answers {
+    if a.arm != "" && !out.contains(a.arm) {
+      out.push(a.arm)
+    }
+  }
+  out
+}
 
 ///|
 /// What one arm did on one run, over the sixteen derived fight states.
@@ -777,7 +791,7 @@ fn arm_runs(
       max_run = a.run
     }
   }
-  for arm in wording_arms {
+  for arm in arms_in(answers) {
     for run in 1..<=max_run {
       let row = ArmRun::new(arm, run)
       for name in order {
@@ -833,19 +847,24 @@ fn arm_runs(
 /// whether the MARGINS move — whether naming the middle position changes how
 /// often the model says it loses the fight and how often it swings anyway —
 /// and, when it swings on a fight it says it loses, whether it will say so.
-async fn run_wording(opts : Opts, client : @lib.Client) -> Unit {
-  let two = @game.fight_scenarios(false)
-  let three = @game.fight_scenarios(true)
+async fn run_wording(
+  opts : Opts,
+  client : @lib.Client,
+  arms : Array[@game.RetreatWording],
+  title : String,
+) -> Unit {
   let repeat = if opts.repeat < 1 { 1 } else { opts.repeat }
+  let states = @game.fight_scenarios(@game.TwoWay).length()
   @report.header(
-    "moba5 wording — the retreat question as two options and as three",
-    "\{opts.model}, \{two.length()} states × 2 wordings × \{repeat} run(s)",
+    title,
+    "\{opts.model}, \{states} states × \{arms.length()} wordings × \{repeat} run(s)",
   )
   let answers : Array[Answer] = []
   let stats = Stats::new()
   for run in 1..<=repeat {
-    for arm in wording_arms {
-      let suite = if arm == "two_way" { two } else { three }
+    for wording in arms {
+      let arm = wording.arm_name()
+      let suite = @game.fight_scenarios(wording)
       for sc in suite {
         let qs = scenario_questions(sc)
         let resp = ask_with_retry(
@@ -882,7 +901,7 @@ async fn run_wording(opts : Opts, client : @lib.Client) -> Unit {
     println("  wrote \{answers.length()} answers to \{opts.answers}")
     println("")
   }
-  print_wording(two, answers)
+  print_wording(@game.fight_scenarios(@game.TwoWay), answers)
   println(
     "  \{stats.requests} requests, \{stats.input_tokens} input tokens (~$\{cost_of(stats.input_tokens)})",
   )
@@ -910,7 +929,7 @@ async fn replay_wording(path : String) -> Unit {
     "moba5 wording — the retreat question as two options and as three",
     "re-derived from \{path}: \{answers.length()} recorded answers, no API",
   )
-  print_wording(@game.fight_scenarios(false), answers)
+  print_wording(@game.fight_scenarios(@game.TwoWay), answers)
 }
 
 ///|
@@ -962,7 +981,7 @@ fn print_wording(
   println("  1. What each wording was answered with")
   println("")
   println(
-    "  \{@report.pad("arm", 12)}\{@report.pad("run", 5)}\{@report.pad("\"we lose it\"", 14)}\{@report.pad("swing", 8)}\{@report.pad("paired", 8)}\{@report.pad("forced", 8)}the retreat answers",
+    "  \{@report.pad("arm", 17)}\{@report.pad("run", 5)}\{@report.pad("\"we lose it\"", 14)}\{@report.pad("swing", 8)}\{@report.pad("paired", 8)}\{@report.pad("forced", 8)}the retreat answers",
   )
   @report.rule(100)
   for r in rows {
@@ -972,7 +991,7 @@ fn print_wording(
       "win_and_fight \{r.chose("win_and_fight")}, lose_but_fight \{r.chose("lose_but_fight")}, walk_away \{r.chose("walk_away")}"
     }
     println(
-      "  \{@report.pad(r.arm, 12)}\{@report.pad("\{r.run}", 5)}\{@report.pad("\{count(r.fight_false)}/\{r.fight_false.length()}", 14)}\{@report.pad("\{count(r.commit)}/\{r.commit.length()}", 8)}\{@report.pad("\{r.paired()}", 8)}\{@report.pad("\{r.forced()}", 8)}\{split}",
+      "  \{@report.pad(r.arm, 17)}\{@report.pad("\{r.run}", 5)}\{@report.pad("\{count(r.fight_false)}/\{r.fight_false.length()}", 14)}\{@report.pad("\{count(r.commit)}/\{r.commit.length()}", 8)}\{@report.pad("\{r.paired()}", 8)}\{@report.pad("\{r.forced()}", 8)}\{split}",
     )
   }
   println("")
@@ -989,111 +1008,174 @@ fn print_wording(
   )
   println("  the runs would count one state several times.")
   println("")
+  let arms = arms_in(answers)
+  let base = if arms.length() > 0 { arms[0] } else { "" }
   for what in ["fight \"we lose it\"", "swing"] {
-    let parts : Array[String] = []
-    for a in rows {
-      if a.arm != "two_way" {
+    for arm in arms {
+      if arm == base {
         continue
       }
-      for b in rows {
-        if b.arm != "three_way" || b.run != a.run {
+      let parts : Array[String] = []
+      for a in rows {
+        if a.arm != base {
           continue
         }
-        let mut two_only = 0
-        let mut three_only = 0
-        let len = if a.fight_false.length() < b.fight_false.length() {
-          a.fight_false.length()
-        } else {
-          b.fight_false.length()
-        }
-        for i in 0..<len {
-          let (x, y) = if what == "swing" {
-            (a.commit[i], b.commit[i])
+        for b in rows {
+          if b.arm != arm || b.run != a.run {
+            continue
+          }
+          let mut base_only = 0
+          let mut arm_only = 0
+          let len = if a.fight_false.length() < b.fight_false.length() {
+            a.fight_false.length()
           } else {
-            (a.fight_false[i], b.fight_false[i])
+            b.fight_false.length()
           }
-          if x && !y {
-            two_only += 1
+          for i in 0..<len {
+            let (x, y) = if what == "swing" {
+              (a.commit[i], b.commit[i])
+            } else {
+              (a.fight_false[i], b.fight_false[i])
+            }
+            if x && !y {
+              base_only += 1
+            }
+            if y && !x {
+              arm_only += 1
+            }
           }
-          if y && !x {
-            three_only += 1
-          }
+          let p = @game.sign_test(arm_only, base_only)
+          parts.push(
+            "run \{a.run}: \{base_only + arm_only} changed (\{base_only}/\{arm_only}), p = \{@report.d3(p)}",
+          )
         }
-        let p = @game.sign_test(three_only, two_only)
-        parts.push(
-          "run \{a.run}: \{two_only + three_only} changed (\{two_only}/\{three_only}), p = \{@report.d3(p)}",
-        )
       }
+      println(
+        "  \{@report.pad(what, 20)}\{@report.pad("\{base} vs \{arm}", 30)}\{parts.join("   ")}",
+      )
     }
-    println("  \{@report.pad(what, 20)}\{parts.join("   ")}")
   }
   println("")
   println(
-    "  (changed counts read as two-way-only / three-way-only, and one changed state cannot be",
+    "  (changed counts read as baseline-only / other-arm-only, and one changed state cannot be",
   )
   println("  a difference under any test — the sign test says so itself.)")
   println("")
-  println("  3. What the three-option arm said about the same fight twice")
+  println("  3. Crossed against its own fight answer, per wording")
   println("")
   println(
-    "  Both answers come out of one request about one node, so the two questions can be crossed",
+    "  Both answers come out of one request about one node, so the two questions cross directly.",
   )
   println(
-    "  directly. `lose_but_fight` is the position the two-option question had nowhere to put;",
+    "  `lose_but_fight` is the position the two-option question had nowhere to put; the cells",
   )
   println(
-    "  the two off-diagonal cells are contradictions with no wording left to blame.",
+    "  marked ← are answers that disagree with the same request's own fight answer. The share",
+  )
+  println(
+    "  on the right is of the states where it said \"we lose it\" AND swung — and these arms",
+  )
+  println(
+    "  exist because that share turned out to be a number my three sentences can move.",
   )
   println("")
   let options = ["win_and_fight", "lose_but_fight", "walk_away"]
   println(
-    "  \{@report.pad("its fight answer", 20)}\{@report.pad("win_and_fight", 16)}\{@report.pad("lose_but_fight", 17)}walk_away",
+    "  \{@report.pad("arm", 17)}\{@report.pad("its fight answer", 18)}\{@report.pad("win_and", 10)}\{@report.pad("lose_but", 10)}\{@report.pad("walk_away", 11)}middle share",
   )
-  @report.rule(72)
-  for said_false in [false, true] {
-    let cells : Array[Int] = [0, 0, 0]
+  @report.rule(92)
+  for arm in arms {
+    // The two-option arm has no middle to name, so it has nothing to cross.
+    let mut three_way = false
     for r in rows {
-      if r.arm != "three_way" {
-        continue
-      }
-      for i in 0..<r.fight_false.length() {
-        if r.fight_false[i] != said_false {
-          continue
-        }
-        for k in 0..<options.length() {
-          if r.retreat_said[i] == options[k] {
-            cells[k] += 1
+      if r.arm == arm {
+        for said in r.retreat_said {
+          if said == "lose_but_fight" || said == "win_and_fight" {
+            three_way = true
           }
         }
       }
     }
-    let label = if said_false { "\"we lose it\"" } else { "\"we win it\"" }
-    let marks = if said_false { ["  ←", "", ""] } else { ["", "  ←", ""] }
-    println(
-      "  \{@report.pad(label, 20)}\{@report.pad("\{cells[0]}\{marks[0]}", 16)}\{@report.pad("\{cells[1]}\{marks[1]}", 17)}\{cells[2]}",
-    )
-  }
-  println("")
-  let parts : Array[String] = []
-  for r in rows {
-    if r.arm != "three_way" {
+    if !three_way {
       continue
     }
-    let (m, t) = r.middle_when_losing()
-    parts.push("run \{r.run}: \{m}/\{t}")
+    for said_false in [false, true] {
+      let cells : Array[Int] = [0, 0, 0]
+      for r in rows {
+        if r.arm != arm {
+          continue
+        }
+        for i in 0..<r.fight_false.length() {
+          if r.fight_false[i] != said_false {
+            continue
+          }
+          for k in 0..<options.length() {
+            if r.retreat_said[i] == options[k] {
+              cells[k] += 1
+            }
+          }
+        }
+      }
+      let label = if said_false { "\"we lose it\"" } else { "\"we win it\"" }
+      let marks = if said_false { ["  ←", "", ""] } else { ["", "  ←", ""] }
+      // The share rides on the "we lose it" row, which is the row it is about.
+      let share = if said_false {
+        let mut mid = 0
+        let mut total = 0
+        for r in rows {
+          if r.arm != arm {
+            continue
+          }
+          let (m, t) = r.middle_when_losing()
+          mid += m
+          total += t
+        }
+        if total == 0 {
+          "—"
+        } else {
+          "\{mid}/\{total}  \{mid * 100 / total}%"
+        }
+      } else {
+        ""
+      }
+      println(
+        "  \{@report.pad(if said_false { "" } else { arm }, 17)}\{@report.pad(label, 18)}\{@report.pad("\{cells[0]}\{marks[0]}", 10)}\{@report.pad("\{cells[1]}\{marks[1]}", 10)}\{@report.pad("\{cells[2]}", 11)}\{share}",
+      )
+    }
   }
-  println(
-    "  Of the states where it said \"we lose it\" AND swung, the share that named the middle",
-  )
-  println("  option, run by run: \{parts.join(",  ")}")
+  println("")
+  println("  Run by run, so the repeats are not counted as independent states:")
+  for arm in arms {
+    let parts : Array[String] = []
+    let mut has_middle = false
+    for r in rows {
+      if r.arm != arm {
+        continue
+      }
+      for said in r.retreat_said {
+        if said == "lose_but_fight" || said == "win_and_fight" {
+          has_middle = true
+        }
+      }
+      let (m, t) = r.middle_when_losing()
+      if t > 0 {
+        parts.push("run \{r.run}: \{m}/\{t}")
+      }
+    }
+    // An arm with no middle option to name has nothing to report here: its
+    // count would be a trivial zero and read as a finding.
+    if has_middle && parts.length() > 0 {
+      println("  \{@report.pad(arm, 17)}\{parts.join(",  ")}")
+    }
+  }
   println("")
   println("  4. Scored against the simulator")
   println("")
   println(
-    "  \{@report.pad("arm", 12)}\{@report.pad("fight", 16)}\{@report.pad("retreat", 16)}rubber stamp on the retreat question",
+    "  \{@report.pad("arm", 17)}\{@report.pad("fight", 16)}\{@report.pad("retreat", 16)}rubber stamp on the retreat question",
   )
   @report.rule(80)
-  for arm in wording_arms {
+  for arm in arms {
     let mut f_hits = 0
     let mut f_n = 0
     let mut r_hits = 0
@@ -1118,7 +1200,7 @@ fn print_wording(
       }
     }
     println(
-      "  \{@report.pad(arm, 12)}\{@report.pad("\{f_hits}/\{f_n}  \{rate(f_hits, f_n)}", 16)}\{@report.pad("\{r_hits}/\{r_n}  \{rate(r_hits, r_n)}", 16)}\{trivial_rate(truths)}",
+      "  \{@report.pad(arm, 17)}\{@report.pad("\{f_hits}/\{f_n}  \{rate(f_hits, f_n)}", 16)}\{@report.pad("\{r_hits}/\{r_n}  \{rate(r_hits, r_n)}", 16)}\{trivial_rate(truths)}",
     )
   }
   println("")
@@ -1209,7 +1291,7 @@ async fn run_coherence(log : String) -> Unit {
   if log != "" {
     println("")
     let answers = read_answers(log)
-    let arms = arm_runs(@game.fight_scenarios(false), answers)
+    let arms = arm_runs(@game.fight_scenarios(@game.TwoWay), answers)
     let mut printed = false
     for r in arms {
       if r.arm != "two_way" {
@@ -2065,6 +2147,11 @@ async fn main {
         long="wording",
         about="Ask the derived fight states under both retreat wordings (two options and three) and compare what moved.",
       ),
+      @argparse.FlagArg(
+        "descriptions",
+        long="descriptions",
+        about="Ask the three-option retreat question under all four of its wordings, to price the option descriptions themselves.",
+      ),
     ],
     options=[
       @argparse.OptionArg(
@@ -2186,6 +2273,7 @@ async fn main {
     arena: matches.flags.get("arena").unwrap_or(false),
     coherence: matches.flags.get("coherence").unwrap_or(false),
     wording: matches.flags.get("wording").unwrap_or(false),
+    descriptions: matches.flags.get("descriptions").unwrap_or(false),
     answers: opt_value(matches, "answers").unwrap_or(""),
     from_answers: opt_value(matches, "from-answers").unwrap_or(""),
     draft: matches.flags.get("draft").unwrap_or(false),
@@ -2204,7 +2292,11 @@ async fn main {
     opts.coherence ||
     opts.from_answers != "" ||
     (opts.bench && opts.dry)
-  if !offline && !opts.bench && !opts.draft && !opts.wording {
+  if !offline &&
+    !opts.bench &&
+    !opts.draft &&
+    !opts.wording &&
+    !opts.descriptions {
     for kind in [opts.team_a, opts.team_b] {
       if kind != "jev" && kind != "scripted" && kind != "smart" {
         @stdio.stderr.write(
@@ -2220,6 +2312,7 @@ async fn main {
       opts.draft ||
       opts.bench ||
       opts.wording ||
+      opts.descriptions ||
       opts.team_a == "jev" ||
       opts.team_b == "jev"
     )
@@ -2275,7 +2368,18 @@ async fn run(opts : Opts) -> Unit {
     return
   }
   if opts.wording {
-    run_wording(opts, client)
+    run_wording(
+      opts,
+      client,
+      [@game.TwoWay, @game.ThreePlain],
+      "moba5 wording — the retreat question as two options and as three",
+    )
+    return
+  }
+  if opts.descriptions {
+    run_wording(
+      opts, client, @game.retreat3_wordings, "moba5 descriptions — the same three options, described four ways",
+    )
     return
   }
   if opts.draft {
