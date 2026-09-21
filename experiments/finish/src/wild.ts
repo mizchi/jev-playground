@@ -1748,6 +1748,23 @@ async function main(): Promise<void> {
         "A task where it never fired cannot show its effect, so the difference there is run-to-run " +
         "variance and the rows below are the place to check which is which.\n",
     );
+    /**
+     * THE CEILING ON THIS COMPARISON, stated before its numbers are read.
+     *
+     * The overlap can never exceed the abandoned record's row count, because
+     * that is all the tasks that ever ran under the old instrument. At 6 rows
+     * the best two-sided p a paired test can reach is 2/2^6 = 0.031, and only
+     * if every single task moves the same way. So this comparison can support
+     * "the fence changed the traffic" as a direction with a small sample
+     * behind it, and it can never support a strong claim -- which is worth
+     * knowing before reading the table rather than after.
+     */
+    console.log(
+      `**This comparison has a ceiling**: only ${dead.rows.length} tasks ever ran under the old ` +
+        `instrument, so the overlap stops there and the best two-sided p it can reach is ` +
+        `${(2 / 2 ** dead.rows.length).toFixed(4)} -- and only if every task moves the same way. ` +
+        "It can show a direction. It cannot establish one.\n",
+    );
     const ed = (r: Row): number => r.calls.filter((c) => c.tool === "Edit" || c.tool === "Write").length;
     const sp = (r: Row): number => r.gate.filter((g) => g.verdict !== "allow").length;
     const ms = [
