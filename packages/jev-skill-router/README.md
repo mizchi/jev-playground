@@ -103,8 +103,17 @@ Set `TYPESAFE_API_KEY`. `--dir` reads `<name>/SKILL.md` with YAML front matter;
 ## As a Pi extension
 
 ```sh
-pi install npm:jev-skill-router
+pi install ./packages/jev-skill-router      # from the repository root
+pi install ./pi/components                  # or all five components at once
 ```
+
+> **`pi install npm:jev-skill-router` was here and it was wrong.** That name is
+> **not on npm** — this repository's packages are unpublished, and three of the
+> six names (`jev-guard`, `jev-model-router`, `jev-compact`) are taken by other
+> authors, so the `npm:` spelling either 404s or installs somebody else's
+> component. A local path is the only one that installs *this* router, and
+> `pi/README.md` has the assembled form. Both lines above are checked by
+> `cd pi && npm run load`.
 
 `/jev-skills` shows what was loaded, what was considered, and how much the prefilter
 dropped. `src/pi.ts` is the only file importing from Pi.

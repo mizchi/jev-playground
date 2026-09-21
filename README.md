@@ -466,10 +466,11 @@ glob だけにすると **14/15 に取りこぼします**。
 ```bash
 cd pi && npm install     # 6 パッケージをローカルから symlink(コピーではない)
 npm run probe            # どの拡張がどの seam を取るか、実測。API キー不要
-npm test                 # 10 件。API キー不要
-npm run load             # Pi 自身の resolver に読ませる
+npm test                 # 11 件。API キー不要
+npm run load             # Pi 自身の resolver に読ませる(6 パッケージ + 2 プロファイル)
 pi install ./pi/components   # 5 つを別々に
 pi install ./pi/resident     # または jev-hermes 1 つ(同じ 5 つを内包)。両方は不可
+pi install ./packages/jev-guard   # 1 つだけ入れることもできる
 ```
 
 **2 つのプロファイルは排他です** —— `jev-hermes` は guard も自前で持つので
@@ -477,8 +478,12 @@ pi install ./pi/resident     # または jev-hermes 1 つ(同じ 5 つを内包)
 付きます(5 seam 全部で衝突。`npm run probe` が測ります)。
 
 そして **npm 上の `jev-guard` / `jev-model-router` / `jev-compact` は別人のパッケージ**です
-(残り 4 つは 404)。だから `pi/` の依存は**すべて `file:` パス**で、
-バージョン範囲を書くと**テストが落ちます**。詳細は [`pi/README.md`](pi/README.md)。
+(残り 4 つは 404 —— このリポジトリのものは未公開)。
+だから**入れ方はローカルパスだけ**で、`pi/` の依存も**すべて `file:` パス**、
+バージョン範囲を書くと**テストが落ちます**。
+6 つのパッケージ README のレシピもそれに合わせて直してあり、
+**コードブロックに `npm:<このリポジトリの名前>` が現れたらテストが落ちます**。
+詳細は [`pi/README.md`](pi/README.md)。
 
 ## 補足
 
