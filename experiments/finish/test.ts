@@ -34,13 +34,13 @@ import { corpus, requestFor, siblingsIn } from "./src/fanout.js";
 import { routerAttempts, runRecords, sepAuc, sweepCaps } from "./src/ceiling.js";
 // ALIASED for the same reason as INTENT_ARMS above: `corpus` is already
 // fanout.ts's harvest, and wild.ts exports one too.
-import { corpus as wildCorpus, fencePrefixes, headMatch, matched, pairGaps, pairs, promptFor, sectionKey, tasksIn, type Task } from "./src/wild.js";
+import { corpus as wildCorpus, fencePrefixes, fenceText, headMatch, matched, pairGaps, pairs, promptFor, sectionKey, tasksIn, type Task } from "./src/wild.js";
 import { pairedPermutation, permutation } from "../shared/thresholds.js";
 // Aliased for reading, not to dodge a clash -- nothing else here exports
 // `candidates`. In a file importing rosters from a dozen modules the bare name
 // would not say which one, and the two aliases above are what that costs.
 import { candidates as widenCandidates, reconcile } from "./src/widen.js";
-import { SWEEPS, harnessReach, pathWithToolchains } from "./src/wild.js";
+import { SWEEPS, fenceRoots, harnessReach, pathWithToolchains } from "./src/wild.js";
 
 let pass = 0;
 let fail = 0;
@@ -1462,11 +1462,35 @@ check("every fenced command lands in a named class, so the table cannot lose one
    * A prefix class that does not cover them is exactly what this guards, so
    * checking one record and calling it covered would miss the case it is for.
    */
+  /**
+   * UNIT CASES FIRST, so the two classes are pinned independently of any
+   * record. The record-driven loop below is the one that found the gap, but it
+   * reads a file a running sweep keeps rewriting -- it cannot be the only
+   * thing holding the classifier in place.
+   */
+  eq(fencePrefixes("cat /root/.moon/bin/moon").join(","), "/root/.moon", "a protected prefix: ");
+  eq(fencePrefixes("ls /home/user/jev-playground").join(","), "/home/user", "the other root: ");
+  eq(fencePrefixes("grep -rn x ../.. --include=*.json").join(","), "..", "the fence's SECOND rule: ");
+  eq(fencePrefixes("cd ../sibling && ls").join(","), "..", "traversal at the start of a word: ");
+  // PRECEDENCE mirrors `outsideSandbox`, which returns on the first absolute
+  // path it finds -- so a command with both is denied FOR the path.
+  eq(
+    fencePrefixes("cat /root/.ccr/x && grep -rn y ../..").join(","),
+    "/root/.ccr",
+    "a path plus a traversal is denied for the path: ",
+  );
+  // And ordinary work must land in NO class, or the table counts noise.
+  eq(fencePrefixes("moon check && cargo build").join(","), "", "ordinary work names nothing: ");
+  eq(fencePrefixes("cat ./src/x.mbt").join(","), "", "a relative path is not traversal: ");
+  eq(fencePrefixes("echo a..b").join(","), "", "two dots inside a word are not traversal: ");
   let checked = 0;
   for (const [name, sweep] of Object.entries(SWEEPS)) {
     if (!existsSync(sweep.record)) continue;
     const rec = JSON.parse(readFileSync(sweep.record, "utf8")) as {
-      rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string }[] }[];
+      // `path` is here because the fence denies on `file_path` too, and the
+      // widened sweep produced one (a `Read` of /root/.moon/...). Leaving it
+      // out was what made this test fail with an empty message.
+      rows: { repo: string; fenced: number; calls: { tool: string; by?: string; command?: string; path?: string }[] }[];
     };
     if (rec.rows.length === 0) continue;
     checked += 1;
@@ -1477,15 +1501,18 @@ check("every fenced command lands in a named class, so the table cannot lose one
       `\`${name}\`: the per-row fence counts and the labelled ledger rows disagree: `,
     );
     for (const c of fenced) {
-      const got = fencePrefixes(c.command ?? "");
+      const got = fencePrefixes(fenceText(c));
       ok(
         got.length > 0,
-        `\`${name}\`: a fenced command names no /home or /root prefix, so §3's table drops it: ${(c.command ?? "").slice(0, 80)}`,
+        `\`${name}\`: a fenced call lands in no class, so §3's table drops it: ` +
+          `tool=${c.tool} text=${JSON.stringify(fenceText(c).slice(0, 70))}`,
       );
-      // And the fence's own rule must be the thing being classified.
+      // And the classes must be the fence's OWN two rules -- an absolute path
+      // under a protected prefix, or `../` traversal. The widened sweep hit
+      // the second one and the classifier only knew the first.
       ok(
-        got.every((g) => g.startsWith("/home/") || g.startsWith("/root/")),
-        `\`${name}\`: classified a path the fence does not protect: ${got.join(",")}`,
+        got.every((g) => g.startsWith("/home/") || g.startsWith("/root/") || g === ".."),
+        `\`${name}\`: classified something the fence does not act on: ${got.join(",")}`,
       );
     }
   }
@@ -1750,6 +1777,133 @@ check("an installed toolchain is reachable without naming a path the fence denie
         "the live record is a copy of the abandoned one, so the discarded instrument is still being reported",
       );
     }
+  }
+});
+
+check("the two doc-link checkers agree, and neither drops `_` from a slug", () => {
+  /**
+   * THREE CORRECT LINKS WERE REPORTED BROKEN, and both causes were already
+   * fixed in the other checker.
+   *
+   * `check-doc-links.mjs` was written to widen `check-doc-anchors.mjs`'s job
+   * past `docs/`, and it REIMPLEMENTED the slug rule rather than reusing it --
+   * so it shipped without two corrections its sibling had already made:
+   *
+   *   `_` belongs in a slug. github-slugger strips `!`-`,`, `.`, `/`, `:`-`@`,
+   *   `[`-`^`, a backtick and `{`-`~`; `_` is 0x5F, between `^` and the
+   *   backtick, so it survives. Dropping it turned docs/62's
+   *   `## 6. \`browser_find\` …` into `6-browserfind-…` and flagged that
+   *   report's own §6 link and docs/README.md's link to it.
+   *
+   *   Link syntax inside a code span is prose. `findings.md` documents this
+   *   script with the sentence "同一ファイル内の \`](#…)\` を…", and the
+   *   checker parsed its own example.
+   *
+   * **Nothing in the repository linked to the underscore-stripped form**, so
+   * the links were right and the tool was wrong -- which is the dangerous
+   * direction, because the reflex is to edit the link until the tool goes
+   * green, breaking it on GitHub.
+   *
+   * Two checkers with divergent slug rules is the real defect. This pins them
+   * to each other rather than to my reading of either.
+   */
+  const root = resolve(import.meta.dirname, "../..");
+  const src = (f: string): string => readFileSync(resolve(root, "scripts", f), "utf8");
+  const both = ["check-doc-links.mjs", "check-doc-anchors.mjs"];
+  for (const f of both) {
+    const s = src(f);
+    ok(/\p{L}/u.test(s), `${f} must exist`);
+    // `_` must be in the keep set, whichever shape the rule takes.
+    ok(
+      /ch === "_"/.test(s) || /\\-_\]/.test(s) || /_\\-/.test(s),
+      `${f} drops \`_\` from heading slugs, so an anchor GitHub serves is reported broken`,
+    );
+    // And a code span must be neutralised before links are matched.
+    ok(
+      /`\+?\[\^`\\n\]\*`/.test(s.replace(/\\/g, "")) || /\[\^`\\n\]\*/.test(s) || /" "\.repeat/.test(s),
+      `${f} reads link syntax inside a code span as a link`,
+    );
+  }
+  // Both scripts must actually run clean on the repository as it stands.
+  for (const f of both) {
+    const out = spawnSync("node", [resolve(root, "scripts", f)], { encoding: "utf8", timeout: 120_000 });
+    eq(out.status, 0, `${f} exited non-zero: `);
+    const tail = (out.stdout ?? "").trim().split("\n").pop() ?? "";
+    ok(/, 0 broken$/.test(tail), `${f} reports breakage: ${tail}`);
+  }
+});
+
+check("the fence protects the harness's own directories, and nothing else new", () => {
+  /**
+   * THE `/tmp` GAP, CLOSED. The fence covered `/home/` and `/root/` and
+   * skipped `/tmp` because "/tmp, /usr, /opt and friends are read-only traffic
+   * in practice" -- false by construction, since the harness keeps its clone
+   * trees AND every sandbox under `/tmp`. docs/63 measured 12 reads of
+   * docs/55's clone tree before this.
+   *
+   * `/tmp` could not simply join the prefix list: the sandbox is under it, so
+   * a blanket rule denies the agent its own working directory. The harness
+   * names its own subtrees instead (`FINISH_FENCE_ROOTS`) and the fence
+   * excludes the current sandbox.
+   *
+   * The negative cases carry the weight. A safety change that also denies
+   * ordinary work gets switched off, and a prefix test that shields a sibling
+   * sharing the prefix is a hole wearing a fix's clothes.
+   */
+  const sandbox = mkdtempSync(resolve(tmpdir(), "jev-wild-"));
+  const roots = fenceRoots();
+  ok(roots.length > 0, "the harness must name its own directories");
+  ok(
+    roots.every((r) => !r.split("/").every((seg) => seg === "" || seg === "tmp")),
+    `a root of tmpdir() itself would deny the sandbox's own parent: ${roots.join(",")}`,
+  );
+  const ask = (command: string, withRoots = true): string => {
+    const env: Record<string, string> = {
+      ...(process.env as Record<string, string>),
+      FINISH_LOG: resolve(sandbox, "led.jsonl"),
+      FINISH_SANDBOX: sandbox,
+    };
+    if (withRoots) env.FINISH_FENCE_ROOTS = roots.join(":");
+    else delete env.FINISH_FENCE_ROOTS;
+    const r = spawnSync("node", [resolve(import.meta.dirname, "src/gate.mjs")], {
+      encoding: "utf8",
+      env,
+      input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: sandbox }),
+    });
+    return (r.stdout ?? "").includes('"deny"') ? "deny" : "allow";
+  };
+  try {
+    for (const [cmd, want] of [
+      // The gap: another sweep's clone tree, read and written.
+      [`cat ${roots[0]}/o-r/src/x.mbt`, "deny"],
+      [`echo x > ${roots[0]}/o-r/TODO.md`, "deny"],
+      [roots[1] !== undefined ? `ls ${roots[1]}/o-r` : `ls ${roots[0]}/o-r`, "deny"],
+      // BOUNDARY: a sibling merely sharing the prefix is not the harness's, so
+      // it must be neither shielded nor denied.
+      [`cat ${roots[0]}-other/x`, "allow"],
+      // The run's own sandbox by absolute path must still work.
+      [`cat ${sandbox}/moon.mod.json`, "allow"],
+      [`cd ${sandbox} && moon check`, "allow"],
+      // Ordinary work and ordinary read-only areas stay allowed.
+      ["moon check && cargo build", "allow"],
+      ["ls /usr/lib && cat /etc/hosts", "allow"],
+      // And the rule this replaces nothing of is untouched.
+      ["ls /root/.moon/bin", "deny"],
+      ["cat /home/user/jev-playground/TODO.md", "deny"],
+    ] as const) {
+      eq(ask(cmd), want, `${cmd.slice(0, 56)}: `);
+    }
+    /**
+     * UNSET MEANS THE OLD BEHAVIOUR, asserted rather than assumed. A sweep was
+     * already running when this landed, and `gate.mjs` is re-executed per tool
+     * call -- so if the new deny fired without the caller opting in, that
+     * sweep's later runs would have had a different fence from its earlier
+     * ones, which is this experiment's own named confound.
+     */
+    eq(ask(`cat ${roots[0]}/o-r/src/x.mbt`, false), "allow", "without the env var the old fence must be unchanged: ");
+    eq(ask("ls /root/.moon/bin", false), "deny", "and the old rule still fires without it: ");
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
   }
 });
 

@@ -589,6 +589,29 @@ export function promptFor(t: Task): string {
  */
 const TOOLCHAIN_BINS = ["/root/.moon/bin", "/root/.cargo/bin", "/root/.bun/bin", "/root/.local/bin"];
 
+/**
+ * THE DIRECTORIES THE FENCE MUST PROTECT BUT CANNOT GUESS.
+ *
+ * Every sweep's clone trees, plus the directory the run sandboxes are made in.
+ * The fence covered `/home/` and `/root/` and skipped `/tmp` because "/tmp,
+ * /usr, /opt and friends are read-only traffic in practice" -- false by
+ * construction here, since the harness keeps both its clone trees and every
+ * sandbox under `/tmp`. docs/63 measured the consequence at 12 reads of
+ * docs/55's clone tree, 0 writes.
+ *
+ * `/tmp` cannot just be added to the fence's prefix list, because the sandbox
+ * itself is under it: a blanket rule would deny the agent its own working
+ * directory. So the harness names its own subtrees and the fence excludes the
+ * current sandbox from them.
+ *
+ * `tmpdir()` itself is deliberately NOT here. It would cover the sandbox's own
+ * parent and every unrelated temporary file, and a fence that denies `/tmp`
+ * wholesale is one that gets switched off.
+ */
+export function fenceRoots(): string[] {
+  return [...new Set(Object.values(SWEEPS).map((s) => s.clones))];
+}
+
 export function pathWithToolchains(): string {
   const have = process.env.PATH ?? "";
   const on = new Set(have.split(":"));
@@ -677,6 +700,10 @@ async function run(t: Task): Promise<Row> {
             PATH: pathWithToolchains(),
             FINISH_LOG: ledger,
             FINISH_SANDBOX: dir,
+            // The harness's own directories, so the fence can protect them.
+            // Which `/tmp` subtrees are the harness's is knowledge only this
+            // file has -- see `fenceRoots`.
+            FINISH_FENCE_ROOTS: fenceRoots().join(":"),
             JEV_GATE: "1",
             JEV_GATE_BIN: SHIPPED_GATE,
             // OBSERVE, DO NOT INTERVENE. See the file docblock.
@@ -924,7 +951,7 @@ function trafficSection(rec: Record_): void {
   // fenced command lands in one.
   const byPrefix = new Map<string, number>();
   for (const c of rows.flatMap((r) => r.calls).filter((c) => c.by === "fence")) {
-    for (const p of fencePrefixes(c.command ?? "")) byPrefix.set(p, (byPrefix.get(p) ?? 0) + 1);
+    for (const p of fencePrefixes(fenceText(c))) byPrefix.set(p, (byPrefix.get(p) ?? 0) + 1);
   }
   if (byPrefix.size > 0) {
     console.log("\n| commands | naming |");
@@ -941,6 +968,8 @@ const FENCE_WHAT: Record<string, string> = {
   "/root/.claude": "**the agent's own session transcript**",
   "/root/.ccr": "the container's proxy CA bundle",
   "/root/.moon": "a toolchain it installed into `$HOME`",
+  // Not a prefix: the fence's OTHER rule. See `fencePrefixes`.
+  "..": "`../` traversal -- **the fence's second rule**, which docs/55 never hit",
 };
 
 /**
@@ -1015,7 +1044,50 @@ export function harnessReach(rec: Pick<Record_, "rows">): {
 export function fencePrefixes(command: string): string[] {
   const out = new Set<string>();
   for (const m of command.matchAll(/\/(?:home|root)\/[\w.@+-]+/g)) out.add(m[0]);
+  /**
+   * THE FENCE HAS TWO RULES AND THIS ONLY MIRRORED ONE.
+   *
+   * `gate.mjs` denies an absolute path outside the sandbox OR a `../`
+   * traversal, and returns `".."` as the offending path in the second case.
+   * Every one of docs/55's five denials was a path, so a classifier that only
+   * knew about paths passed its test for a whole report.
+   *
+   * The widened sweep produced the other kind: a `grep -rn ... ../..` in
+   * `jsimd`, which the fence denied for the traversal and which classified as
+   * nothing -- so §3's table, whose total is printed separately, would have
+   * dropped it. `".."` is a class now.
+   *
+   * The precedence mirrors the fence's own: `outsideSandbox` checks absolute
+   * paths first and returns on the first hit, so a command naming both is
+   * denied FOR the path, and that is what the table should say it was denied
+   * for.
+   */
+  if (out.size === 0 && /(^|[\s"'=(])\.\.\//.test(command)) out.add("..");
   return [...out];
+}
+
+/**
+ * THE TEXT A FENCED CALL SHOULD BE CLASSIFIED BY -- command OR path.
+ *
+ * The fence denies on `file_path` as well as on `command`, and the widened
+ * sweep produced one: a `Read` of `/root/.moon/registry/cache/mizchi/css`.
+ * Every call site was passing `c.command ?? ""`, so that denial classified as
+ * nothing and §3's fence table -- whose total is printed separately -- would
+ * have dropped it. The test written for exactly that failure mode caught it,
+ * on a record that was still being written.
+ *
+ * AND THE PATH NEEDS ITS SLASH BACK. `gate.mjs` records a path with the
+ * sandbox prefix removed and then a leading `/` stripped, so a path OUTSIDE
+ * the sandbox is stored as `root/.moon/...` and looks exactly like a relative
+ * path from inside it. `by: "fence"` is what distinguishes them, and the
+ * leading slash is restored only for a segment that is a real filesystem root
+ * -- guessing on anything else would invent an absolute path that the agent
+ * never named.
+ */
+export function fenceText(c: Pick<Call, "command" | "path">): string {
+  if (c.command !== undefined && c.command !== "") return c.command;
+  const p = c.path ?? "";
+  return /^(?:home|root)\//.test(p) ? `/${p}` : p;
 }
 
 function gateSection(rec: Record_): void {
@@ -1357,7 +1429,12 @@ function comparisonSection(rec: Record_): void {
     { name: "the gate spoke", of: spoke, lower: "less to judge" },
     { name: "seconds", of: (r) => Math.round(r.ms / 1000), lower: "finished sooner" },
   ];
-  console.log("\n| per run | open (median) | done (median) | diff of means | exact p | splits |");
+  // The header says `permutation p` and not `exact p`: at 16 against 16,
+  // C(32,16) is 601,080,390 and the test samples. docs/55's 5 against 8 was
+  // C(13,5) = 1,287 and enumerated everything, so the old header was true
+  // there and would have been false here -- with "(sampled)" printed in the
+  // cell next to a column claiming exactness.
+  console.log("\n| per run | open (median) | done (median) | diff of means | permutation p | splits |");
   console.log("| --- | --- | --- | --- | --- | --- |");
   for (const m of metrics) {
     const a = open.map(m.of);
@@ -1371,23 +1448,42 @@ function comparisonSection(rec: Record_): void {
   /**
    * PER SECTION, because the pooled row above is a cancellation and not a
    * null. The design pairs by section, so this is the breakdown the design
-   * supports, and the two sections move in OPPOSITE directions on every
-   * metric -- which is the whole reason the pooled difference is near zero.
+   * supports, and docs/55's two sections move in OPPOSITE directions on every
+   * metric -- which is the whole reason its pooled difference is near zero.
    * Neither reaches 0.05, and `Tier 2` cannot: its floor is one relabelling
    * in ten.
+   *
+   * SUPPRESSED WHEN EVERY SECTION HOLDS 1 AGAINST 1, which is what a paired
+   * sample is. There, `C(2,1)` is 2, so **every p is 1.000 and every floor is
+   * 0.500 by construction** -- for the widened sweep this table was 80 rows
+   * that could not have said anything else, which is worse than saying
+   * nothing because it looks like sixteen findings. §4.1's paired test is the
+   * instrument for that design, and it is the one that was pre-registered.
    */
-  console.log("\n| section | per run | open | done | diff | exact p | floor |");
-  console.log("| --- | --- | --- | --- | --- | --- | --- |");
-  for (const k of shared) {
-    const section = k.split("\u0000")[2];
-    const o = open.filter((r) => key(r) === k);
-    const d = done.filter((r) => key(r) === k);
-    for (const m of metrics) {
-      const t = permutation(o.map(m.of), d.map(m.of));
-      console.log(
-        `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
-          `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
-      );
+  const everyPairIsOneToOne = shared.every(
+    (k) => open.filter((r) => key(r) === k).length === 1 && done.filter((r) => key(r) === k).length === 1,
+  );
+  if (everyPairIsOneToOne) {
+    console.log(
+      `\n**No per-section table**: every one of the ${shared.length} sections holds exactly one run ` +
+        "of each class, so an unpaired test inside a section enumerates 2 relabellings and returns " +
+        "p = 1.000 and a floor of 0.500 **for every metric, by construction**. That is not a null, " +
+        "it is arithmetic. §4.1 is the test this design supports.\n",
+    );
+  } else {
+    console.log("\n| section | per run | open | done | diff | permutation p | floor |");
+    console.log("| --- | --- | --- | --- | --- | --- | --- |");
+    for (const k of shared) {
+      const section = k.split("\u0000")[2];
+      const o = open.filter((r) => key(r) === k);
+      const d = done.filter((r) => key(r) === k);
+      for (const m of metrics) {
+        const t = permutation(o.map(m.of), d.map(m.of));
+        console.log(
+          `| ${section} | ${m.name} | ${quantile(o.map(m.of), 0.5)} | ${quantile(d.map(m.of), 0.5)} | ` +
+            `${t.diff > 0 ? "+" : ""}${t.diff.toFixed(1)} | ${t.p.toFixed(3)} | ${(1 / t.splits).toFixed(3)} |`,
+        );
+      }
     }
   }
   const signs = shared.map((k) => {
@@ -1472,8 +1568,9 @@ function reachLine(rec: Record_): string {
     );
   }
   return (
-    `- **The fence has a gap and this sweep walked into it: ${r.calls} calls named a harness clone ` +
-    `tree**, ${r.writes === 0 ? "**none of them with a write tool**" : `**${r.writes} of them with a write tool**`}. ` +
+    `- **The fence has a gap and this sweep walked into it: ${r.calls} ` +
+    `${r.calls === 1 ? "call" : "calls"} named a harness clone tree**, ` +
+    `${r.writes === 0 ? "**none of them with a write tool**" : `**${r.writes} of them with a write tool**`}. ` +
     "`src/gate.mjs` says it denies anything outside the sandbox; its rule is `/home/` and `/root/` " +
     "only, because `/tmp` was assumed read-only traffic -- and the harness puts its clone trees and " +
     `every sandbox under \`/tmp\`. ${r.byTree[0] ? `Most of it is \`${r.byTree[0].tree}\` (${r.byTree[0].calls}).` : ""} ` +
@@ -1622,7 +1719,7 @@ async function main(): Promise<void> {
       for (const [i, c] of cs.entries()) {
         if (c.by !== "fence") continue;
         console.log(`\n${row.repo} ${row.file}:${row.line} -- ${row.task.slice(0, 56)}`);
-        console.log(`  named: ${fencePrefixes(c.command ?? "").join(" ") || "(none)"}`);
+        console.log(`  named: ${fencePrefixes(fenceText(c)).join(" ") || "(none)"}`);
         for (let j = Math.max(0, i - 2); j <= Math.min(cs.length - 1, i + 3); j++) {
           const n = cs[j];
           console.log(
