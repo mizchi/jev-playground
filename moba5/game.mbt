@@ -99,6 +99,59 @@ pub const DRAGON_HP = 210
 pub const BARON_HP = 340
 
 ///|
+pub const HERALD_HP = 170
+
+///|
+/// Herald's charge: a large bonus to structure damage, for a short while, and
+/// nothing else. It is worth more than Baron's siege bonus and lasts less
+/// long, which is what makes it a tool for taking one tower rather than a
+/// window for closing a game.
+pub const HERALD_STRUCT_PCT = 60
+
+///|
+pub const HERALD_TICKS = 16
+
+///|
+/// The tick Herald leaves the map. Baron takes its pit, so the two are never
+/// up at once and the top river's question changes rather than doubling.
+pub const HERALD_GONE_TICK = 70
+
+///|
+/// Plating. An outer tower's health is divided into this many plates; a
+/// champion that takes one off is paid for it whether or not the tower falls,
+/// which is what makes chipping a tower worth a tick of somebody's time.
+///
+/// Minions do not break plates. A lane that shoves itself into a tower would
+/// otherwise pay a team for standing somewhere else, and "go and hit it
+/// yourself" is the decision the plate is there to create.
+pub const PLATES = 5
+
+///|
+pub const PLATE_GOLD = 28
+
+///|
+/// When the plating falls off. After this the tower is just a tower, so the
+/// early game has a window in it that the late game does not.
+pub const PLATE_TICKS = 40
+
+///|
+/// How long an inner tower stays down before it comes back.
+///
+/// The inner tower plays the inhibitor's part here: it is the gate to the
+/// nexus, breaking it opens the lane, and it returns on a timer so the lane
+/// closes again. The base is one node on this map, so an inhibitor of its own
+/// would have to share that node with the nexus and `Game::structure_at`
+/// would have to guess which of the two "the structure here" meant.
+pub const INHIB_TICKS = 22
+
+///|
+/// Extra pressure per tick, in the breaker's favour, in a lane whose inner
+/// tower is down. These are the super minions: the lane pushes itself while
+/// the gate is open, so the defender has to answer it and the window costs
+/// them something even if nothing else happens in it.
+pub const SUPER_PUSH = 1
+
+///|
 /// The four drake elements, in the order `drake_index` numbers them.
 pub let drake_kinds : Array[String] = ["infernal", "mountain", "ocean", "cloud"]
 
@@ -526,6 +579,12 @@ pub struct Structure {
   tier : Int
   mut hp : Int
   max_hp : Int
+  /// Plates left on an outer tower: gold for whoever takes one off, and gone
+  /// at `PLATE_TICKS` whether anybody took them or not. 0 on everything else.
+  mut plates : Int
+  /// Ticks until an inner tower comes back, or 0. Only an inner tower
+  /// respawns — see `INHIB_TICKS`.
+  mut respawn_in : Int
 }
 
 ///|
@@ -556,7 +615,34 @@ pub fn Structure::copy(self : Structure) -> Structure {
     tier: self.tier,
     hp: self.hp,
     max_hp: self.max_hp,
+    plates: self.plates,
+    respawn_in: self.respawn_in,
   }
+}
+
+///|
+/// How many plates this structure's remaining health corresponds to. Plates
+/// come off from the top, so a tower at four fifths of its health has four
+/// left and the fifth has been paid for.
+pub fn Structure::plates_for_hp(self : Structure) -> Int {
+  if self.plates == 0 || self.max_hp <= 0 {
+    return 0
+  }
+  let want = (self.hp * PLATES + self.max_hp - 1) / self.max_hp
+  if want > self.plates {
+    self.plates
+  } else if want < 0 {
+    0
+  } else {
+    want
+  }
+}
+
+///|
+/// Whether this structure is an inner tower waiting to come back — the state
+/// in which its lane is open and the clock is running.
+pub fn Structure::is_down_temporarily(self : Structure) -> Bool {
+  self.respawn_in > 0
 }
 
 // ------------------------------------------------------------------- neutrals
@@ -668,6 +754,8 @@ pub struct Game {
   mut soul_team : Int
   /// Ticks of Baron buff left, indexed by team id.
   baron : Array[Int]
+  /// Ticks of Herald charge left, indexed by team id. Structures only.
+  herald : Array[Int]
   mut tick : Int
   /// 0 while the game is running, otherwise the winning team.
   mut winner : Int
@@ -788,6 +876,8 @@ pub fn Game::with_handicap(
       tier: 1,
       hp: 130,
       max_hp: 130,
+      plates: PLATES,
+      respawn_in: 0,
     })
     structures.push({
       node: a_inner[li],
@@ -796,6 +886,8 @@ pub fn Game::with_handicap(
       tier: 2,
       hp: 160,
       max_hp: 160,
+      plates: 0,
+      respawn_in: 0,
     })
     structures.push({
       node: b_outer[li],
@@ -804,6 +896,8 @@ pub fn Game::with_handicap(
       tier: 1,
       hp: 130,
       max_hp: 130,
+      plates: PLATES,
+      respawn_in: 0,
     })
     structures.push({
       node: b_inner[li],
@@ -812,6 +906,8 @@ pub fn Game::with_handicap(
       tier: 2,
       hp: 160,
       max_hp: 160,
+      plates: 0,
+      respawn_in: 0,
     })
   }
   structures.push({
@@ -821,6 +917,8 @@ pub fn Game::with_handicap(
     tier: 3,
     hp: 260,
     max_hp: 260,
+    plates: 0,
+    respawn_in: 0,
   })
   structures.push({
     node: B_BASE,
@@ -829,6 +927,8 @@ pub fn Game::with_handicap(
     tier: 3,
     hp: 260,
     max_hp: 260,
+    plates: 0,
+    respawn_in: 0,
   })
   let neutrals : Array[Neutral] = [
     // The drake is up early and often: a small permanent stack, repeatedly
@@ -857,6 +957,21 @@ pub fn Game::with_handicap(
       spawn_in: 70,
       respawn_ticks: 30,
     },
+    // Herald holds Baron's pit until Baron wants it. It is the top river's
+    // early question, and because its reward is siege damage while the towers
+    // are still plated, taking it is how a team converts a river fight into a
+    // lane. It leaves at `HERALD_GONE_TICK` and does not come back.
+    // One per game, as there is in the game this is modelled on: a respawn it
+    // can never finish is how `Neutral` says "this does not come back"
+    // without a field that only one monster would use.
+    {
+      node: RIV_TOP,
+      key: "herald",
+      hp: HERALD_HP,
+      max_hp: HERALD_HP,
+      spawn_in: 14,
+      respawn_ticks: 1 << 24,
+    },
   ]
   {
     champs,
@@ -869,6 +984,7 @@ pub fn Game::with_handicap(
     drakes: Array::make(3 * drake_kinds.length(), 0),
     soul_team: 0,
     baron: [0, 0, 0],
+    herald: [0, 0, 0],
     tick: 0,
     winner: 0,
     log: [],
@@ -929,6 +1045,7 @@ pub fn Game::copy(self : Game) -> Game {
     },
     soul_team: self.soul_team,
     baron: [0, self.baron[1], self.baron[2]],
+    herald: [0, self.herald[1], self.herald[2]],
     tick: self.tick,
     winner: self.winner,
     log,
@@ -942,6 +1059,19 @@ pub fn Game::structure_at(self : Game, node : Int) -> Structure? {
   for s in self.structures {
     if s.node == node && s.alive() {
       return Some(s)
+    }
+  }
+  None
+}
+
+///|
+/// The monster with this key, alive or not. Named lookups, so nothing has to
+/// remember that Baron is `neutrals[1]` — which stopped being obvious the
+/// moment there were three of them.
+pub fn Game::neutral_named(self : Game, key : String) -> Neutral? {
+  for n in self.neutrals {
+    if n.key == key {
+      return Some(n)
     }
   }
   None
@@ -1601,13 +1731,20 @@ pub fn Game::damage_to_champ(self : Game, c : Champ, target : Champ) -> Int {
 }
 
 ///|
-/// Damage a structure takes from `c`, including the Baron siege bonus.
+/// Damage a structure takes from `c`, including both siege bonuses.
+///
+/// Baron and Herald stack, although they cannot in practice: Herald is off the
+/// map before Baron arrives, so the sum is written out rather than guarded
+/// with a rule the timers already enforce.
 pub fn Game::damage_to_structure(self : Game, c : Champ) -> Int {
-  let mut d = self.damage_to(c, STRUCT_ARMOR, STRUCT_MR)
+  let mut pct = 100
   if self.baron[c.team] > 0 {
-    d = d * (100 + BARON_STRUCT_PCT) / 100
+    pct += BARON_STRUCT_PCT
   }
-  d
+  if self.herald[c.team] > 0 {
+    pct += HERALD_STRUCT_PCT
+  }
+  self.damage_to(c, STRUCT_ARMOR, STRUCT_MR) * pct / 100
 }
 
 ///|
@@ -2031,8 +2168,37 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       continue
     }
     s.hp -= d
+    // Plates come off as the health goes down, and are paid for whether or not
+    // the tower falls. Only champion damage is in `struct_dmg`, which is what
+    // keeps a minion wave from collecting them for a team standing somewhere
+    // else.
+    let broke = s.plates - s.plates_for_hp()
+    if broke > 0 {
+      s.plates -= broke
+      match struct_top.get(idx) {
+        Some((who, _)) => {
+          let team = self.champs[who].team
+          for c in self.champs {
+            if c.team == team {
+              c.gold += broke * PLATE_GOLD
+            }
+          }
+          events.push(
+            "team \{team_name(team)} took \{broke} plate(s) off the \{s.kind_name()} at \{node_name(s.node)} (+\{broke * PLATE_GOLD} each, \{s.plates} left)",
+          )
+        }
+        None => ()
+      }
+    }
     if s.hp <= 0 {
       s.hp = 0
+      s.plates = 0
+      // The inner tower comes back. It is the gate to the nexus, so its being
+      // down is a window rather than a state, and the window is why taking it
+      // is worth a teamfight.
+      if s.tier == 2 {
+        s.respawn_in = INHIB_TICKS
+      }
       let by = match struct_top.get(idx) {
         Some((who, _)) => {
           let killer = self.champs[who]
@@ -2048,8 +2214,13 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
         }
         None => "someone"
       }
+      let note = if s.tier == 2 {
+        " (back in \{INHIB_TICKS} ticks; \{s.lane} is open until then)"
+      } else {
+        ""
+      }
       events.push(
-        "\{by} destroyed the \{s.kind_name()} at \{node_name(s.node)}",
+        "\{by} destroyed the \{s.kind_name()} at \{node_name(s.node)}\{note}",
       )
     }
   }
@@ -2070,14 +2241,29 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
           let team = self.champs[who].team
           for c in self.champs {
             if c.team == team {
-              c.gold += if n.key == "baron" { 100 } else { 60 }
-              c.gain_xp(if n.key == "baron" { 40 } else { 25 })
+              c.gold += match n.key {
+                "baron" => 100
+                "herald" => 80
+                _ => 60
+              }
+              c.gain_xp(
+                match n.key {
+                  "baron" => 40
+                  "herald" => 30
+                  _ => 25
+                },
+              )
             }
           }
           if n.key == "baron" {
             self.baron[team] = BARON_TICKS
             events.push(
               "team \{team_name(team)} took BARON (+\{BARON_ATK_PCT}% attack, +\{BARON_STRUCT_PCT}% siege for \{BARON_TICKS} ticks)",
+            )
+          } else if n.key == "herald" {
+            self.herald[team] = HERALD_TICKS
+            events.push(
+              "team \{team_name(team)} took the HERALD (+\{HERALD_STRUCT_PCT}% structure damage for \{HERALD_TICKS} ticks)",
             )
           } else {
             // The element is read BEFORE the stack is added, because the stack
@@ -2173,6 +2359,17 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
     } else {
       0
     }
+    // Super minions: a lane whose inner tower is down pushes itself in the
+    // breaker's favour for as long as the gate stays open. The champions in
+    // the lane still decide the rest, so a defender that shows up can hold it
+    // — it costs them the tick, which is the point.
+    let mut super_ = 0
+    for st in self.structures {
+      if st.tier == 2 && st.lane == lane && st.is_down_temporarily() {
+        super_ += if st.team == TEAM_A { -SUPER_PUSH } else { SUPER_PUSH }
+      }
+    }
+    let delta = delta + super_
     if delta > 0 {
       self.push[li] = @cmp.minimum(PUSH_CAP, self.push[li] + delta)
     } else if delta < 0 {
@@ -2329,8 +2526,41 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
     if self.baron[t] > 0 {
       self.baron[t] -= 1
     }
+    if self.herald[t] > 0 {
+      self.herald[t] -= 1
+    }
+  }
+  // Plating falls off, and the inner towers come back.
+  for st in self.structures {
+    if st.plates > 0 && self.tick >= PLATE_TICKS {
+      st.plates = 0
+      events.push(
+        "the plating came off the \{st.kind_name()} at \{node_name(st.node)}",
+      )
+    }
+    if st.respawn_in > 0 {
+      st.respawn_in -= 1
+      if st.respawn_in == 0 {
+        st.hp = st.max_hp
+        events.push(
+          "the \{st.kind_name()} at \{node_name(st.node)} is back up, closing \{st.lane}",
+        )
+      }
+    }
   }
   for n in self.neutrals {
+    // Herald hands its pit to Baron and does not come back. `alive` wants
+    // `spawn_in == 0`, so a timer it can never finish is how it stays gone;
+    // the alternative would be a field on `Neutral` that only one monster
+    // uses.
+    if n.key == "herald" && self.tick >= HERALD_GONE_TICK {
+      if n.alive() {
+        events.push("the herald has left the rift")
+      }
+      n.hp = 0
+      n.spawn_in = 1 << 24
+      continue
+    }
     if n.spawn_in > 0 {
       n.spawn_in -= 1
       if n.spawn_in == 0 {

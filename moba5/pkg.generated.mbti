@@ -58,6 +58,18 @@ pub const GROWTH_EVEN : Int = 12
 
 pub const HEAL_AT_BASE : Int = 30
 
+pub const HERALD_GONE_TICK : Int = 70
+
+pub const HERALD_HP : Int = 170
+
+pub const HERALD_STRUCT_PCT : Int = 60
+
+pub const HERALD_TICKS : Int = 16
+
+pub const HERALD_VALUE : Int = 190
+
+pub const INHIB_TICKS : Int = 22
+
 pub const ITEM_COST : Int = 350
 
 pub const ITEM_SLOTS : Int = 3
@@ -73,6 +85,14 @@ pub const MAX_LEVEL : Int = 6
 pub const MINION_DAMAGE : Int = 4
 
 pub const N_NODES : Int = 23
+
+pub const PLATES : Int = 5
+
+pub const PLATE_GOLD : Int = 28
+
+pub const PLATE_TICKS : Int = 40
+
+pub const PLATE_VALUE : Int = 14
 
 pub const PUSH_CAP : Int = 5
 
@@ -105,6 +125,8 @@ pub const SOUL_VALUE : Int = 250
 pub const STRUCT_ARMOR : Int = 20
 
 pub const STRUCT_MR : Int = 20
+
+pub const SUPER_PUSH : Int = 1
 
 pub const TEAM_A : Int = 1
 
@@ -437,6 +459,7 @@ pub struct Game {
   drakes : Array[Int]
   mut soul_team : Int
   baron : Array[Int]
+  herald : Array[Int]
   mut tick : Int
   mut winner : Int
   log : Array[String]
@@ -450,6 +473,7 @@ pub fn Game::best_focus(Self, Int, Int, Int) -> Int
 pub fn Game::best_focus_names(Self, Int, Int, Int) -> String
 pub fn Game::best_item(Self, Int, Int, Int) -> String
 pub fn Game::buff_pct(Self, Int) -> Int
+pub fn Game::can_contest(Self, Int, Int) -> Bool
 pub fn Game::cc_pick(Self, Int, Int) -> Champ?
 pub fn Game::champs_at(Self, Int, Int) -> Array[Champ]
 pub fn Game::copy(Self) -> Self
@@ -488,6 +512,7 @@ pub fn Game::mitigate(Self, Int, Int) -> Int
 pub fn Game::monster_value(Self, Int, Neutral) -> Int
 pub fn Game::neediest_ally(Self, Champ) -> Champ?
 pub fn Game::neutral_at(Self, Int) -> Neutral?
+pub fn Game::neutral_named(Self, String) -> Neutral?
 pub fn Game::new() -> Self
 pub fn Game::nexus_exposed(Self, Int) -> Bool
 pub fn Game::objective_target(Self, Int) -> Int
@@ -530,6 +555,7 @@ pub fn Game::ticks_under_tower(Self, Champ) -> Int
 pub fn Game::tough_pct(Self, Int) -> Int
 pub fn Game::tower_damage_to(Self, Champ) -> Int
 pub fn Game::tower_shoots(Self, Structure, Champ) -> Bool
+pub fn Game::tower_value(Self, Int) -> Int
 pub fn Game::turn_message(Self, Int, Memory) -> Json
 pub fn Game::visible_enemies(Self, Int) -> Array[Champ]
 pub fn Game::visible_physical_share(Self, Int) -> Int
@@ -646,11 +672,15 @@ pub struct Structure {
   tier : Int
   mut hp : Int
   max_hp : Int
+  mut plates : Int
+  mut respawn_in : Int
 }
 pub fn Structure::alive(Self) -> Bool
 pub fn Structure::copy(Self) -> Self
+pub fn Structure::is_down_temporarily(Self) -> Bool
 pub fn Structure::is_nexus(Self) -> Bool
 pub fn Structure::kind_name(Self) -> String
+pub fn Structure::plates_for_hp(Self) -> Int
 
 pub struct Ward {
   node : Int

@@ -272,7 +272,19 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
     AttackStructure =>
       match self.structure_at(c.node) {
         Some(s) => {
-          let head = "attack the enemy \{s.kind_name()} here (hp \{s.hp}) for about \{self.damage_to_structure(c)}"
+          let plates = if s.plates > 0 {
+            // A plate is gold for damage that does not have to finish the
+            // tower, which is the whole reason to spend a tick on one.
+            "; it has \{s.plates} plate(s) left, each worth \{PLATE_GOLD} gold per champion to whoever takes it off, and the plating falls off at tick \{PLATE_TICKS}"
+          } else {
+            ""
+          }
+          let gate = if s.tier == 2 {
+            "; breaking it opens \{s.lane} onto their nexus for \{INHIB_TICKS} ticks before it comes back up"
+          } else {
+            ""
+          }
+          let head = "attack the enemy \{s.kind_name()} here (hp \{s.hp}) for about \{self.damage_to_structure(c)}\{plates}\{gate}"
           if self.tower_shoots(s, c) {
             "\{head}; WE HAVE NO WAVE HERE, so it will shoot back for \{self.tower_damage_to(c)} a tick — about \{self.ticks_under_tower(c)} tick(s) before it kills this champion"
           } else {
@@ -286,6 +298,8 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
         Some(m) =>
           if m.key == "baron" {
             "attack the baron here (hp \{m.hp}/\{m.max_hp}) for about \{self.raw_attack(c)}; killing it gives +\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% siege for \{BARON_TICKS} ticks, team-wide"
+          } else if m.key == "herald" {
+            "attack the herald here (hp \{m.hp}/\{m.max_hp}) for about \{self.raw_attack(c)}; killing it gives +\{HERALD_STRUCT_PCT}% structure damage for \{HERALD_TICKS} ticks, team-wide — enough to take plates off a tower or break one outright, and it leaves the map at tick \{HERALD_GONE_TICK} whether anybody takes it or not"
           } else {
             let element = self.drake_now()
             let need = self.drakes_to_soul(c.team)

@@ -130,6 +130,8 @@ pub fn Game::replay_frame(self : Game) -> Json {
         "tier": Json(s.tier),
         "hp": Json(s.hp),
         "max_hp": Json(s.max_hp),
+        "plates": Json(s.plates),
+        "comes_back_in": Json(s.respawn_in),
       }),
     )
   }
@@ -190,6 +192,10 @@ pub fn Game::replay_frame(self : Game) -> Json {
     "baron_ticks": Json({
       "A": Json(self.baron[TEAM_A]),
       "B": Json(self.baron[TEAM_B]),
+    }),
+    "herald_ticks": Json({
+      "A": Json(self.herald[TEAM_A]),
+      "B": Json(self.herald[TEAM_B]),
     }),
     "event": Json(event),
   })

@@ -44,14 +44,29 @@ pub(all) struct Plan {
 // playing the situation out rather than from these.
 
 ///|
-/// A tower whose lane we hold: the cheapest structure on the map, since it
-/// cannot shoot back while our wave is in front of it.
+/// A tower whose lane we hold, with no plating left on it: the cheapest
+/// structure on the map, since it cannot shoot back while our wave is in
+/// front of it.
 pub const FREE_TOWER_VALUE = 110
+
+///|
+/// What one plate adds to that. Five of them put a plated tower above any
+/// single drake and above Herald, and at `PLATE_TICKS` they all come off at
+/// once — so the game's phases fall out of this comparison rather than out of
+/// a schedule: plates and lanes, then the soul, then Baron.
+pub const PLATE_VALUE = 14
 
 ///|
 /// Baron: a short window of far more damage and much faster sieging. Above a
 /// free tower, because the window is usually spent taking two of them.
 pub const BARON_VALUE = 200
+
+///|
+/// Herald: a tower and its plating, roughly, plus the choice of which. Just
+/// above a fully plated tower, because the charge takes one anywhere rather
+/// than in the lane that happens to be shoved; below Baron, which buys two and
+/// adds the damage to win the fight over them.
+pub const HERALD_VALUE : Int = FREE_TOWER_VALUE + PLATES * PLATE_VALUE + 10
 
 ///|
 /// One drake stack, on its own, before anything the soul adds.
@@ -120,10 +135,26 @@ pub fn Game::objective_target(self : Game, team : Int) -> Int {
 ///|
 /// What `n` is worth to `team` right now, on one scale with `FREE_TOWER_VALUE`.
 pub fn Game::monster_value(self : Game, team : Int, n : Neutral) -> Int {
-  if n.key == "baron" {
-    BARON_VALUE
-  } else {
-    self.drake_value(team)
+  match n.key {
+    "baron" => BARON_VALUE
+    "herald" => HERALD_VALUE
+    _ => self.drake_value(team)
+  }
+}
+
+///|
+/// What the structure at `node` is worth to take right now, on the same scale
+/// as the river.
+///
+/// The plating is most of it early. Five plates pay `PLATE_GOLD` to every
+/// champion on the team that breaks them, which is more gold than any single
+/// drake is worth, so a plated tower in a lane we already hold really does
+/// outbid the river — and the moment the plating falls off, the same tower
+/// stops outbidding it.
+pub fn Game::tower_value(self : Game, node : Int) -> Int {
+  match self.structure_at(node) {
+    Some(s) => FREE_TOWER_VALUE + s.plates * PLATE_VALUE
+    None => FREE_TOWER_VALUE
   }
 }
 
@@ -168,9 +199,27 @@ pub fn Game::drake_value(self : Game, team : Int) -> Int {
 }
 
 ///|
+/// Whether `team` could take something standing on `node` right now: nobody
+/// it can see is contesting it, or the simulator says the fight there is ours.
+///
+/// Through this team's own vision, like everything else the plan reads. A node
+/// we cannot see counts as uncontested, which is how a bot without a ward
+/// walks into a five-man — and is the reason warding the pit before the timer
+/// is worth a turn.
+pub fn Game::can_contest(self : Game, node : Int, team : Int) -> Bool {
+  if !self.vision(team)[node] {
+    return true
+  }
+  if self.champs_at(node, enemy_of(team)).is_empty() {
+    return true
+  }
+  self.fight_is_won(node, team, 12)
+}
+
+///|
 /// The shared plan. The order of the branches IS the macro priority: a nexus
-/// you can hit beats everything, then a structure about to fall, then an
-/// objective that is up, then the siege.
+/// you can hit beats everything, then a structure about to fall, then the best
+/// thing on the map we can actually take, then the siege.
 pub fn Game::team_plan(self : Game, team : Int) -> Plan {
   let goto = Array::make(10, -1)
   let foe = enemy_of(team)
@@ -194,32 +243,50 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
       why = "\{lanes[lane]} falls in \{ticks} ticks"
     }
   }
-  // 3. A lane whose wave we already hold: the tower there cannot shoot us, so
-  //    it is the cheapest structure on the map — unless the river holds
-  //    something worth more, which `FREE_TOWER_VALUE` is there to say.
+  // 3. The best thing on the map we could actually go and take: a tower whose
+  //    lane we already hold, or a monster in the river. Both priced on one
+  //    scale and both required to be achievable.
   //
-  //    This used to be an unconditional branch ahead of the objective, and the
-  //    comment said the free tower "beats a monster". It beat every monster:
-  //    the bot holds a wave in at least one lane almost every tick, so the
-  //    branch was a standing veto on the one below it, and a played game saw
-  //    one drake and one Baron in 128 ticks. An order of branches cannot say
-  //    "usually, but not this one"; a number can.
-  if rally < 0 && self.objective_value(team) <= FREE_TOWER_VALUE {
+  //    This was two branches with the tower unconditionally ahead, and the
+  //    comment said the free tower "beats a monster". It beat EVERY monster:
+  //    the bot holds a wave in some lane almost every tick, so the tower
+  //    branch was a standing veto on the river, and a played game saw one
+  //    drake and one Baron in 128 ticks. Pricing them both fixed that and
+  //    broke it the other way twice over, which is why this is one comparison
+  //    now and why both halves of it have a gate:
+  //
+  //    - with ONE price for "a free tower" the river won every comparison
+  //      instead of losing every one, champions stopped touching towers at
+  //      all, and in a whole game not a single plate came off. `tower_value`
+  //      reads the plating that is actually on the tower, which is most of
+  //      what an early tower is worth;
+  //    - and with no achievability gate, both teams rallied onto the same
+  //      objective and stood on it. A 150-tick game went by with every
+  //      champion parked on the Baron pit, every lane at even push, and not
+  //      one structure destroyed. Wanting a thing is not the same as being
+  //      able to take it, so `can_contest` asks the simulator.
+  if rally < 0 {
+    let mut best = 0
+    let mut best_node = -1
+    let mut best_why = ""
     for lane in lanes {
-      if rally >= 0 || !self.has_wave(team, lane) {
+      if !self.has_wave(team, lane) {
         continue
       }
       let front = self.lane_front(team, lane)
-      if front >= 0 {
-        rally = front
-        why = "we hold the \{lane} wave"
+      if front < 0 {
+        continue
+      }
+      let v = self.tower_value(front)
+      if v > best {
+        best = v
+        best_node = front
+        best_why = "we hold the \{lane} wave"
       }
     }
-  }
-  // 4. An epic monster is up, we have the bodies for it, and our lanes are not
-  //    bleeding. A buff bought with two towers is not a buff, it is a trade —
-  //    and the minion rules make that trade real rather than rhetorical.
-  if rally < 0 {
+    // The river, if we have the bodies for it and our lanes are not bleeding.
+    // A buff bought with two towers is not a buff, it is a trade — and the
+    // minion rules make that trade real rather than rhetorical.
     let mut bleeding = 0
     for li in 0..<3 {
       let against = if team == TEAM_A { -self.push[li] } else { self.push[li] }
@@ -227,14 +294,22 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
         bleeding += 1
       }
     }
-    let o = self.objective_target(team)
-    if o >= 0 && self.living(team).length() >= 3 && bleeding <= 1 {
-      let monster = match self.neutral_at(o) {
-        Some(m) => m.key
-        None => "objective"
+    if self.living(team).length() >= 3 && bleeding <= 1 {
+      for n in self.neutrals {
+        if !n.alive() || !self.can_contest(n.node, team) {
+          continue
+        }
+        let v = self.monster_value(team, n)
+        if v > best {
+          best = v
+          best_node = n.node
+          best_why = "\{n.key} is up"
+        }
       }
-      rally = o
-      why = "\{monster} is up"
+    }
+    if best_node >= 0 {
+      rally = best_node
+      why = best_why
     }
   }
   // 5. Otherwise, siege together.

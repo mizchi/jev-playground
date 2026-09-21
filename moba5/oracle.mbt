@@ -37,7 +37,9 @@ pub fn Game::position_score(self : Game, team : Int) -> Int {
     (if self.soul_team == team { 250 } else { 0 }) -
     (if self.soul_team == foe { 250 } else { 0 }) +
     (if self.baron[team] > 0 { 200 } else { 0 }) -
-    (if self.baron[foe] > 0 { 200 } else { 0 })
+    (if self.baron[foe] > 0 { 200 } else { 0 }) +
+    (if self.herald[team] > 0 { 90 } else { 0 }) -
+    (if self.herald[foe] > 0 { 90 } else { 0 })
   // A body that is down is a body that is not defending.
   let mut body_diff = 0
   for c in self.champs {

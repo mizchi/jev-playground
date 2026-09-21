@@ -296,6 +296,8 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
         "side": Json(if s.team == team { "ours" } else { "theirs" }),
         "hp": Json(s.hp),
         "max_hp": Json(s.max_hp),
+        "plates_left": Json(s.plates),
+        "comes_back_in": Json(s.respawn_in),
         "attackable_now": Json(s.alive() && self.structure_attackable(s)),
       }),
     )
@@ -359,12 +361,14 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
         "spawns_in": Json(n.spawn_in),
         "hp": Json(if n.alive() { n.hp } else { 0 }),
         "max_hp": Json(n.max_hp),
-        "element": Json(if n.key == "baron" { "" } else { self.drake_now() }),
+        "element": Json(if n.key == "dragon" { self.drake_now() } else { "" }),
         "reward": Json(
-          if n.key == "baron" {
-            "+\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% structure damage for \{BARON_TICKS} ticks, whole team"
-          } else {
-            drake_reward(self.drake_now())
+          match n.key {
+            "baron" =>
+              "+\{BARON_ATK_PCT}% attack and +\{BARON_STRUCT_PCT}% structure damage for \{BARON_TICKS} ticks, whole team"
+            "herald" =>
+              "+\{HERALD_STRUCT_PCT}% structure damage for \{HERALD_TICKS} ticks, whole team; leaves the map at tick \{HERALD_GONE_TICK}"
+            _ => drake_reward(self.drake_now())
           },
         ),
         "visible": Json(seen[n.node]),
@@ -410,7 +414,7 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "5v5 MOBA: three lanes (top/mid/bot), a jungle each side, and a river with two epic monsters",
     ),
     "objective": Json(
-      "Destroy the enemy nexus. A nexus can only be attacked once BOTH towers in at least one of its lanes are down; an inner tower cannot be attacked while its own lane's outer tower stands.",
+      "Destroy the enemy nexus. A nexus can only be attacked once BOTH towers in at least one of its lanes are down; an inner tower cannot be attacked while its own lane's outer tower stands, and it comes back up \{INHIB_TICKS} ticks after it falls, closing the lane again.",
     ),
     "rules": Json(
       "One action per champion per tick. Moving is one node; a blink is two. Ranged champions can poke an adjacent node for half damage and take nothing back. Abilities have cooldowns; a stun removes the target's next turn outright. Recalling teleports home, heals, and restocks wards; out of combat a champion regenerates slowly on the spot. Gold buys items at base, experience buys levels, and both raise your stats.",
@@ -446,6 +450,8 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "drakes_they_need_for_soul": Json(self.drakes_to_soul(foe)),
       "our_baron_ticks_left": Json(self.baron[team]),
       "their_baron_ticks_left": Json(self.baron[foe]),
+      "our_herald_ticks_left": Json(self.herald[team]),
+      "their_herald_ticks_left": Json(self.herald[foe]),
       "lane_in_most_danger": Json(
         if worst_lane < 0 {
           "none"
@@ -470,6 +476,12 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "The four jungle nodes are BRUSH. Standing next to a brush shows you nothing inside it, and standing IN one shows you the nodes around it as normal — so a champion waiting in a brush is invisible to everyone outside it, and can see who is walking past. A ward placed in a brush is the only way to watch it from outside. Every node listed under nodes_you_are_blind_to could be holding enemies; a brush next to a lane you are pushing is where they would be.",
     ),
     "brush_nodes": Json(brush_list),
+    "plating_rule": Json(
+      "Every outer tower starts with \{PLATES} plates. Champion damage takes them off one at a time — \{PLATE_GOLD} gold each to every champion on the team that broke it — and pays whether or not the tower falls, so chipping a tower is worth a tick even when finishing it is not. Minion damage takes no plates. All plating falls off at tick \{PLATE_TICKS}, so this is an early-game source of gold and then it is gone.",
+    ),
+    "inhibitor_rule": Json(
+      "An inner tower is the gate to its team's nexus, and it comes back \{INHIB_TICKS} ticks after it falls. While it is down that lane pushes itself toward the team that broke it, and their nexus can be attacked through it; when it comes back up the lane closes again. So breaking one starts a clock rather than winning a lane, and the question is what you do with the ticks.",
+    ),
     "drake_rule": Json(
       "Every drake is one of four elements and gives its element's stack permanently to whoever kills it. The element of the drake in the pit now is under objectives; the first drake of the game has its own element and every drake after it has the rift's, so the soul at stake never changes. The first team to \{SOUL_STACKS} drakes of any elements takes the \{self.rift_element()} SOUL: \{soul_reward(self.rift_element())}. Nobody gets a second one, so the fourth drake is the one worth a teamfight and the enemy's fourth is worth denying.",
     ),
