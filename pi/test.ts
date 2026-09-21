@@ -10,8 +10,9 @@
  *   it here, and the agent quietly runs five sixths of this repository. So the
  *   roster is derived from the packages' own `pi` keys and compared.
  *
- *   BOTH PROFILES LOAD. They collide on every seam they take -- measured, not
- *   asserted -- and `tool_call` twice means two permission gates on one call.
+ *   BOTH PROFILES LOAD. They collide on every seam they take, and on the
+ *   `tool_call` seam that means one command showing a user TWO confirmation
+ *   dialogs -- fired through Pi's own runner in `collide.ts`, not inferred.
  *   The structural defence is that `pi/` is not itself a loadable package, and
  *   that is checked rather than documented.
  *
@@ -25,6 +26,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { ALL, COMPONENTS, PROFILES, RESIDENT, type Component } from "./seams.js";
 import { entriesOn, overlap, probe, recorder, type Registered } from "./probe.js";
+import { ARMS, run as fire, type Observed } from "./collide.js";
 
 let pass = 0;
 let fail = 0;
@@ -260,6 +262,61 @@ const tests = [
       "",
       "a document offers an npm install for a package this repository does not own on npm: ",
     );
+  }),
+
+  check("both profiles loaded together: two dialogs on an ask, one gate on a deny", async () => {
+    /**
+     * THE COLLISION, FIRED. `pi/README.md` used to state this as a reading of
+     * the seam table and admit it was unobserved; `collide.ts` fires all four
+     * seams through Pi's own `ExtensionRunner` and the reading was wrong in
+     * two places, so these are the numbers rather than the prediction.
+     *
+     * It is in `npm test` because it costs about two seconds and needs
+     * nothing but this repository -- `fetch` is replaced by a counter, so no
+     * request leaves the process and no key is read.
+     */
+    const got = new Map<string, Observed>();
+    for (const arm of ARMS) got.set(arm.name, await fire(arm));
+    const c = got.get("components") as Observed;
+    const r = got.get("resident") as Observed;
+    const b = got.get("both") as Observed;
+
+    // Pi neither deduplicates the two profiles nor warns about them. If that
+    // ever changes, the structural defence in this directory is redundant and
+    // the README should say so instead.
+    eq(b.loaded, c.loaded + r.loaded, "extensions loaded for `both`: ");
+    eq(b.loadErrors.length, 0, "load errors for `both`: ");
+    eq(b.diagnostics.length, 0, "diagnostics for `both` -- Pi now warns, so the README is stale: ");
+
+    // THE ASK BAND DOUBLES. This is the hazard, and it is the whole reason the
+    // profiles are separate packages.
+    eq(c.ask.confirms, 1, "one profile, one confirmation: ");
+    eq(r.ask.confirms, 1, "one profile, one confirmation: ");
+    eq(b.ask.confirms, 2, "both profiles: one command, two confirmation dialogs: ");
+    eq(b.ask.requests, 2, "both profiles ask twice about one command: ");
+
+    // THE DENY BAND DOES NOT. `emitToolCall` returns on the first
+    // `{block: true}`, so the second gate never runs -- which is why the
+    // README's "two gates on every tool call" was wrong.
+    ok(c.deny.blocked && r.deny.blocked && b.deny.blocked, "the deny answer set must block in every arm");
+    eq(b.deny.requests, c.deny.requests, "a blocked call short-circuits, so `both` costs no more than one: ");
+    eq(b.deny.requests, 1, "a blocked call must cost exactly one request: ");
+
+    // `context` CHAINS AND DOES NOT DOUBLE. Both compactors run, the second
+    // sees what the first left, and it deletes nothing because the first
+    // already got under budget -- at no extra request.
+    ok(c.context.messagesOut < c.context.messagesIn, "the compactor must actually delete, or this proves nothing");
+    eq(b.context.messagesOut, c.context.messagesOut, "the second compactor deletes nothing further: ");
+    eq(b.context.requests, c.context.requests, "the second compactor asks nothing further: ");
+    ok(
+      b.entries.includes("jev-compact/deletion") && b.entries.includes("hermes/compaction"),
+      `both compactors must have run: ${b.entries.join(", ")}`,
+    );
+
+    // And the ledger order is where the short-circuit is visible: the ask fire
+    // reaches both gates, the deny fire reaches only the first.
+    const gates = b.entries.filter((e) => e === "jev-guard/decision" || e === "hermes/guard");
+    eq(gates.join(" "), "jev-guard/decision hermes/guard jev-guard/decision", "the gate sequence across both fires: ");
   }),
 
   check("the Pi core packages stay peer dependencies, unbundled", () => {

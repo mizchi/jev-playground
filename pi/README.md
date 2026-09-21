@@ -12,7 +12,8 @@
 ```bash
 cd pi && npm install         # 6 パッケージをローカルから symlink する。1 回だけ
 npm run probe                # どの拡張がどの seam を取るか、実測。API キー不要
-npm test                     # 11 件。API キー不要
+npm test                     # 12 件。API キー不要
+npm run collide              # 両方入れたら何が 2 回走るか、Pi のランナーで実測
 npm run load                 # Pi 自身の resolver に読ませる(こちらは Pi の実物を起動)
 npm run load -- packages     # パッケージ README のレシピだけ、6 本とも
 ```
@@ -53,16 +54,48 @@ pi install ./pi/resident     # 両方入れてはいけません(理由は §2)
 | --- | --- | --- | --- | --- |
 | `hermes` | `session_start` `before_agent_start` `tool_call` `context` `session_before_compact` | `hermes` | 5 | all five, in one request per turn, under one budget |
 
-**The two profiles collide on 5 of the seams they take** (`before_agent_start`, `context`, `session_before_compact`, `session_start`, `tool_call`), which is why they are separate packages: `tool_call` twice is two permission gates on one call.
+**The two profiles collide on 5 of the seams they take** (`before_agent_start`, `context`, `session_before_compact`, `session_start`, `tool_call`), which is why they are separate packages. What each collision costs is not uniform and is not inferable from this table -- `collide.ts` fires them: a command in the gate's `ask` band shows the user two confirmation dialogs, and a blocked one stops at the first gate.
 
-**5 seam のうち 5 つ、つまり全部で衝突します。** 両方入れると:
+**5 seam のうち 5 つ、つまり全部で衝突します。**
 
-| seam | 両方入れたときに起きること |
-| --- | --- |
-| `tool_call` | **1 コマンドに permission gate が 2 つ**。確認ダイアログが 2 回、block も 2 回 |
-| `before_agent_start` | hermes が**1 リクエストに束ねた**のに、別々の 3 つが**さらに 3 リクエスト** |
-| `context` | **削除が 2 回**。2 つ目は 1 つ目が削った後のリストを見る |
-| `session_before_compact` | 要約のキャンセル判断が 2 つ |
+### 2.1 両方入れて実際に撃ちました —— そして予測は 2 箇所外れていました
+
+`npm run collide` が **Pi 自身の `ExtensionRunner`** で 4 つの seam を発火させ、
+**3 アーム(components / resident / both)に同じ入力**を与えます。
+コマンドは `rm -rf /etc/nginx/sites-enabled`。
+
+| | 拡張 | ask: req | **ask: 確認ダイアログ** | deny: req | deny: block | context: req | context: msgs | turn: req | 要約キャンセル |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `components` | 5 | 1 | **1** | 1 | yes | 1 | 24 → 11 | 1 | yes |
+| `resident` | 1 | 1 | **1** | 1 | yes | 1 | 24 → 11 | 1 | yes |
+| **`both`** | **6** | **2** | **2** | **1** | yes | **1** | 24 → 11 | **2** | yes |
+
+**Pi は 6 つ全部を載せます** —— load エラー 0、**diagnostic 0**。
+重複排除も警告も**一切ありません**(だから防御は構造側にしか置けません)。
+
+| seam | 予測していたこと | 実測 |
+| --- | --- | --- |
+| `tool_call`(ask) | 確認ダイアログが 2 回 | **成立。1 → 2**(リクエストも 1 → 2) |
+| `tool_call`(deny) | block も 2 回 | **不成立。1 回**。`emitToolCall` は最初の `{block:true}` で **return** するので**2 つ目の gate は走りません** |
+| `before_agent_start` | hermes の 1 件に**別々の 3 つが 3 件足す** | **1 → 2**。しかも**同じ 4 問**(`tier` `underspecified` `oversized` `effort`)—— 残り 2 つの turn 系部品はこのハーネスでは聞くことが無かった(§5) |
+| `context` | **削除が 2 回**、2 つ目は 1 つ目の後のリストを見る | **半分成立。**「後のリストを見る」は正しい(`emitContext` は短絡せず**連鎖**する)が、**削除は 1 回**。2 つ目は残った 11 件を見て `cannot-fit` を記録し、**リクエストも送りません** |
+| `session_before_compact` | キャンセル判断が 2 つ | **不成立。**`emit` は最初の `{cancel:true}` で return するので**1 つ**(ただし両アームともキャンセルする) |
+
+> **つまり本当の危険は 1 箇所に絞れます** —— **`ask` に落ちたコマンド**です。
+> ユーザは**同じコマンドについて 2 回聞かれ**、1 回目に yes と答えたときだけ 2 回目が来ます
+> (no と答えると `{block:true}` になり、そこで短絡する)。
+> **block されるコマンドは 1 回**、**削除は 1 回**、**要約キャンセルは 1 回**。
+> 「全 seam で 2 倍」は**短絡を数えていなかった私の読み**でした。
+
+ledger の順序にそれが出ます(`npm run collide` が印字):
+
+```
+components  jev-guard/decision -> jev-guard/decision -> jev-compact/deletion
+resident    hermes/guard -> hermes/guard -> hermes/compaction -> hermes/turn
+both        jev-guard/decision -> hermes/guard   <- ask は 2 つ通る
+         -> jev-guard/decision                   <- deny は 1 つで止まる
+         -> jev-compact/deletion -> hermes/compaction -> hermes/turn
+```
 
 **Pi の重複排除は救ってくれません。** 同一性は npm 名・git URL・**解決後の絶対パス**で決まるので
 (`pi-coding-agent/docs/packages.md`)、2 つのプロファイルは別物として両方載ります。
@@ -149,10 +182,27 @@ export { default } from "jev-guard/pi";
   **実際に解決されるかは `npm run load`** が Pi 自身に訊きます。
 - **`npm run load` は `npm test` に入れていません。** Pi の実ランタイムを作るので遅く、
   **このディレクトリのせいでない理由で落ち得る**からです。`npm test` は repo だけで完結します。
-- **両方のプロファイルを同時に入れた状態は測っていません。**
-  上の表は「そうなったら何が 2 回走るか」を seam から**読んだもの**で、
-  2 つ入れて確認したものではありません。
-  防いでいるのは構造(別パッケージ・`pi/` 自身は非パッケージ)とテストです。
+- **両方同時は測りました(§2.1)。ただし判断は全部私の canned 値です。**
+  `globalThis.fetch` を差し替えて、問いの `type` と名前から固定値で答えています ——
+  **測ったのは「何個の handler が走り、何回リクエストが飛び、ユーザが何回聞かれ、
+  何件のメッセージが残るか」**で、**Jev がこれらのコマンドをどう答えるかは測っていません**。
+  カウントが所見で、判定は stub のものです。
+- **`before_agent_start` の 1 → 2 は、3 つのうち 1 つしか聞いていない状態の 1 → 2** です。
+  リクエストの問い名は 3 アームすべて `tier`/`underspecified`/`oversized`/`effort`
+  だけ —— つまり **model router のみ**。skill router は**カタログが空**で聞くことが無く、
+  orchestrator は既定で `before_agent_start` ではなく**ツール経路**です
+  ([jev-orchestrator の README](../packages/jev-orchestrator/README.md))。
+  **実セッションではこの列はもっと増え得ます。**
+- **ハーネスの stub が seam の結果を決めている箇所が在ります。**
+  `getContextUsage()` は私が与えた数字で、`setModel()` は常に false を返します。
+  compactor は**これを整合させるまで 2 度空振り**しました ——
+  最初は 190,000 トークン使用と申告して 4,000 トークンの transcript を渡したので、
+  hermes は overhead を引いて予算 0 で `cannot-fit`、`jev-compact` は
+  overhead を引かないので「もう予算内」で 0 件削除。
+  **どちらも与えた数字については正しく、間違っていたのは私の設定**でした。
+  さらに compactor の逃げ道 `nothing_spare` を noul の既定 0.9 で答えていたため
+  **ランキング前に全削除が拒否**されていました(`nothingSpareAt: 0.8`)。
+  いまは transcript から usage を導出し、`nothing_spare` を表に入れてあります。
 - **パッケージ README のレシピは直しましたが、「公開する」方は選んでいません。**
   6 本とも**ローカルパスのレシピ**(`npm run load` が 6 本とも Pi の resolver で確認)にしました。
   **公開は選択肢として潰れています** —— `jev-guard` / `jev-model-router` / `jev-compact` の
