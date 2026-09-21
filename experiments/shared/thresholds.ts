@@ -525,3 +525,87 @@ export function logisticValueAt(model: Logistic, p: number): number {
   if (model.a === 0) return Number.NaN;
   return (Math.log(clamped / (1 - clamped)) - model.b) / model.a;
 }
+
+export interface Permuted {
+  /** The observed difference, `mean(a) - mean(b)`. */
+  diff: number;
+  /** Two-sided p: the share of relabellings at least this extreme. */
+  p: number;
+  /** How many relabellings were considered. */
+  splits: number;
+  /** True when every split was enumerated rather than sampled. */
+  exact: boolean;
+}
+
+/**
+ * An exact two-sided permutation test on the difference in means.
+ *
+ * For two small UNPAIRED samples, which is what docs/55's `- [x]` comparison
+ * has: 5 open runs against 8 done ones, from the same two sections of one
+ * file. A sign test does not apply -- nothing pairs a specific open task with
+ * a specific done one -- and a t-test would assert a distribution over five
+ * points. Enumerating every way to relabel the 13 observations into groups of
+ * 5 and 8 assumes only that the labels were exchangeable under the null,
+ * which is exactly the hypothesis being tested.
+ *
+ * `C(13,5)` is 1,287, so the whole distribution is enumerable. Above
+ * `maxSplits` it samples instead and says so, because a p-value from a
+ * sampled distribution is not the same claim as one from a complete
+ * enumeration.
+ */
+export function permutation(
+  a: readonly number[],
+  b: readonly number[],
+  maxSplits = 200_000,
+  seed = 1,
+): Permuted {
+  const all = [...a, ...b];
+  const n = all.length;
+  const k = a.length;
+  if (k === 0 || b.length === 0) return { diff: Number.NaN, p: Number.NaN, splits: 0, exact: false };
+  const observed = mean(a) - mean(b);
+  const total = (() => {
+    let c = 1;
+    for (let i = 0; i < k; i += 1) c = (c * (n - i)) / (i + 1);
+    return Math.round(c);
+  })();
+  const atLeast = (d: number): boolean => Math.abs(d) >= Math.abs(observed) - 1e-12;
+  const diffOf = (idx: readonly number[]): number => {
+    let sa = 0;
+    for (const i of idx) sa += all[i];
+    const sum = all.reduce((s, x) => s + x, 0);
+    return sa / k - (sum - sa) / (n - k);
+  };
+  if (total <= maxSplits) {
+    // Every subset of size k, in lexicographic order.
+    const idx = Array.from({ length: k }, (_, i) => i);
+    let extreme = 0;
+    let splits = 0;
+    for (;;) {
+      splits += 1;
+      if (atLeast(diffOf(idx))) extreme += 1;
+      let i = k - 1;
+      while (i >= 0 && idx[i] === n - k + i) i -= 1;
+      if (i < 0) break;
+      idx[i] += 1;
+      for (let j = i + 1; j < k; j += 1) idx[j] = idx[j - 1] + 1;
+    }
+    return { diff: observed, p: extreme / splits, splits, exact: true };
+  }
+  // Sampled, with a fixed seed so the number is reproducible.
+  let state = seed >>> 0;
+  const rnd = (): number => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x1_0000_0000;
+  };
+  const order = Array.from({ length: n }, (_, i) => i);
+  let extreme = 0;
+  for (let s = 0; s < maxSplits; s += 1) {
+    for (let i = n - 1; i > 0; i -= 1) {
+      const j = Math.floor(rnd() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    if (atLeast(diffOf(order.slice(0, k)))) extreme += 1;
+  }
+  return { diff: observed, p: extreme / maxSplits, splits: maxSplits, exact: false };
+}
