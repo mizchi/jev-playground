@@ -1237,7 +1237,7 @@ function pairedRows(rec: Record_): { repo: string; section: string; open: Row; d
 }
 
 /**
- * The paired comparison, using the test docs/56 §3.0 pre-registered.
+ * The paired comparison, using the test docs/57 §3.0 pre-registered.
  *
  * Written while the sweep was at 4 of 32 rows and no comparison had been
  * computed, for the same reason the test itself was: analysis code written
@@ -1273,7 +1273,7 @@ function pairedSection(rec: Record_, metrics: { name: string; of: (r: Row) => nu
   /**
    * A METRIC THE CAP KILLED, said out loud rather than shown as a dash.
    *
-   * `seconds` was pre-registered in docs/56 §3.0 with the other four, from
+   * `seconds` was pre-registered in docs/57 §3.0 with the other four, from
    * docs/55 §5.3. But every run in this sweep hit the 600 s cap, so the
    * measure is CONSTANT: every pair ties, `n` falls to zero and the test
    * returns no p. docs/55's runs had a median of 483 s and only some hit the

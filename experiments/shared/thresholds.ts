@@ -630,7 +630,7 @@ export interface Paired {
  * An exact two-sided PAIRED permutation test -- every sign flip enumerated.
  *
  * PRE-REGISTERED, and the timestamp matters more than the code: this was
- * written and committed while docs/56's sweep was still running and before any
+ * written and committed while docs/57's sweep was still running and before any
  * of its numbers existed. A test chosen after seeing the data is a test
  * chosen to produce an answer, which is the defect this programme keeps
  * finding in its own reports.
@@ -638,7 +638,7 @@ export interface Paired {
  * WHY PAIRED, AND WHY DOCS/55 COULD NOT BE. docs/55's `- [x]` comparison had 5
  * open runs against 8 done ones drawn from two sections of one file, so
  * nothing paired a specific open task with a specific done one and
- * `permutation` above is the right instrument for it. docs/56's sample is
+ * `permutation` above is the right instrument for it. docs/57's sample is
  * built as pairs by construction -- one open and one done item from the SAME
  * section of the same file of the same repository, 16 of them, one per
  * repository. That is what a paired test needs, and pairing is the whole

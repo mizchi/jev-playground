@@ -1,5 +1,5 @@
 {
-  "note": "The widened roster for docs/56. DERIVED, not chosen: every repository the `account` rule in widen.ts selected that holds at least one matched section -- a markdown heading with both a `- [ ]` and a `- [x]` item, which is the only pairing docs/55 §4 supports. `revs` is the revision widen.ts's probe cloned and counted, so the roster is pinned to the tree the yields were measured on rather than to whatever HEAD moves to later.",
+  "note": "The widened roster for docs/57. DERIVED, not chosen: every repository the `account` rule in widen.ts selected that holds at least one matched section -- a markdown heading with both a `- [ ]` and a `- [x]` item, which is the only pairing docs/55 §4 supports. `revs` is the revision widen.ts's probe cloned and counted, so the roster is pinned to the tree the yields were measured on rather than to whatever HEAD moves to later.",
   "rule": "source === 'account' && matchedSections > 0 in records/widen.json, pinned to the `head` that probe recorded, sorted by name",
   "derivedFrom": "experiments/finish/records/widen.json",
   "revs": {

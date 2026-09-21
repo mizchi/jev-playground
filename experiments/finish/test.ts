@@ -1658,9 +1658,9 @@ check("the permutation test is exact at this size, and its floor is stated", () 
   ok(Number.isNaN(permutation([], [1, 2]).p), "an empty arm must not produce a p");
 });
 
-check("the paired test docs/56 pre-registered is exact, and its floor is returned", () => {
+check("the paired test docs/57 pre-registered is exact, and its floor is returned", () => {
   /**
-   * PRE-REGISTERED: written and asserted while docs/56's sweep was still
+   * PRE-REGISTERED: written and asserted while docs/57's sweep was still
    * running, before any of its numbers existed. Two controls, because a test
    * that cannot fail is not a test.
    */
