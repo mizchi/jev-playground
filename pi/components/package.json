@@ -1,0 +1,31 @@
+{
+  "name": "@jev-playground/pi-components",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "This repository as a Pi agent: the five jev components as five separate extensions. The alternative profile is ../resident, which covers the same five in one extension -- load one or the other, never both.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "jev"
+  ],
+  "pi": {
+    "extensions": [
+      "extensions/*.ts"
+    ]
+  },
+  "dependencies": {
+    "jev-compact": "file:../../packages/jev-compact",
+    "jev-guard": "file:../../packages/jev-guard",
+    "jev-model-router": "file:../../packages/jev-model-router",
+    "jev-orchestrator": "file:../../packages/jev-orchestrator",
+    "jev-skill-router": "file:../../packages/jev-skill-router"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

@@ -320,6 +320,9 @@ TYPESAFEAI_API_KEY=... node hooks/test-gate.mjs   # docs/01 の 24 コマンド�
 **このリポジトリでは意図的に配線していません** —— チェックアウトした人全員の
 Bash がゲートされてしまうので。実測値と設計の理由は [docs/18](docs/18-permission-hook.md)。
 
+**同じ判断を Pi の拡張として動かす部品は [`pi/`](pi/) です**(§11)——
+Pi の `tool_call` は `ask` を返せないので、`ask` の解決の仕方だけが違います。
+
 ## 8. jevdsl — 判断を `match` できる値にする
 
 `lib` は API をそのまま写した生クライアントです。`jevdsl` は判断を
@@ -452,6 +455,30 @@ glob だけにすると **14/15 に取りこぼします**。
   **スイートの穴**が出ました
 - 効いたのは **doc コメント 1 行**。「何をするか」を「何を守るか」に書き直すだけで
   削減 53.3% → 65.9%(過剰選択 31/45 → 18/45)
+
+## 11. pi エージェントとして動かす —— [`pi/`](pi/)
+
+§7 は Claude Code の hook でした。**同じ判断を [Pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent)
+の拡張として動かす部品は [`pi/`](pi/) にまとめてあります。**
+`packages/jev-<name>/src/pi.ts` の 6 つがその実体で、
+**`pi/` はそれを「1 コマンドで入る 1 つのもの」に組み立てたもの**です。
+
+```bash
+cd pi && npm install     # 6 パッケージをローカルから symlink(コピーではない)
+npm run probe            # どの拡張がどの seam を取るか、実測。API キー不要
+npm test                 # 10 件。API キー不要
+npm run load             # Pi 自身の resolver に読ませる
+pi install ./pi/components   # 5 つを別々に
+pi install ./pi/resident     # または jev-hermes 1 つ(同じ 5 つを内包)。両方は不可
+```
+
+**2 つのプロファイルは排他です** —— `jev-hermes` は guard も自前で持つので
+`resident` は `components` の代替で、両方入れると **1 コマンドに permission gate が 2 つ**
+付きます(5 seam 全部で衝突。`npm run probe` が測ります)。
+
+そして **npm 上の `jev-guard` / `jev-model-router` / `jev-compact` は別人のパッケージ**です
+(残り 4 つは 404)。だから `pi/` の依存は**すべて `file:` パス**で、
+バージョン範囲を書くと**テストが落ちます**。詳細は [`pi/README.md`](pi/README.md)。
 
 ## 補足
 
