@@ -227,3 +227,46 @@ fn mirror_complaint(g : Game) -> String {
   }
   bad.join("; ")
 }
+
+///|
+/// The two teams are told the same thing, up to the relabelling.
+///
+/// This is the check that decides what a side-dependent number means. The
+/// benchmark's fog read is **0.25 when the model plays team A and 0.008 when
+/// it plays team B against the same opponent**, reproducibly — and the first
+/// edition of docs/56 explained a split like that as the opponent's
+/// predictability, which turned out to be an engine bug. So: if what the two
+/// teams can and cannot see is mirror-equivalent, the asymmetry is not in the
+/// rules and not in the state, and what is left is how the policy reads it.
+///
+/// Asserted on the blind set specifically, because that IS the fog question's
+/// input: "which of their champions can we not account for, and where".
+test "a mirror match tells both teams the same thing" {
+  for comp in tournament_comps {
+    let picks = comp_by_name(comp.name)
+    let g = Game::with_comps(picks, picks)
+    while g.winner == 0 && g.tick < 60 {
+      let actions : Map[Int, Action] = Map([])
+      for team in [TEAM_A, TEAM_B] {
+        for e in smart_team_actions(g, team) {
+          actions[e.0] = e.1
+        }
+      }
+      g.step(actions)
+      let a_sees = g.vision(TEAM_A)
+      let b_sees = g.vision(TEAM_B)
+      for n in 0..<N_NODES {
+        // What A sees at n, B sees at n's mirror. Nothing weaker would do:
+        // equal COUNTS of visible nodes would pass while the two teams were
+        // looking at different halves of the map.
+        assert_eq(a_sees[n], b_sees[mirror_node(n)])
+      }
+      // And the same number of enemies is hidden from each, which is the
+      // arithmetic half of the fog class.
+      assert_eq(
+        g.visible_enemies(TEAM_A).length(),
+        g.visible_enemies(TEAM_B).length(),
+      )
+    }
+  }
+}
