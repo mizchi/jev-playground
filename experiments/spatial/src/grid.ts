@@ -182,7 +182,7 @@ export function draw(c: GridCase): string[] {
  *
  * NetHack's glyphs are public knowledge and docs/34 supplied no legend, so §2
  * supplies none either. These glyphs are mine, so withholding a legend would
- * measure guessing. It is identical across all five arms.
+ * measure guessing. It is identical across every arm.
  */
 export const LEGEND: Record<string, string> = {
   "@": "you",

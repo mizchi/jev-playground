@@ -1,11 +1,12 @@
 /**
  * Does the ENCODING of a space decide whether judgment can read it?
  *
- *   npx tsx src/spatial.ts --sample        # the five encodings of one space, no API
+ *   npx tsx src/spatial.ts --sample        # every encoding of one space, side by side, no API
  *   npx tsx src/spatial.ts --instruments   # what the harness checks about itself, no API
  *   npx tsx src/spatial.ts --report        # every table below, from the records, no API
  *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --grid      # §1, the drawn rooms
  *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --screens   # §2, the 244 NetHack screens
+ *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --cut       # §3, the nine-square crop
  *
  * THE ENTRY POINT IS NOT CALLED `run.ts` ON PURPOSE. The roguelike
  * experiment's `run.ts` ends with `if (process.argv[1]?.endsWith("run.ts"))`,
@@ -20,7 +21,7 @@ import { resolve } from "node:path";
 
 import { Jev, type Answer, type Question } from "../../shared/jev.js";
 import { auc as aucOf, pairedPermutation, separation } from "../../shared/thresholds.js";
-import { mapOf, type Screen } from "../../roguelike/src/nethack.js";
+import { glyphAt, heroAt, mapOf, type Screen } from "../../roguelike/src/nethack.js";
 import { probesFor as screenProbes } from "../../roguelike/src/perceive.js";
 import { rehydrate } from "../../roguelike/src/run.js";
 import { ARMS, type ArmName, LEAKY, encode, type Scene } from "./encode.js";
@@ -58,6 +59,8 @@ export interface Row {
   /** Per-request input tokens, so the report can price each encoding. */
   input: number;
   ms: number;
+  /** §3 only: whether the state was the whole map or the nine-square crop. */
+  scope?: Scope;
   /** §1 only: the generator's factors, so the report can split by them. */
   width?: number;
   quadrant?: Quadrant;
@@ -88,12 +91,11 @@ function read(name: string): Record_ | null {
 // ---------------------------------------------------------------------- asking
 
 /**
- * One case, all five encodings.
+ * One case, every encoding.
  *
- * The five requests differ in the `state` and in nothing else: the questions
- * object is built once and handed to each. That is the experiment, so it is
- * worth saying in code rather than in a comment -- `questions` is out of the
- * loop.
+ * The requests differ in the `state` and in nothing else: the questions object
+ * is built ONCE and handed to each. That is the experiment, so it is worth
+ * saying in code rather than in a comment -- `questions` is out of the loop.
  */
 async function askAll(
   jev: Jev,
@@ -219,6 +221,109 @@ async function runScreens(limit: number): Promise<void> {
   console.log(`  ${done} screens x ${ARMS.length} arms, ${jev.calls} requests -> records/screens.json`);
 }
 
+// ------------------------------------------------- §3 the three-by-three crop
+
+/**
+ * The nine squares around the `@`, cropped out of the 21x80 map.
+ *
+ * docs/34's SECOND suggestion, and the one §2 could not settle. `adjacent_monster`
+ * sits at 63% on the full picture and coordinates made it WORSE (53%); only the
+ * `@`-relative arm helped (74%). Two explanations survive that:
+ *
+ *   LOCALISATION -- finding the `@` inside 21 rows of 80 characters is the hard
+ *     part, and once the nine squares are handed over the question is easy;
+ *   CLASSIFICATION -- reading which of eight glyphs is a monster is the hard
+ *     part, and cropping changes nothing.
+ *
+ * A 3x3 crop separates them, because in a 3x3 crop there is no spatial relation
+ * left to get wrong: every listed square IS adjacent. If accuracy jumps, the
+ * failure was localisation. If it stays near 60%, it was never about space.
+ *
+ * Out-of-bounds squares come back as the blank that `glyphAt` returns, which is
+ * what the map itself shows for unexplored -- so an `@` against the edge is
+ * cropped the same way the game draws it.
+ */
+export function cutScene(screen: Screen): Scene | null {
+  const hero = heroAt(screen);
+  if (!hero) return null;
+  const rows: string[] = [];
+  for (let dy = -1; dy <= 1; dy += 1) {
+    let row = "";
+    for (let dx = -1; dx <= 1; dx += 1) row += glyphAt(screen, hero.x + dx, hero.y + dy);
+    rows.push(row);
+  }
+  return {
+    rows,
+    subject: "the nine squares of a screen from NetHack 3.6.7 centred on your @, cropped out of the map",
+    observer: "@",
+    extra: { status_lines: [screen.rows[22].trim(), screen.rows[23].trim()] },
+  };
+}
+
+/** `full` is the whole 21x80 picture; `cut` is the nine squares. */
+export type Scope = "full" | "cut";
+
+/**
+ * The three measurements, chosen so each pair isolates one thing.
+ *
+ *   full/ascii     docs/34's state -- the control, and §2's number again
+ *   cut/ascii      the same picture form, localisation removed
+ *   cut/relative   the crop with the relation pre-computed as well
+ */
+const CUT_ARMS: { scope: Scope; arm: ArmName }[] = [
+  { scope: "full", arm: "ascii" },
+  { scope: "cut", arm: "ascii" },
+  { scope: "cut", arm: "relative" },
+];
+
+async function runCut(limit: number): Promise<void> {
+  const walk = JSON.parse(readFileSync(WALK, "utf8")) as { screens: ScreenRow[] };
+  const jev = new Jev();
+  const rec: Record_ = { model: jev.model, usage: { input: 0, output: 0, calls: 0, ms: 0 }, rows: [] };
+  const screens = walk.screens.slice(0, limit);
+  let done = 0;
+  for (const row of screens) {
+    const screen = rehydrate(row);
+    const cut = cutScene(screen);
+    const { nouls } = screenProbes(screen);
+    // The LOCAL band only, plus the status control. `monster_count` and the
+    // staircase questions are about the whole map and a crop cannot answer
+    // them -- asking anyway would measure my cropping, not the encoding.
+    const asked = nouls.filter((p) => p.band === "local" || p.band === "status");
+    if (!cut || asked.length === 0) continue;
+    const questions = Object.fromEntries(asked.map((p) => [p.key, p.question] as const));
+    const full = screenScene(screen);
+    const out = await Promise.all(
+      CUT_ARMS.map(async ({ scope, arm }) => {
+        const started = Date.now();
+        const res = await jev.ask(encode(scope === "full" ? full : cut, arm), questions);
+        const probes: ProbeRow[] = asked.map((p) => {
+          const a = res.answers[p.key] as Answer & { noul?: number };
+          return { key: p.key, band: p.band, truth: p.truth, answer: a?.noul ?? Number.NaN };
+        });
+        return { scope, arm, probes, input: res.usage.input_tokens, ms: Date.now() - started };
+      }),
+    );
+    for (const o of out) {
+      rec.rows.push({
+        case: `${row.game}/${row.turn}`,
+        arm: o.arm,
+        scope: o.scope,
+        probes: o.probes,
+        input: o.input,
+        ms: o.ms,
+      });
+    }
+    done += 1;
+    if (done % 20 === 0 || done === screens.length) {
+      console.log(`  ${done}/${screens.length} screens`);
+      rec.usage = { input: jev.inputTokens, output: jev.outputTokens, calls: jev.calls, ms: jev.totalMs };
+      write("cut.json", rec);
+    }
+  }
+  console.log(`  ${done} screens x ${CUT_ARMS.length} states, ${jev.calls} requests -> records/cut.json`);
+}
+
 // --------------------------------------------------------------------- reading
 
 const pct = (hit: number, n: number): string => (n === 0 ? "   -" : `${Math.round((hit / n) * 100)}%`.padStart(4));
@@ -282,6 +387,7 @@ function armXquestion(rec: Record_, title: string): void {
     console.log(`  ${key.padEnd(20)}${line}`);
   }
   console.log(`\n  each cell is accuracy at 0.5 / AUC. ${[...LEAKY].join(", ")}* has the answer in its state (see encode.ts).`);
+  console.log("  sparse omits the floor, so it cannot answer `dead_end` or `in_room` on a NetHack screen -- predicted in encode.ts, not discovered here.");
 }
 
 function bands(rec: Record_): void {
@@ -295,13 +401,13 @@ function bands(rec: Record_): void {
     }).join("");
     if (order.some((b) => cells.has(`${ARMS[0]}\u0000${b}`))) console.log(`  ${band.padEnd(10)}${line}`);
   }
-  console.log("\n  `status` is the control: the same prose in all five states. It must not move.");
+  console.log("\n  `status` is the control: the same prose in every state. It must not move.");
 }
 
 /**
  * The paired test.
  *
- * Every case is measured under all five encodings, so a comparison between two
+ * Every case is measured under every encoding, so a comparison between two
  * arms is paired by construction -- the same room, the same questions, the
  * same wording. On a 0/1 outcome the pairs that agree are ties, they are
  * dropped, and what is left is the count of cases where exactly one arm was
@@ -530,6 +636,70 @@ function replication(mine: Record_): void {
   );
 }
 
+/**
+ * §3: does cropping the map to the nine squares fix the local band?
+ *
+ * The three states are labelled `scope/arm` because the independent variable
+ * here is not the encoding alone -- `full/ascii` and `cut/ascii` are the SAME
+ * encoding of two different extents, and that pair is the measurement.
+ */
+function cutReport(rec: Record_): void {
+  const label = (r: Row): string => `${r.scope ?? "full"}/${r.arm}`;
+  const combos = [...new Set(rec.rows.map(label))];
+  const keys = [...new Set(rec.rows.flatMap((r) => r.probes.map((p) => p.key)))];
+  const cells = new Map<string, Cell>();
+  for (const r of rec.rows) {
+    for (const p of r.probes) {
+      const k = `${label(r)}\u0000${p.key}`;
+      const cell = cells.get(k) ?? blank();
+      add(cell, p);
+      cells.set(k, cell);
+    }
+  }
+  console.log(`\n  every question, every extent\n`);
+  console.log(`  ${"probe".padEnd(20)}${combos.map((c) => c.padStart(15)).join("")}`);
+  for (const key of keys) {
+    const line = combos
+      .map((c) => {
+        const cell = cells.get(`${c}\u0000${key}`);
+        if (!cell) return "       -       ";
+        const s = separation(cell.samples);
+        const showAuc = s.pos > 0 && s.neg > 0;
+        return `${pct(cell.hit, cell.n)}/${showAuc ? s.auc.toFixed(2) : " -  "}`.padStart(15);
+      })
+      .join("");
+    console.log(`  ${key.padEnd(20)}${line}`);
+  }
+  const of = (combo: string, key: string): Map<string, boolean> => {
+    const m = new Map<string, boolean>();
+    for (const r of rec.rows) {
+      if (label(r) !== combo) continue;
+      for (const p of r.probes) if (p.key === key) m.set(r.case, right(p));
+    }
+    return m;
+  };
+  const pairs = (a: string, b: string, key: string): { a: number; b: number }[] => {
+    const A = of(a, key);
+    const B = of(b, key);
+    const out: { a: number; b: number }[] = [];
+    for (const [c, v] of A) {
+      const w = B.get(c);
+      if (w !== undefined) out.push({ a: v ? 1 : 0, b: w ? 1 : 0 });
+    }
+    return out;
+  };
+  for (const against of ["cut/ascii", "cut/relative"]) {
+    if (!combos.includes(against)) continue;
+    console.log(`\n  \`${against}\` against \`full/ascii\`, on the same screens\n`);
+    console.log(PAIRED_HEAD("cut", "ful"));
+    for (const key of keys) {
+      const p = pairs(against, "full/ascii", key);
+      if (p.length > 0) pairedLine(key, p);
+    }
+    console.log("\n  wins = screens where the cropped state was right and the whole picture wrong.");
+  }
+}
+
 /** What each encoding cost, which is a result and not an aside. */
 function costTable(rec: Record_): void {
   console.log("\n  what each encoding cost\n");
@@ -549,8 +719,8 @@ function costTable(rec: Record_): void {
 function report(): void {
   const grid = read("grid.json");
   const screens = read("screens.json");
-  if (!grid && !screens) {
-    console.log("no records yet; run with --grid and --screens");
+  if (!grid && !screens && !read("cut.json")) {
+    console.log("no records yet; run with --grid, --screens and --cut");
     return;
   }
   if (grid) {
@@ -574,6 +744,14 @@ function report(): void {
     scoreTable(screens, "monster_count", ["0", "1", "2", "3+"]);
     replication(screens);
     costTable(screens);
+  }
+  const cut = read("cut.json");
+  if (cut) {
+    console.log(
+      `\n\n=== §3  the nine-square crop -- ${new Set(cut.rows.map((r) => r.case)).size} screens x ${CUT_ARMS.length} states, ${cut.usage.calls} requests`,
+    );
+    cutReport(cut);
+    costTable(cut);
   }
 }
 
@@ -645,6 +823,7 @@ async function main(): Promise<void> {
   if (argv.includes("--instruments")) return instruments();
   if (argv.includes("--report") || argv.length === 0) return report();
   if (argv.includes("--grid")) await runGrid(Number(arg("reps", "6")));
+  if (argv.includes("--cut")) await runCut(Number(arg("screens", "244")));
   if (argv.includes("--screens")) await runScreens(Number(arg("screens", "244")));
 }
 

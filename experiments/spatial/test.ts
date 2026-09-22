@@ -3,17 +3,19 @@
  *
  *   npm test      # no API key, no NetHack
  *
- * This experiment's whole claim is that FIVE STATES DIFFER IN ONE THING. That
+ * This experiment's whole claim is that THE STATES DIFFER IN ONE THING. That
  * is not something a reader can check by looking at a table, so it is checked
  * here instead:
  *
  *   `ascii` is byte-identical to the roguelike experiment's state, so §2's
  *     control arm IS docs/34's measurement and not a lookalike;
  *   the non-geometry part of the state (NetHack's status lines, the room's
- *     caption) is identical in all five encodings, so the control band cannot
+ *     caption) is identical in every encoding, so the control band cannot
  *     move for a reason of mine;
- *   every encoding is LOSSLESS -- the grid can be rebuilt from each one, so no
- *     arm is handed less space than another;
+ *   every encoding NOT NAMED IN `LOSSY` is lossless -- an independent decoder
+ *     per arm rebuilds the grid character for character, so no arm is handed
+ *     less space than another. `sparse` is the one exemption and it is named
+ *     in the source, not in whatever assertion happened to pass;
  *   `relative` really does contain the answer. The docblock in `encode.ts`
  *     says so; this asserts it on all 144 rooms, because a claim about a leak
  *     that is only written in prose is a claim nobody checked;
@@ -25,7 +27,7 @@ import { resolve } from "node:path";
 import { heroAt, mapOf, ROWS, type Screen } from "../roguelike/src/nethack.js";
 import { probesFor as screenProbes, stairsAt, stateFor as perceiveState } from "../roguelike/src/perceive.js";
 import { rehydrate } from "../roguelike/src/run.js";
-import { ARMS, LEAKY, cellsOf, drawCode, encode, encodeAll, observerAt, ruled, rulerLines } from "./src/encode.js";
+import { ARMS, LEAKY, LOSSY, cellsOf, drawCode, encode, encodeAll, observerAt, ruled, rulerLines, runsOf } from "./src/encode.js";
 import {
   HEIGHT,
   LEGEND,
@@ -190,7 +192,7 @@ check("ascii is byte-identical to the roguelike experiment's state", () => {
   );
 });
 
-check("the non-geometry part of the state is identical in all five encodings", () => {
+check("the non-geometry part of the state is identical in every encoding", () => {
   // The control band's job is to be unmoved by the independent variable. If
   // these strings differed by an encoding, a `status` difference would be my
   // harness rather than a finding -- and the report reads that band as the
@@ -205,7 +207,7 @@ check("the non-geometry part of the state is identical in all five encodings", (
   }
 });
 
-check("the five encodings differ only after `what`", () => {
+check("the encodings differ only after `what`", () => {
   const c = CASES[0];
   const states = encodeAll(sceneOf(c));
   const geometry = new Set(ARMS.map((a) => JSON.stringify(Object.keys(states[a]))));
@@ -215,6 +217,145 @@ check("the five encodings differ only after `what`", () => {
     eq(keys[0], "what", `${arm}: what is not first`);
     eq(keys[1], "legend", `${arm}: legend is not second`);
     eq(keys[keys.length - 1], "status_line", `${arm}: the control text is not last`);
+  }
+});
+
+/**
+ * An INDEPENDENT decoder per arm, so losslessness is a round trip rather than
+ * a claim.
+ *
+ * Deliberately not shared with `encode.ts`: a round-trip test that calls the
+ * encoder's own inverse proves the two agree, not that either is right. The
+ * regexes here read the emitted code the way a reader would, and they parse
+ * the glyph as a JSON string literal because NetHack draws `"` (an amulet) and
+ * `\` (a throne) -- `"(.)"` looked fine on the synthetic rooms and would have
+ * silently skipped those two on a real screen.
+ */
+function rebuild(scene: Parameters<typeof encode>[0], arm: (typeof ARMS)[number]): string[] {
+  const state = encode(scene, arm) as Record<string, never>;
+  const width = Math.max(0, ...scene.rows.map((r) => r.length));
+  const blank = (): string[][] => scene.rows.map((r) => " ".repeat(r.length).split(""));
+  const join = (g: string[][]): string[] => g.map((r) => r.join(""));
+  const LITERAL = String.raw`("(?:[^"\\]|\\.)*")`;
+  if (arm === "ascii") return state.map_rows as unknown as string[];
+  if (arm === "ruler") {
+    return (state.map_rows as unknown as string[]).slice(rulerLines(width)).map((l) => l.slice(3));
+  }
+  if (arm === "coords" || arm === "sparse") {
+    const g = blank();
+    // `sparse` omits the floor, so the rebuild starts from floor rather than
+    // from blank -- which is exactly the rule the state states. On a NetHack
+    // screen that rule cannot be applied (unlisted is floor OR unexplored),
+    // and the test below asserts the arm is lossy there instead of pretending.
+    if (arm === "sparse") {
+      for (const row of g) for (let x = 0; x < row.length; x += 1) row[x] = scene.floor ?? ".";
+    }
+    for (const c of state.cells as unknown as { x: number; y: number; glyph: string }[]) {
+      g[c.y][c.x] = c.glyph;
+    }
+    return join(g);
+  }
+  if (arm === "code") {
+    const g = blank();
+    for (const m of (state.code as unknown as string).matchAll(
+      new RegExp(String.raw`screen\.put\((\d+), (\d+), ${LITERAL}\);`, "g"),
+    )) {
+      g[Number(m[2])][Number(m[1])] = JSON.parse(m[3]) as string;
+    }
+    return join(g);
+  }
+  if (arm === "runs") {
+    const g = blank();
+    for (const m of (state.code as unknown as string).matchAll(
+      new RegExp(String.raw`screen\.span\((\d+), (\d+), ${LITERAL}\);`, "g"),
+    )) {
+      const x = Number(m[1]);
+      const y = Number(m[2]);
+      [...(JSON.parse(m[3]) as string)].forEach((ch, i) => {
+        g[y][x + i] = ch;
+      });
+    }
+    return join(g);
+  }
+  const you = observerAt(scene.rows, scene.observer ?? "@");
+  if (!you) throw new Error("no observer");
+  const g = blank();
+  g[you.y][you.x] = (state.you as unknown as { glyph: string }).glyph;
+  for (const c of state.cells as unknown as { dx: number; dy: number; glyph: string }[]) {
+    g[you.y + c.dy][you.x + c.dx] = c.glyph;
+  }
+  return join(g);
+}
+
+check("every encoding not named in LOSSY rebuilds the grid exactly", () => {
+  // The general form of what used to be three hand-written round trips. An
+  // arm added later is covered the moment it appears in ARMS, and the only way
+  // to exempt one is to name it in LOSSY, in the source, where a reader sees it.
+  for (const c of CASES.slice(0, 16)) {
+    const scene = sceneOf(c);
+    const want = draw(c).join("\n");
+    for (const arm of ARMS) {
+      if (LOSSY.has(arm)) continue;
+      eq(rebuild(scene, arm).join("\n"), want, `${c.key}: ${arm} lost the picture`);
+    }
+  }
+});
+
+check("sparse rebuilds the drawn rooms too, because there floor is the only filler", () => {
+  // §1's rooms are full rectangles with no unexplored blank, so the omission
+  // rule ("every unlisted position is floor") is exactly true and the arm is
+  // lossless HERE. This is the one place an arm means something different in
+  // §1 and §2, so it is asserted rather than described.
+  for (const c of CASES.slice(0, 16)) {
+    eq(rebuild(sceneOf(c), "sparse").join("\n"), draw(c).join("\n"), `${c.key}: sparse lost a room`);
+    ok(!draw(c).some((r) => r.includes(" ")), `${c.key}: a drawn room has blank in it`);
+  }
+});
+
+check("sparse drops the floor and nothing else", () => {
+  for (const c of CASES.slice(0, 16)) {
+    const scene = sceneOf(c);
+    const all = cellsOf(draw(c));
+    const kept = (encode(scene, "sparse") as { cells: { glyph: string }[] }).cells;
+    const want = all.filter((x) => x.glyph !== ".");
+    eq(kept.length, want.length, `${c.key}: wrong number of entries`);
+    eq(kept.every((k) => k.glyph !== "."), true, `${c.key}: a floor entry survived`);
+    eq(
+      JSON.stringify(kept.map((k) => k.glyph)),
+      JSON.stringify(want.map((w) => w.glyph)),
+      `${c.key}: sparse changed the order or the contents`,
+    );
+    ok(all.length > want.length, `${c.key}: nothing was dropped, so the arm is a copy of coords`);
+  }
+});
+
+check("sparse says what an unlisted position means, and the sentence is true", () => {
+  // The omission has to be answerable from the state. Without the rule the arm
+  // would be measuring whether a gap can be guessed.
+  for (const c of CASES.slice(0, 8)) {
+    const state = encode(sceneOf(c), "sparse") as { floor_is_omitted: string; grid: { width: number; height: number } };
+    ok(/floor/.test(state.floor_is_omitted), `${c.key}: no omission rule in the state`);
+    // No blank in these rooms, so the sentence must NOT hedge with "unexplored".
+    eq(/unexplored/.test(state.floor_is_omitted), false, `${c.key}: hedged about a room with no blank`);
+    eq(state.grid.width, c.width, `${c.key}: grid width`);
+    eq(state.grid.height, c.height, `${c.key}: grid height`);
+  }
+});
+
+check("runsOf makes maximal runs, so no two neighbours share a glyph", () => {
+  for (const c of CASES.slice(0, 16)) {
+    const rows = draw(c);
+    const runs = runsOf(rows);
+    for (const r of runs) {
+      eq(new Set([...r.text]).size, 1, `${c.key}: a run mixes glyphs`);
+      eq(rows[r.y].slice(r.x, r.x + r.text.length), r.text, `${c.key}: a run is not where it says`);
+      const before = r.x > 0 ? rows[r.y][r.x - 1] : "";
+      const after = rows[r.y][r.x + r.text.length] ?? "";
+      ok(before !== r.text[0], `${c.key}: run at ${r.x},${r.y} could extend left`);
+      ok(after !== r.text[0], `${c.key}: run at ${r.x},${r.y} could extend right`);
+    }
+    // And it really is a compression, or the arm is just `code` with a longer name.
+    ok(runs.length < cellsOf(rows).length, `${c.key}: runs did not compress anything`);
   }
 });
 
@@ -338,7 +479,7 @@ check("relative contains the answer to east and south, on every room", () => {
   eq(LEAKY.has("relative"), true, "the arm leaks but is not marked leaky");
 });
 
-check("the other four encodings do not carry a direction or a criterion", () => {
+check("no encoding but `relative` carries a direction or a criterion", () => {
   // The convention this repository keeps breaking and re-fixing: a label must
   // not ride along in the payload. `relative` is exempt BY NAME, which is the
   // only kind of exemption that survives a refactor.
@@ -380,7 +521,7 @@ check("no encoding carries a truth value", () => {
 // -------------------------------------------------- against the real screens
 
 if (SCREENS.length > 0) {
-  check("all five encodings of a real screen are lossless", () => {
+  check("every lossless encoding of a real screen really is lossless", () => {
     const scene = screenScene(SCREEN);
     const rows = mapOf(SCREEN);
     const coords = encode(scene, "coords") as { cells: { x: number; y: number; glyph: string }[] };
