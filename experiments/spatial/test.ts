@@ -42,6 +42,29 @@ import {
   probesFor as gridProbes,
   sceneOf,
 } from "./src/grid.js";
+import { PIXEL_ARMS } from "./src/shapes.js";
+import {
+  MARGINS,
+  SHAPE_ARMS,
+  SHAPE_LEAKY,
+  corpus as rectCorpus,
+  draw as rectDraw,
+  encodeShape,
+  overlapArea as rectArea,
+  overlaps as rectOverlaps,
+  probesFor as rectProbes,
+  sceneOf as rectScene,
+} from "./src/rects.js";
+import {
+  DEPTH as SOLID_DEPTH,
+  HEIGHT as SOLID_HEIGHT,
+  SOLID_LEAKY,
+  chebyshev3,
+  corpus as solidCorpus,
+  draw as solidDraw,
+  encode3,
+  probesFor as solidProbes,
+} from "./src/solid.js";
 import { screenScene } from "./src/spatial.js";
 
 let pass = 0;
@@ -585,6 +608,234 @@ if (SCREENS.length > 0) {
 } else {
   skip("the real screens", "no roguelike/records/walk.json");
 }
+
+
+// ------------------------------------------------------ docs/64: rectangles
+
+const RECTS = rectCorpus();
+
+check("the rectangle corpus is balanced on `overlap`, exactly", () => {
+  eq(RECTS.filter((c) => rectOverlaps(c.a, c.b)).length * 2, RECTS.length, "overlap is not half");
+  for (const m of MARGINS) {
+    const at = RECTS.filter((c) => c.margin === m);
+    eq(at.length * 4, RECTS.length, `margin ${m} is not a quarter`);
+    // The margin class IS the answer, which is what makes it a difficulty dial
+    // rather than a nuisance factor.
+    const want = m === "deep" || m === "edge1";
+    eq(at.every((c) => rectOverlaps(c.a, c.b) === want), true, `margin ${m} disagrees with overlap`);
+  }
+});
+
+check("`edge1` and `touch` really are one cell apart", () => {
+  // The pair this corpus exists for. `edge1` shares exactly one row or column
+  // of cells; `touch` shares none and has no gap. If the generator let them
+  // blur, the hard cases would stop being hard.
+  for (const c of RECTS.filter((x) => x.margin === "edge1")) {
+    ok(rectArea(c.a, c.b) > 0, `${c.key}: edge1 shares nothing`);
+  }
+  for (const c of RECTS.filter((x) => x.margin === "touch")) {
+    eq(rectArea(c.a, c.b), 0, `${c.key}: touch shares a cell`);
+  }
+  for (const c of RECTS.filter((x) => x.margin === "gap1")) {
+    eq(rectArea(c.a, c.b), 0, `${c.key}: gap1 shares a cell`);
+  }
+});
+
+check("the rectangle probes' truths come from the four numbers", () => {
+  for (const c of RECTS) {
+    const by = new Map(rectProbes(c).nouls.map((p) => [p.key, p.truth]));
+    eq(by.get("overlap"), rectOverlaps(c.a, c.b), `${c.key}: overlap`);
+    eq(by.get("a_starts_left"), c.a.x < c.b.x, `${c.key}: a_starts_left`);
+    eq(by.get("a_starts_above"), c.a.y < c.b.y, `${c.key}: a_starts_above`);
+    // Always defined: the generator never lets the two share a left or top edge.
+    ok(by.has("a_starts_left") && by.has("a_starts_above"), `${c.key}: a direction probe is missing`);
+    // Conditional: skipped when the widths tie, so the floor is not the base rate.
+    eq(by.has("a_is_wider"), c.a.width !== c.b.width, `${c.key}: a_is_wider is not conditional`);
+  }
+});
+
+check("the drawn outlines recover both rectangles", () => {
+  // The picture arm can only be fair if the extents are IN the picture. B is
+  // drawn over A where the outlines cross, so A is recovered from the cells
+  // that remain -- and this asserts that enough of them do.
+  for (const c of RECTS) {
+    const rows = rectDraw(c);
+    eq(rows.length, c.gridHeight, `${c.key}: height`);
+    const seen = { A: [] as number[][], B: [] as number[][] };
+    rows.forEach((row, y) => {
+      [...row].forEach((ch, x) => {
+        if (ch === "A") seen.A.push([x, y]);
+        if (ch === "B") seen.B.push([x, y]);
+      });
+    });
+    ok(seen.A.length > 0, `${c.key}: rectangle A is entirely hidden`);
+    ok(seen.B.length > 0, `${c.key}: rectangle B is entirely hidden`);
+    // B is never occluded, so its extent must come back exactly.
+    const bx = seen.B.map((p) => p[0]);
+    const byy = seen.B.map((p) => p[1]);
+    eq(Math.min(...bx), c.b.x, `${c.key}: B's left edge`);
+    eq(Math.max(...bx), c.b.x + c.b.width - 1, `${c.key}: B's right edge`);
+    eq(Math.min(...byy), c.b.y, `${c.key}: B's top edge`);
+    eq(Math.max(...byy), c.b.y + c.b.height - 1, `${c.key}: B's bottom edge`);
+  }
+});
+
+check("no glyph in the picture marks the intersection", () => {
+  // A third glyph for "both" would BE the answer to `overlap`, which is why
+  // the rectangles are drawn as outlines. Only three characters may appear.
+  const drawn = new Set(RECTS.flatMap((c) => rectDraw(c).flatMap((r) => [...r])));
+  eq([...drawn].sort().join(""), ".AB", `the picture uses ${[...drawn].sort().join("")}`);
+});
+
+check("both shape arms contain the answer, and are named as ceilings", () => {
+  // `encodeShape`'s docblock says both are ceilings. This is the proof: the
+  // overlap predicate evaluated on the numbers in the state equals the truth,
+  // for every pair, in both arms.
+  for (const c of RECTS) {
+    const truth = rectOverlaps(c.a, c.b);
+    for (const arm of SHAPE_ARMS) {
+      ok(SHAPE_LEAKY.has(arm), `${arm} is not marked as a ceiling`);
+      const state = encodeShape(c, arm) as { rectangles: Record<string, number>[] };
+      const [A, B] = state.rectangles;
+      const box = (r: Record<string, number>): number[] =>
+        arm === "rects"
+          ? [r.x, r.x + r.width - 1, r.y, r.y + r.height - 1]
+          : [r.first_column, r.last_column, r.first_row, r.last_row];
+      const [ax0, ax1, ay0, ay1] = box(A);
+      const [bx0, bx1, by0, by1] = box(B);
+      eq(ax0 <= bx1 && bx0 <= ax1 && ay0 <= by1 && by0 <= ay1, truth, `${c.key}: ${arm} does not encode overlap`);
+    }
+  }
+});
+
+check("the pixel arms of the rectangle corpus carry no answer", () => {
+  for (const c of RECTS.slice(0, 24)) {
+    const { nouls } = rectProbes(c);
+    const criteria = nouls.flatMap((p) => {
+      const q = p.question as { criteria?: { true?: unknown; false?: unknown } };
+      return [q.criteria?.true, q.criteria?.false].filter((x): x is string => typeof x === "string");
+    });
+    for (const arm of PIXEL_ARMS) {
+      const text = JSON.stringify(encode(rectScene(c), arm));
+      for (const crit of criteria) ok(!text.includes(crit), `${c.key}: ${arm} carries a criterion`);
+      for (const word of ["overlap", "share", "wider", "left of"]) {
+        ok(!text.toLowerCase().includes(word), `${c.key}: ${arm} carries the word "${word}"`);
+      }
+    }
+  }
+});
+
+// ---------------------------------------------------- docs/64: three dimensions
+
+const BLOCKS = solidCorpus();
+
+check("the block corpus makes all three axes half and independent", () => {
+  // Eight octants with equal counts. Each axis is exactly 50/50 AND the three
+  // are mutually independent, so "all three true" must be exactly an eighth --
+  // which is the check that catches a generator that correlates two axes.
+  eq(BLOCKS.filter((c) => c.target.x > c.observer.x).length * 2, BLOCKS.length, "east is not half");
+  eq(BLOCKS.filter((c) => c.target.y > c.observer.y).length * 2, BLOCKS.length, "south is not half");
+  eq(BLOCKS.filter((c) => c.target.z > c.observer.z).length * 2, BLOCKS.length, "above is not half");
+  eq(
+    BLOCKS.filter((c) => c.target.x > c.observer.x && c.target.y > c.observer.y && c.target.z > c.observer.z).length * 8,
+    BLOCKS.length,
+    "the three axes are not independent",
+  );
+  eq(BLOCKS.filter((c) => c.range === "near").length * 2, BLOCKS.length, "adjacent is not half");
+});
+
+check("only the width changes across the block sweep", () => {
+  for (const c of BLOCKS) {
+    eq(c.height, SOLID_HEIGHT, `${c.key}: the height moved`);
+    eq(c.depth, SOLID_DEPTH, `${c.key}: the number of layers moved`);
+  }
+  eq(new Set(BLOCKS.map((c) => c.width)).size, 2, "the width does not vary");
+});
+
+check("the block probes' truths come from the three coordinates", () => {
+  for (const c of BLOCKS) {
+    const by = new Map(solidProbes(c).nouls.map((p) => [p.key, p.truth]));
+    eq(by.get("east"), c.target.x > c.observer.x, `${c.key}: east`);
+    eq(by.get("south"), c.target.y > c.observer.y, `${c.key}: south`);
+    eq(by.get("above"), c.target.z > c.observer.z, `${c.key}: above`);
+    eq(by.get("adjacent"), chebyshev3(c.observer, c.target) === 1, `${c.key}: adjacent`);
+  }
+});
+
+check("the three axis questions are the same sentence with one word changed", () => {
+  // A difference between the axes has to come from the nesting, not from my
+  // prose. The three instructions must differ only where they name the axis.
+  const { nouls } = solidProbes(BLOCKS[0]);
+  const text = (k: string): string => {
+    const q = nouls.find((p) => p.key === k)!.question as { instructions?: string };
+    return q.instructions ?? "";
+  };
+  const shape = (s: string): string =>
+    s.replace(/column|row|layer/g, "AXIS").replace(/right|left|back|forward|down|up/g, "DIR");
+  eq(shape(text("east")), shape(text("south")), "east and south are not the same sentence");
+  eq(shape(text("south")), shape(text("above")), "south and above are not the same sentence");
+});
+
+check("the layers arm labels neither y nor z", () => {
+  // Numbering z but not y would give one of the two index axes an advantage
+  // the other does not have, and the comparison between them is the point.
+  const state = encode3(BLOCKS[0], "layers") as { layers: string[][] };
+  ok(Array.isArray(state.layers), "layers is not an array");
+  for (const slice of state.layers) {
+    for (const row of slice) {
+      eq(/^[ @*%]*$/.test(row), true, `a row carries something other than the glyphs: ${JSON.stringify(row)}`);
+    }
+  }
+});
+
+check("every block encoding rebuilds the block, and relative is the only leak", () => {
+  for (const c of BLOCKS.slice(0, 12)) {
+    const want = JSON.stringify(solidDraw(c));
+    const blankBlock = (): string[][][] =>
+      Array.from({ length: c.depth }, () => Array.from({ length: c.height }, () => " ".repeat(c.width).split("")));
+    const finish = (g: string[][][]): string => JSON.stringify(g.map((s) => s.map((r) => r.join(""))));
+    // layers
+    eq(JSON.stringify((encode3(c, "layers") as { layers: string[][] }).layers), want, `${c.key}: layers`);
+    // coords
+    const g1 = blankBlock();
+    for (const t of (encode3(c, "coords") as { things: { x: number; y: number; z: number; glyph: string }[] }).things) {
+      g1[t.z][t.y][t.x] = t.glyph;
+    }
+    eq(finish(g1), want, `${c.key}: coords`);
+    // code
+    const g2 = blankBlock();
+    for (const m of (encode3(c, "code") as { code: string }).code.matchAll(
+      /block\.put\((\d+), (\d+), (\d+), "(.)"\);/g,
+    )) {
+      g2[Number(m[3])][Number(m[2])][Number(m[1])] = m[4];
+    }
+    eq(finish(g2), want, `${c.key}: code`);
+    // relative, and the leak it carries
+    const rel = encode3(c, "relative") as { things: { dx: number; dy: number; dz: number; glyph: string }[] };
+    const g3 = blankBlock();
+    g3[c.observer.z][c.observer.y][c.observer.x] = "@";
+    for (const t of rel.things) g3[c.observer.z + t.dz][c.observer.y + t.dy][c.observer.x + t.dx] = t.glyph;
+    eq(finish(g3), want, `${c.key}: relative`);
+    const target = rel.things.find((t) => t.glyph === "*");
+    ok(target !== undefined, `${c.key}: no target in the relative state`);
+    const by = new Map(solidProbes(c).nouls.map((p) => [p.key, p.truth]));
+    eq(target!.dx > 0, by.get("east")!, `${c.key}: dx does not encode east`);
+    eq(target!.dy > 0, by.get("south")!, `${c.key}: dy does not encode south`);
+    eq(target!.dz > 0, by.get("above")!, `${c.key}: dz does not encode above`);
+    eq(SOLID_LEAKY.has("relative"), true, "relative is not marked as a leak");
+  }
+});
+
+check("the picture arms of the block corpus carry no answer", () => {
+  for (const c of BLOCKS.slice(0, 16)) {
+    for (const arm of ["layers", "coords", "code"] as const) {
+      const text = JSON.stringify(encode3(c, arm)).toLowerCase();
+      for (const word of ["above the", "below the", "to the right of", "touching"]) {
+        ok(!text.includes(word), `${c.key}: ${arm} carries "${word}"`);
+      }
+    }
+  }
+});
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

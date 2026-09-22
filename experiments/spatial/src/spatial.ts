@@ -73,7 +73,7 @@ export interface Record_ {
   rows: Row[];
 }
 
-function write(name: string, rec: Record_): void {
+export function write(name: string, rec: Record_): void {
   mkdirSync(RECORDS, { recursive: true });
   writeFileSync(
     resolve(RECORDS, name),
@@ -83,7 +83,7 @@ function write(name: string, rec: Record_): void {
   );
 }
 
-function read(name: string): Record_ | null {
+export function read(name: string): Record_ | null {
   const p = resolve(RECORDS, name);
   return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as Record_) : null;
 }
@@ -326,10 +326,10 @@ async function runCut(limit: number): Promise<void> {
 
 // --------------------------------------------------------------------- reading
 
-const pct = (hit: number, n: number): string => (n === 0 ? "   -" : `${Math.round((hit / n) * 100)}%`.padStart(4));
-const right = (p: ProbeRow): boolean => p.truth === p.answer > 0.5;
+export const pct = (hit: number, n: number): string => (n === 0 ? "   -" : `${Math.round((hit / n) * 100)}%`.padStart(4));
+export const right = (p: ProbeRow): boolean => p.truth === p.answer > 0.5;
 
-interface Cell {
+export interface Cell {
   n: number;
   hit: number;
   t: number;
@@ -339,11 +339,11 @@ interface Cell {
   samples: { value: number; positive: boolean }[];
 }
 
-function blank(): Cell {
+export function blank(): Cell {
   return { n: 0, hit: 0, t: 0, tHit: 0, f: 0, fHit: 0, samples: [] };
 }
 
-function add(cell: Cell, p: ProbeRow): void {
+export function add(cell: Cell, p: ProbeRow): void {
   cell.n += 1;
   if (right(p)) cell.hit += 1;
   if (p.truth) {
@@ -479,9 +479,9 @@ function pairAcross(rec: Record_, arm: ArmName, x: string, y: string): { a: numb
  * places; a report that prints it flat says "impossible" where the honest
  * statement is "smaller than this table can show".
  */
-const p4 = (x: number): string => (x < 0.0001 ? "<1e-4" : x.toFixed(4)).padStart(6);
+export const p4 = (x: number): string => (x < 0.0001 ? "<1e-4" : x.toFixed(4)).padStart(6);
 
-function pairedLine(label: string, pairs: { a: number; b: number }[]): void {
+export function pairedLine(label: string, pairs: { a: number; b: number }[]): void {
   if (pairs.length === 0) return;
   const a = pairs.filter((p) => p.a === 1).length;
   const b = pairs.filter((p) => p.b === 1).length;
@@ -496,7 +496,7 @@ function pairedLine(label: string, pairs: { a: number; b: number }[]): void {
   );
 }
 
-const PAIRED_HEAD = (x: string, y: string): string =>
+export const PAIRED_HEAD = (x: string, y: string): string =>
   `  ${"encoding".padEnd(12)}${x.padStart(4)}  ${y.padStart(4)}  ${"n".padStart(5)}  ${"gap".padStart(9)}  discordant   wins       p   floor  exact`;
 
 function axisTests(rec: Record_, colKey: string, rowKey: string, label: string): void {
@@ -701,10 +701,13 @@ function cutReport(rec: Record_): void {
 }
 
 /** What each encoding cost, which is a result and not an aside. */
-function costTable(rec: Record_): void {
+export function costTable(rec: Record_, arms: readonly string[] = ARMS): void {
   console.log("\n  what each encoding cost\n");
   console.log(`  ${"encoding".padEnd(10)}  requests   input tokens   per request     ms/request`);
-  for (const arm of ARMS) {
+  // The arm list is a PARAMETER because docs/64 has its own arms. Hardcoding
+  // `ARMS` here silently dropped `rects` and `bounds` from that report's cost
+  // table -- a missing row, which is the kind of omission a reader cannot see.
+  for (const arm of arms) {
     const mine = rec.rows.filter((r) => r.arm === arm);
     if (mine.length === 0) continue;
     const input = mine.reduce((s, r) => s + r.input, 0);

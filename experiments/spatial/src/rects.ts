@@ -234,18 +234,28 @@ export function sceneOf(c: RectCase): Scene {
 // ------------------------------------------------------------- the shape arms
 
 /**
- * The two encodings a picture cannot have.
+ * The two encodings a picture cannot have -- and BOTH are ceilings.
  *
- * `rects` is the figure itself -- the rung above coordinates on the same
- * ladder, and the form a program would actually pass. `bounds` is the same
- * figure written as the four intervals the overlap predicate reads, so
- * `overlap` there is `a.x0 <= b.x1 && b.x0 <= a.x1 && ...`: arithmetic on
- * numbers I computed, not perception. `bounds` is this corpus's ceiling arm,
- * the way `relative` was docs/63's, and it is never pooled with the rest.
+ * `rects` is the figure itself, the rung above coordinates on the same ladder
+ * and the form a program would actually pass. `bounds` is the same figure as
+ * the four intervals the overlap predicate reads.
+ *
+ * MY FIRST VERSION MARKED ONLY `bounds` AS LEAKY, AND THAT WAS WRONG.
+ * `overlap` on `bounds` is `a.first_column <= b.last_column && ...` -- four
+ * comparisons on numbers I computed. On `rects` it is the same thing after one
+ * addition, `x + width - 1`. Neither requires looking at a space, so calling
+ * one of them perception and the other a leak would have been a distinction
+ * about my arithmetic rather than about the encoding. Both are named here.
+ *
+ * WHICH MAKES THE PAIR ITS OWN MEASUREMENT. docs/63 found that reading the
+ * SIGN of a number handed over was free (`relative` scored 100%). Here the two
+ * ceiling arms differ by exactly one addition per rectangle, so `rects`
+ * against `bounds` asks whether that addition is free too. And `ascii` against
+ * either says how far the picture falls short of having the numbers.
  */
 export type ShapeArm = "rects" | "bounds";
 export const SHAPE_ARMS: readonly ShapeArm[] = ["rects", "bounds"] as const;
-export const SHAPE_LEAKY: ReadonlySet<ShapeArm> = new Set<ShapeArm>(["bounds"]);
+export const SHAPE_LEAKY: ReadonlySet<ShapeArm> = new Set<ShapeArm>(["rects", "bounds"]);
 
 const AXIS_NOTE =
   "x is the column, counted from 0 at the left edge; y is the row, counted from 0 at the top. " +
@@ -353,17 +363,27 @@ export function probesFor(c: RectCase): { nouls: RectProbe[]; scores: RectScore[
         "the topmost row of B is above the topmost row of A",
       ),
     },
-    {
+  ];
+  // CONDITIONAL, the way docs/34 omits `upstairs_east` when the `<` shares the
+  // `@`'s column. With equal widths counted as "not wider" the probe came out
+  // 38% true, so answering "no" every time scored 62% -- the base rate, not a
+  // reading. Skipping the ties puts the floor back near a coin.
+  //
+  // This is a SIZE comparison and not a spatial relation, and it is here as
+  // the control for the other two: it needs no locating at all, only two
+  // numbers read off the same picture.
+  if (c.a.width !== c.b.width) {
+    nouls.push({
       key: "a_is_wider",
       band: "relation",
       truth: c.a.width > c.b.width,
       question: noul(
         "Compare how many columns wide rectangle A is with how many columns wide rectangle B is. Is A wider than B?",
         "rectangle A spans more columns than rectangle B",
-        "rectangle B spans at least as many columns as rectangle A",
+        "rectangle B spans fewer columns than rectangle A",
       ),
-    },
-  ];
+    });
+  }
   const scores: RectScore[] = [
     {
       key: "shared_cells",
