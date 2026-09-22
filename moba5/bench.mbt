@@ -1140,6 +1140,139 @@ fn ask_brush_step(g : Game, champ_id : Int, node : Int) -> Ask {
 }
 
 ///|
+/// `jungle` — which camp is this jungler's next one?
+fn ask_jungle_camp(g : Game, team : Int, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let options = []
+  let descs = []
+  for camp in g.camps {
+    if !camp.up() {
+      continue
+    }
+    let whose = if camp.side == team { "ours" } else { "THEIRS" }
+    options.push(node_name(camp.node))
+    descs.push(
+      "\{whose}, \{hops(c.node, camp.node)} hop(s) away\{if camp.side == team { "" } else { " — taking it denies them the camp for \{CAMP_RESPAWN} ticks, and their half is unlit brush beside their lanes" }}",
+    )
+  }
+  {
+    key: "jungle_camp",
+    class_: "jungle",
+    form: "choice",
+    tier: "score",
+    instructions: "\{c.name} is our jungler, standing at \{node_name(c.node)}. Every camp pays the same \{CAMP_GOLD} gold whoever owns it, and is then down for \{CAMP_RESPAWN} ticks. Which one should it walk to? Moving is one node a tick.",
+    options,
+    descriptions: descs,
+    truth: g.best_camp(team, champ_id, 10),
+    why: "the jungler was sent to each camp on a copy and both teams played the strong baseline for 10 ticks; this one left us the best position",
+    // The baseline's own route: ours before theirs, nearest first.
+    floor: node_name(g.next_camp(team, c.node)),
+  }
+}
+
+///|
+/// `jungle` — is crossing into their half survivable right now?
+fn ask_jungle_cross(g : Game, champ_id : Int, node : Int) -> Ask {
+  let c = g.champs[champ_id]
+  {
+    key: "jungle_cross",
+    class_: "jungle",
+    form: "noul",
+    tier: "rules",
+    instructions: "\{c.name} is about to cross into \{node_name(node)}, a camp on THEIR side of the jungle. It is brush, so we have no vision of it, and it sits beside their lanes. Would it still be alive \{RETREAT_HORIZON} ticks later? Answer true if it survives.",
+    options: [],
+    descriptions: [],
+    truth: "\{g.step_in_survives(champ_id, node, RETREAT_HORIZON)}",
+    why: "the champion moved into that node on a copy and both teams played the strong baseline for \{RETREAT_HORIZON} ticks",
+    // The heuristic crosses whenever its own camps are down and the walk is
+    // short, which is a route and not a risk assessment.
+    floor: "\{g.counter_jungle_worth(c.team, c.node)}",
+  }
+}
+
+///|
+/// `jungle` — when is that camp back?
+fn ask_jungle_timer(g : Game, node : Int) -> Ask {
+  let left = match g.camp_at(node) {
+    Some(camp) => camp.down_for
+    None => 0
+  }
+  let options = []
+  for n in 0..<=CAMP_RESPAWN {
+    options.push("\{n}")
+  }
+  {
+    key: "jungle_timer",
+    class_: "jungle",
+    form: "choice",
+    tier: "arith",
+    instructions: "In how many ticks does the camp at \{node_name(node)} come back? A camp is down for \{CAMP_RESPAWN} ticks after it is taken, and 0 means it is standing right now.",
+    options,
+    descriptions: [],
+    truth: "\{left}",
+    why: "read off that camp's timer, which the state carries under `jungle`",
+    // A heuristic with no memory of when it was taken assumes a full timer.
+    floor: "\{CAMP_RESPAWN}",
+  }
+}
+
+///|
+/// `vision` — where does the control ward go?
+fn ask_vision_sweep(g : Game, team : Int, champ_id : Int) -> Ask {
+  let c = g.champs[champ_id]
+  let options = []
+  let descs = []
+  for n in ward_spots(c.node) {
+    let mut clears = 0
+    for w in g.wards {
+      if w.team != team &&
+        w.ttl > 0 &&
+        (w.node == n || adjacency[n].contains(w.node)) {
+        clears += 1
+      }
+    }
+    options.push(node_name(n))
+    descs.push(
+      "\{node_lane[n]}\{if is_brush(n) { ", brush" } else { "" }} — a control ward here would destroy \{clears} of their ward(s)",
+    )
+  }
+  {
+    key: "vision_sweep",
+    class_: "vision",
+    form: "choice",
+    tier: "arith",
+    instructions: "\{c.name} has \{c.gold} gold and is buying a CONTROL ward, which destroys every enemy ward on its node or a neighbour. Where should it go to take the most of their vision away? Their wards we can see are in the state.",
+    options,
+    descriptions: descs,
+    truth: g.best_sweep(team, c.node),
+    why: "counted the enemy wards in range of each spot; this one clears the most",
+    // The heuristic sweeps the pit that is about to spawn rather than the
+    // node that is actually watched.
+    floor: node_name(ward_spots(c.node)[0]),
+  }
+}
+
+///|
+/// `vision` — a control ward, or save the gold and use a charge?
+fn ask_vision_kind(g : Game, team : Int, node : Int) -> Ask {
+  let watched = g.enemy_ward_near(team, node)
+  {
+    key: "vision_kind",
+    class_: "vision",
+    form: "noul",
+    tier: "arith",
+    instructions: "We want vision of \{node_name(node)}. A stealth ward is free — a charge a champion already carries — and sees for \{WARD_TTL} ticks. A control ward costs \{CONTROL_COST} gold out of the same pocket that buys items, sees for \{CONTROL_TTL}, and DESTROYS their wards in range. Is the control ward worth the gold here? Answer true if they have vision in range of that node for it to take away, and false if a free charge would buy us the same read.",
+    options: [],
+    descriptions: [],
+    truth: "\{watched}",
+    why: "\{if watched { "they have a live ward on that node or a neighbour" } else { "they have no ward in range, so the control ward would destroy nothing a charge would not also see" }}",
+    // "Always buy the control ward" — the answer that is right half the time
+    // and costs 75 gold the other half.
+    floor: "true",
+  }
+}
+
+///|
 /// `siege` — what is the plating on this tower worth to the team?
 fn ask_siege_plates(g : Game, node : Int) -> Ask {
   let plates = match g.structure_at(node) {
@@ -2060,6 +2193,87 @@ fn sc_brush(
 }
 
 ///|
+/// A jungler mid-route, with some camps down and some up. The `jungle` class's
+/// home.
+fn sc_jungle(
+  name : String,
+  note : String,
+  stand : Int,
+  down : Array[(Int, Int)],
+  ask_timer_for : Int,
+  their_bodies : Array[Int],
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("dive"), 4, 26)
+  park_all(g)
+  let jg = g.champs[1]
+  jg.node = stand
+  // Each camp's own timer, not one shared number: two states whose camps are
+  // all down by the same amount ask the same question twice.
+  for entry in down {
+    let (n, left) = entry
+    match g.camp_at(n) {
+      Some(camp) => camp.down_for = left
+      None => ()
+    }
+  }
+  // Theirs, where the state says they are. A crossing question with nobody on
+  // the other side is a question about hops.
+  for i in 0..<their_bodies.length() {
+    g.champs[5 + i].node = their_bodies[i]
+  }
+  // One of ours in each lane, so the plan is not answering an empty map.
+  g.champs[0].node = node_id("mid_top")
+  g.champs[2].node = node_id("mid_mid")
+  g.champs[3].node = node_id("a1_bot")
+  g.champs[4].node = node_id("a1_bot")
+  let cross = node_id("b_jg_bot")
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [
+      ask_jungle_camp(g, TEAM_A, jg.id),
+      ask_jungle_cross(g, jg.id, cross),
+      ask_jungle_timer(g, ask_timer_for),
+    ],
+  }
+}
+
+///|
+/// A contested pit with their wards on it. The `vision` class's home.
+fn sc_vision(
+  name : String,
+  note : String,
+  pit : Int,
+  their_wards : Array[Int],
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("poke"), 5, 40)
+  park_all(g)
+  let scout = g.champs[4]
+  scout.node = pit
+  scout.gold = CONTROL_COST + 40
+  scout.wards = WARD_CHARGES
+  for n in their_wards {
+    g.wards.push({ node: n, team: TEAM_B, kind: WARD_STEALTH, ttl: WARD_TTL, })
+  }
+  // Ours standing on the pit is what lets us SEE their wards on it — the
+  // sweep question is only answerable for vision we actually have, which is
+  // the rule and not a convenience.
+  g.champs[1].node = pit
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [
+      ask_vision_sweep(g, TEAM_A, scout.id),
+      ask_vision_kind(g, TEAM_A, pit),
+    ],
+  }
+}
+
+///|
 /// A plated tower and an open gate: the two clocks the siege runs on.
 fn sc_siege(
   name : String,
@@ -2226,6 +2440,43 @@ pub fn bench_suite() -> Array[Scenario] {
       2,
       node_id("a1_mid"),
     ),
+    // The jungle and the two ward kinds. More than one state each, because
+    // the answer to "which camp" is a route and a route depends on where the
+    // jungler is standing and which timers are running.
+    sc_jungle(
+      "jungle_ours_is_up",
+      "our top camp is down for 3 more, our bottom one is standing, and two of theirs are in their bottom jungle",
+      node_id("a1_mid"),
+      [(node_id("a_jg_top"), 3)],
+      node_id("a_jg_top"),
+      [node_id("b_jg_bot"), node_id("b1_bot")],
+    ),
+    sc_jungle(
+      "jungle_own_half_down",
+      "both of ours are down and their half is unguarded: nobody is near the camp we would take",
+      node_id("a_jg_bot"),
+      [(node_id("a_jg_top"), 7), (node_id("a_jg_bot"), 1)],
+      node_id("a_jg_bot"),
+      [node_id("b1_top"), node_id("mid_top")],
+    ),
+    sc_vision(
+      "vision_pit_is_watched",
+      "the drake pit with two of their wards on it and one in our own jungle beside it",
+      RIV_BOT,
+      [RIV_BOT, node_id("b_jg_bot"), node_id("a_jg_bot")],
+    ),
+    sc_vision(
+      "vision_pit_is_dark",
+      "the baron pit with their only ward far away, out of every sweep's range",
+      RIV_TOP,
+      [node_id("b1_bot")],
+    ),
+    sc_vision(
+      "vision_our_side_watched",
+      "the baron pit with their ward in OUR jungle, which no sweep of the pit itself reaches",
+      RIV_TOP,
+      [node_id("a_jg_top")],
+    ),
   ]
   // The `fight` class comes last and comes from the sweep, not from here: two
   // cases per bucket, so the head count is worth 0.50 on the class and any
@@ -2246,5 +2497,5 @@ pub const FIGHT_PER_BUCKET = 4
 /// The classes the report groups by, in a fixed order so two runs line up.
 pub let bench_classes : Array[String] = [
   "fight", "focus", "item", "dive", "lane", "macro", "retreat", "retreat3", "power",
-  "ability", "fog", "cs", "drake", "brush", "siege",
+  "ability", "fog", "cs", "drake", "brush", "siege", "jungle", "vision",
 ]

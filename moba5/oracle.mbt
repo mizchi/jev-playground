@@ -366,3 +366,59 @@ pub fn Game::blind_brush(self : Game, team : Int) -> Array[Int] {
   }
   out
 }
+
+///|
+/// Which camp this jungler should walk to, by playing each choice forward with
+/// both teams on the strong baseline. The truth for the `jungle` class.
+///
+/// A camp question cannot be answered by "the nearest one that is up": the
+/// walk costs ticks the enemy also gets, their half is unlit brush next to
+/// their lanes, and a camp taken there denies them as much as it pays us. So
+/// this forces the jungler to each one and reads the position off the end,
+/// which is the same machinery `macro` uses and carries the same caveat — it
+/// is the argmax of a stated objective, not a fact.
+pub fn Game::best_camp(
+  self : Game,
+  team : Int,
+  champ_id : Int,
+  horizon : Int,
+) -> String {
+  let names = []
+  let scores = []
+  for camp in self.camps {
+    if !camp.up() {
+      continue
+    }
+    let goto = Array::make(10, -1)
+    goto[champ_id] = camp.node
+    names.push(node_name(camp.node))
+    scores.push(self.simulate_macro(team, goto, horizon))
+  }
+  tied_best(names, scores)
+}
+
+///|
+/// The control-ward spot that clears the most enemy vision from where this
+/// champion stands. Exact arithmetic over the wards in range, so it is an
+/// `arith` truth rather than a played-out one.
+///
+/// Ties are joined and they are common: two spots that clear the same one
+/// ward really are the same answer, and letting the option order pick between
+/// them would mark a correct read wrong.
+pub fn Game::best_sweep(self : Game, team : Int, from : Int) -> String {
+  let names = []
+  let scores = []
+  for n in ward_spots(from) {
+    let mut clears = 0
+    for w in self.wards {
+      if w.team != team &&
+        w.ttl > 0 &&
+        (w.node == n || adjacency[n].contains(w.node)) {
+        clears += 1
+      }
+    }
+    names.push(node_name(n))
+    scores.push(clears)
+  }
+  tied_best(names, scores)
+}
