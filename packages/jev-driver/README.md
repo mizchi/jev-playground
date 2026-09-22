@@ -35,16 +35,28 @@ A `Driver` sees the whole step and can return `kind: "custom"`, so the whole
 shape fits **today, with no change upstream**. Three drivers in chaosbringer
 already do this (`flow-driver`, `form-driver`, `auth-attack`).
 
-Two upstream PRs shrink this package rather than enable it:
+Three upstream PRs from this line of work shrink this package rather than
+enable it. **All three are merged and none is released**, so the code here
+still targets the published `0.9.0`, which has none of them:
 
-| PR | what it changes here |
-| --- | --- |
-| [#145](https://github.com/mizchi/chaosbringer/pull/145) (merged) | a provider now sees `type` + the geometry, and the screenshot is a thunk — so a future *provider* version of this could at least see the facts |
-| [#146](https://github.com/mizchi/chaosbringer/pull/146) | `operation: "clear"` on a `select` pick replaces one `custom`, and the trace stops calling a clear an `input` |
+| PR | status | what it changes here |
+| --- | --- | --- |
+| [#145](https://github.com/mizchi/chaosbringer/pull/145) | merged | a provider sees `type` + the geometry, and the screenshot is a thunk — so a *provider* version of this could at least see the facts |
+| [#146](https://github.com/mizchi/chaosbringer/pull/146) | merged | `operation: "clear"` on a pick replaces one `custom`, and `ActionResult["type"]` gains `"clear"` |
+| [#147](https://github.com/mizchi/chaosbringer/pull/147) | merged | a `<select>` is finally a candidate, carrying the value a pick would set, and `ActionResult["type"]` gains `"select"` — this is what gives the `SELECT` head something to attach to at all |
 
-Until #146 lands, a driver that empties a field **has to mislabel its own
-action** in the trace: `ActionResult["type"]` has `"input"` and no `"clear"`.
-That mislabelling is in this code, marked.
+Until a release carries them, this driver **mislabels two of its own
+actions**, because `0.9.0` would otherwise record an `ActionResult` type it
+does not know. Both are marked in the code, and they do not cost the same:
+
+- a **clear** recorded as `"input"` is only a wrong label — it round-trips
+  through the recipe language as a fill with an empty value either way;
+- a **select** recorded as `"input"` becomes `{ kind: "fill", value: "test
+  input" }`, and `replay` calls `page.fill` on a `<select>`, which throws. So
+  a recipe captured from that arm does not replay. Read off the code, not
+  observed: only `tracingDriver` builds recipes and nothing here wraps it.
+
+That second one is the first thing to fix on release.
 
 ## The action space
 
@@ -123,10 +135,11 @@ are the reason the run is worth writing down at all.
 5. **A `<select>` is never a candidate at all.** chaosbringer's scrape queries
    `input, textarea, [contenteditable], [role=textbox], [role=searchbox]` plus
    tags with a `role`; a bare `<select>` matches none of them. So the `SELECT`
-   head can only ever be filled from a dropdown that carries an explicit
-   `role`. **That is a finding for upstream, not something this package can
-   work around** — the value-carrying operation the survey said everyone ships
-   has no candidate to attach to.
+   head had nothing to attach to — the value-carrying operation the survey
+   said everyone ships. **Fixed upstream by
+   [#147](https://github.com/mizchi/chaosbringer/pull/147)** (merged,
+   unreleased), which also found that six other places in the library already
+   knew about dropdowns and only the action-target scrape did not.
 6. **And in the published `0.9.0`, a form field's selector matches nothing.**
    This is why the counter from (1) mattered: it read `[2 unreadable]` on every
    step, and the two were the page's two `<input>`s. Dumping the selectors:
@@ -152,13 +165,23 @@ are the reason the run is worth writing down at all.
    are newer than the published `@mizchi/*`, so that check is **unrun here**.
 
 What is **not** measured: whether this reaches goals a flat picker does not.
-Both arms exist in the runner for that comparison, and the comparison is
+Both arms exist in the runner for that comparison, and the comparison was
 blocked on (5) and (6) rather than on the model — with no `<select>` candidate
 and no resolvable field, every board so far collapses to `CLICK`, which is the
 one operation both arms already express identically. **A run where the arms
-agree is not a null result about the action space.** The next thing to do is
-re-run against a released chaosbringer that carries the selector fix, not to
-write more driver.
+agree is not a null result about the action space.**
+
+Both are now fixed upstream and **neither is released**, so the block is a
+release rather than a design question. The next thing to do is re-run against a
+chaosbringer that carries them — not to write more driver. In order, on release:
+
+1. bump the peer and the experiment's install, and switch the two mislabelled
+   `ActionResult` types to `"clear"` and `"select"` (the select one first: it
+   is the one that breaks replay);
+2. drop the `custom` for a clear in favour of
+   `{ kind: "select", index, operation: "clear" }`;
+3. re-run `--board fields` on both arms, on a board that can finally offer
+   `SELECT`, and see whether the typed action space buys anything.
 
 ## Running it
 

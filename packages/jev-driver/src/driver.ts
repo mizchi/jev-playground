@@ -7,9 +7,16 @@
  * space needs to answer with an *operation* as well, and `CLEAR` and
  * `SELECT` need to carry a value. A `Driver` sees the whole step and can
  * return `kind: "custom"`, so the whole shape fits today with no change
- * upstream. (chaosbringer#145 widened what a provider sees;
- * chaosbringer#146 adds `operation: "clear"` to a `select` pick. Neither
- * is needed to run this, and both shrink it — see README.)
+ * upstream.
+ *
+ * Three upstream PRs from this line of work are now **merged and
+ * unreleased**: chaosbringer#145 (a provider sees `type` + the
+ * geometry, and the screenshot is a thunk), #146 (`operation: "clear"`
+ * on a pick, and `"clear"` as an `ActionResult` type) and #147 (a
+ * `<select>` is finally a candidate, with `"select"` as an
+ * `ActionResult` type). None of them is needed to run this, and each
+ * shrinks it — but the released `0.9.0` has none of them, so the code
+ * below still targets that. See README for what changes on release.
  *
  * What it does not need is a screenshot. Jev takes text and returns
  * typed probabilistic decisions, so there is no capture cost, and at one
@@ -293,10 +300,14 @@ function toPick(
         if (op === "CLEAR") {
           await locator.clear({ timeout: 2000 });
           return {
-            // `"clear"` once chaosbringer#146 lands. Until then the
-            // trace cannot tell this apart from a fill, which is the
-            // whole argument of that PR — a driver that empties a field
-            // today has to mislabel its own action.
+            // Mislabelled on purpose, for exactly as long as the release
+            // lags: chaosbringer#146 added `"clear"` and is merged but
+            // not published, and `0.9.0` would record an `ActionResult`
+            // type it does not know. Until then the trace cannot tell
+            // this apart from a fill, which was that PR's whole
+            // argument. Costs nothing worse than a wrong label, since a
+            // clear round-trips through the recipe language as a fill
+            // with an empty value either way.
             type: "input",
             target: `cleared ${c.description}`,
             selector,
@@ -307,6 +318,16 @@ function toPick(
         if (op === "SELECT" && option !== undefined) {
           await locator.selectOption(option, { timeout: 2000 });
           return {
+            // Same wait on the same release (#147 added `"select"`), but
+            // this label costs more than the clear's, and the cost is
+            // read off the code rather than observed: a recorded
+            // `"input"` becomes `{ kind: "fill", value: "test input" }`,
+            // and `replay` calls `page.fill` on a `<select>`, which
+            // throws. So a recipe captured from this arm does not
+            // replay. Only reachable through `tracingDriver`, which
+            // nothing here wraps, so it has not been seen — but it is
+            // the first thing to fix on release, and the reason to fix
+            // the label rather than leave it approximate.
             type: "input",
             target: `${c.description} = ${option}`,
             selector,
