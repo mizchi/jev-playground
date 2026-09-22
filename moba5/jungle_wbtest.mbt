@@ -390,7 +390,7 @@ test "the jungle and both ward kinds are used in played games" {
   let mut counters = 0
   let mut controls = 0
   let mut stealths = 0
-  let mut cleared = 0
+  let mut clear_ticks = 0
   for i in 0..<tournament_comps.length() {
     for j in 0..<tournament_comps.length() {
       if i == j {
@@ -401,7 +401,6 @@ test "the jungle and both ward kinds are used in played games" {
         comp_by_name(tournament_comps[j].name),
       )
       while g.winner == 0 && g.tick < 150 {
-        let before = g.wards.length()
         let actions : Map[Int, Action] = Map([])
         for team in [TEAM_A, TEAM_B] {
           for e in smart_team_actions(g, team) {
@@ -416,10 +415,15 @@ test "the jungle and both ward kinds are used in played games" {
           }
         }
         g.step(actions)
-        // A tick that added a ward and still has fewer than it started with
-        // cleared at least one.
-        if g.wards.length() < before {
-          cleared += 1
+      }
+      // Placing a control ward and clearing something with it are different
+      // events: one that lands on an unwarded node logs nothing. The engine
+      // only writes the line when it swept at least one enemy ward, so this
+      // counts ticks in which a control ward did its job — a lower bound on
+      // the wards cleared, since one tick's events share a line.
+      for line in g.log {
+        if line.contains("enemy ward(s)") {
+          clear_ticks += 1
         }
       }
       for c in g.champs {
@@ -437,4 +441,9 @@ test "the jungle and both ward kinds are used in played games" {
   // Both ward kinds get placed.
   assert_true(stealths > 0)
   assert_true(controls > 0)
+  // And the control ward is not just an expense: the vision war has two sides,
+  // so somebody's ward actually comes off the map. This is the assertion the
+  // first version of the test left out — it counted the wards placed and threw
+  // the clears away, which is the difference between "used" and "worked".
+  assert_true(clear_ticks > 0)
 }
