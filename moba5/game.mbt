@@ -117,6 +117,23 @@ pub const HERALD_TICKS = 16
 pub const HERALD_GONE_TICK = 70
 
 ///|
+/// A jungle camp's bounty, and how long it takes to come back.
+///
+/// Sized against a lane: two own camps on a six-tick round trip pay about ten
+/// gold a tick, which is what a laner earns last-hitting. The respawn is
+/// slightly LONGER than that round trip on purpose — a jungler that cycles
+/// perfectly arrives early sometimes, and then has to decide whether to wait,
+/// walk into the enemy's half, or go and help a lane. A respawn shorter than
+/// the trip would answer that question permanently.
+pub const CAMP_GOLD = 30
+
+///|
+pub const CAMP_XP = 22
+
+///|
+pub const CAMP_RESPAWN = 8
+
+///|
 /// Plating. An outer tower's health is divided into this many plates; a
 /// champion that takes one off is paid for it whether or not the tower falls,
 /// which is what makes chipping a tower worth a tick of somebody's time.
@@ -218,6 +235,27 @@ pub const BARON_STRUCT_PCT = 40
 pub const BARON_TICKS = 12
 
 ///|
+/// The two kinds of ward. A stealth ward is the one a champion carries; a
+/// control ward is bought with gold and **takes vision away**, which is the
+/// half of the vision game that a map with only one ward kind cannot have.
+pub const WARD_STEALTH = 0
+
+///|
+pub const WARD_CONTROL = 1
+
+///|
+/// What a control ward costs, how long it lasts, and the rule that makes it
+/// worth the gold: an enemy ward on its node or a neighbour is destroyed when
+/// it goes down, and an enemy STEALTH ward placed there afterwards is
+/// destroyed at the end of that tick. It cannot be restocked at base, so it
+/// competes with the shop — which is what makes it a decision rather than a
+/// second free charge.
+pub const CONTROL_COST = 75
+
+///|
+pub const CONTROL_TTL = 24
+
+///|
 /// How long a ward sees, how many a champion carries, and what a `Ward` costs.
 pub const WARD_TTL = 8
 
@@ -289,6 +327,8 @@ pub struct Champ {
   mut kills : Int
   mut deaths : Int
   mut assists : Int
+  /// Jungle camps this champion has taken, its own side's and the enemy's.
+  mut camps : Int
   /// Minions taken with a last hit. Gold follows from it, so this is the laning
   /// phase's score and what the `cs` class is marked against.
   mut cs : Int
@@ -559,6 +599,7 @@ pub fn Champ::copy(self : Champ) -> Champ {
     kills: self.kills,
     deaths: self.deaths,
     assists: self.assists,
+    camps: self.camps,
     cs: self.cs,
     cs_lost: self.cs_lost,
     items,
@@ -678,6 +719,33 @@ pub fn Neutral::copy(self : Neutral) -> Neutral {
 }
 
 ///|
+/// A jungle camp: a bounty that is taken whole and then has to come back.
+///
+/// It used to be a per-tick trickle keyed off the node, which meant a jungler
+/// could stand on one node and print gold for the whole game, and meant that
+/// "taking a camp" removed nothing from anybody. A camp with an owner and a
+/// timer is what the two decisions the jungle is supposed to create need:
+/// **where to be when it comes back**, and **whether to take theirs**.
+pub struct Camp {
+  node : Int
+  /// Whose half of the jungle it sits in. Taking one on the enemy's side is
+  /// counter-jungling.
+  side : Int
+  /// Ticks until it comes back, or 0 while it is up.
+  mut down_for : Int
+}
+
+///|
+pub fn Camp::up(self : Camp) -> Bool {
+  self.down_for == 0
+}
+
+///|
+pub fn Camp::copy(self : Camp) -> Camp {
+  { node: self.node, side: self.side, down_for: self.down_for, }
+}
+
+///|
 /// The default rotation: an infernal drake first, then an ocean rift. Two
 /// entries is all the rule needs, because every drake after the second has the
 /// rift's element — so the first entry is the opening drake and the second is
@@ -715,12 +783,23 @@ pub fn drake_kind_index(element : String) -> Int {
 pub struct Ward {
   node : Int
   team : Int
+  kind : Int
   mut ttl : Int
 }
 
 ///|
 pub fn Ward::copy(self : Ward) -> Ward {
-  { node: self.node, team: self.team, ttl: self.ttl, }
+  { node: self.node, team: self.team, kind: self.kind, ttl: self.ttl, }
+}
+
+///|
+/// Whether this ward's sweep reaches `node`: its own node or a neighbour. Only
+/// a control ward has one.
+pub fn Ward::sweeps(self : Ward, node : Int) -> Bool {
+  if self.kind != WARD_CONTROL {
+    return false
+  }
+  self.node == node || adjacency[self.node].contains(node)
 }
 
 // ----------------------------------------------------------------- the game
@@ -730,6 +809,8 @@ pub struct Game {
   champs : Array[Champ]
   structures : Array[Structure]
   neutrals : Array[Neutral]
+  /// The four jungle camps, one per jungle node.
+  camps : Array[Camp]
   wards : Array[Ward]
   /// Minion pressure per lane, indexed as `lanes`. Positive means team A's
   /// wave is ahead in that lane.
@@ -756,6 +837,10 @@ pub struct Game {
   baron : Array[Int]
   /// Ticks of Herald charge left, indexed by team id. Structures only.
   herald : Array[Int]
+  /// Camps on this team's own side that the ENEMY took, indexed by team id.
+  /// The price of a counter-jungle, counted where the team that paid it can
+  /// read it.
+  camps_lost : Array[Int]
   mut tick : Int
   /// 0 while the game is running, otherwise the winning team.
   mut winner : Int
@@ -846,6 +931,7 @@ pub fn Game::with_handicap(
       kills: 0,
       deaths: 0,
       assists: 0,
+      camps: 0,
       cs: 0,
       cs_lost: 0,
       items: [],
@@ -973,10 +1059,18 @@ pub fn Game::with_handicap(
       respawn_ticks: 1 << 24,
     },
   ]
+  let camps : Array[Camp] = []
+  for n in 0..<N_NODES {
+    let side = camp_side(n)
+    if side != 0 {
+      camps.push({ node: n, side, down_for: 0, })
+    }
+  }
   {
     champs,
     structures,
     neutrals,
+    camps,
     wards: [],
     push: [0, 0, 0],
     ripe: Array::make(lanes.length() * 3, 0),
@@ -985,6 +1079,7 @@ pub fn Game::with_handicap(
     soul_team: 0,
     baron: [0, 0, 0],
     herald: [0, 0, 0],
+    camps_lost: [0, 0, 0],
     tick: 0,
     winner: 0,
     log: [],
@@ -1008,6 +1103,10 @@ pub fn Game::copy(self : Game) -> Game {
   for n in self.neutrals {
     neutrals.push(n.copy())
   }
+  let camps = []
+  for c in self.camps {
+    camps.push(c.copy())
+  }
   let wards = []
   for w in self.wards {
     wards.push(w.copy())
@@ -1020,6 +1119,7 @@ pub fn Game::copy(self : Game) -> Game {
     champs,
     structures,
     neutrals,
+    camps,
     wards,
     push: [self.push[0], self.push[1], self.push[2]],
     ripe: {
@@ -1046,6 +1146,7 @@ pub fn Game::copy(self : Game) -> Game {
     soul_team: self.soul_team,
     baron: [0, self.baron[1], self.baron[2]],
     herald: [0, self.herald[1], self.herald[2]],
+    camps_lost: [0, self.camps_lost[1], self.camps_lost[2]],
     tick: self.tick,
     winner: self.winner,
     log,
@@ -1085,6 +1186,74 @@ pub fn Game::neutral_at(self : Game, node : Int) -> Neutral? {
     }
   }
   None
+}
+
+// -------------------------------------------------------------------- jungle
+
+///|
+/// The camp at `node`, up or down, or None for a node that has none.
+pub fn Game::camp_at(self : Game, node : Int) -> Camp? {
+  for c in self.camps {
+    if c.node == node {
+      return Some(c)
+    }
+  }
+  None
+}
+
+///|
+/// Camps on `team`'s side of the jungle that are standing right now.
+pub fn Game::camps_up(self : Game, team : Int) -> Array[Camp] {
+  let out = []
+  for c in self.camps {
+    if c.side == team && c.up() {
+      out.push(c)
+    }
+  }
+  out
+}
+
+///|
+/// The camp `team` should walk to: one that is up, nearest to `from`, ours
+/// before theirs.
+///
+/// Ours first because theirs costs a walk through unlit brush next to their
+/// lanes. That is a preference and not a rule — `counter_jungle_worth` is
+/// where the other half of the decision lives.
+pub fn Game::next_camp(self : Game, team : Int, from : Int) -> Int {
+  let mut best = -1
+  let mut best_key = 1 << 28
+  for c in self.camps {
+    if !c.up() {
+      continue
+    }
+    let theirs = if c.side == team { 0 } else { 1 }
+    let key = theirs * 100 + hops(from, c.node)
+    if key < best_key {
+      best_key = key
+      best = c.node
+    }
+  }
+  best
+}
+
+///|
+/// Whether crossing into the enemy's half is the better use of the next few
+/// ticks: none of ours is up, at least one of theirs is, and we can get there.
+///
+/// The denial is the point and it is not in this function — it is in the
+/// enemy's gold, which `position_score` already counts. A camp we take is a
+/// camp they do not, for `CAMP_RESPAWN` ticks.
+pub fn Game::counter_jungle_worth(self : Game, team : Int, from : Int) -> Bool {
+  if !self.camps_up(team).is_empty() {
+    return false
+  }
+  for c in self.camps {
+    if c.side != team && c.up() && hops(from, c.node) <= 3 {
+      return true
+    }
+  }
+  false
 }
 
 // ------------------------------------------------------------------- drakes
@@ -1570,6 +1739,23 @@ pub fn Game::has_ward(self : Game, team : Int, node : Int) -> Bool {
 }
 
 ///|
+/// Whether the enemy has a live ward watching `node` — on it, or next to it.
+///
+/// What a control ward is for. `has_ward` answers the additive question ("do
+/// we already see this"); this one answers the subtractive one, and a map
+/// with one ward kind had no way to ask it.
+pub fn Game::enemy_ward_near(self : Game, team : Int, node : Int) -> Bool {
+  for w in self.wards {
+    if w.team != team &&
+      w.ttl > 0 &&
+      (w.node == node || adjacency[node].contains(w.node)) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub fn Game::wards_of(self : Game, team : Int) -> Array[Ward] {
   let out = []
   for w in self.wards {
@@ -1895,10 +2081,50 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
           c.apply_buy(key)
           events.push("\{c.name} bought \{key} for \{paid}")
         }
+      Some(PlaceControl(n)) =>
+        if c.gold >= CONTROL_COST &&
+          (n == c.node || adjacency[c.node].contains(n)) {
+          c.gold -= CONTROL_COST
+          // It clears the node as it lands: every enemy ward in range goes,
+          // control wards included, so a contested node goes to whoever paid
+          // last. A stealth ward placed there later is swept at the end of
+          // the tick instead — see the ward phase.
+          let kept : Array[Ward] = []
+          let mut cleared = 0
+          for w in self.wards {
+            if w.team != c.team &&
+              w.ttl > 0 &&
+              (w.node == n || adjacency[n].contains(w.node)) {
+              cleared += 1
+            } else {
+              kept.push(w)
+            }
+          }
+          self.wards.clear()
+          for w in kept {
+            self.wards.push(w)
+          }
+          self.wards.push({
+            node: n,
+            team: c.team,
+            kind: WARD_CONTROL,
+            ttl: CONTROL_TTL,
+          })
+          if cleared > 0 {
+            events.push(
+              "\{c.name}'s control ward at \{node_name(n)} cleared \{cleared} enemy ward(s)",
+            )
+          }
+        }
       Some(PlaceWard(n)) =>
         if c.wards > 0 && (n == c.node || adjacency[c.node].contains(n)) {
           c.wards -= 1
-          self.wards.push({ node: n, team: c.team, ttl: WARD_TTL, })
+          self.wards.push({
+            node: n,
+            team: c.team,
+            kind: WARD_STEALTH,
+            ttl: WARD_TTL,
+          })
         }
       _ => ()
     }
@@ -2062,8 +2288,10 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       // Farming a LANE takes whatever is ripe there: the last hit is the
       // gold, so a tick spent farming an empty wave pays nothing and a tick
       // spent elsewhere leaves the ripe minions to be finished by our own
-      // side. A jungle camp is still a flat camp — the jungler's trade is
-      // where it farms, not whether it lands the blow.
+      // side. Farming the JUNGLE takes the camp whole and puts it on a timer,
+      // so the jungler's tick is spent on a thing that is either there or
+      // not — and a camp taken on the enemy's side is a camp they do not get
+      // for `CAMP_RESPAWN` ticks.
       Some(Farm) => {
         let lane = node_lane[c.node]
         let ri = ripe_index(lane, c.team)
@@ -2075,9 +2303,23 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
             c.gold += took * CS_GOLD
             c.gain_xp(took * CS_XP)
           }
-        } else if camp_gold(c.node) > 0 {
-          c.gold += camp_gold(c.node)
-          c.gain_xp(camp_xp(c.node))
+        } else {
+          match self.camp_at(c.node) {
+            Some(camp) =>
+              if camp.up() {
+                camp.down_for = CAMP_RESPAWN
+                c.camps += 1
+                c.gold += CAMP_GOLD
+                c.gain_xp(CAMP_XP)
+                if camp.side != c.team {
+                  self.camps_lost[camp.side] += 1
+                  events.push(
+                    "\{c.name} took \{team_name(camp.side)}'s camp at \{node_name(c.node)}",
+                  )
+                }
+              }
+            None => ()
+          }
         }
       }
       _ => ()
@@ -2503,15 +2745,19 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
     }
   }
 
-  // Being in a lane or a jungle earns experience and a gold trickle whatever
-  // the champion spent its turn on: the minions die next to it either way.
-  // Without this, a policy that never picks `Farm` would still be level 1 at
-  // tick 60, no champion would ever out-scale a tower, and no game would end —
-  // which is not a lesson about the policy, only about the model.
+  // Being in a LANE earns experience and a gold trickle whatever the champion
+  // spent its turn on: the minions die next to it either way. Without this, a
+  // policy that never picks `Farm` would still be level 1 at tick 60, no
+  // champion would ever out-scale a tower, and no game would end — which is
+  // not a lesson about the policy, only about the model.
+  //
+  // The jungle gets none of it. A jungle node pays its camp and nothing else,
+  // which is what makes a jungler have to move: standing on one used to print
+  // sixteen gold a tick forever.
   for c in self.champs {
-    if c.alive() && camp_gold(c.node) > 0 {
-      c.gold += camp_gold(c.node) / 3
-      c.gain_xp(camp_xp(c.node) / 2)
+    if c.alive() && lane_index(node_lane[c.node]) >= 0 {
+      c.gold += LANE_TRICKLE
+      c.gain_xp(CS_XP / 2)
     }
   }
 
@@ -2581,6 +2827,15 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       self.herald[t] -= 1
     }
   }
+  // Camps come back.
+  for camp in self.camps {
+    if camp.down_for > 0 {
+      camp.down_for -= 1
+      if camp.down_for == 0 {
+        events.push("the camp at \{node_name(camp.node)} is back")
+      }
+    }
+  }
   // Plating falls off, and the inner towers come back.
   for st in self.structures {
     if st.plates > 0 && self.tick >= PLATE_TICKS {
@@ -2622,9 +2877,29 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
   let live_wards : Array[Ward] = []
   for w in self.wards {
     w.ttl -= 1
-    if w.ttl > 0 {
-      live_wards.push(w)
+    if w.ttl <= 0 {
+      continue
     }
+    // A live control ward keeps the enemy's STEALTH wards out of its range,
+    // so one cannot simply be dropped back under it the tick after it lands.
+    // Control against control is decided on placement instead — the newer one
+    // clears the older — because sweeping each other every tick would be a
+    // rule with no stable answer.
+    if w.kind == WARD_STEALTH {
+      let mut swept = false
+      for other in self.wards {
+        if other.team != w.team && other.ttl > 0 && other.sweeps(w.node) {
+          swept = true
+        }
+      }
+      if swept {
+        events.push(
+          "a control ward cleared the \{team_name(w.team)} ward at \{node_name(w.node)}",
+        )
+        continue
+      }
+    }
+    live_wards.push(w)
   }
   self.wards.clear()
   for w in live_wards {

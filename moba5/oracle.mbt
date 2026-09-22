@@ -83,6 +83,7 @@ pub fn Game::simulate_macro(
       goto: forced,
       rally: own.rally,
       why: own.why,
+      grouped: own.grouped,
       hold_lane: own.hold_lane,
     }
     let actions : Map[Int, Action] = Map([])
@@ -344,7 +345,7 @@ pub fn Game::best_ward(self : Game, team : Int, from : Int) -> String {
   let scores = []
   for n in ward_spots(from) {
     let g = self.copy()
-    g.wards.push({ node: n, team, ttl: WARD_TTL, })
+    g.wards.push({ node: n, team, kind: WARD_STEALTH, ttl: WARD_TTL, })
     names.push(node_name(n))
     scores.push(g.visible_enemies(team).length())
   }

@@ -93,7 +93,7 @@ test "a ward inside a brush reveals it" {
   park_all_to(g, A_BASE)
   g.champs[0].node = A_BASE
   assert_false(g.vision(TEAM_A)[brush])
-  g.wards.push({ node: brush, team: TEAM_A, ttl: WARD_TTL, })
+  g.wards.push({ node: brush, team: TEAM_A, kind: WARD_STEALTH, ttl: WARD_TTL, })
   assert_true(g.vision(TEAM_A)[brush])
   // And it expires, so the cover comes back.
   g.wards[0].ttl = 0

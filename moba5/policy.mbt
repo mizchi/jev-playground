@@ -31,6 +31,10 @@ pub(all) struct Plan {
   rally : Int
   /// A one-line reason, for `--verbose` and for the report.
   why : String
+  /// Whether this rally wants the whole team: a fight for an objective, a
+  /// structure about to fall, or their open nexus. A tower we can hit for
+  /// free does not — and the difference is what frees the jungler to farm.
+  grouped : Bool
   /// The lane index a single champion is being left to hold, or -1.
   hold_lane : Int
 }
@@ -234,12 +238,14 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
   let foe = enemy_of(team)
   let mut rally = -1
   let mut why = ""
+  let mut grouped = false
   // 1. Their nexus is open: nothing else matters.
   if self.nexus_exposed(foe) {
     for s in self.structures {
       if s.team == foe && s.is_nexus() && s.alive() {
         rally = s.node
         why = "their nexus is open"
+        grouped = true
       }
     }
   }
@@ -250,6 +256,7 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
       let (lane, ticks) = self.lane_under_pressure(team)
       rally = d
       why = "\{lanes[lane]} falls in \{ticks} ticks"
+      grouped = true
     }
   }
   // 3. The best thing on the map we could actually go and take: a tower whose
@@ -278,6 +285,7 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
     let mut best = 0
     let mut best_node = -1
     let mut best_why = ""
+    let mut best_grouped = false
     for lane in lanes {
       if !self.has_wave(team, lane) {
         continue
@@ -313,12 +321,14 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
           best = v
           best_node = n.node
           best_why = "\{n.key} is up"
+          best_grouped = true
         }
       }
     }
     if best_node >= 0 {
       rally = best_node
       why = best_why
+      grouped = best_grouped
     }
   }
   // 5. Otherwise, siege together.
@@ -398,7 +408,31 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
       goto[c.id] = rally
     }
   }
-  { goto, rally, why, hold_lane, }
+  // The jungler farms between plays. When the rally is the fallback siege —
+  // nothing is open, nothing is falling, nothing is up in the river — send it
+  // to the next camp instead of to the tower with everybody else, and across
+  // into their half when ours are all down.
+  //
+  // This exists because camps now have a timer. While a jungle node paid a
+  // flat sixteen gold a tick forever, the jungler had no route to plan: it
+  // stood on one node, and "where should the jungler be" had the same answer
+  // every tick of every game.
+  if !grouped {
+    for c in self.champs {
+      if c.team != team || !c.alive() || c.role != "jungle" {
+        continue
+      }
+      let camp = self.next_camp(team, c.node)
+      if camp >= 0 &&
+        (
+          (self.camp_at(camp) is Some({ side: s, .. }) && s == team) ||
+          self.counter_jungle_worth(team, c.node)
+        ) {
+        goto[c.id] = camp
+      }
+    }
+  }
+  { goto, rally, why, grouped, hold_lane, }
 }
 
 // ------------------------------------------------------------ the weak floor
@@ -764,6 +798,24 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
 
   // Ward the river before the next monster spawns, so the objective fight
   // starts with vision instead of a guess.
+  //
+  // A control ward first, when they already see the pit and we can pay for
+  // one: a stealth ward next to their vision adds our read without removing
+  // theirs, and the fight over an objective both teams can see is the fight
+  // neither team can set up. This is the only action in the game that takes
+  // vision away.
+  if c.gold >= CONTROL_COST {
+    for n in neutral_soon(g) {
+      if !g.enemy_ward_near(c.team, n) {
+        continue
+      }
+      for a in legal {
+        if a == PlaceControl(n) {
+          return a
+        }
+      }
+    }
+  }
   if c.wards > 0 {
     for n in neutral_soon(g) {
       if g.has_ward(c.team, n) {
@@ -812,12 +864,34 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
     }
   }
   if target >= 0 && target != c.node {
-    // A blink is worth it when it saves a whole move toward where we are going.
+    // A blink is worth it when it saves a whole move toward where we are
+    // going. Take the BEST one rather than the first that improves, and break
+    // a tie by who ends up nearer their base — `step_toward_prefer` decides a
+    // walk the same way and for the same reason.
+    //
+    // "The first that improves" resolved ties by the order `blink_targets`
+    // happens to build its list, which is the order of `adjacency`, which is
+    // not mirrored between the two halves of the map. A mirror match had
+    // A_jungle blink home from a1_top while B_jungle blinked to the river
+    // from b1_top, with every other field of the state identical. Same shape
+    // as docs/56 §8's third bug, one action along.
+    let mut best = -1
+    let mut best_key = 1 << 28
     for a in legal {
       match a {
-        Blink(n) => if hops(n, target) + 1 < hops(c.node, target) { return a }
+        Blink(n) =>
+          if hops(n, target) + 1 < hops(c.node, target) {
+            let key = hops(n, target) * 100 + hops(n, base_of(foe))
+            if key < best_key {
+              best_key = key
+              best = n
+            }
+          }
         _ => ()
       }
+    }
+    if best >= 0 {
+      return Blink(best)
     }
     let next = step_toward_prefer(c.node, target, base_of(foe))
     if next != c.node && legal.contains(Move(next)) {

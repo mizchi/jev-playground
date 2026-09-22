@@ -32,6 +32,10 @@ pub(all) enum Action {
   Farm
   /// Place a ward on a node, buying vision of it and its neighbours.
   PlaceWard(Int)
+  /// Place a CONTROL ward: costs gold rather than a charge, lasts three times
+  /// as long, and destroys the enemy's wards in range. The only way to take
+  /// vision away rather than only add it.
+  PlaceControl(Int)
   /// Buy an item. Only at base, only with the gold for it.
   Buy(String)
   /// Teleport home and start healing. Costs the tick.
@@ -60,6 +64,7 @@ pub fn Action::to_string(self : Action) -> String {
     AttackNeutral => "attack_monster"
     Farm => "farm"
     PlaceWard(n) => "ward_\{node_name(n)}"
+    PlaceControl(n) => "control_ward_\{node_name(n)}"
     Buy(key) => "buy_\{key}"
     Recall => "recall"
     Hold => "hold"
@@ -81,6 +86,7 @@ pub fn Action::kind_name(self : Action) -> String {
     AttackNeutral => "objective"
     Farm => "farm"
     PlaceWard(_) => "ward"
+    PlaceControl(_) => "control_ward"
     Buy(_) => "buy"
     Recall => "recall"
     Hold => "hold"
@@ -91,7 +97,7 @@ pub fn Action::kind_name(self : Action) -> String {
 /// The families, in the order a report prints them.
 pub let action_kinds : Array[String] = [
   "move", "blink", "attack", "poke", "ability", "structure", "objective", "farm",
-  "ward", "buy", "recall", "hold",
+  "ward", "control_ward", "buy", "recall", "hold",
 ]
 
 ///|
@@ -177,12 +183,20 @@ pub fn Game::legal_actions(self : Game, c : Champ) -> Array[Action] {
   if self.neutral_at(c.node) is Some(_) {
     out.push(AttackNeutral)
   }
-  if camp_gold(c.node) > 0 {
+  if is_farmable(c.node) {
     out.push(Farm)
   }
   if c.wards > 0 {
     for n in ward_spots(c.node) {
       out.push(PlaceWard(n))
+    }
+  }
+  // A control ward is bought with gold, not carried, so it is legal wherever
+  // a stealth ward is as long as the pocket holds it. It competes with the
+  // shop for the same gold, which is the decision.
+  if c.gold >= CONTROL_COST {
+    for n in ward_spots(c.node) {
+      out.push(PlaceControl(n))
     }
   }
   if c.node == base_of(c.team) {
@@ -331,11 +345,44 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
         }
         "\{pay}, and SHOVE the \{lane} lane wave one step toward them\{if self.has_wave(c.team, lane) { " (we already hold this lane)" } else { " — this is how a tower here becomes attackable without it shooting back" }}"
       } else {
-        "farm here for +\{camp_gold(c.node)} gold and +\{camp_xp(c.node)} xp (a jungle camp: safe, but no lane pressure)"
+        match self.camp_at(c.node) {
+          Some(camp) => {
+            let whose = if camp.side == c.team { "our own" } else { "THEIR" }
+            if camp.up() {
+              let deny = if camp.side == c.team {
+                ""
+              } else {
+                "; it is a counter-jungle, so they lose it for those \{CAMP_RESPAWN} ticks too"
+              }
+              "take \{whose} camp here for +\{CAMP_GOLD} gold and +\{CAMP_XP} xp, all at once — then it is gone for \{CAMP_RESPAWN} ticks\{deny}"
+            } else {
+              "\{whose} camp here is already down and comes back in \{camp.down_for} tick(s), so this pays nothing"
+            }
+          }
+          None => "nothing to farm here"
+        }
       }
     }
     PlaceWard(n) =>
       "ward \{node_name(n)} — vision of it and its neighbours for \{WARD_TTL} ticks (\{c.wards} ward(s) left)"
+    PlaceControl(n) => {
+      // What it would actually clear, counted rather than described: this is
+      // the whole reason to spend the gold instead of a charge.
+      let mut clears = 0
+      for w in self.wards {
+        if w.team != c.team &&
+          w.ttl > 0 &&
+          (w.node == n || adjacency[n].contains(w.node)) {
+          clears += 1
+        }
+      }
+      let takes = if clears == 0 {
+        "they have no ward in range of it right now"
+      } else {
+        "it DESTROYS \{clears} of their ward(s) in range the moment it lands, and keeps their stealth wards out of that range while it stands"
+      }
+      "CONTROL WARD on \{node_name(n)} for \{CONTROL_COST} gold — vision for \{CONTROL_TTL} ticks, three times a normal ward, and \{takes}"
+    }
     Buy(key) =>
       match item_of(key) {
         Some(it) => {

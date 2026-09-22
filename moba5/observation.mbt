@@ -379,8 +379,32 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
   let our_wards = []
   for w in self.wards_of(team) {
     our_wards.push(
-      Json({ "at": Json(node_name(w.node)), "expires_in": Json(w.ttl) }),
+      Json({
+        "at": Json(node_name(w.node)),
+        "kind": Json(if w.kind == WARD_CONTROL { "control" } else { "stealth" }),
+        "expires_in": Json(w.ttl),
+      }),
     )
+  }
+  // Their wards, but only the ones we can see — which is the point of the
+  // sweep: you cannot clear what you have not found.
+  let their_wards = []
+  for w in self.wards_of(foe) {
+    if seen[w.node] {
+      their_wards.push(
+        Json({
+          "at": Json(node_name(w.node)),
+          "kind": Json(
+            if w.kind == WARD_CONTROL {
+              "control"
+            } else {
+              "stealth"
+            },
+          ),
+          "expires_in": Json(w.ttl),
+        }),
+      )
+    }
   }
 
   let visible_nodes = []
@@ -393,6 +417,21 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     }
   }
   let (worst_lane, worst_ticks) = self.lane_under_pressure(team)
+  // Both jungles, with the timers. A camp a policy cannot see the clock on is
+  // a camp it cannot plan a route around, and the enemy's timers are the whole
+  // of a counter-jungle: you cross when theirs is up and yours is not.
+  let camp_rows = []
+  for camp in self.camps {
+    camp_rows.push(
+      Json({
+        "at": Json(node_name(camp.node)),
+        "side": Json(if camp.side == team { "ours" } else { "theirs" }),
+        "up_now": Json(camp.up()),
+        "comes_back_in": Json(camp.down_for),
+        "visible": Json(seen[camp.node]),
+      }),
+    )
+  }
   let element_rows = []
   for element in drake_kinds {
     element_rows.push(
@@ -439,6 +478,7 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
     "lanes": Json(lane_rows),
     "objectives": Json(objectives),
     "our_wards": Json(our_wards),
+    "their_wards_we_can_see": Json(their_wards),
     "team_reads": Json({
       "our_total_level": Json(self.team_level(team)),
       "their_total_level_if_seen": Json(self.team_level(foe)),
@@ -452,6 +492,10 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "their_baron_ticks_left": Json(self.baron[foe]),
       "our_herald_ticks_left": Json(self.herald[team]),
       "their_herald_ticks_left": Json(self.herald[foe]),
+      "camps_of_ours_they_took": Json(self.camps_lost[team]),
+      "camps_of_theirs_we_took": Json(self.camps_lost[foe]),
+      "our_camps_up_now": Json(self.camps_up(team).length()),
+      "their_camps_up_now": Json(self.camps_up(foe).length()),
       "lane_in_most_danger": Json(
         if worst_lane < 0 {
           "none"
@@ -476,6 +520,13 @@ pub fn Game::observation(self : Game, team : Int, mem : Memory) -> Json {
       "The four jungle nodes are BRUSH. Standing next to a brush shows you nothing inside it, and standing IN one shows you the nodes around it as normal — so a champion waiting in a brush is invisible to everyone outside it, and can see who is walking past. A ward placed in a brush is the only way to watch it from outside. Every node listed under nodes_you_are_blind_to could be holding enemies; a brush next to a lane you are pushing is where they would be.",
     ),
     "brush_nodes": Json(brush_list),
+    "jungle": Json(camp_rows),
+    "ward_rule": Json(
+      "Two kinds of ward. A STEALTH ward is one of the \{WARD_CHARGES} charges a champion carries, restocked free at base, and sees its node and neighbours for \{WARD_TTL} ticks. A CONTROL ward costs \{CONTROL_COST} gold from the same pocket that buys items, sees for \{CONTROL_TTL} ticks, and **destroys the enemy's wards**: every enemy ward on its node or a neighbour is gone the moment it lands, and an enemy stealth ward placed in that range afterwards is destroyed at the end of that tick. An enemy control ward placed later clears yours in turn, so a contested node belongs to whoever paid last. This is the only way in the game to take vision away rather than only add it — a stealth ward next to their ward adds your read without removing theirs.",
+    ),
+    "jungle_rule": Json(
+      "The four jungle nodes each hold a camp, and each camp belongs to the side of the map it sits in. `farm` on a camp that is up takes it WHOLE — \{CAMP_GOLD} gold and \{CAMP_XP} xp at once, not a trickle — and it is then gone for \{CAMP_RESPAWN} ticks. Farming a camp that is down pays nothing. Standing in the jungle earns nothing at all by itself: unlike a lane there is no passive income there, so a champion in the jungle is either taking a camp or wasting the tick. Taking a camp on THEIR side is a counter-jungle: it pays you the same and denies them that camp for the same \{CAMP_RESPAWN} ticks — and their half of the jungle is brush next to their lanes, so it is the walk that costs you, not the camp.",
+    ),
     "plating_rule": Json(
       "Every outer tower starts with \{PLATES} plates. Champion damage takes them off one at a time — \{PLATE_GOLD} gold each to every champion on the team that broke it — and pays whether or not the tower falls, so chipping a tower is worth a tick even when finishing it is not. Minion damage takes no plates. All plating falls off at tick \{PLATE_TICKS}, so this is an early-game source of gold and then it is gone.",
     ),

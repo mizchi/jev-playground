@@ -9,11 +9,11 @@
 /// ```text
 ///          a2_top --- a1_top --- mid_top --- b1_top --- b2_top
 ///         /              |          |           |             \
-///        /          a_jg_top --- riv_top --- b_jg_top          \
-///       /           /      \       |        /      \            \
+///        /           a_jg_top -- riv_top -- b_jg_top           \
+///       /                 |         |          |                \
 /// a_base --- a2_mid --- a1_mid - mid_mid - b1_mid --- b2_mid --- b_base
-///       \           \      /       |        \      /            /
-///        \          a_jg_bot --- riv_bot --- b_jg_bot          /
+///       \                 |         |          |                /
+///        \           a_jg_bot -- riv_bot -- b_jg_bot           /
 ///         \              |          |           |             /
 ///          a2_bot --- a1_bot --- mid_bot --- b1_bot --- b2_bot
 /// ```
@@ -23,12 +23,44 @@
 ///   once one whole lane is open — both of that lane's towers down — so a
 ///   single lane's worth of siege wins the game, which is why lane pressure
 ///   matters here and did not in the 3v3 map.
-/// - **Two jungles**, one per side, each touching its own lanes and the river.
-///   The jungle is how a team crosses the map without walking a lane, so it is
-///   both the rotation route and the place ambushes come from.
+/// - **Four jungle quadrants**, two per side, each with exactly **three
+///   exits**: the two lanes it sits between — at their OUTER tower, the
+///   contested end — and the river. That is the shape the real map has, and
+///   getting it wrong was expensive in a way nothing else here was:
+///
+///   The base used to open straight onto both of its jungle quadrants, and
+///   each quadrant used to touch six nodes including the inner towers. So the
+///   fountain was a **two-hop teleporter between any two lanes**, a jungler
+///   was **one step from a camp after every recall**, and — because the
+///   jungle short-circuited every route — **base to base was four hops
+///   through any lane**. Three lanes of identical length with a highway
+///   between them is not Summoner's Rift; it is a ladder.
+///
+///   Now: base to base is **six** through any lane, and the jungle is **three
+///   hops from the fountain**.
 /// - **A river** with `riv_top` (Baron) and `riv_bot` (Dragon). These are the
 ///   two nodes both teams want and neither owns, and they sit off-lane, so
 ///   contesting one means leaving a lane — the central macro trade of the genre.
+///
+/// The distance table is where the shape shows up as decisions, and it now
+/// reads the way the real map does:
+///
+/// | node | to Baron | to Dragon |
+/// | --- | --- | --- |
+/// | `a1_top` | **2** | 4 |
+/// | `a1_mid` | **2** | **2** |
+/// | `a1_bot` | 4 | **2** |
+///
+/// **The mid laner is the only one equally close to both objectives**, which
+/// is why mid is the lane that roams; top is near Baron and far from Dragon,
+/// bot the reverse, which is why the drake pulls the bottom side of the map
+/// and Baron the top. `a2_bot` is **five** hops from Baron — the far corner.
+///
+/// What this graph still does not express: **mid is not fewer hops base to
+/// base than the side lanes**, because all three lanes have the same five
+/// nodes. On the real map mid is the diagonal and is shorter outright. Saying
+/// that would need a sixth node in top and bot, and a hop graph of this size
+/// buys the centrality without the length.
 
 ///|
 pub const N_NODES = 23
@@ -85,29 +117,38 @@ pub let lanes : Array[String] = ["top", "mid", "bot"]
 /// Undirected adjacency. A champion may move to any neighbour in one tick;
 /// `Blink` reaches a neighbour's neighbour.
 pub let adjacency : Array[Array[Int]] = [
-  [2, 7, 12, 17, 18], // 0  a_base
-  [6, 11, 16, 19, 22], // 1  b_base
-  [0, 3, 17], // 2  a2_top
+  // A base's only exits are its three inner towers. It used to also open
+  // straight onto both jungle quadrants, which made the fountain a two-hop
+  // teleporter between any two lanes and put a jungler one step from a camp
+  // after every recall. On Summoner's Rift the jungle is a walk from the
+  // fountain, and that walk is most of what a jungler's route costs.
+  [2, 7, 12], // 0  a_base
+  [6, 11, 16], // 1  b_base
+  [0, 3], // 2  a2_top
   [2, 4, 17], // 3  a1_top
   [3, 5, 20], // 4  mid_top
   [4, 6, 19], // 5  b1_top
-  [1, 5, 19], // 6  b2_top
-  [0, 8, 17, 18], // 7  a2_mid
+  [1, 5], // 6  b2_top
+  [0, 8], // 7  a2_mid
   [7, 9, 17, 18], // 8  a1_mid
   [8, 10, 20, 21], // 9  mid_mid
   [9, 11, 19, 22], // 10 b1_mid
-  [1, 10, 19, 22], // 11 b2_mid
-  [0, 13, 18], // 12 a2_bot
+  [1, 10], // 11 b2_mid
+  [0, 13], // 12 a2_bot
   [12, 14, 18], // 13 a1_bot
   [13, 15, 21], // 14 mid_bot
   [14, 16, 22], // 15 b1_bot
-  [1, 15, 22], // 16 b2_bot
-  [0, 2, 3, 7, 8, 20], // 17 a_jg_top
-  [0, 7, 8, 12, 13, 21], // 18 a_jg_bot
-  [1, 5, 6, 10, 11, 20], // 19 b_jg_top
+  [1, 15], // 16 b2_bot
+  // A jungle quadrant has exactly three exits, which is what it has on the
+  // real map: the two lanes it sits between — at their OUTER tower, the
+  // contested end — and the river. Six neighbours including the base made it
+  // the shortest path between everything.
+  [3, 8, 20], // 17 a_jg_top
+  [8, 13, 21], // 18 a_jg_bot
+  [5, 10, 20], // 19 b_jg_top
   [4, 9, 17, 19], // 20 riv_top  (Baron)
   [9, 14, 18, 22], // 21 riv_bot  (Dragon)
-  [1, 10, 11, 15, 16, 21], // 22 b_jg_bot
+  [10, 15, 21], // 22 b_jg_bot
 ]
 
 ///|
@@ -146,29 +187,39 @@ pub let brush_nodes : Array[Int] = {
 }
 
 ///|
-/// What one tick of farming pays at a node, in gold. Lane minions are safe but
-/// thin; a jungle camp pays better and is off-lane, which is the trade that
-/// makes a jungler a distinct role rather than a fourth laner.
-pub fn camp_gold(node : Int) -> Int {
-  match node_lane[node] {
-    "jungle" => 16
-    "river" => 0
-    "base" => 0
-    _ => 9
+/// Whose half of the jungle a node is in, or 0 for a node that is not jungle.
+///
+/// This is what makes counter-jungling a thing rather than a word: a camp
+/// belongs to a side, so taking one in the enemy's half denies them the camp
+/// for as long as it takes to come back. Before camps had an owner and a
+/// timer, `a_jg_top` paid team B exactly what it paid team A and taking it
+/// took nothing from anybody.
+pub fn camp_side(node : Int) -> Int {
+  if node_lane[node] != "jungle" {
+    return 0
+  }
+  if node_names[node].has_prefix("a_") {
+    TEAM_A
+  } else {
+    TEAM_B
   }
 }
 
 ///|
-/// Experience for one tick of farming. Slightly flatter than gold, so a
-/// champion that only farms jungle still levels at roughly a laner's pace.
-pub fn camp_xp(node : Int) -> Int {
-  match node_lane[node] {
-    "jungle" => 13
-    "river" => 0
-    "base" => 0
-    _ => 11
-  }
+/// Whether `Farm` does anything at this node: a lane has minions, a jungle
+/// node has a camp, and the river and the bases have neither.
+pub fn is_farmable(node : Int) -> Bool {
+  lane_index(node_lane[node]) >= 0 || camp_side(node) != 0
 }
+
+///|
+/// Gold a champion standing in a LANE earns per tick without doing anything.
+///
+/// It is small on purpose — strictly less than one minion — so that it cannot
+/// substitute for the last hit. The jungle has no trickle at all: a jungle
+/// node pays its camp and nothing else, which is the whole reason a jungler
+/// has to move.
+pub const LANE_TRICKLE = 3
 
 ///|
 pub fn node_name(node : Int) -> String {

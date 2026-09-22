@@ -20,9 +20,19 @@ pub const BIG_ITEM_COST : Int = 550
 
 pub const B_BASE : Int = 1
 
+pub const CAMP_GOLD : Int = 30
+
+pub const CAMP_RESPAWN : Int = 8
+
+pub const CAMP_XP : Int = 22
+
 pub const COMBINE_COST : Int = 200
 
 pub const COMPONENT_COST : Int = 150
+
+pub const CONTROL_COST : Int = 75
+
+pub const CONTROL_TTL : Int = 24
 
 pub const CS_GOLD : Int = 6
 
@@ -77,6 +87,8 @@ pub const ITEM_SLOTS : Int = 3
 pub const KILL_GOLD : Int = 160
 
 pub const KILL_XP : Int = 45
+
+pub const LANE_TRICKLE : Int = 3
 
 pub const LEVEL_XP : Int = 55
 
@@ -136,6 +148,10 @@ pub const TOWER_DAMAGE : Int = 26
 
 pub const WARD_CHARGES : Int = 2
 
+pub const WARD_CONTROL : Int = 1
+
+pub const WARD_STEALTH : Int = 0
+
 pub const WARD_TTL : Int = 8
 
 pub fn ability_support(Champ) -> Int
@@ -158,9 +174,7 @@ pub fn blink_targets(Int) -> Array[Int]
 
 pub let brush_nodes : Array[Int]
 
-pub fn camp_gold(Int) -> Int
-
-pub fn camp_xp(Int) -> Int
+pub fn camp_side(Int) -> Int
 
 pub fn coherence_report(Recorded) -> CoherenceReport
 
@@ -193,6 +207,8 @@ pub fn forced_overlap(Int, Int, Int) -> Int
 pub fn hops(Int, Int) -> Int
 
 pub fn is_brush(Int) -> Bool
+
+pub fn is_farmable(Int) -> Bool
 
 pub fn item_builds_into(String) -> Array[String]
 
@@ -292,6 +308,7 @@ pub(all) enum Action {
   AttackNeutral
   Farm
   PlaceWard(Int)
+  PlaceControl(Int)
   Buy(String)
   Recall
   Hold
@@ -312,6 +329,14 @@ pub(all) struct Ask {
   floor : String
 }
 pub fn Ask::discriminates(Self) -> Bool
+
+pub struct Camp {
+  node : Int
+  side : Int
+  mut down_for : Int
+}
+pub fn Camp::copy(Self) -> Self
+pub fn Camp::up(Self) -> Bool
 
 pub struct Champ {
   id : Int
@@ -343,6 +368,7 @@ pub struct Champ {
   mut kills : Int
   mut deaths : Int
   mut assists : Int
+  mut camps : Int
   mut cs : Int
   mut cs_lost : Int
   items : Array[String]
@@ -452,6 +478,7 @@ pub struct Game {
   champs : Array[Champ]
   structures : Array[Structure]
   neutrals : Array[Neutral]
+  camps : Array[Camp]
   wards : Array[Ward]
   push : Array[Int]
   ripe : Array[Int]
@@ -460,6 +487,7 @@ pub struct Game {
   mut soul_team : Int
   baron : Array[Int]
   herald : Array[Int]
+  camps_lost : Array[Int]
   mut tick : Int
   mut winner : Int
   log : Array[String]
@@ -476,11 +504,14 @@ pub fn Game::best_item(Self, Int, Int, Int) -> String
 pub fn Game::best_ward(Self, Int, Int) -> String
 pub fn Game::blind_brush(Self, Int) -> Array[Int]
 pub fn Game::buff_pct(Self, Int) -> Int
+pub fn Game::camp_at(Self, Int) -> Camp?
+pub fn Game::camps_up(Self, Int) -> Array[Camp]
 pub fn Game::can_contest(Self, Int, Int) -> Bool
 pub fn Game::cc_pick(Self, Int, Int) -> Champ?
 pub fn Game::champs_at(Self, Int, Int) -> Array[Champ]
 pub fn Game::copy(Self) -> Self
 pub fn Game::counter_item(Self, Champ) -> String
+pub fn Game::counter_jungle_worth(Self, Int, Int) -> Bool
 pub fn Game::damage_to(Self, Champ, Int, Int) -> Int
 pub fn Game::damage_to_champ(Self, Champ, Champ) -> Int
 pub fn Game::damage_to_structure(Self, Champ) -> Int
@@ -494,6 +525,7 @@ pub fn Game::drake_value(Self, Int) -> Int
 pub fn Game::drakes_of(Self, Int, String) -> Int
 pub fn Game::drakes_slain(Self) -> Int
 pub fn Game::drakes_to_soul(Self, Int) -> Int
+pub fn Game::enemy_ward_near(Self, Int, Int) -> Bool
 pub fn Game::fight_action(Self, Champ) -> Action
 pub fn Game::fight_actions(Self, Int) -> Map[Int, Action]
 pub fn Game::fight_actions_focus(Self, Int, Int, Int) -> Map[Int, Action]
@@ -517,6 +549,7 @@ pub fn Game::neediest_ally(Self, Champ) -> Champ?
 pub fn Game::neutral_at(Self, Int) -> Neutral?
 pub fn Game::neutral_named(Self, String) -> Neutral?
 pub fn Game::new() -> Self
+pub fn Game::next_camp(Self, Int, Int) -> Int
 pub fn Game::nexus_exposed(Self, Int) -> Bool
 pub fn Game::objective_target(Self, Int) -> Int
 pub fn Game::objective_value(Self, Int) -> Int
@@ -641,6 +674,7 @@ pub(all) struct Plan {
   goto : Array[Int]
   rally : Int
   why : String
+  grouped : Bool
   hold_lane : Int
 }
 
@@ -689,9 +723,11 @@ pub fn Structure::plates_for_hp(Self) -> Int
 pub struct Ward {
   node : Int
   team : Int
+  kind : Int
   mut ttl : Int
 }
 pub fn Ward::copy(Self) -> Self
+pub fn Ward::sweeps(Self, Int) -> Bool
 
 // Type aliases
 

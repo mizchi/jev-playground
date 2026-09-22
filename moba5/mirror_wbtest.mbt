@@ -144,6 +144,9 @@ fn mirror_complaint(g : Game) -> String {
     if x.cs != y.cs || x.cs_lost != y.cs_lost {
       bad.push("\{x.name} cs \{x.cs}/\{x.cs_lost} against \{y.cs}/\{y.cs_lost}")
     }
+    if x.camps != y.camps {
+      bad.push("\{x.name} camps \{x.camps} against \{y.camps}")
+    }
     if x.cd != y.cd || x.stunned != y.stunned || x.shield != y.shield {
       bad.push("\{x.name} cooldown \{x.cd} against \{y.cd}")
     }
@@ -177,6 +180,24 @@ fn mirror_complaint(g : Game) -> String {
       }
     }
   }
+  // A camp mirrors to the other side's camp, so their timers move together in
+  // a mirror match — and so do the counters that price a counter-jungle.
+  for camp in g.camps {
+    match g.camp_at(mirror_node(camp.node)) {
+      Some(other) =>
+        if camp.down_for != other.down_for {
+          bad.push(
+            "camp \{node_name(camp.node)} down \{camp.down_for} against \{other.down_for}",
+          )
+        }
+      None => bad.push("camp \{node_name(camp.node)} has no mirror")
+    }
+  }
+  if g.camps_lost[TEAM_A] != g.camps_lost[TEAM_B] {
+    bad.push(
+      "camps lost \{g.camps_lost[TEAM_A]} against \{g.camps_lost[TEAM_B]}",
+    )
+  }
   if g.drake_total(TEAM_A) != g.drake_total(TEAM_B) {
     bad.push("drakes \{g.drake_total(TEAM_A)} against \{g.drake_total(TEAM_B)}")
   }
@@ -185,6 +206,21 @@ fn mirror_complaint(g : Game) -> String {
   }
   if g.baron[TEAM_A] != g.baron[TEAM_B] || g.herald[TEAM_A] != g.herald[TEAM_B] {
     bad.push("buffs")
+  }
+  // The wards, by kind and by mirrored node: a control ward that cleared on
+  // one side and not the other is exactly the sort of thing this test is for.
+  for w in g.wards_of(TEAM_A) {
+    let mut matched = false
+    for v in g.wards_of(TEAM_B) {
+      if v.node == mirror_node(w.node) && v.kind == w.kind && v.ttl == w.ttl {
+        matched = true
+      }
+    }
+    if !matched {
+      bad.push(
+        "ward at \{node_name(w.node)} kind \{w.kind} ttl \{w.ttl} has no mirror",
+      )
+    }
   }
   if g.wards_of(TEAM_A).length() != g.wards_of(TEAM_B).length() {
     bad.push("wards on the map")

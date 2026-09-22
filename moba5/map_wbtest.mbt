@@ -48,11 +48,18 @@ test "the map's tables line up" {
   assert_eq(node_name(RIV_BOT), "riv_bot")
   assert_eq(node_name(A_BASE), "a_base")
   assert_eq(node_name(B_BASE), "b_base")
-  // Nobody farms in the river or at a base; everywhere else pays.
-  assert_eq(camp_gold(RIV_TOP), 0)
-  assert_eq(camp_gold(A_BASE), 0)
-  assert_true(camp_gold(4) > 0)
-  assert_true(camp_gold(17) > camp_gold(4)) // a jungle camp beats a lane wave
+  // Nobody farms in the river or at a base; lanes and the jungle both do.
+  assert_false(is_farmable(RIV_TOP))
+  assert_false(is_farmable(A_BASE))
+  assert_true(is_farmable(4))
+  assert_true(is_farmable(17))
+  // And a jungle node belongs to a side, which is what makes taking one on
+  // the other side a counter-jungle rather than a synonym for farming.
+  assert_eq(camp_side(4), 0) // a lane belongs to nobody
+  assert_eq(camp_side(node_id("a_jg_top")), TEAM_A)
+  assert_eq(camp_side(node_id("a_jg_bot")), TEAM_A)
+  assert_eq(camp_side(node_id("b_jg_top")), TEAM_B)
+  assert_eq(camp_side(node_id("b_jg_bot")), TEAM_B)
 }
 
 ///|
@@ -75,7 +82,14 @@ test "the map is symmetric under the A-B relabelling" {
     assert_true(m >= 0)
     assert_eq(mirror_node(m), i) // the relabelling is its own inverse
     assert_eq(node_lane[i], node_lane[m]) // a top lane node mirrors to one
-    assert_eq(camp_gold(i), camp_gold(m))
+    assert_eq(is_farmable(i), is_farmable(m))
+    // A camp mirrors to the OTHER side's camp: that is what the relabelling
+    // means, and it is the property counter-jungling rests on.
+    if camp_side(i) != 0 {
+      assert_eq(camp_side(m), enemy_of(camp_side(i)))
+    } else {
+      assert_eq(camp_side(m), 0)
+    }
     assert_eq(adjacency[i].length(), adjacency[m].length())
     for j in adjacency[i] {
       assert_true(adjacency[m].contains(mirror_node(j)))
@@ -189,4 +203,75 @@ test "wards go to the jungle and the river" {
   assert_true(ward_spots(18).contains(RIV_BOT))
   // Standing on a lane tower with no jungle next door, there is not.
   assert_true(ward_spots(4).contains(RIV_TOP))
+}
+
+///|
+/// The shape of the map, as the distances a rotation actually pays.
+///
+/// These are the numbers that make the lanes different from each other, and
+/// every one of them was wrong before the jungle stopped being a highway: the
+/// fountain opened onto both jungle quadrants and each quadrant touched six
+/// nodes, so base to base was four hops through any lane and a jungler was one
+/// step from a camp after every recall.
+test "the lanes and the jungle are the shape the real map has" {
+  // A base's only exits are its own three inner towers — one per lane, and
+  // three DIFFERENT lanes, so the fountain is a fork and not a crossroads.
+  assert_eq(adjacency[A_BASE].length(), 3)
+  let from_base = []
+  for n in adjacency[A_BASE] {
+    assert_true(node_names[n].has_prefix("a2_"))
+    assert_false(from_base.contains(node_lane[n]))
+    from_base.push(node_lane[n])
+  }
+  assert_eq(from_base.length(), lanes.length())
+  // A jungle quadrant has exactly three: two outer-tower nodes and one river.
+  for n in brush_nodes {
+    assert_eq(adjacency[n].length(), 3)
+    let mut rivers = 0
+    let mut outers = 0
+    for m in adjacency[n] {
+      if node_lane[m] == "river" {
+        rivers += 1
+      } else if node_names[m].has_prefix("a1_") ||
+        node_names[m].has_prefix("b1_") {
+        outers += 1
+      }
+    }
+    assert_eq(rivers, 1)
+    assert_eq(outers, 2)
+  }
+
+  // Base to base is the full length of a lane, the same through each of them.
+  // The sameness is a limitation and not a property: on the real map mid is
+  // the diagonal and shorter, and five nodes a lane cannot say that.
+  assert_eq(hops(A_BASE, B_BASE), 6)
+  for lane in lanes {
+    assert_eq(hops(A_BASE, node_id("mid_\{lane}")), 3)
+  }
+
+  // The jungle is a walk from the fountain, not a step.
+  for n in brush_nodes {
+    assert_true(hops(n, A_BASE) >= 3)
+    assert_true(hops(n, B_BASE) >= 3)
+  }
+
+  // And the asymmetry that decides which half of the map an objective pulls:
+  // top is near Baron and far from Dragon, bot the reverse, and mid is the
+  // only lane equally close to both.
+  assert_eq(hops(node_id("a1_top"), RIV_TOP), 2)
+  assert_eq(hops(node_id("a1_top"), RIV_BOT), 4)
+  assert_eq(hops(node_id("a1_bot"), RIV_TOP), 4)
+  assert_eq(hops(node_id("a1_bot"), RIV_BOT), 2)
+  assert_eq(hops(node_id("a1_mid"), RIV_TOP), 2)
+  assert_eq(hops(node_id("a1_mid"), RIV_BOT), 2)
+  // The far corner of the map is a bottom-lane inner tower against Baron.
+  assert_eq(hops(node_id("a2_bot"), RIV_TOP), 5)
+
+  // Nothing is cut off, which is the one way an edge list can be wrong that
+  // no other assertion here would notice.
+  for i in 0..<N_NODES {
+    for j in 0..<N_NODES {
+      assert_true(hops(i, j) < N_NODES)
+    }
+  }
 }

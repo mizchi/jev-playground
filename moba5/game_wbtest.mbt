@@ -470,7 +470,7 @@ test "every legal action round-trips through its key" {
 test "a copied game shares nothing with its original" {
   let g = Game::with_comps(comp_by_name("meta"), comp_by_name("dive"))
   g.neutrals[0].spawn_in = 0
-  g.wards.push({ node: RIV_BOT, team: TEAM_A, ttl: 4, })
+  g.wards.push({ node: RIV_BOT, team: TEAM_A, kind: WARD_STEALTH, ttl: 4, })
   let h = g.copy()
   h.champs[0].hp = 1
   h.champs[0].items.push("blade")
