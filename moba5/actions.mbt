@@ -194,8 +194,8 @@ pub fn Game::legal_actions(self : Game, c : Champ) -> Array[Action] {
   // A control ward is bought with gold, not carried, so it is legal wherever
   // a stealth ward is as long as the pocket holds it. It competes with the
   // shop for the same gold, which is the decision.
-  if c.gold >= CONTROL_COST {
-    for n in ward_spots(c.node) {
+  for n in ward_spots(c.node) {
+    if c.can_place_control(n) {
       out.push(PlaceControl(n))
     }
   }

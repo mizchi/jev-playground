@@ -167,7 +167,7 @@ fn Audit::play(
     }
     // Before the tick: what everyone is worth, and the counters the tick can
     // move. A control ward is gold leaving without an item arriving, so the
-    // legal ones are priced here, with the same test `Game::step` applies.
+    // ones that will land are priced here, by the rule `Game::step` applies.
     let wealth0 = Array::make(n, 0)
     let xp0 = Array::make(n, 0)
     let cs0 = Array::make(n, 0)
@@ -184,9 +184,7 @@ fn Audit::play(
       assists0[c.id] = c.assists
       match actions.get(c.id) {
         Some(PlaceControl(nd)) =>
-          if c.can_act() &&
-            c.gold >= CONTROL_COST &&
-            (nd == c.node || adjacency[c.node].contains(nd)) {
+          if c.can_act() && c.can_place_control(nd) {
             spend[c.id] = CONTROL_COST
           }
         _ => ()

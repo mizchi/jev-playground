@@ -455,6 +455,16 @@ pub fn Champ::can_buy(self : Champ, key : String) -> Bool {
 }
 
 ///|
+/// Whether this champion may put a control ward on `n` this tick: the gold for
+/// it, and a node within reach. One rule in three places — the legal move, the
+/// tick, and the audit that prices what the tick spent — so it lives here, as
+/// buying does.
+pub fn Champ::can_place_control(self : Champ, n : Int) -> Bool {
+  self.gold >= CONTROL_COST &&
+  (n == self.node || adjacency[self.node].contains(n))
+}
+
+///|
 /// Take the gold, consume the components, hand over the item. Assumes
 /// `can_buy`; the callers check it.
 pub fn Champ::apply_buy(self : Champ, key : String) -> Unit {
@@ -2224,8 +2234,7 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
           events.push("\{c.name} bought \{key} for \{paid}")
         }
       Some(PlaceControl(n)) =>
-        if c.gold >= CONTROL_COST &&
-          (n == c.node || adjacency[c.node].contains(n)) {
+        if c.can_place_control(n) {
           c.gold -= CONTROL_COST
           // It clears the node as it lands: every enemy ward in range goes,
           // control wards included, so a contested node goes to whoever paid
