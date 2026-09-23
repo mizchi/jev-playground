@@ -45,7 +45,8 @@ struct Opts {
   descriptions : Bool
   /// Where to write the per-answer log, or where to read one back from.
   answers : String
-  /// Re-derive the wording comparison from a committed answers log. No API key.
+  /// Re-derive the wording comparison from a committed answers log, or with
+  /// `--bench` re-mark the benchmark's recorded answers. No API key.
   from_answers : String
   /// Ask Jev to draft from the raw archetype stats, against the empirical
   /// arena.
@@ -585,19 +586,26 @@ let arena_levels : Array[Int] = [1, @game.MAX_LEVEL]
 /// already follows.
 struct Answer {
   run : Int
-  /// `two_way` or `three_way`.
+  /// `two_way` or `three_way` for the wording logs, `bench` for the suite.
   arm : String
   scenario : String
   key : String
   class_ : String
+  /// The truth when the answer was recorded. A replay compares it with the
+  /// truth the simulator gives now, so a rules change that moved an answer key
+  /// is counted rather than silently re-marking old answers.
   truth : String
   said : String
   conf : Double
+  /// The model that answered, and a fingerprint of the exact request it was
+  /// answering — both empty in the wording logs, which predate them.
+  model : String
+  q : String
 }
 
 ///|
 fn Answer::to_json_line(self : Answer) -> String {
-  let j : Json = {
+  let j : Map[String, Json] = {
     "run": Json::number(self.run.to_double()),
     "arm": Json::string(self.arm),
     "scenario": Json::string(self.scenario),
@@ -607,7 +615,15 @@ fn Answer::to_json_line(self : Answer) -> String {
     "said": Json::string(self.said),
     "conf": Json::number(self.conf),
   }
-  j.stringify()
+  // Only when set, so a wording log written today reads byte for byte like
+  // the ones already committed.
+  if self.model != "" {
+    j["model"] = Json::string(self.model)
+  }
+  if self.q != "" {
+    j["q"] = Json::string(self.q)
+  }
+  Json::object(j).stringify()
 }
 
 ///|
@@ -621,6 +637,8 @@ fn answer_of_json(j : Json) -> Answer {
     truth: as_str(field(j, "truth")),
     said: as_str(field(j, "said")),
     conf: as_num(field(j, "conf")),
+    model: as_str(field(j, "model")),
+    q: as_str(field(j, "q")),
   }
 }
 
@@ -906,6 +924,8 @@ async fn run_wording(
                 truth: ask.truth,
                 said,
                 conf,
+                model: "",
+                q: "",
               })
             }
           None => ()
@@ -1412,6 +1432,9 @@ fn run_tournament(policy : String, max_ticks : Int) -> Unit {
 /// has told you how large a difference has to be before it means anything.
 struct AskRuns {
   ask : @game.Ask
+  /// The scenario's name, which with the question's key is how a recorded
+  /// answer finds its row again.
+  scenario : String
   /// Which scenario this question was asked in, for the detail lines.
   where_ : String
   said : Array[String]
@@ -1420,8 +1443,27 @@ struct AskRuns {
 }
 
 ///|
-fn AskRuns::new(ask : @game.Ask, where_ : String) -> AskRuns {
-  { ask, where_, said: [], conf: [], hits: 0, }
+fn AskRuns::new(ask : @game.Ask, sc : @game.Scenario) -> AskRuns {
+  {
+    ask,
+    scenario: sc.name,
+    where_: "\{sc.name} — \{sc.note}",
+    said: [],
+    conf: [],
+    hits: 0,
+  }
+}
+
+///|
+/// One row per question, in suite order.
+fn bench_rows(suite : Array[@game.Scenario]) -> Array[AskRuns] {
+  let rows : Array[AskRuns] = []
+  for sc in suite {
+    for ask in sc.asks {
+      rows.push(AskRuns::new(ask, sc))
+    }
+  }
+  rows
 }
 
 ///|
@@ -1675,15 +1717,12 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
 
   // One row per question, in suite order, reused across every repeat so the
   // questions really are identical between runs.
-  let rows : Array[AskRuns] = []
-  for sc in suite {
-    for ask in sc.asks {
-      rows.push(AskRuns::new(ask, "\{sc.name} — \{sc.note}"))
-    }
-  }
+  let rows = bench_rows(suite)
   let stats = Stats::new()
   // Per-run overall scores, so the spread is visible rather than averaged away.
   let per_run : Array[Int] = []
+  // Every answer as it came back, for `--answers`.
+  let log : Array[Answer] = []
   for run in 0..<repeat {
     if opts.dry {
       break
@@ -1693,6 +1732,7 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     let mut run_answered = 0
     for sc in suite {
       let qs = scenario_questions(sc)
+      let q = request_fingerprint(sc)
       let resp = ask_with_retry(
         client,
         { state: sc.state, model: opts.model, questions: qs, },
@@ -1711,6 +1751,18 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
               r.hits += 1
               run_hits += 1
             }
+            log.push({
+              run: run + 1,
+              arm: "bench",
+              scenario: sc.name,
+              key: ask.key,
+              class_: ask.class_,
+              truth: ask.truth,
+              said,
+              conf,
+              model: opts.model,
+              q,
+            })
           }
           None => ()
         }
@@ -1726,7 +1778,41 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
   if repeat > 1 && !opts.dry {
     println("")
   }
+  if opts.answers != "" && !opts.dry {
+    let lines : Array[String] = []
+    for a in log {
+      lines.push(a.to_json_line())
+    }
+    @fs.write_file(opts.answers, lines.join("\n") + "\n")
+    println("  wrote \{log.length()} answers to \{opts.answers}")
+    println("")
+  }
+  print_bench(
+    opts,
+    opts.model,
+    rows,
+    per_run,
+    repeat,
+    asks_total,
+    stats,
+    "a request failed",
+  )
+}
 
+///|
+/// The table, from rows that already hold their answers — however those
+/// answers arrived. A live run and a replay of its log go through this one
+/// function, so the two cannot print different tables for the same answers.
+fn print_bench(
+  opts : Opts,
+  model : String,
+  rows : Array[AskRuns],
+  per_run : Array[Int],
+  repeat : Int,
+  asks_total : Int,
+  stats : Stats,
+  missing_why : String,
+) -> Unit {
   let tallies : Map[String, Tally] = Map([])
   fn tally(name : String) -> Tally {
     match tallies.get(name) {
@@ -1801,7 +1887,7 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
         marks.push("\{r.said[k]}\{if ok { "" } else { "*" }}")
       }
       println(
-        "        \{opts.model}: \{r.hits}/\{r.said.length()} — \{marks.join(", ")}\{if r.comparable() && !r.stable() { "   (moved between runs)" } else { "" }}",
+        "        \{model}: \{r.hits}/\{r.said.length()} — \{marks.join(", ")}\{if r.comparable() && !r.stable() { "   (moved between runs)" } else { "" }}",
       )
     }
   }
@@ -1809,7 +1895,7 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     println("")
   }
 
-  let model_col = if opts.dry { "—" } else { opts.model }
+  let model_col = if opts.dry { "—" } else { model }
   println(
     "  class      asks  ans  \{@report.pad(model_col, 16)} floor        const  stable   conf(hit)  conf(miss)",
   )
@@ -1943,7 +2029,7 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
   }
   if missing > 0 {
     println(
-      "  \{missing} answer(s) missing because a request failed — left out, not scored as wrong",
+      "  \{missing} answer(s) missing because \{missing_why} — left out, not scored as wrong",
     )
   }
   if stats.requests > 0 && overall.n > 0 {
@@ -1955,6 +2041,166 @@ async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
     )
   }
   println("")
+}
+
+///|
+/// A fingerprint of the request a scenario sends: its state and every question
+/// on it, serialized exactly as the client serializes them, minus the model's
+/// name.
+///
+/// An answer is an answer to one request. The replay below re-marks recorded
+/// answers against the truths and the floor the code gives today, and that is
+/// only honest while the question itself has not moved: a reworded
+/// instruction, a new option or a different state would make an old answer an
+/// answer to something else. So every recorded answer carries this, and the
+/// replay refuses the ones whose request no longer matches. FNV-1a over the
+/// JSON text — nothing cryptographic is wanted, only "these are not the same
+/// bytes".
+fn request_fingerprint(sc : @game.Scenario) -> String {
+  let req : @lib.SystemOneRequest = {
+    state: sc.state,
+    model: "",
+    questions: scenario_questions(sc),
+  }
+  let mut h = 2166136261U
+  for ch in req.to_json().stringify() {
+    h = (h ^ ch.to_int().reinterpret_as_uint()) * 16777619U
+  }
+  h.to_string()
+}
+
+///|
+/// `--bench --from-answers`: the benchmark table, re-marked from a recorded
+/// log against the truths and the floor the code gives NOW. No API.
+///
+/// This is what lets a floor change be measured on its own. Teaching the
+/// baseline a rule moves the floor column, and it can move truths as well —
+/// the oracle plays that same baseline forward — so a fresh model run after
+/// such a change moves three things at once: the floor, some truths, and the
+/// model's own draw. Re-marking the answers already recorded holds the model
+/// fixed, and the lines printed first say how much of the rest moved.
+async fn replay_bench(opts : Opts) -> Unit {
+  let path = opts.from_answers
+  let answers = read_answers(path)
+  let suite = @game.bench_suite()
+  let asks_total = suite.fold(init=0, (n, sc) => n + sc.ask_count())
+  let mut model = ""
+  let mut runs = 0
+  for a in answers {
+    if a.arm == "bench" {
+      if model == "" {
+        model = a.model
+      }
+      if a.run > runs {
+        runs = a.run
+      }
+    }
+  }
+  @report.header(
+    "moba5 benchmark — a policy against the simulator's own answers",
+    "\{model}, \{suite.length()} scenarios, \{asks_total} questions × \{runs} run(s), re-marked from \{path} with no API",
+  )
+  let rows = bench_rows(suite)
+  let at : Map[String, Int] = Map([])
+  for i, r in rows {
+    at["\{r.scenario}/\{r.ask.key}"] = i
+  }
+  let now : Map[String, String] = Map([])
+  for sc in suite {
+    now[sc.name] = request_fingerprint(sc)
+  }
+  let per_run = Array::make(runs, 0)
+  let per_run_n = Array::make(runs, 0)
+  let stale : Array[String] = []
+  let gone : Array[String] = []
+  let moved : Array[String] = []
+  let mut used = 0
+  let mut bench_lines = 0
+  for a in answers {
+    if a.arm != "bench" || a.run < 1 {
+      continue
+    }
+    bench_lines += 1
+    let tag = "\{a.scenario}/\{a.key}"
+    let i = match at.get(tag) {
+      Some(i) => i
+      None => {
+        if !gone.contains(tag) {
+          gone.push(tag)
+        }
+        continue
+      }
+    }
+    // The question it answered is not the question the suite asks now.
+    if now.get(a.scenario) != Some(a.q) {
+      if !stale.contains(a.scenario) {
+        stale.push(a.scenario)
+      }
+      continue
+    }
+    let r = rows[i]
+    if a.truth != r.ask.truth {
+      let line = "\{tag}: \{a.truth} → \{r.ask.truth}"
+      if !moved.contains(line) {
+        moved.push(line)
+      }
+    }
+    r.said.push(a.said)
+    r.conf.push(a.conf)
+    used += 1
+    per_run_n[a.run - 1] += 1
+    if @game.truth_accepts(r.ask.truth, a.said) {
+      r.hits += 1
+      per_run[a.run - 1] += 1
+    }
+  }
+  println("  \{used} of \{bench_lines} recorded answers re-marked")
+  if moved.is_empty() {
+    println("  no truth has moved since the log was recorded")
+  } else {
+    println(
+      "  \{moved.length()} truth(s) moved since the log was recorded, and are marked against the new one:",
+    )
+    for m in moved {
+      println("    \{m}")
+    }
+  }
+  if !stale.is_empty() {
+    println(
+      "  left out, because the request they answered has changed since: \{stale.join(", ")}",
+    )
+  }
+  if !gone.is_empty() {
+    println(
+      "  left out, because the suite no longer asks them: \{gone.join(", ")}",
+    )
+  }
+  println("")
+  if runs > 1 {
+    for k in 0..<runs {
+      println(
+        "  run \{k + 1}: \{per_run[k]}/\{per_run_n[k]}  \{rate(per_run[k], per_run_n[k])}",
+      )
+    }
+    println("")
+  }
+  print_bench(
+    opts,
+    model,
+    rows,
+    per_run,
+    runs,
+    asks_total,
+    Stats::new(),
+    "the request it answered changed after the log was recorded",
+  )
+  // A moved truth is what a rules change is expected to do, and it is marked
+  // and listed above. An answer that could not be placed at all is different:
+  // the table printed is then not the table of this log, and a replay recipe
+  // that passed anyway would let a committed number drift without a failure.
+  if !stale.is_empty() || !gone.is_empty() {
+    @sys.exit(1)
+  }
 }
 
 // ------------------------------------------------------------------- draft
@@ -2250,12 +2496,12 @@ async fn main {
       @argparse.OptionArg(
         "answers",
         long="answers",
-        about="--wording: write every answer to this file (JSON lines), so the comparison can be re-derived without the API.",
+        about="--bench, --wording: write every answer to this file (JSON lines), so the table can be re-derived without the API.",
       ),
       @argparse.OptionArg(
         "from-answers",
         long="from-answers",
-        about="Re-derive the wording comparison from an answers file written earlier. Needs no API key.",
+        about="Re-derive the wording comparison from an answers file written earlier — or, with --bench, re-mark the benchmark's recorded answers against today's truths and floor. Needs no API key.",
       ),
       @argparse.OptionArg(
         "hcap-a",
@@ -2369,6 +2615,10 @@ async fn main {
 
 ///|
 async fn run(opts : Opts) -> Unit {
+  if opts.bench && opts.from_answers != "" {
+    replay_bench(opts)
+    return
+  }
   if opts.arena {
     run_arena(opts.max_ticks)
   }
