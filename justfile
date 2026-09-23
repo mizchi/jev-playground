@@ -180,6 +180,14 @@ replay-moba5-wording: moon-build
     moon run --target native cmd/moba5 -- --from-answers moba5/runs/wording.jsonl
     moon run --target native cmd/moba5 -- --from-answers moba5/runs/descriptions.jsonl
 
+# @inputs: moba5/** cmd/moba5/** moba5/runs/**
+# @cost: 3.6
+# Re-mark docs/56's recorded benchmark run (165 questions x 5) against today's
+# truths and today's floor, no API. Fails if any recorded answer no longer
+# matches the question the suite asks
+replay-moba5-bench-answers: moon-build
+    moon run --target native cmd/moba5 -- --bench --from-answers moba5/runs/bench.jsonl
+
 # ---------------------------------------------------------------- JS checks
 
 # @inputs: jevlang-js/**
@@ -530,5 +538,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-moba5 replay-moba5-bench replay-moba5-comps replay-moba5-coherence replay-moba5-wording test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-moba5 replay-moba5-bench replay-moba5-comps replay-moba5-coherence replay-moba5-wording replay-moba5-bench-answers test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
     @echo "all green"
