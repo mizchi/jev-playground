@@ -2211,6 +2211,10 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
 
   // Movement, recalls and purchases first, so combat happens where champions
   // end up and with the items they just bought.
+  //
+  // Control wards are paid for here and land after the loop, all together —
+  // see below.
+  let new_controls : Array[(Int, Int)] = []
   for c in self.champs {
     if !c.can_act() {
       continue
@@ -2236,36 +2240,7 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       Some(PlaceControl(n)) =>
         if c.can_place_control(n) {
           c.gold -= CONTROL_COST
-          // It clears the node as it lands: every enemy ward in range goes,
-          // control wards included, so a contested node goes to whoever paid
-          // last. A stealth ward placed there later is swept at the end of
-          // the tick instead — see the ward phase.
-          let kept : Array[Ward] = []
-          let mut cleared = 0
-          for w in self.wards {
-            if w.team != c.team &&
-              w.ttl > 0 &&
-              (w.node == n || adjacency[n].contains(w.node)) {
-              cleared += 1
-            } else {
-              kept.push(w)
-            }
-          }
-          self.wards.clear()
-          for w in kept {
-            self.wards.push(w)
-          }
-          self.wards.push({
-            node: n,
-            team: c.team,
-            kind: WARD_CONTROL,
-            ttl: CONTROL_TTL,
-          })
-          if cleared > 0 {
-            events.push(
-              "\{c.name}'s control ward at \{node_name(n)} cleared \{cleared} enemy ward(s)",
-            )
-          }
+          new_controls.push((c.id, n))
         }
       Some(PlaceWard(n)) =>
         if c.wards > 0 && (n == c.node || adjacency[c.node].contains(n)) {
@@ -2278,6 +2253,58 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
           })
         }
       _ => ()
+    }
+  }
+
+  // The control wards bought this tick land together. Each clears every enemy
+  // ward in its range that was already there, control wards included, so a
+  // contested node goes to whoever paid last; a stealth ward placed there
+  // later is swept at the end of the tick instead — see the ward phase.
+  //
+  // "Last" is by tick. Two control wards that go down in the same tick are
+  // equally new, so neither clears the other. They used to land one by one,
+  // inside the loop above, and so in the order it visits champions: every
+  // same-tick duel went to team B, whose champions come after A's — 30
+  // duels in 14 of the 72 tournament games, every one of them B's. The
+  // mirror matches never staged one, so the mirror test could not see it; a
+  // cheaper ward staged one by tick 8. Same shape as docs/56 §8's even-fight
+  // bug, in the ward phase.
+  if !new_controls.is_empty() {
+    let cleared = Array::make(new_controls.length(), 0)
+    let kept : Array[Ward] = []
+    for w in self.wards {
+      let mut gone = false
+      for i, placed in new_controls {
+        let (who, n) = placed
+        if w.team != self.champs[who].team &&
+          w.ttl > 0 &&
+          (w.node == n || adjacency[n].contains(w.node)) {
+          cleared[i] += 1
+          gone = true
+        }
+      }
+      if !gone {
+        kept.push(w)
+      }
+    }
+    self.wards.clear()
+    for w in kept {
+      self.wards.push(w)
+    }
+    for i, placed in new_controls {
+      let (who, n) = placed
+      let c = self.champs[who]
+      self.wards.push({
+        node: n,
+        team: c.team,
+        kind: WARD_CONTROL,
+        ttl: CONTROL_TTL,
+      })
+      if cleared[i] > 0 {
+        events.push(
+          "\{c.name}'s control ward at \{node_name(n)} cleared \{cleared[i]} enemy ward(s)",
+        )
+      }
     }
   }
 

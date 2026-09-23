@@ -270,3 +270,29 @@ test "a mirror match tells both teams the same thing" {
     }
   }
 }
+
+///|
+/// Two control wards that go down in the same tick are equally new, so neither
+/// clears the other, whichever team's champions `step` visits first.
+///
+/// They used to land one by one, in champion order, and so every same-tick
+/// duel was team B's: its ward cleared A's, never the other way round. The
+/// played mirror matches never staged one — neither jungler can afford a ward
+/// that early — so the test above could not see it; 30 of them happened in 14
+/// of the 72 tournament games.
+test "control wards placed in the same tick both stand" {
+  let g = Game::new()
+  let a = g.champs[1]
+  let b = g.champs[6]
+  assert_eq(node_name(a.node), "a_jg_bot")
+  assert_eq(node_name(b.node), "b_jg_bot")
+  a.gold = CONTROL_COST
+  b.gold = CONTROL_COST
+  let actions : Map[Int, Action] = Map([])
+  actions[a.id] = PlaceControl(RIV_BOT)
+  actions[b.id] = PlaceControl(RIV_BOT)
+  g.step(actions)
+  let standing = g.wards.filter(w => w.kind == WARD_CONTROL && w.node == RIV_BOT)
+  assert_eq(standing.length(), 2)
+  assert_eq(mirror_complaint(g), "")
+}
