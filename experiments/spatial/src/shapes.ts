@@ -6,6 +6,8 @@
  *   npx tsx src/shapes.ts --report        # every table, from the records, no API
  *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --rects   # §1, two rectangles
  *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --solid   # §2, a stack of layers
+ *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --pairs   # §3.1, observer / size / gap
+ *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --swap    # §3.2, layers and rows swapped
  *
  * [docs/64](../../../docs/64-spatial.md) measured relations between the
  * OBSERVER and one thing, on a two-dimensional picture. Two of its limits are
@@ -32,6 +34,10 @@ import { resolve } from "node:path";
 import { Jev, type Answer, type Question } from "../../shared/jev.js";
 import { auc as aucOf, separation } from "../../shared/thresholds.js";
 import { encode, type ArmName } from "./encode.js";
+import { corpus as roomCorpus } from "./grid.js";
+import { heroAt } from "../../roguelike/src/nethack.js";
+import { stairsAt } from "../../roguelike/src/perceive.js";
+import { rehydrate } from "../../roguelike/src/run.js";
 import {
   PAIRED_HEAD,
   type ProbeRow,
@@ -61,6 +67,15 @@ import {
   sceneOf as rectScene,
   overlapArea,
 } from "./rects.js";
+import {
+  GAPS,
+  VARIANTS,
+  type Variant,
+  corpus as pairCorpus,
+  draw as drawPair,
+  probesFor as pairProbes,
+  sceneOf as pairScene,
+} from "./pairs.js";
 import {
   SOLID_ARMS,
   SOLID_LEAKY,
@@ -210,6 +225,92 @@ async function runSolid(reps: number): Promise<void> {
   console.log(`  ${cases.length} blocks x ${SOLID_ARMS.length} encodings, ${jev.calls} requests -> records/solid.json`);
 }
 
+// -------------------------------------------------- TODO §1.15: two follow-ups
+
+/**
+ * One case asked as several requests, all built from the same question list.
+ * The three §1.15 variants and the two block geometries go through here, so
+ * no variant can be asked a differently worded question by accident.
+ */
+async function askVariants(
+  jev: Jev,
+  states: { variant: string; arm: ArmName | SolidArm; state: Record<string, unknown> }[],
+  nouls: { key: string; band: string; truth: boolean; question: Question }[],
+): Promise<{ variant: string; arm: string; probes: ProbeRow[]; input: number; ms: number }[]> {
+  const questions: Record<string, Question> = Object.fromEntries(nouls.map((p) => [p.key, p.question] as const));
+  return Promise.all(
+    states.map(async ({ variant, arm, state }) => {
+      const started = Date.now();
+      const res = await jev.ask(state, questions);
+      const probes: ProbeRow[] = nouls.map((p) => {
+        const a = res.answers[p.key] as Answer & { noul?: number };
+        return { key: p.key, band: p.band, truth: p.truth, answer: a?.noul ?? Number.NaN };
+      });
+      return { variant, arm: arm as string, probes, input: res.usage.input_tokens, ms: Date.now() - started };
+    }),
+  );
+}
+
+/** The picture and the coordinate table: the two ends docs/64 found matter. */
+const PAIR_ARMS: readonly ArmName[] = ["ascii", "coords"] as const;
+
+async function runPairs(reps: number): Promise<void> {
+  const cases = pairCorpus(reps);
+  const jev = new Jev();
+  const rec: Record_ = { model: jev.model, usage: { input: 0, output: 0, calls: 0, ms: 0 }, rows: [] };
+  for (const [i, c] of cases.entries()) {
+    const states = VARIANTS.flatMap((variant) =>
+      PAIR_ARMS.map((arm) => ({ variant, arm, state: encode(pairScene(c, variant), arm) })),
+    );
+    const out = await askVariants(jev, states, pairProbes(c));
+    for (const o of out) {
+      rec.rows.push({ case: c.key, arm: o.arm as ArmName, variant: o.variant, gap: c.gap, probes: o.probes, input: o.input, ms: o.ms });
+    }
+    if ((i + 1) % 16 === 0 || i + 1 === cases.length) {
+      console.log(`  ${i + 1}/${cases.length} geometries`);
+      rec.usage = { input: jev.inputTokens, output: jev.outputTokens, calls: jev.calls, ms: jev.totalMs };
+      write("pairs.json", rec);
+    }
+  }
+  console.log(`  ${cases.length} geometries x ${VARIANTS.length} variants x ${PAIR_ARMS.length} encodings, ${jev.calls} requests -> records/pairs.json`);
+}
+
+/**
+ * The block corpus at both shapes, in ONE run.
+ *
+ * `7x5` is docs/65 §2's block (seven rows, five layers) and `5x7` swaps them.
+ * Both are collected together so the comparison between them is not also a
+ * comparison between two days -- docs/64 measured that noise at two points,
+ * and the difference this is looking for could be smaller than that.
+ */
+const SWAP_ARMS: readonly SolidArm[] = ["layers", "coords"] as const;
+const SHAPES_OF: Record<string, { height: number; depth: number }> = {
+  "7x5": { height: 7, depth: 5 },
+  "5x7": { height: 5, depth: 7 },
+};
+
+async function runSwap(reps: number): Promise<void> {
+  const jev = new Jev();
+  const rec: Record_ = { model: jev.model, usage: { input: 0, output: 0, calls: 0, ms: 0 }, rows: [] };
+  for (const [variant, dims] of Object.entries(SHAPES_OF)) {
+    const cases = solidCorpus(reps, 20260922, dims);
+    for (const [i, c] of cases.entries()) {
+      const { nouls } = solidProbes(c);
+      const states = SWAP_ARMS.map((arm) => ({ variant, arm, state: encode3(c, arm) }));
+      const out = await askVariants(jev, states, nouls);
+      for (const o of out) {
+        rec.rows.push({ case: `${variant}:${c.key}`, arm: o.arm as unknown as ArmName, variant, width: c.width, probes: o.probes, input: o.input, ms: o.ms });
+      }
+      if ((i + 1) % 32 === 0 || i + 1 === cases.length) {
+        console.log(`  ${variant} ${i + 1}/${cases.length} blocks`);
+        rec.usage = { input: jev.inputTokens, output: jev.outputTokens, calls: jev.calls, ms: jev.totalMs };
+        write("swap.json", rec);
+      }
+    }
+  }
+  console.log(`  2 shapes x 128 blocks x ${SWAP_ARMS.length} encodings, ${jev.calls} requests -> records/swap.json`);
+}
+
 // ------------------------------------------------------------------- reading
 
 function armTable(rec: Record_, arms: readonly string[], leaky: (a: string) => boolean, title: string): void {
@@ -342,11 +443,152 @@ function scoreTable(rec: Record_, arms: readonly string[], leaky: (a: string) =>
   }
 }
 
+/**
+ * TODO §1.15's first measurement: observer, size and gap, one at a time.
+ *
+ * Every geometry was asked as `you/cell`, `object/cell` and `object/block`, so
+ * the two comparisons are paired -- and the gap is a controlled factor, so the
+ * third explanation is read directly off the columns.
+ */
+function pairsReport(rec: Record_): void {
+  console.log("\n  `a_right` by the column gap -- every variant is the same geometry\n");
+  for (const arm of PAIR_ARMS) {
+    console.log(`  ${arm}`);
+    console.log(`  ${"variant".padEnd(14)}${GAPS.map((g) => `gap ${g}`.padStart(8)).join("")}     all   a_above  status`);
+    for (const v of VARIANTS) {
+      const rows = rec.rows.filter((r) => r.arm === arm && r.variant === v);
+      const acc = (key: string, keep: (r: Row) => boolean = () => true): string => {
+        const cell = blank();
+        for (const r of rows.filter(keep)) for (const q of r.probes) if (q.key === key) add(cell, q);
+        return pct(cell.hit, cell.n);
+      };
+      const status = blank();
+      for (const r of rows) for (const q of r.probes) if (q.band === "status") add(status, q);
+      console.log(
+        `  ${v.padEnd(14)}${GAPS.map((g) => acc("a_right", (r) => r.gap === g).padStart(8)).join("")}   ${acc("a_right").padStart(5)}    ${acc("a_above").padStart(5)}   ${pct(status.hit, status.n)}`,
+      );
+    }
+    console.log("");
+  }
+  const pairsFor = (arm: string, a: Variant, b: Variant): { a: number; b: number }[] => {
+    const of = (v: Variant): Map<string, boolean> => {
+      const m = new Map<string, boolean>();
+      for (const r of rec.rows) {
+        if (r.arm !== arm || r.variant !== v) continue;
+        for (const q of r.probes) if (q.key === "a_right") m.set(r.case, right(q));
+      }
+      return m;
+    };
+    const A = of(a);
+    const B = of(b);
+    const out: { a: number; b: number }[] = [];
+    for (const [c, x] of A) {
+      const y = B.get(c);
+      if (y !== undefined) out.push({ a: x ? 1 : 0, b: y ? 1 : 0 });
+    }
+    return out;
+  };
+  console.log("  the two paired comparisons, on `a_right` in the picture\n");
+  console.log(PAIRED_HEAD("A", "B"));
+  pairedLine("observer", pairsFor("ascii", "you/cell", "object/cell"));
+  pairedLine("size", pairsFor("ascii", "object/block", "object/cell"));
+  console.log("\n  observer: A = you/cell, B = object/cell (they differ in ONE legend entry).");
+  console.log("  size:     A = object/block, B = object/cell (the same left columns).");
+}
+
+/** TODO §1.15's second measurement: the block with its rows and layers swapped. */
+function swapReport(rec: Record_): void {
+  console.log("\n  the three axes at both shapes -- collected in one run\n");
+  console.log(`  ${"encoding".padEnd(10)}${"shape".padEnd(22)}${["east (x)", "south (y)", "above (z)", "adjacent"].map((s) => s.padStart(11)).join("")}`);
+  for (const arm of SWAP_ARMS) {
+    for (const [v, dims] of Object.entries(SHAPES_OF)) {
+      const rows = rec.rows.filter((r) => (r.arm as unknown as SolidArm) === arm && r.variant === v);
+      const line = ["east", "south", "above", "adjacent"]
+        .map((key) => {
+          const cell = blank();
+          for (const r of rows) for (const q of r.probes) if (q.key === key) add(cell, q);
+          return pct(cell.hit, cell.n).padStart(11);
+        })
+        .join("");
+      console.log(`  ${arm.padEnd(10)}${`${dims.height} rows, ${dims.depth} layers`.padEnd(22)}${line}`);
+    }
+  }
+  console.log("\n  y is the INNER index and z the OUTER one at both shapes; only their sizes swap.");
+}
+
+/**
+ * The same column question in three corpora, split by how far apart the two
+ * things are. Read from records already committed -- no request is made.
+ *
+ * This is what closes the confound TODO §1.15 did not name: docs/64's rooms
+ * put half their targets one column away, and docs/65's rectangles did not.
+ */
+function gapSplit(): void {
+  const band = (g: number): string =>
+    g === 1 ? "1" : g === 2 ? "2" : g <= 4 ? "3-4" : g <= 8 ? "5-8" : g <= 16 ? "9-16" : "17+";
+  const BANDS = ["1", "2", "3-4", "5-8", "9-16", "17+"];
+  const table = (title: string, rows: { gap: number; arm: string; ok: boolean }[], arms: string[]): void => {
+    console.log(`\n  ${title}\n`);
+    console.log(`  ${"gap".padEnd(8)}${arms.map((a) => a.padStart(14)).join("")}`);
+    for (const b of BANDS) {
+      const line = arms
+        .map((a) => {
+          const at = rows.filter((r) => r.arm === a && band(r.gap) === b);
+          return at.length === 0 ? "             -" : `${pct(at.filter((r) => r.ok).length, at.length)} (${at.length})`.padStart(14);
+        })
+        .join("");
+      console.log(`  ${b.padEnd(8)}${line}`);
+    }
+  };
+  const grid = read("grid.json");
+  if (grid) {
+    const gap = new Map(roomCorpus().map((c) => [c.key, Math.abs(c.target.x - c.observer.x)]));
+    table(
+      "docs/64 rooms, `east` (the `*` against the `@`)",
+      grid.rows.flatMap((r) => r.probes.filter((q) => q.key === "east").map((q) => ({ gap: gap.get(r.case) ?? 0, arm: r.arm, ok: right(q) }))),
+      ["ascii", "coords", "code"],
+    );
+  }
+  const screens = read("screens.json");
+  if (screens) {
+    const walk = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../roguelike/records/walk.json"), "utf8")) as {
+      screens: { game: number; turn: number; policy: string; rows: string[] }[];
+    };
+    const gap = new Map<string, number>();
+    for (const row of walk.screens) {
+      const screen = rehydrate(row);
+      const hero = heroAt(screen);
+      const up = stairsAt(screen, "<");
+      if (hero && up) gap.set(`${row.game}/${row.turn}`, Math.abs(up.x - hero.x));
+    }
+    table(
+      "docs/64 screens, `upstairs_east` (the `<` against the `@`)",
+      screens.rows.flatMap((r) =>
+        r.probes.filter((q) => q.key === "upstairs_east").map((q) => ({ gap: gap.get(r.case) ?? 0, arm: r.arm, ok: right(q) })),
+      ),
+      ["ascii", "coords", "code"],
+    );
+  }
+  const rects = read("rects.json");
+  if (rects) {
+    const gap = new Map(rectCorpus().map((c) => [c.key, Math.abs(c.a.x - c.b.x)]));
+    table(
+      "docs/65 rectangles, `a_starts_left` (two left edges)",
+      rects.rows.flatMap((r) =>
+        r.probes.filter((q) => q.key === "a_starts_left").map((q) => ({ gap: gap.get(r.case) ?? 0, arm: r.arm, ok: right(q) })),
+      ),
+      ["ascii", "coords", "sparse"],
+    );
+  }
+}
+
 function report(): void {
   const rects = read("rects.json");
   const solid = read("solid.json");
-  if (!rects && !solid) {
-    console.log("no records yet; run with --rects and --solid");
+  const pairs = read("pairs.json");
+  const swap = read("swap.json");
+  if (!rects && !solid && !pairs && !swap) {
+    console.log("no records yet; run with --rects, --solid, --pairs and --swap");
     return;
   }
   if (rects) {
@@ -365,6 +607,16 @@ function report(): void {
     scoreTable(solid, SOLID_ARMS, (a) => SOLID_LEAKY.has(a as SolidArm), "distance", ["1 step", "2-4", "5-9", "10+"]);
     costTable(solid, SOLID_ARMS);
   }
+  if (pairs) {
+    console.log(`\n\n=== §3.1  observer, size or gap -- ${new Set(pairs.rows.map((r) => r.case)).size} geometries x ${VARIANTS.length} variants x ${PAIR_ARMS.length} encodings, ${pairs.usage.calls} requests`);
+    pairsReport(pairs);
+  }
+  if (swap) {
+    console.log(`\n\n=== §3.2  rows and layers swapped -- ${swap.usage.calls} requests`);
+    swapReport(swap);
+  }
+  console.log("\n\n=== §3.3  the column question split by gap, from the records already committed (no requests)");
+  gapSplit();
 }
 
 // ---------------------------------------------------------------- no-API views
@@ -443,6 +695,8 @@ async function main(): Promise<void> {
   if (argv.includes("--report") || argv.length === 0) return report();
   if (argv.includes("--rects")) await runRects(Number(arg("reps", "15")));
   if (argv.includes("--solid")) await runSolid(Number(arg("reps", "4")));
+  if (argv.includes("--pairs")) await runPairs(Number(arg("reps", "8")));
+  if (argv.includes("--swap")) await runSwap(Number(arg("reps", "4")));
 }
 
 if (import.meta.filename === process.argv[1]) {

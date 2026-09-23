@@ -104,9 +104,20 @@ export function chebyshev3(a: Point, b: Point): number {
  * nothing about `south` or `above`. Rejection sampling for the same reason as
  * docs/64's rooms: a hand-derived placement rule is where a bias hides.
  */
-export function corpus(reps = 4, seed = 20260922): SolidCase[] {
+export function corpus(
+  reps = 4,
+  seed = 20260922,
+  // THE DIMENSIONS ARE A PARAMETER so TODO §1.15 can swap them. docs/65 §2.1
+  // read z 98% / y 88% as "outer index against inner index", but the block had
+  // five layers and seven rows, so the same numbers are also "five against
+  // seven". The defaults are the original 7 rows x 5 layers, so the recorded
+  // corpus -- and `solid.json` -- are exactly what they were.
+  dims: { height: number; depth: number } = { height: HEIGHT, depth: DEPTH },
+): SolidCase[] {
   const rnd = mulberry32(seed);
   const out: SolidCase[] = [];
+  const H = dims.height;
+  const D = dims.depth;
   for (const width of WIDTHS) {
     const need = new Map<string, number>();
     for (const o of OCTANTS) for (const r of RANGES) need.set(`${o}/${r}`, reps);
@@ -115,7 +126,7 @@ export function corpus(reps = 4, seed = 20260922): SolidCase[] {
       attempts += 1;
       if (attempts > 8_000_000) throw new Error(`solid: width ${width} cannot be filled`);
       const pick = (loV: number, hiV: number): number => loV + Math.floor(rnd() * (hiV - loV + 1));
-      const at = (): Point => ({ x: pick(0, width - 1), y: pick(0, HEIGHT - 1), z: pick(0, DEPTH - 1) });
+      const at = (): Point => ({ x: pick(0, width - 1), y: pick(0, H - 1), z: pick(0, D - 1) });
       const observer = at();
       const target = at();
       const octant = octantOf(target.x - observer.x, target.y - observer.y, target.z - observer.z);
@@ -130,7 +141,7 @@ export function corpus(reps = 4, seed = 20260922): SolidCase[] {
       // real search rather than "the one that is not empty".
       const taken = new Set([`${observer.x},${observer.y},${observer.z}`, `${target.x},${target.y},${target.z}`]);
       const clutter: Point[] = [];
-      const wanted = DEPTH * 2;
+      const wanted = D * 2;
       for (let i = 0; i < wanted * 8 && clutter.length < wanted; i += 1) {
         const p = at();
         const k = `${p.x},${p.y},${p.z}`;
@@ -143,8 +154,8 @@ export function corpus(reps = 4, seed = 20260922): SolidCase[] {
       out.push({
         key: `w${width}-${octant}-${range}-${reps - (need.get(slot) ?? 0)}`,
         width,
-        height: HEIGHT,
-        depth: DEPTH,
+        height: H,
+        depth: D,
         octant,
         range,
         observer,

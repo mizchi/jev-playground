@@ -65,6 +65,15 @@ import {
   encode3,
   probesFor as solidProbes,
 } from "./src/solid.js";
+import {
+  BLOCK,
+  GAPS,
+  VARIANTS,
+  corpus as pairCorpus,
+  draw as pairDraw,
+  probesFor as pairProbes,
+  sceneOf as pairScene,
+} from "./src/pairs.js";
 import { screenScene } from "./src/spatial.js";
 
 let pass = 0;
@@ -835,6 +844,133 @@ check("the picture arms of the block corpus carry no answer", () => {
       }
     }
   }
+});
+
+
+// ----------------------------------------------- TODO §1.15: observer, size, gap
+
+const PAIRS = pairCorpus();
+
+check("the pair corpus controls the gap exactly and balances both signs", () => {
+  for (const g of GAPS) {
+    const at = PAIRS.filter((c) => c.gap === g);
+    eq(at.length * GAPS.length, PAIRS.length, `gap ${g} is not a quarter`);
+    for (const c of at) eq(Math.abs(c.a.x - c.b.x), g, `${c.key}: the gap is not ${g}`);
+    eq(at.filter((c) => c.a.x > c.b.x).length * 2, at.length, `gap ${g}: a_right is not half`);
+    eq(at.filter((c) => c.a.y < c.b.y).length * 2, at.length, `gap ${g}: a_above is not half`);
+  }
+});
+
+check("you/cell and object/cell differ in ONE legend entry and nothing else", () => {
+  // The whole observer comparison rests on this. The glyphs, the geometry,
+  // the status line and every other legend entry must be byte-identical, so a
+  // difference between the two can only come from being told A is you.
+  for (const c of PAIRS.slice(0, 16)) {
+    const you = encode(pairScene(c, "you/cell"), "ascii") as Record<string, unknown>;
+    const obj = encode(pairScene(c, "object/cell"), "ascii") as Record<string, unknown>;
+    const strip = (st: Record<string, unknown>): string => {
+      const legend = { ...(st.legend as Record<string, string>) };
+      delete legend.A;
+      return JSON.stringify({ ...st, legend });
+    };
+    eq(strip(you), strip(obj), `${c.key}: the observer variants differ outside legend.A`);
+    ok((you.legend as Record<string, string>).A !== (obj.legend as Record<string, string>).A, `${c.key}: legend.A is the same`);
+    ok(/you/.test((you.legend as Record<string, string>).A), `${c.key}: you/cell does not say A is you`);
+    ok(!/you/.test((obj.legend as Record<string, string>).A), `${c.key}: object/cell says A is you`);
+  }
+});
+
+check("object/block keeps the same left columns and top rows as object/cell", () => {
+  // The size comparison is only about size if the positions do not move.
+  for (const c of PAIRS) {
+    const cell = pairDraw(c, "object/cell");
+    const block = pairDraw(c, "object/block");
+    const box = (rows: string[], glyph: string): { x0: number; x1: number; y0: number; y1: number } => {
+      const xs: number[] = [];
+      const ys: number[] = [];
+      rows.forEach((r, y) => [...r].forEach((ch, x) => (ch === glyph ? (xs.push(x), ys.push(y)) : null)));
+      return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+    };
+    for (const g of ["A", "B"]) {
+      const a = box(cell, g);
+      const b = box(block, g);
+      eq(a.x0, b.x0, `${c.key}: ${g}'s left column moved`);
+      eq(a.y0, b.y0, `${c.key}: ${g}'s top row moved`);
+      eq(a.x1 - a.x0, 0, `${c.key}: ${g} is not a single cell`);
+      eq(b.x1 - b.x0, BLOCK - 1, `${c.key}: ${g} is not ${BLOCK} wide`);
+      eq(b.y1 - b.y0, BLOCK - 1, `${c.key}: ${g} is not ${BLOCK} tall`);
+    }
+    // Disjoint row bands, so a close pair of blocks never draws one over the other.
+    eq(block.join("").split("A").length - 1, BLOCK * BLOCK, `${c.key}: A was overdrawn`);
+    eq(block.join("").split("B").length - 1, BLOCK * BLOCK, `${c.key}: B was overdrawn`);
+  }
+});
+
+check("every variant is asked the same questions, and the truths come from the numbers", () => {
+  // `probesFor` takes the geometry and not the variant, which is the design.
+  // This asserts the consequence: one question list, three variants.
+  for (const c of PAIRS) {
+    const probes = pairProbes(c);
+    const by = new Map(probes.map((p) => [p.key, p.truth]));
+    eq(by.get("a_right"), c.a.x > c.b.x, `${c.key}: a_right`);
+    eq(by.get("a_above"), c.a.y < c.b.y, `${c.key}: a_above`);
+  }
+  eq(VARIANTS.length, 3, "the design is three variants, not a full 2x2");
+});
+
+check("the pair states carry no case-specific direction and no criterion", () => {
+  // THE FIRST VERSION OF THIS TEST FAILED ON THE AXIS CONVENTION. `coords`
+  // says "a larger x is further right on the screen", which shares two words
+  // with the criteria -- and which is a definition, not an answer: without it
+  // a coordinate cannot be read at all, and docs/64's coordinate arms carried
+  // the same sentence.
+  //
+  // So the check is stated on principle instead of on a word list. `what` is
+  // the same string for every case of an arm, so it cannot carry any one
+  // case's answer; that is asserted. Everything else in the state must be
+  // free of the criteria and of the direction words.
+  const whatOf = new Map<string, Set<string>>();
+  for (const c of PAIRS) {
+    for (const variant of VARIANTS) {
+      for (const arm of ["ascii", "coords"] as const) {
+        const state = encode(pairScene(c, variant), arm) as Record<string, unknown>;
+        const k = `${variant}/${arm}`;
+        whatOf.set(k, (whatOf.get(k) ?? new Set()).add(String(state.what)));
+      }
+    }
+  }
+  for (const [k, whats] of whatOf) eq(whats.size, 1, `${k}: \`what\` varies between cases`);
+  for (const c of PAIRS.slice(0, 16)) {
+    const criteria = pairProbes(c).flatMap((p) => {
+      const q = p.question as { criteria?: { true?: unknown; false?: unknown } };
+      return [q.criteria?.true, q.criteria?.false].filter((x): x is string => typeof x === "string");
+    });
+    for (const variant of VARIANTS) {
+      for (const arm of ["ascii", "coords"] as const) {
+        const { what: _what, ...rest } = encode(pairScene(c, variant), arm) as Record<string, unknown>;
+        const text = JSON.stringify(rest).toLowerCase();
+        for (const crit of criteria) ok(!text.includes(crit.toLowerCase()), `${c.key}/${variant}/${arm}: a criterion`);
+        for (const w of ["right", "left", "above", "below", "further"]) {
+          ok(!text.includes(w), `${c.key}/${variant}/${arm}: carries "${w}" outside the axis convention`);
+        }
+      }
+    }
+  }
+});
+
+check("the swapped block corpus has five rows and seven layers, and the original is untouched", () => {
+  const original = solidCorpus();
+  const swapped = solidCorpus(4, 20260922, { height: 5, depth: 7 });
+  eq(original.every((c) => c.height === 7 && c.depth === 5), true, "the default corpus changed shape");
+  eq(swapped.every((c) => c.height === 5 && c.depth === 7), true, "the swapped corpus has the wrong shape");
+  eq(swapped.filter((c) => c.target.z > c.observer.z).length * 2, swapped.length, "above is not half when swapped");
+  eq(swapped.filter((c) => c.target.y > c.observer.y).length * 2, swapped.length, "south is not half when swapped");
+  // Same generator, so the octant design carries over exactly.
+  eq(
+    swapped.filter((c) => c.target.x > c.observer.x && c.target.y > c.observer.y && c.target.z > c.observer.z).length * 8,
+    swapped.length,
+    "the swapped axes are not independent",
+  );
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

@@ -65,6 +65,16 @@ export interface Row {
   width?: number;
   quadrant?: Quadrant;
   range?: Range;
+  /**
+   * docs/65's follow-ups: which version of the same geometry was asked --
+   * `you/cell`, `object/cell`, `object/block` for the pairs corpus, `7x5` or
+   * `5x7` for the swapped blocks. Its own field, because docs/65 §1 already
+   * smuggled its margin into `range` and doing that twice is how a record
+   * stops being readable.
+   */
+  variant?: string;
+  /** The pairs corpus only: how many columns separate A's left edge from B's. */
+  gap?: number;
 }
 
 export interface Record_ {
