@@ -263,6 +263,26 @@ pub const WARD_TTL = 8
 pub const WARD_CHARGES = 2
 
 ///|
+/// What destroying a structure pays: gold to the champion that landed the
+/// biggest blow on it, and experience to everyone on its team.
+pub const TOWER_GOLD = 120
+
+///|
+pub const TOWER_XP = 20
+
+///|
+/// What an epic monster pays each member of the team that takes it, as (gold,
+/// experience). One function rather than two matches in the tick, so the audit
+/// reads the same numbers the tick pays.
+pub fn neutral_bounty(key : String) -> (Int, Int) {
+  match key {
+    "baron" => (100, 40)
+    "herald" => (80, 30)
+    _ => (60, 25)
+  }
+}
+
+///|
 pub const KILL_GOLD = 160
 
 ///|
@@ -2605,12 +2625,12 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       let by = match struct_top.get(idx) {
         Some((who, _)) => {
           let killer = self.champs[who]
-          killer.gold += 120
+          killer.gold += TOWER_GOLD
           // Everyone on the team shares the experience: a structure is a team
           // objective, not a last hit.
           for c in self.champs {
             if c.team == killer.team {
-              c.gain_xp(20)
+              c.gain_xp(TOWER_XP)
             }
           }
           killer.name
@@ -2642,20 +2662,11 @@ pub fn Game::step(self : Game, actions : Map[Int, Action]) -> Unit {
       match neutral_top.get(idx) {
         Some((who, _)) => {
           let team = self.champs[who].team
+          let (bounty_gold, bounty_xp) = neutral_bounty(n.key)
           for c in self.champs {
             if c.team == team {
-              c.gold += match n.key {
-                "baron" => 100
-                "herald" => 80
-                _ => 60
-              }
-              c.gain_xp(
-                match n.key {
-                  "baron" => 40
-                  "herald" => 30
-                  _ => 25
-                },
-              )
+              c.gold += bounty_gold
+              c.gain_xp(bounty_xp)
             }
           }
           if n.key == "baron" {

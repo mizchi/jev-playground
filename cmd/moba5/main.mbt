@@ -35,6 +35,10 @@ struct Opts {
   tournament : Bool
   /// Round-robin the named comps as pure 5v5 teamfights. No API key.
   arena : Bool
+  /// Play the tournament field and say where the gold and the experience came
+  /// from, when levels and items arrived and how many towers fell; then the
+  /// champions' curves by level and build. No API key.
+  audit : Bool
   /// Put the `fight` and `retreat` truths side by side over the derived fight
   /// states, against one recorded run. No API key.
   coherence : Bool
@@ -1426,6 +1430,232 @@ fn run_tournament(policy : String, max_ticks : Int) -> Unit {
     games,
   )
 }
+
+// ------------------------------------------------------------------ the audit
+
+///|
+/// `num / den` as a percentage with one decimal.
+fn pct1(num : Int, den : Int) -> String {
+  if den == 0 {
+    "-"
+  } else {
+    @report.d1(num.to_double() * 100.0 / den.to_double()) + "%"
+  }
+}
+
+///|
+/// `num / den` with the given decimals; with none, rounded to a whole number.
+fn per(num : Int, den : Int, places : Int) -> String {
+  if den == 0 {
+    "-"
+  } else if places == 0 {
+    (num.to_double() / den.to_double()).round().to_int().to_string()
+  } else {
+    @report.fixed(num.to_double() / den.to_double(), places)
+  }
+}
+
+///|
+/// The lower median, the 10th and the 90th percentile of the values that are
+/// not -1, and how many were -1 ("never").
+fn spread(values : Array[Int]) -> (Int, Int, Int, Int) {
+  let seen = values.filter(v => v >= 0)
+  seen.sort()
+  let never = values.length() - seen.length()
+  if seen.is_empty() {
+    return (-1, -1, -1, never)
+  }
+  let n = seen.length()
+  (seen[(n - 1) / 2], seen[n / 10], seen[n * 9 / 10], never)
+}
+
+///|
+/// What the rules do when they are played, and what the champions look like
+/// at the two ends of a game. The numbers docs/64 compares with LoL.
+fn run_audit(policy : String, max_ticks : Int) -> Unit {
+  let a = @game.audit_tournament(policy, max_ticks)
+  @report.header(
+    "moba5 audit",
+    "the tournament field, \{policy} vs \{policy}, \{max_ticks}-tick cap",
+  )
+  println(
+    "  \{a.games} games, \{a.champ_games} champion-games; nexus kills \{a.nexus_kills}; unaccounted gold \{a.unaccounted_gold}, experience \{a.unaccounted_xp}\n",
+  )
+  let mut gold = 0
+  let mut xp = 0
+  for k in 0..<@game.audit_sources.length() {
+    gold += a.gold[k]
+    xp += a.xp[k]
+  }
+  println(
+    "  where the gold and the experience come from (per champion per game)",
+  )
+  println("  source      gold   share      xp   share")
+  for k in 0..<@game.audit_sources.length() {
+    println(
+      "  \{@report.pad(@game.audit_sources[k], 8)} \{@report.pad_left(per(a.gold[k], a.champ_games, 0), 6)}  \{@report.pad_left(pct1(a.gold[k], gold), 6)}  \{@report.pad_left(per(a.xp[k], a.champ_games, 0), 6)}  \{@report.pad_left(pct1(a.xp[k], xp), 6)}",
+    )
+  }
+  println(
+    "  total    \{@report.pad_left(per(gold, a.champ_games, 0), 6)}          \{@report.pad_left(per(xp, a.champ_games, 0), 6)}   (level \{@game.MAX_LEVEL} needs \{(@game.MAX_LEVEL - 1) * @game.LEVEL_XP})",
+  )
+  println(
+    "  spent on control wards \{per(a.control_spend, a.champ_games, 0)} per champion per game, \{pct1(a.control_spend, gold)} of everything earned\n",
+  )
+  println("  levels: the tick a champion first stood at each one")
+  println("  level  median  p10  p90  never")
+  for lv in 2..<=@game.MAX_LEVEL {
+    let (med, p10, p90, never) = spread(a.level_at[lv])
+    println(
+      "    \{lv}    \{@report.pad_left(med.to_string(), 5)} \{@report.pad_left(p10.to_string(), 4)} \{@report.pad_left(p90.to_string(), 4)}  \{@report.pad_left(never.to_string(), 5)}",
+    )
+  }
+  let mut past_cap = 0
+  let cap_xp = (@game.MAX_LEVEL - 1) * @game.LEVEL_XP
+  if xp > cap_xp * a.champ_games {
+    past_cap = xp - cap_xp * a.champ_games
+  }
+  println(
+    "  alive time at the level cap \{pct1(a.capped_ticks, a.alive_ticks)}; at least \{pct1(past_cap, xp)} of the experience lands past it\n",
+  )
+  let (med, p10, p90, never) = spread(a.first_item)
+  println("  items")
+  println(
+    "  first completed item: median tick \{med} (p10 \{p10}, p90 \{p90}); never \{never} of \{a.champ_games}",
+  )
+  let held = []
+  for k in 0..<a.completed_held.length() {
+    held.push("\{k}: \{a.completed_held[k]}")
+  }
+  println("  completed items held at the end: \{held.join(", ")}")
+  println(
+    "  the share of the final stat line items supply: attack \{pct1(a.stat_items[0], a.stat_total[0])}, health \{pct1(a.stat_items[1], a.stat_total[1])}, armor \{pct1(a.stat_items[2], a.stat_total[2])}, magic resist \{pct1(a.stat_items[3], a.stat_total[3])}\n",
+  )
+  println("  the mean champion over time")
+  println("  tick  level  earned  in items  completed")
+  for i in 0..<@game.audit_checkpoints.length() {
+    let s = a.at_samples[i]
+    println(
+      "  \{@report.pad_left(@game.audit_checkpoints[i].to_string(), 4)}  \{@report.pad_left(per(a.at_level[i], s, 2), 5)}  \{@report.pad_left(per(a.at_earned[i], s, 0), 6)}  \{@report.pad_left(per(a.at_items[i], s, 0), 8)}  \{@report.pad_left(per(a.at_completed[i], s, 2), 9)}",
+    )
+  }
+  println("")
+  let (ft, _, _, no_tower) = spread(a.first_tower)
+  let (fd, _, _, _) = spread(a.first_drake)
+  println("  towers and objectives (per game)")
+  println(
+    "  structures destroyed by champions \{per(a.towers_by_champs, a.games, 2)}, by minions \{per(a.towers_by_minions, a.games, 2)}; inner towers broken \{per(a.inner_breaks, a.games, 2)}",
+  )
+  println(
+    "  first tower: median tick \{ft}; no tower fell in \{no_tower} of \{a.games} games",
+  )
+  println(
+    "  plates taken \{per(a.plates_taken, a.games, 2)} of \{6 * @game.PLATES}; the rest fall off unpaid at tick \{@game.PLATE_TICKS}",
+  )
+  println(
+    "  drakes \{per(a.drakes, a.games, 2)} (the first at median tick \{fd}), heralds \{per(a.heralds, a.games, 2)}, barons \{per(a.barons, a.games, 2)}; a soul in \{a.souls} of \{a.games}",
+  )
+  println(
+    "  champion kills \{per(a.kills, a.games, 2)}, deaths to towers \{per(a.tower_kills, a.games, 2)}; champion-ticks spent dead \{pct1(a.dead_ticks, a.dead_ticks + a.alive_ticks)}\n",
+  )
+  audit_curves()
+}
+
+///|
+/// The champions at the two ends of a game, by the arithmetic rather than by
+/// play: level 1 bare, level 6 bare, and level 6 in the full build.
+fn audit_curves() -> Unit {
+  let kinds = [
+    "marksman", "bully", "mage", "artillery", "assassin", "skirmisher", "jungler",
+    "bruiser", "tank", "support", "enchanter",
+  ]
+  let settings = [(1, false), (@game.MAX_LEVEL, false), (@game.MAX_LEVEL, true)]
+  println(
+    "  the champions: attack/health/armor/magic resist, and ticks alive under a tower with no wave",
+  )
+  println(
+    "  (full = three of the two-component item on the kind's path, \{@game.ITEM_SLOTS * @game.BIG_ITEM_COST} gold)",
+  )
+  println(
+    "  kind         L1 bare          L\{@game.MAX_LEVEL} bare          L\{@game.MAX_LEVEL} full           under tower L1/L\{@game.MAX_LEVEL}/full",
+  )
+  for kind in kinds {
+    let cols = []
+    let under = []
+    for st in settings {
+      let g = @game.audit_pair(kind, kind, st.0, st.1)
+      let c = g.champs[0]
+      cols.push(
+        @report.pad("\{c.attack()}/\{c.hp_cap()}/\{c.armor()}/\{c.mr()}", 16),
+      )
+      under.push(@game.audit_under_tower(kind, st.0, st.1).to_string())
+    }
+    println("  \{@report.pad(kind, 11)}  \{cols.join(" ")}  \{under.join("/")}")
+  }
+  // The structures' health, read off a fresh game rather than repeated here.
+  let tier_hp = [0, 0, 0, 0]
+  for s in @game.Game::new().structures {
+    if s.team == @game.TEAM_B {
+      tier_hp[s.tier] = s.max_hp
+    }
+  }
+  let carries = [
+    "marksman", "bully", "mage", "artillery", "assassin", "skirmisher",
+  ]
+  let walls = ["jungler", "bruiser", "tank"]
+  fn median_ttk(
+    atts : Array[String],
+    defs : Array[String],
+    lv : Int,
+    full : Bool,
+  ) -> Int {
+    let v = []
+    for x in atts {
+      for y in defs {
+        v.push(@game.audit_ttk(x, y, lv, full))
+      }
+    }
+    let (m, _, _, _) = spread(v)
+    m
+  }
+
+  let row = []
+  let row2 = []
+  for st in settings {
+    row.push(median_ttk(carries, carries, st.0, st.1).to_string())
+    row2.push(median_ttk(carries, walls, st.0, st.1).to_string())
+  }
+  println(
+    "\n  basic attacks for one champion to kill another (median), L1 / L\{@game.MAX_LEVEL} / L\{@game.MAX_LEVEL} full",
+  )
+  println("  carry into carry       \{row.join(" / ")}")
+  println("  carry into frontline   \{row2.join(" / ")}")
+  println(
+    "\n  teams: structure damage per tick with all five hitting, ticks to take an outer (\{tier_hp[1]}), inner (\{tier_hp[2]})",
+  )
+  println(
+    "  and nexus (\{tier_hp[3]}) at that rate, and how long the comp's mirror lasts as an all-in teamfight",
+  )
+  println(
+    "  comp        setting  siege  outer inner nexus  mirror fight (ticks, deaths)",
+  )
+  for comp in @game.tournament_comps {
+    for st in settings {
+      let s = @game.audit_siege(comp.picks, st.0, st.1)
+      let r = @game.audit_mirror_fight(comp.picks, st.0, st.1, 60)
+      let label = if st.1 { "L\{st.0} full" } else { "L\{st.0} bare" }
+      let fight = if r.ticks >= 60 && r.a_standing > 0 && r.b_standing > 0 {
+        "60+ (\{r.a_deaths}+\{r.b_deaths})"
+      } else {
+        "\{r.ticks} (\{r.a_deaths}+\{r.b_deaths})"
+      }
+      println(
+        "  \{@report.pad(comp.name, 10)}  \{@report.pad(label, 7)}  \{@report.pad_left(s.to_string(), 5)}  \{@report.pad_left(((tier_hp[1] + s - 1) / s).to_string(), 5)} \{@report.pad_left(((tier_hp[2] + s - 1) / s).to_string(), 5)} \{@report.pad_left(((tier_hp[3] + s - 1) / s).to_string(), 5)}  \{fight}",
+      )
+    }
+  }
+  println("")
+}
 // -------------------------------------------------------------- the benchmark
 
 ///|
@@ -2417,6 +2647,11 @@ async fn main {
         about="Round-robin the named comps as pure 5v5 teamfights. Needs no API key.",
       ),
       @argparse.FlagArg(
+        "audit",
+        long="audit",
+        about="Play the tournament field and attribute every point of gold and experience to the rule that paid it. Needs no API key.",
+      ),
+      @argparse.FlagArg(
         "draft",
         long="draft",
         about="Ask the model to rank the comps from raw archetype stats, against the empirical arena.",
@@ -2560,6 +2795,7 @@ async fn main {
     verbose: matches.flags.get("verbose").unwrap_or(false),
     tournament: matches.flags.get("tournament").unwrap_or(false),
     arena: matches.flags.get("arena").unwrap_or(false),
+    audit: matches.flags.get("audit").unwrap_or(false),
     coherence: matches.flags.get("coherence").unwrap_or(false),
     wording: matches.flags.get("wording").unwrap_or(false),
     descriptions: matches.flags.get("descriptions").unwrap_or(false),
@@ -2582,6 +2818,7 @@ async fn main {
   // need neither a team policy nor a key.
   let offline = opts.tournament ||
     opts.arena ||
+    opts.audit ||
     opts.coherence ||
     opts.from_answers != "" ||
     (opts.bench && opts.dry)
@@ -2646,13 +2883,20 @@ async fn run(opts : Opts) -> Unit {
   if opts.tournament {
     run_tournament(opts.baseline, opts.max_ticks)
   }
+  if opts.audit {
+    run_audit(opts.baseline, opts.max_ticks)
+  }
   if opts.coherence {
     run_coherence(opts.from_answers)
   }
   if opts.from_answers != "" && !opts.coherence {
     replay_wording(opts.from_answers)
   }
-  if opts.arena || opts.tournament || opts.coherence || opts.from_answers != "" {
+  if opts.arena ||
+    opts.tournament ||
+    opts.audit ||
+    opts.coherence ||
+    opts.from_answers != "" {
     return
   }
   let client = if opts.base_url == "https://api.typesafe.ai" {
