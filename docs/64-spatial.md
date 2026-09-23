@@ -141,7 +141,7 @@ docs/34 の[正直な限界](34-roguelike.md#正直な限界)は、自分の質�
 | `adjacent`(`@` の隣) | 60% | 60% | 80% | 78% | 67% | 61% | 91% |
 
 同じ部屋・同じ符号化で 2 つの質問を並べたので、**これは対応のある比較**です
-([`pairedPermutation`](../experiments/shared/thresholds.ts) —— docs/56 の掃引中に**先に**書いて commit した器):
+([`pairedPermutation`](../experiments/shared/thresholds.ts) —— [63](63-widen.md) の掃引中に**先に**書いて commit した器):
 
 | 符号化 | 列 | 行 | n | 差 | 不一致 | 列が勝ち | p | 器の下限 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
