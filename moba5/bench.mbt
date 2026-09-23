@@ -1254,17 +1254,16 @@ fn ask_vision_sweep(g : Game, team : Int, champ_id : Int) -> Ask {
   let options = []
   let descs = []
   for n in ward_spots(c.node) {
-    let mut clears = 0
-    for w in g.wards {
-      if w.team != team &&
-        w.ttl > 0 &&
-        (w.node == n || adjacency[n].contains(w.node)) {
-        clears += 1
-      }
-    }
+    // Through our own vision. This used to count every ward in range, and
+    // the option list then told the model about wards in brush the
+    // observation had just hidden — `vision_our_side_watched` read "riv_top:
+    // destroys 1" with nothing of theirs in sight. The truth still counts
+    // them all, because the ward really does destroy them all; the question
+    // is whether a reader can guess where the rest are.
+    let clears = g.visible_clears(team, n)
     options.push(node_name(n))
     descs.push(
-      "\{node_lane[n]}\{if is_brush(n) { ", brush" } else { "" }} — a control ward here would destroy \{clears} of their ward(s)",
+      "\{node_lane[n]}\{if is_brush(n) { ", brush" } else { "" }} — a control ward here would destroy \{clears} of the ward(s) of theirs we can see, plus any in range we cannot",
     )
   }
   {
@@ -2500,7 +2499,7 @@ pub fn bench_suite() -> Array[Scenario] {
     ),
     sc_vision(
       "vision_pit_is_watched",
-      "the drake pit with two of their wards on it and one in our own jungle beside it",
+      "the drake pit with one of their wards on it and one in each bottom jungle beside it, both in brush we cannot see into",
       RIV_BOT,
       [RIV_BOT, node_id("b_jg_bot"), node_id("a_jg_bot")],
     ),
@@ -2512,7 +2511,7 @@ pub fn bench_suite() -> Array[Scenario] {
     ),
     sc_vision(
       "vision_our_side_watched",
-      "the baron pit with their ward in OUR jungle, which no sweep of the pit itself reaches",
+      "the baron pit with their ward in OUR top jungle beside it, in brush nobody of ours can see into",
       RIV_TOP,
       [node_id("a_jg_top")],
     ),

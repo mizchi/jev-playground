@@ -481,8 +481,12 @@ test "the jungle and the wards reach the observation" {
   // And the action descriptions say what the tick would actually do.
   let c = g.champs[1]
   c.gold = CONTROL_COST
+  // Their control ward is on the node we are standing on, so it is in sight
+  // and counted.
   assert_true(
-    g.describe_action(c, PlaceControl(RIV_TOP)).contains("DESTROYS 1"),
+    g
+    .describe_action(c, PlaceControl(RIV_TOP))
+    .contains("DESTROYS the 1 ward(s) of theirs we can see"),
   )
   let jg = g.champs[2]
   jg.node = node_id("b_jg_top")
@@ -562,4 +566,55 @@ test "the jungle and both ward kinds are used in played games" {
   // first version of the test left out — it counted the wards placed and threw
   // the clears away, which is the difference between "used" and "worked".
   assert_true(clear_ticks > 0)
+}
+
+///|
+/// Nothing the model reads counts a ward it cannot see.
+///
+/// The observation lists only `their_wards_we_can_see`, and two sentences used
+/// to undo that: the control ward's action description and the `vision_sweep`
+/// options both counted every ward in range, so "destroys 1" appeared beside
+/// a pit with nothing of theirs in sight. Adding a ward nobody can see must not
+/// change a word of the observation, the options or the actions — and must
+/// still change the truth, because the ward really is there to destroy.
+test "no description counts a ward the team cannot see" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  let scout = g.champs[4]
+  scout.node = RIV_BOT
+  scout.gold = CONTROL_COST
+  // One of theirs we can see, on the pit.
+  g.wards.push({
+    node: RIV_BOT,
+    team: TEAM_B,
+    kind: WARD_STEALTH,
+    ttl: WARD_TTL,
+  })
+  // And one we cannot, in the brush beside it.
+  let hidden = node_id("b_jg_bot")
+  assert_false(g.vision(TEAM_A)[hidden])
+  let h = g.copy()
+  h.wards.push({
+    node: hidden,
+    team: TEAM_B,
+    kind: WARD_STEALTH,
+    ttl: WARD_TTL,
+  })
+  let (seen_g, _) = observe(g, TEAM_A)
+  let (seen_h, _) = observe(h, TEAM_A)
+  assert_eq(seen_g.stringify(), seen_h.stringify())
+  let ask_g = ask_vision_sweep(g, TEAM_A, scout.id)
+  let ask_h = ask_vision_sweep(h, TEAM_A, scout.id)
+  assert_eq(ask_g.options, ask_h.options)
+  assert_eq(ask_g.descriptions, ask_h.descriptions)
+  assert_eq(ask_g.instructions, ask_h.instructions)
+  for n in ward_spots(RIV_BOT) {
+    assert_eq(
+      g.describe_action(scout, PlaceControl(n)),
+      h.describe_action(h.champs[4], PlaceControl(n)),
+    )
+  }
+  // The truth is the rules' answer, and the rules see it: with the hidden ward
+  // the pit and that brush each destroy two, without it every spot destroys one.
+  assert_true(ask_g.truth != ask_h.truth)
 }

@@ -366,20 +366,16 @@ pub fn Game::describe_action(self : Game, c : Champ, a : Action) -> String {
     PlaceWard(n) =>
       "ward \{node_name(n)} — vision of it and its neighbours for \{WARD_TTL} ticks (\{c.wards} ward(s) left)"
     PlaceControl(n) => {
-      // What it would actually clear, counted rather than described: this is
-      // the whole reason to spend the gold instead of a charge.
-      let mut clears = 0
-      for w in self.wards {
-        if w.team != c.team &&
-          w.ttl > 0 &&
-          (w.node == n || adjacency[n].contains(w.node)) {
-          clears += 1
-        }
-      }
+      // What it would clear, counted rather than described — this is the
+      // whole reason to spend the gold instead of a charge — but counted
+      // through our own vision. The first version counted every ward on the
+      // map, so this sentence told the player about stealth wards in brush
+      // its observation was careful not to show it.
+      let clears = self.visible_clears(c.team, n)
       let takes = if clears == 0 {
-        "they have no ward in range of it right now"
+        "we can see none of their wards in range of it, so anything it destroys would be a ward we did not know about"
       } else {
-        "it DESTROYS \{clears} of their ward(s) in range the moment it lands, and keeps their stealth wards out of that range while it stands"
+        "it DESTROYS the \{clears} ward(s) of theirs we can see in range the moment it lands, and any in range we cannot, and keeps their stealth wards out of that range while it stands"
       }
       "CONTROL WARD on \{node_name(n)} for \{CONTROL_COST} gold — vision for \{CONTROL_TTL} ticks, three times a normal ward, and \{takes}"
     }

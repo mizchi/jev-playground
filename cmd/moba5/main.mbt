@@ -59,6 +59,9 @@ struct Opts {
   /// With --bench: ask the identical questions this many times. The model is
   /// probabilistic, so one pass cannot separate a real gap from a draw.
   repeat : Int
+  /// With --bench: ask only these scenarios. For re-asking the few whose
+  /// question changed, rather than paying for the whole suite again.
+  only : Array[String]
   /// The baseline policy used as the opponent in tournament mode and as the
   /// floor everywhere.
   baseline : String
@@ -1700,7 +1703,16 @@ fn read_answer(
 /// noise). An unanswered question — a request that failed every attempt — is
 /// left out rather than scored wrong: missing data is not a mistake.
 async fn run_bench(opts : Opts, client : @lib.Client) -> Unit {
-  let suite = @game.bench_suite()
+  let suite = if opts.only.is_empty() {
+    @game.bench_suite()
+  } else {
+    @game.bench_suite().filter(sc => opts.only.contains(sc.name))
+  }
+  if suite.is_empty() {
+    @stdio.stderr.write("moba5: --only named no scenario in the suite\n")
+    @sys.exit(1)
+    return
+  }
   let repeat = if opts.dry || opts.repeat < 1 { 1 } else { opts.repeat }
   let mut asks_total = 0
   for sc in suite {
@@ -2483,6 +2495,11 @@ async fn main {
         about="--bench: ask the identical questions this many times, and report the spread and the model's own self-consistency.",
       ),
       @argparse.OptionArg(
+        "only",
+        long="only",
+        about="--bench: ask only these scenarios (comma-separated names), e.g. to re-ask the ones whose question changed since a log was recorded.",
+      ),
+      @argparse.OptionArg(
         "baseline",
         long="baseline",
         default_values=["smart"],
@@ -2552,6 +2569,10 @@ async fn main {
     bench: matches.flags.get("bench").unwrap_or(false),
     dry: matches.flags.get("dry").unwrap_or(false),
     repeat: parse_int(opt_value(matches, "repeat"), 1),
+    only: match opt_value(matches, "only") {
+      Some(v) if v != "" => v.split(",").map(x => x.to_owned()).to_array()
+      _ => []
+    },
     baseline: opt_value(matches, "baseline").unwrap_or("smart"),
     hcap_a: parse_int(opt_value(matches, "hcap-a"), 100),
     hcap_b: parse_int(opt_value(matches, "hcap-b"), 100),
