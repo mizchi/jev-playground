@@ -125,3 +125,30 @@ fn lane_beside(brush : Int) -> Int {
   }
   -1
 }
+
+///|
+/// The baseline's answer to "where does a ward reveal the most of them": the
+/// spot that shows the most of what it cannot see, and both sides break a tie
+/// the same way. `ward_spots` lists neighbours in `adjacency` order, which the
+/// two halves of the map do not share, so a tie broken by list order would put
+/// team A's ward on one side of the pit and team B's on the other.
+test "the ward that reveals the most is picked the same way from both sides" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  let a = g.champs[4]
+  let b = g.champs[9]
+  a.node = RIV_BOT
+  b.node = RIV_BOT
+  // Their brush has two of their lanes' unlit nodes behind it; ours has our
+  // own towers, which we already see.
+  assert_eq(g.stealth_ward_spot(a, RIV_BOT), node_id("b_jg_bot"))
+  assert_eq(g.stealth_ward_spot(b, RIV_BOT), mirror_node(node_id("b_jg_bot")))
+  // Light those two lanes and both brush show one new node each: the tie goes
+  // to the one nearer their base, mirrored.
+  g.champs[2].node = node_id("b1_mid")
+  g.champs[3].node = node_id("b1_bot")
+  g.champs[7].node = mirror_node(node_id("b1_mid"))
+  g.champs[8].node = mirror_node(node_id("b1_bot"))
+  assert_eq(g.stealth_ward_spot(a, RIV_BOT), node_id("b_jg_bot"))
+  assert_eq(g.stealth_ward_spot(b, RIV_BOT), node_id("a_jg_bot"))
+}

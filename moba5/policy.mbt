@@ -227,6 +227,12 @@ pub fn Game::can_contest(self : Game, node : Int, team : Int) -> Bool {
 }
 
 ///|
+/// Below this share of maximum health a champion goes home instead of walking
+/// on. One number, because the benchmark's floor quotes it: "would it walk into
+/// that brush" is answered by whether it is this hurt.
+pub const LOW_HP_PCT = 35
+
+///|
 /// The shared plan. The order of the branches IS the macro priority: a nexus
 /// you can hit beats everything, then a structure about to fall, then the best
 /// thing on the map we can actually take, then the siege.
@@ -236,13 +242,31 @@ pub fn Game::team_plan(self : Game, team : Int) -> Plan {
   let mut rally = -1
   let mut why = ""
   let mut grouped = false
-  // 1. Their nexus is open: nothing else matters.
+  // 1. Their nexus is open, and most of us get there before the gate shuts.
+  //
+  //    "Open" used to be the whole test. An inner tower comes back
+  //    `INHIB_TICKS` after it falls, so the lane is a window and not a state,
+  //    and a team four hops out with two ticks on the clock walked the whole
+  //    way to arrive at a closed gate — the one thing the timer is there to
+  //    punish. Most of the team, because the nexus is not a one-champion job.
   if self.nexus_exposed(foe) {
-    for s in self.structures {
-      if s.team == foe && s.is_nexus() && s.alive() {
-        rally = s.node
-        why = "their nexus is open"
-        grouped = true
+    let mut living = 0
+    let mut reach = 0
+    for c in self.champs {
+      if c.team == team && c.alive() {
+        living += 1
+        if self.reaches_nexus_in_time(c.node, foe) {
+          reach += 1
+        }
+      }
+    }
+    if reach > 0 && reach * 2 >= living {
+      for s in self.structures {
+        if s.team == foe && s.is_nexus() && s.alive() {
+          rally = s.node
+          why = "their nexus is open"
+          grouped = true
+        }
       }
     }
   }
@@ -700,7 +724,7 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
   if !finishable.is_empty() {
     return AttackChamp(finishable[0].id)
   }
-  let low = c.hp * 100 < c.max_hp * 35
+  let low = c.hp * 100 < c.max_hp * LOW_HP_PCT
   if !here_enemies.is_empty() {
     // Commit with a numbers edge, with a wall to soak the focus, or when the
     // simulator says this fight is ours. Otherwise disengage rather than trade
@@ -819,6 +843,18 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
       }
     }
   }
+  // The stealth ward goes on the pit itself. Its job here is the objective:
+  // seeing the pit and the lanes that walk into it before the monster is up.
+  //
+  // `stealth_ward_spot` would put it in the brush beside the pit instead — a
+  // ward there sees the pit too, and the brush, and it is the right answer to
+  // "where does a ward reveal the most of them". It was tried as the play
+  // here, and it is not neutral: in the 72 baseline games of
+  // `drake_wbtest.mbt` the soul went from 2 to 0, and every variant of it did
+  // the same (tie toward either base, our own brush only), while an unrelated
+  // change of the same size left the drake race byte-identical. A ward on the
+  // pit sees the lanes beside it; a ward in the brush trades them for the
+  // brush, and that trade moves who arrives at the drake knowing what.
   if c.wards > 0 {
     for n in neutral_soon(g) {
       if g.has_ward(c.team, n) {
@@ -923,6 +959,46 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
     return Farm
   }
   Hold
+}
+
+///|
+/// Where a stealth ward from `c` shows the most of what `c`'s team cannot see
+/// right now, among the spots within reach that would also watch `pit`; -1
+/// when none would. A tie goes to the spot nearer their base, for the same
+/// mirror reason as `control_ward_spot`.
+///
+/// The baseline's answer to "where does a ward reveal the most of them",
+/// which is what the benchmark's `brush_ward` asks. It is not where the
+/// baseline's own pit ward goes in play — see `smart_action` for why that one
+/// stays on the pit. And "the most unlit nodes" is the most a rule can say
+/// about where the enemy is from one tick's vision alone: the truth counts who
+/// is actually hiding, and the record of where they were last seen — which
+/// this function does not read, since the baseline keeps none — can say
+/// better.
+pub fn Game::stealth_ward_spot(self : Game, c : Champ, pit : Int) -> Int {
+  let seen = self.vision(c.team)
+  let foe = enemy_of(c.team)
+  let mut best = -1
+  let mut best_fresh = -1
+  let mut best_key = 1 << 28
+  for n in ward_spots(c.node) {
+    if n != pit && !adjacency[n].contains(pit) {
+      continue
+    }
+    let mut fresh = if seen[n] { 0 } else { 1 }
+    for m in adjacency[n] {
+      if !is_brush(m) && !seen[m] {
+        fresh += 1
+      }
+    }
+    let key = hops(n, base_of(foe))
+    if fresh > best_fresh || (fresh == best_fresh && key < best_key) {
+      best = n
+      best_fresh = fresh
+      best_key = key
+    }
+  }
+  best
 }
 
 ///|

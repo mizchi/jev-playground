@@ -1552,6 +1552,40 @@ pub fn Game::nexus_exposed(self : Game, team : Int) -> Bool {
 }
 
 ///|
+/// How many more ticks `team`'s nexus stays exposed: the longest timer on an
+/// inner tower of theirs in an open lane, since one open lane is enough. 0
+/// when no lane is open.
+///
+/// A gate that is down with no timer on it never closes. Only a staged state
+/// makes one — a real break always starts `INHIB_TICKS` — but the benchmark
+/// stages several, and reading "no timer" as "closed" would turn a
+/// permanently open lane into a shut one.
+pub fn Game::nexus_window(self : Game, team : Int) -> Int {
+  let mut best = 0
+  for lane in lanes {
+    if !self.lane_open(team, lane) {
+      continue
+    }
+    for s in self.structures {
+      if s.team == team && s.lane == lane && s.tier == 2 {
+        let left = if s.respawn_in > 0 { s.respawn_in } else { 1 << 20 }
+        if left > best {
+          best = left
+        }
+      }
+    }
+  }
+  best
+}
+
+///|
+/// Whether a champion at `from`, walking a node a tick, reaches `foe`'s nexus
+/// with at least one tick left to swing before the gate shuts.
+pub fn Game::reaches_nexus_in_time(self : Game, from : Int, foe : Int) -> Bool {
+  hops(from, base_of(foe)) < self.nexus_window(foe)
+}
+
+///|
 /// Whether a structure can be damaged right now. A tier cannot be skipped.
 pub fn Game::structure_attackable(self : Game, s : Structure) -> Bool {
   if !s.alive() {

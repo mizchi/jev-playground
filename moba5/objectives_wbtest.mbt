@@ -472,3 +472,43 @@ test "a structure the minions finish loses its plating and its lane" {
   assert_eq(gate.hp, gate.max_hp)
   assert_false(g.lane_open(TEAM_B, "top"))
 }
+
+///|
+/// The gate's clock reaches the plan. A lane that shuts before most of the
+/// team can get there is not a lane to rally to — the first version rallied
+/// whenever the nexus read as attackable, and walked four hops to a closed
+/// gate. And a gate that is down with no timer on it, which only a staged
+/// state makes, never shuts.
+test "the nexus window is the gate's clock, and the plan reads it" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  assert_eq(g.nexus_window(TEAM_B), 0)
+  // Their top lane open: the outer down for good, the inner on a short clock.
+  enemy_outer(g, TEAM_A, "top").hp = 0
+  let inner = inner_of(g, TEAM_B, "top")
+  inner.hp = 0
+  inner.respawn_in = 3
+  assert_true(g.nexus_exposed(TEAM_B))
+  assert_eq(g.nexus_window(TEAM_B), 3)
+  // Two hops out with three on the clock: a tick to spare. Three hops: none.
+  assert_true(g.reaches_nexus_in_time(node_id("b1_top"), TEAM_B))
+  assert_false(g.reaches_nexus_in_time(node_id("mid_top"), TEAM_B))
+  // From home, six hops away, the plan does not go.
+  assert_true(g.team_plan(TEAM_A).rally != B_BASE)
+  // From their outer tower it does.
+  for c in g.champs {
+    if c.team == TEAM_A {
+      c.node = node_id("b1_top")
+    }
+  }
+  assert_eq(g.team_plan(TEAM_A).rally, B_BASE)
+  // Most of the team, not the nearest one: two of five in range is not a rally.
+  for id in [0, 1, 2] {
+    g.champs[id].node = A_BASE
+  }
+  assert_true(g.team_plan(TEAM_A).rally != B_BASE)
+  // And a gate down with no clock is open for as long as it takes.
+  inner.respawn_in = 0
+  assert_true(g.reaches_nexus_in_time(A_BASE, TEAM_B))
+  assert_eq(g.team_plan(TEAM_A).rally, B_BASE)
+}

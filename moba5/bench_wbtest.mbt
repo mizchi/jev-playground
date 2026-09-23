@@ -439,3 +439,31 @@ test "an observation never leaks an unseen enemy" {
   assert_eq(mem.last_seen_node[5], 2)
   assert_eq(mem.last_seen_tick[5], g.tick)
 }
+
+///|
+/// A judgment question has to be answerable from what the model is given.
+///
+/// The two ward questions that turn on the record carry the record — their
+/// jungler's last sighting, one tick old — and the truth is the brush the record
+/// points at. The static rule, which keeps no record, misses the one where the
+/// record points at our side; that miss is what the scenario is for, and a
+/// floor that learned to read `enemies_last_known` would make this fail.
+test "the ward questions that turn on the record carry it" {
+  let mut n = 0
+  for sc in bench_suite() {
+    let (seen, went) = match sc.name {
+      "brush_seen_going_ours" => ("a1_bot", "a_jg_bot")
+      "brush_seen_going_theirs" => ("mid_bot", "b_jg_bot")
+      _ => continue
+    }
+    n += 1
+    let text = sc.state.stringify()
+    assert_true(text.contains("\"last_seen_at\":\"\{seen}\""))
+    assert_true(text.contains("\"ticks_ago\":1"))
+    assert_eq(sc.asks[0].truth, went)
+    if sc.name == "brush_seen_going_ours" {
+      assert_false(truth_accepts(sc.asks[0].truth, sc.asks[0].floor))
+    }
+  }
+  assert_eq(n, 2)
+}

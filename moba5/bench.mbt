@@ -1087,9 +1087,10 @@ fn ask_brush_hidden(g : Game, team : Int) -> Ask {
     descriptions: descs,
     truth: names.join("|"),
     why: "the brush nodes outside our vision mask, which is the same mask the observation was built from",
-    // The floor names the brush nearest our own base, which is the wrong
-    // instinct: the one that matters is the one next to the lane we are in.
-    floor: node_name(brush_nodes[0]),
+    // The mask the baseline's ward placement reads. This floor used to name a
+    // fixed brush whatever was lit; the observation lists the unlit nodes, so
+    // a rule that knows the brush rule only has to read the list.
+    floor: node_name(g.blind_brush(team)[0]),
   }
 }
 
@@ -1115,7 +1116,9 @@ fn ask_brush_ward(g : Game, team : Int, champ_id : Int) -> Ask {
     descriptions: descs,
     truth: g.best_ward(team, c.node),
     why: "each spot warded on a copy and the enemies then visible counted",
-    floor: node_name(ward_spots(c.node)[0]),
+    // Where the baseline puts a stealth ward: the spot that shows the most of
+    // what it cannot see now. It used to be the pit itself, every time.
+    floor: node_name(g.stealth_ward_spot(c, c.node)),
   }
 }
 
@@ -1133,9 +1136,10 @@ fn ask_brush_step(g : Game, champ_id : Int, node : Int) -> Ask {
     descriptions: [],
     truth: "\{g.step_in_survives(champ_id, node, RETREAT_HORIZON)}",
     why: "the champion moved into that node on a copy and both teams played the strong baseline for \{RETREAT_HORIZON} ticks",
-    // The heuristic walks in whenever it is not already hurt, which is the
-    // mistake the brush exists to punish.
-    floor: "\{c.hp * 100 >= c.max_hp * 50}",
+    // The baseline walks in unless it is hurt enough to go home — it has no
+    // risk model for brush, which is the mistake the brush exists to punish.
+    // This used to say half health; the baseline's own line is `LOW_HP_PCT`.
+    floor: "\{c.hp * 100 >= c.max_hp * LOW_HP_PCT}",
   }
 }
 
@@ -1365,9 +1369,71 @@ fn ask_siege_window(g : Game, team : Int, champ_id : Int) -> Ask {
     descriptions: [],
     truth: "\{trip < left}",
     why: "\{trip} hop(s) against \{left} tick(s) on the gate's timer",
-    // The heuristic goes whenever the nexus reads as attackable, which is what
-    // the timer is there to make wrong.
-    floor: "true",
+    // The clock the baseline's nexus rally reads. It used to be "true": the
+    // baseline went whenever the nexus read as attackable, which is what the
+    // timer is there to make wrong.
+    floor: "\{g.reaches_nexus_in_time(c.node, foe)}",
+  }
+}
+
+///|
+/// `siege` — take the plates, or take the drake?
+///
+/// The class used to be two read-offs, and a floor that reads both scores it
+/// perfectly: "how many plates are left" is a number in the state and "does
+/// the gate stay open long enough" is two numbers the question itself hands
+/// over. `bench_wbtest` refuses to ship a class the heuristic sweeps, because
+/// such a class can show a model failing to read but never a model doing
+/// better than reading. This is the siege decision reading does not settle:
+/// the plates pay every champion now and fall off at `PLATE_TICKS`, the drake
+/// is a stack and a share of the soul, and which leaves us better off depends
+/// on where their five are and what they do about it. So it is played out,
+/// with the same machinery and the same caveat as `macro`.
+fn ask_siege_trade(
+  g : Game,
+  team : Int,
+  from : Int,
+  tower : Int,
+  pit : Int,
+  horizon : Int,
+) -> Ask {
+  let options = ["take_the_plates", "take_the_drake", "split_three_and_two"]
+  let split = plan_all(team, pit)
+  let base = if team == TEAM_A { 0 } else { 5 }
+  // The bot lane's two, since the tower in question is theirs to press.
+  split[base + 3] = tower
+  split[base + 4] = tower
+  let scores = [
+    g.simulate_macro(team, plan_all(team, tower), horizon),
+    g.simulate_macro(team, plan_all(team, pit), horizon),
+    g.simulate_macro(team, split, horizon),
+  ]
+  let plates = g.plates_on(tower)
+  let parts = []
+  for i in 0..<options.length() {
+    parts.push("\{options[i]} scored \{scores[i]}")
+  }
+  {
+    key: "siege_trade",
+    class_: "siege",
+    form: "choice",
+    tier: "score",
+    instructions: "Our five are together at \{node_name(from)}. Their tower at \{node_name(tower)} is one hop one way with \{plates} plate(s) still on it, and our wave holds that lane so it will not shoot us; a drake is up in \{node_name(pit)}, one hop the other way. What should our five do?",
+    options,
+    descriptions: [
+      "All five go and break plates: \{PLATE_GOLD} gold per plate to every champion on the team, and the plating falls off by itself at tick \{PLATE_TICKS}",
+      "All five take the drake: a \{g.drake_now()} stack, and we hold \{g.drake_total(team)} of the \{SOUL_STACKS} the soul needs",
+      "Three take the drake while our bot lane's two break plates",
+    ],
+    truth: tied_best(options, scores),
+    why: "\{horizon} ticks forward with them on the strong baseline: " +
+    parts.join(", "),
+    floor: floor_plan_name(
+      g,
+      team,
+      [(tower, "take_the_plates"), (pit, "take_the_drake")],
+      "split_three_and_two",
+    ),
   }
 }
 
@@ -2363,6 +2429,98 @@ fn sc_siege(
 }
 
 ///|
+/// A plated tower one hop one way and a drake one hop the other. The `siege`
+/// class's judgment: the plating's clock against the drake's.
+///
+/// The three states vary what the trade turns on — how much plating is left,
+/// how close either team is to the soul, and where their five are — and were
+/// fixed before either the truths or the floor's answers were looked at.
+fn sc_siege_trade(
+  name : String,
+  note : String,
+  tick : Int,
+  plates_left : Int,
+  ours : Int,
+  theirs : Int,
+  their_nodes : Array[Int],
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("dive"), 5, tick)
+  g.with_drakes(["infernal", "mountain"])
+  park_all(g)
+  let tower = node_id("b1_bot")
+  let from = node_id("mid_bot")
+  for st in g.structures {
+    if st.node == tower {
+      st.plates = plates_left
+      st.hp = st.max_hp * (plates_left + 1) / (PLATES + 1)
+    }
+  }
+  g.drakes[drake_index(TEAM_A, "infernal")] = ours
+  g.drakes[drake_index(TEAM_B, "infernal")] = theirs
+  match g.neutral_named("dragon") {
+    Some(n) => n.spawn_in = 0
+    None => ()
+  }
+  for c in g.champs {
+    if c.team == TEAM_A {
+      c.node = from
+    }
+  }
+  for i in 0..<their_nodes.length() {
+    g.champs[5 + i].node = their_nodes[i]
+  }
+  // Our wave holds bot, so the tower shoots minions and not us.
+  g.push[lane_index("bot")] = PUSH_TO_TOWER
+  let (state, _) = observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state,
+    asks: [ask_siege_trade(g, TEAM_A, from, tower, RIV_BOT, 12)],
+  }
+}
+
+///|
+/// A ward to place, and an enemy who walked out of sight one tick ago. The
+/// `brush` class's judgment: the static answer against the record.
+///
+/// `brush_ward` asks which spot reveals the most of their five, and its truth
+/// counts enemies nobody can see — which a policy can only guess at, unless
+/// the observation says something about where they went. Here it does: their
+/// jungler was seen one tick ago at `seen_at`, and `enemies_last_known`
+/// carries that. A reader who puts the record next to the map can work out
+/// which unlit node it could have walked into; a rule that only looks at this
+/// tick's vision cannot, because it never saw the jungler at all.
+fn sc_brush_memory(
+  name : String,
+  note : String,
+  seen_at : Int,
+  hid_in : Int,
+) -> Scenario {
+  let g = stage(comp_by_name("meta"), comp_by_name("dive"), 5, 30)
+  park_all(g)
+  let scout = g.champs[4]
+  scout.node = RIV_BOT
+  scout.wards = WARD_CHARGES
+  let jg = g.champs[6]
+  let mem = Memory::new()
+  // One tick ago: in sight.
+  jg.node = seen_at
+  g.tick -= 1
+  mem.observe(g, TEAM_A)
+  // Now: one step on, into a node we cannot see.
+  jg.node = hid_in
+  g.tick += 1
+  mem.observe(g, TEAM_A)
+  {
+    name,
+    note,
+    state: g.observation(TEAM_A, mem),
+    asks: [ask_brush_ward(g, TEAM_A, scout.id)],
+  }
+}
+
+///|
 /// Every scenario, in report order. Each one is a single request: one state,
 /// several questions.
 pub fn bench_suite() -> Array[Scenario] {
@@ -2454,6 +2612,19 @@ pub fn bench_suite() -> Array[Scenario] {
       RIV_BOT,
       node_id("b_jg_top"),
     ),
+    // The ward question where the record, not the map, says which brush.
+    sc_brush_memory(
+      "brush_seen_going_ours",
+      "their jungler was seen under our bot tower one tick ago and is gone: the only unlit node next to it is our bottom jungle",
+      node_id("a1_bot"),
+      node_id("a_jg_bot"),
+    ),
+    sc_brush_memory(
+      "brush_seen_going_theirs",
+      "their jungler was seen in the bot lane between the towers one tick ago and is gone: the only unlit node next to it is their outer tower's",
+      node_id("mid_bot"),
+      node_id("b1_bot"),
+    ),
     sc_siege(
       "siege_early_plates",
       "tick 20: the plating is still worth gold and the gate has just opened",
@@ -2477,6 +2648,40 @@ pub fn bench_suite() -> Array[Scenario] {
       0,
       2,
       node_id("a1_mid"),
+    ),
+    // The judgment the two read-offs above leave out (TODO §1.15 item 1).
+    sc_siege_trade(
+      "siege_plates_or_drake_free",
+      "tick 24: five plates on their bot tower, the drake up, all five of theirs at home",
+      24,
+      PLATES,
+      0,
+      0,
+      [B_BASE, B_BASE, B_BASE, B_BASE, B_BASE],
+    ),
+    sc_siege_trade(
+      "siege_plates_or_drake_contested",
+      "tick 30: two plates left, three of theirs already on the drake, two of ours down to the soul",
+      30,
+      2,
+      2,
+      1,
+      [RIV_BOT, RIV_BOT, RIV_BOT, B_BASE, B_BASE],
+    ),
+    sc_siege_trade(
+      "siege_plates_or_drake_soul",
+      "tick 34: five plates, and this drake is our fourth — the soul — with their five guarding the tower",
+      34,
+      PLATES,
+      3,
+      1,
+      [
+        node_id("b2_bot"),
+        node_id("b2_bot"),
+        node_id("b2_bot"),
+        node_id("b2_bot"),
+        node_id("b2_bot"),
+      ],
     ),
     // The jungle and the two ward kinds. More than one state each, because
     // the answer to "which camp" is a route and a route depends on where the
