@@ -1165,9 +1165,35 @@ fn ask_jungle_camp(g : Game, team : Int, champ_id : Int) -> Ask {
     descriptions: descs,
     truth: g.best_camp(team, champ_id, 10),
     why: "the jungler was sent to each camp on a copy and both teams played the strong baseline for 10 ticks; this one left us the best position",
-    // The baseline's own route: ours before theirs, nearest first.
-    floor: node_name(g.next_camp(team, c.node)),
+    floor: camp_floor(g, team, c.node, options),
   }
+}
+
+///|
+/// The baseline's route, restricted to the camps this question offers — the
+/// standing ones. `next_camp` can answer "stay, ours is back in one", which
+/// is an answer to a different question; the part of it that orders the
+/// standing camps (ours before theirs, then nearest) is what is quoted here,
+/// the way `cs_floor` quotes the lane-economy branch of `smart_action`.
+fn camp_floor(
+  g : Game,
+  team : Int,
+  from : Int,
+  options : Array[String],
+) -> String {
+  let mut best = options[0]
+  let mut best_key = 1 << 28
+  for camp in g.camps {
+    if !options.contains(node_name(camp.node)) {
+      continue
+    }
+    let key = camp_order_key(team, from, camp)
+    if key < best_key {
+      best_key = key
+      best = node_name(camp.node)
+    }
+  }
+  best
 }
 
 ///|
@@ -1184,8 +1210,10 @@ fn ask_jungle_cross(g : Game, champ_id : Int, node : Int) -> Ask {
     descriptions: [],
     truth: "\{g.step_in_survives(champ_id, node, RETREAT_HORIZON)}",
     why: "the champion moved into that node on a copy and both teams played the strong baseline for \{RETREAT_HORIZON} ticks",
-    // The heuristic crosses whenever its own camps are down and the walk is
-    // short, which is a route and not a risk assessment.
+    // The heuristic crosses when its route says theirs and the walk is short —
+    // which is a route and not a risk assessment, and since the route reads
+    // the camp timers it also declines to cross for a camp of ours that is
+    // about to come back.
     floor: "\{g.counter_jungle_worth(c.team, c.node)}",
   }
 }
@@ -1211,8 +1239,11 @@ fn ask_jungle_timer(g : Game, node : Int) -> Ask {
     descriptions: [],
     truth: "\{left}",
     why: "read off that camp's timer, which the state carries under `jungle`",
-    // A heuristic with no memory of when it was taken assumes a full timer.
-    floor: "\{CAMP_RESPAWN}",
+    // The timer the baseline's route reads. This floor used to be a full
+    // `CAMP_RESPAWN` — "a heuristic with no memory of when it was taken" —
+    // but the state carries the clock, so no heuristic needed a memory, and
+    // once the route reads it the floor is the read.
+    floor: "\{g.camp_back_in(node)}",
   }
 }
 
@@ -1246,9 +1277,10 @@ fn ask_vision_sweep(g : Game, team : Int, champ_id : Int) -> Ask {
     descriptions: descs,
     truth: g.best_sweep(team, c.node),
     why: "counted the enemy wards in range of each spot; this one clears the most",
-    // The heuristic sweeps the pit that is about to spawn rather than the
-    // node that is actually watched.
-    floor: node_name(ward_spots(c.node)[0]),
+    // Where the baseline puts a control ward: the spot that clears the most
+    // of the wards it can SEE, the pit on a tie. The truth counts every ward,
+    // seen or not, since a control ward destroys both.
+    floor: node_name(g.control_ward_spot(c, c.node).0),
   }
 }
 
@@ -1266,9 +1298,13 @@ fn ask_vision_kind(g : Game, team : Int, node : Int) -> Ask {
     descriptions: [],
     truth: "\{watched}",
     why: "\{if watched { "they have a live ward on that node or a neighbour" } else { "they have no ward in range, so the control ward would destroy nothing a charge would not also see" }}",
-    // "Always buy the control ward" — the answer that is right half the time
-    // and costs 75 gold the other half.
-    floor: "true",
+    // The baseline's own trigger: a control ward when it can see a ward of
+    // theirs in range. This floor used to be "always buy", which is not what
+    // the baseline did — it checked for an enemy ward first, and through
+    // `enemy_ward_near`, which could see wards it should not have. Through our
+    // own vision it misses the ward nobody can see, which is the one state here
+    // where their vision is hidden in a brush.
+    floor: "\{g.enemy_ward_seen_near(team, node)}",
   }
 }
 
@@ -1301,7 +1337,10 @@ fn ask_siege_plates(g : Game, node : Int) -> Ask {
     descriptions: descs,
     truth: "\{plates * PLATE_GOLD}",
     why: "\{plates} plate(s) left at \{PLATE_GOLD} gold each",
-    floor: "\{PLATES * PLATE_GOLD}",
+    // The count `tower_value` prices a tower by. This floor used to assume a
+    // full five, which the baseline never did: it has read the plating left
+    // on a tower since plating existed.
+    floor: "\{g.plates_on(node) * PLATE_GOLD}",
   }
 }
 

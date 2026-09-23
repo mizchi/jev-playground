@@ -154,12 +154,128 @@ test "the baseline counter-jungles when its own camps are down" {
   }
   assert_true(g.counter_jungle_worth(TEAM_A, jg.node))
   assert_eq(camp_side(g.next_camp(TEAM_A, jg.node)), TEAM_B)
-  // Everything down: nothing to cross for.
+  // Everything down: nothing to cross for, and the route goes to whichever of
+  // ours is back first — it used to answer -1, "nowhere", which left the
+  // jungler to drift with the group while its own camps ticked back.
   for camp in g.camps {
     camp.down_for = CAMP_RESPAWN
   }
   assert_false(g.counter_jungle_worth(TEAM_A, jg.node))
-  assert_eq(g.next_camp(TEAM_A, jg.node), -1)
+  assert_eq(camp_side(g.next_camp(TEAM_A, jg.node)), TEAM_A)
+}
+
+///|
+/// The route reads the timers. A camp of ours that is back before we could
+/// reach one of theirs is worth waiting for; one that is not, is not.
+test "the route waits for our camp when it is back before theirs is reached" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  let jg = g.champs[1]
+  let ours = node_id("a_jg_bot")
+  jg.node = ours
+  // Both of ours down; theirs all standing. b_jg_bot is two hops away,
+  // through the drake pit.
+  for camp in g.camps {
+    if camp.side == TEAM_A {
+      camp.down_for = CAMP_RESPAWN
+    }
+  }
+  assert_eq(hops(ours, node_id("b_jg_bot")), 2)
+  // Ours is back in one: stand on it rather than walk two hops into theirs.
+  match g.camp_at(ours) {
+    Some(camp) => camp.down_for = 1
+    None => panic()
+  }
+  assert_eq(g.next_camp(TEAM_A, jg.node), ours)
+  assert_false(g.counter_jungle_worth(TEAM_A, jg.node))
+  // Back in exactly the walk: the same arrival either way, and the walk into
+  // their half is the risk, so still ours.
+  match g.camp_at(ours) {
+    Some(camp) => camp.down_for = 2
+    None => panic()
+  }
+  assert_eq(g.next_camp(TEAM_A, jg.node), ours)
+  // Back in three: theirs is standing and nearer in time. Cross.
+  match g.camp_at(ours) {
+    Some(camp) => camp.down_for = 3
+    None => panic()
+  }
+  assert_eq(g.next_camp(TEAM_A, jg.node), node_id("b_jg_bot"))
+  assert_true(g.counter_jungle_worth(TEAM_A, jg.node))
+  // And a standing camp of ours still beats any of theirs, however near —
+  // the preference the timers overrule only when none of ours is up.
+  match g.camp_at(node_id("a_jg_top")) {
+    Some(camp) => camp.down_for = 0
+    None => panic()
+  }
+  assert_eq(g.next_camp(TEAM_A, jg.node), node_id("a_jg_top"))
+  assert_false(g.counter_jungle_worth(TEAM_A, jg.node))
+}
+
+///|
+/// A control ward is bought against the wards the team can SEE, and put where
+/// it clears the most of them.
+test "the baseline's control ward reads only the wards it can see" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  let scout = g.champs[4]
+  scout.node = RIV_BOT
+  scout.gold = CONTROL_COST
+  let their_jg = node_id("b_jg_bot")
+  // One of theirs in a brush beside the pit. Standing on the pit does not see
+  // into it, so the rules know it is there and the team does not.
+  g.wards.push({
+    node: their_jg,
+    team: TEAM_B,
+    kind: WARD_STEALTH,
+    ttl: WARD_TTL,
+  })
+  assert_true(g.enemy_ward_near(TEAM_A, RIV_BOT))
+  assert_false(g.vision(TEAM_A)[their_jg])
+  assert_false(g.enemy_ward_seen_near(TEAM_A, RIV_BOT))
+  assert_eq(g.visible_clears(TEAM_A, RIV_BOT), 0)
+  let (_, clears) = g.control_ward_spot(scout, RIV_BOT)
+  assert_eq(clears, 0)
+  // So the baseline does not pay for it. It used to: `enemy_ward_near` read
+  // the hidden ward and the pit got a control ward against nothing it knew of.
+  let drake = match g.neutral_named("dragon") {
+    Some(n) => n
+    None => panic()
+  }
+  drake.spawn_in = 0
+  // It spends the free charge on the pit instead — the 75 gold buys no item,
+  // so nothing else competes for the turn.
+  assert_true(scout.gold < COMPONENT_COST)
+  assert_true(smart_action(g, scout, g.team_plan(TEAM_A)) == PlaceWard(RIV_BOT))
+  // Once somebody stands in that brush the ward is seen, and it is cleared —
+  // from the pit, which reaches it, on the tie with the brush itself.
+  g.champs[3].node = their_jg
+  assert_true(g.enemy_ward_seen_near(TEAM_A, RIV_BOT))
+  let (spot, seen) = g.control_ward_spot(scout, RIV_BOT)
+  assert_eq(seen, 1)
+  assert_eq(spot, RIV_BOT)
+}
+
+///|
+/// A control ward goes to the spot that clears the most, not to the pit by
+/// habit.
+test "the control ward goes where it clears the most" {
+  let g = Game::with_comps(comp_by_name("meta"), comp_by_name("meta"))
+  park_all(g)
+  let scout = g.champs[4]
+  let from = node_id("a_jg_bot")
+  scout.node = from
+  // Two of theirs on our side of the bot jungle, both in sight of the scout
+  // standing in the brush: one in the brush itself, one in the lane beside
+  // it. A control ward on the pit reaches the brush but not the lane.
+  let lane = node_id("a1_bot")
+  g.wards.push({ node: from, team: TEAM_B, kind: WARD_STEALTH, ttl: WARD_TTL, })
+  g.wards.push({ node: lane, team: TEAM_B, kind: WARD_STEALTH, ttl: WARD_TTL, })
+  assert_eq(g.visible_clears(TEAM_A, RIV_BOT), 1)
+  assert_eq(g.visible_clears(TEAM_A, from), 2)
+  let (spot, clears) = g.control_ward_spot(scout, RIV_BOT)
+  assert_eq(spot, from)
+  assert_eq(clears, 2)
 }
 
 ///|

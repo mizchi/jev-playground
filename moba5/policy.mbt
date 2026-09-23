@@ -156,10 +156,7 @@ pub fn Game::monster_value(self : Game, team : Int, n : Neutral) -> Int {
 /// outbid the river — and the moment the plating falls off, the same tower
 /// stops outbidding it.
 pub fn Game::tower_value(self : Game, node : Int) -> Int {
-  match self.structure_at(node) {
-    Some(s) => FREE_TOWER_VALUE + s.plates * PLATE_VALUE
-    None => FREE_TOWER_VALUE
-  }
+  FREE_TOWER_VALUE + self.plates_on(node) * PLATE_VALUE
 }
 
 ///|
@@ -804,15 +801,21 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
   // theirs, and the fight over an objective both teams can see is the fight
   // neither team can set up. This is the only action in the game that takes
   // vision away.
+  //
+  // "They see the pit" is read through OUR vision. The first version asked
+  // `enemy_ward_near`, which is the rules' question and knows every ward on
+  // the map — so the strong baseline, whose header says it reads only its own
+  // team's observation, was buying control wards against stealth wards in
+  // brush it could not see. And it only ever put the ward on the pit itself,
+  // where one next to the pit can clear more of them.
   if c.gold >= CONTROL_COST {
     for n in neutral_soon(g) {
-      if !g.enemy_ward_near(c.team, n) {
+      if n != c.node && !adjacency[c.node].contains(n) {
         continue
       }
-      for a in legal {
-        if a == PlaceControl(n) {
-          return a
-        }
+      let (spot, clears) = g.control_ward_spot(c, n)
+      if clears > 0 && legal.contains(PlaceControl(spot)) {
+        return PlaceControl(spot)
       }
     }
   }
@@ -920,6 +923,38 @@ pub fn smart_action(g : Game, c : Champ, plan : Plan) -> Action {
     return Farm
   }
   Hold
+}
+
+///|
+/// Where a control ward from `c` takes the most of the enemy's vision away,
+/// and how many of their wards it would destroy there — counting only the
+/// wards `c`'s team can see. A tie goes to the spot nearest `pit`, the
+/// objective the ward is for, and then to the one nearer their base.
+///
+/// The second tie-break is not decoration. `ward_spots` lists neighbours in
+/// `adjacency` order, which is not mirrored between the two halves of the map,
+/// so "the first of the tied spots" would put team A's ward on its own side
+/// of a pit and team B's on the far side — docs/56 §8's third bug, one action
+/// along. Distance to their base is the same number from both sides.
+///
+/// Returns (-1, 0) from a node with no jungle or river within reach.
+pub fn Game::control_ward_spot(self : Game, c : Champ, pit : Int) -> (Int, Int) {
+  let foe = enemy_of(c.team)
+  let mut best = -1
+  let mut best_clears = 0
+  let mut best_key = 1 << 28
+  for n in ward_spots(c.node) {
+    let clears = self.visible_clears(c.team, n)
+    let key = hops(n, pit) * 100 + hops(n, base_of(foe))
+    if best < 0 ||
+      clears > best_clears ||
+      (clears == best_clears && key < best_key) {
+      best = n
+      best_clears = clears
+      best_key = key
+    }
+  }
+  (best, best_clears)
 }
 
 ///|

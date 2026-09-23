@@ -1166,6 +1166,21 @@ pub fn Game::structure_at(self : Game, node : Int) -> Structure? {
 }
 
 ///|
+/// The plates still on the structure at `node`: 0 once they have been broken
+/// or have fallen off at `PLATE_TICKS`, and 0 where there is no structure.
+///
+/// One read, shared. The baseline prices a tower by it (`tower_value`), and
+/// the benchmark's floor answers the plating question with it — the floor
+/// used to assume a full five, which is a number the baseline itself never
+/// believed.
+pub fn Game::plates_on(self : Game, node : Int) -> Int {
+  match self.structure_at(node) {
+    Some(s) => s.plates
+    None => 0
+  }
+}
+
+///|
 /// The monster with this key, alive or not. Named lookups, so nothing has to
 /// remember that Baron is `neutrals[1]` — which stopped being obvious the
 /// moment there were three of them.
@@ -1214,46 +1229,88 @@ pub fn Game::camps_up(self : Game, team : Int) -> Array[Camp] {
 }
 
 ///|
-/// The camp `team` should walk to: one that is up, nearest to `from`, ours
-/// before theirs.
+/// Ticks until the camp at `node` can be taken again: 0 while it stands, and
+/// 0 where there is no camp.
 ///
-/// Ours first because theirs costs a walk through unlit brush next to their
-/// lanes. That is a preference and not a rule — `counter_jungle_worth` is
-/// where the other half of the decision lives.
+/// The number the observation carries as `comes_back_in`, and the one the
+/// baseline's route reads.
+pub fn Game::camp_back_in(self : Game, node : Int) -> Int {
+  match self.camp_at(node) {
+    Some(c) => c.down_for
+    None => 0
+  }
+}
+
+///|
+/// How the route orders camps that are standing: ours before theirs, then
+/// nearest. Ours first because theirs costs a walk through unlit brush next to
+/// their lanes — a preference, not a rule, and `next_camp` is where the timers
+/// get to overrule it.
+pub fn camp_order_key(team : Int, from : Int, camp : Camp) -> Int {
+  (if camp.side == team { 0 } else { 100 }) + hops(from, camp.node)
+}
+
+///|
+/// The camp `team` should walk to from `from`, or -1.
+///
+/// One of ours that is standing, nearest first. When none of ours is, the
+/// nearest of theirs that is standing — unless one of ours is back before we
+/// could reach theirs, in which case the route goes to ours and waits. The
+/// walk into their half costs the ticks the timer would have, and it is the
+/// walk that carries the risk.
+///
+/// The first version read no timers at all: a camp was up or it was not. So
+/// a jungler standing on its own camp with one tick left on the clock walked
+/// two hops into their brush for the same thirty gold it would have had by
+/// standing still. "Where to be when it comes back" is one of the two
+/// decisions a camp with a timer exists to create, and the baseline was not
+/// making it.
 pub fn Game::next_camp(self : Game, team : Int, from : Int) -> Int {
-  let mut best = -1
-  let mut best_key = 1 << 28
+  let mut standing = -1
+  let mut standing_key = 1 << 28
+  let mut soon = -1
+  let mut soon_at = 1 << 28
   for c in self.camps {
-    if !c.up() {
-      continue
-    }
-    let theirs = if c.side == team { 0 } else { 1 }
-    let key = theirs * 100 + hops(from, c.node)
-    if key < best_key {
-      best_key = key
-      best = c.node
+    if c.up() {
+      let key = camp_order_key(team, from, c)
+      if key < standing_key {
+        standing_key = key
+        standing = c.node
+      }
+    } else if c.side == team {
+      // When it can be taken if we set off now: the walk, or the timer when
+      // the timer is the longer of the two.
+      let walk = hops(from, c.node)
+      let at = if c.down_for > walk { c.down_for } else { walk }
+      if at < soon_at {
+        soon_at = at
+        soon = c.node
+      }
     }
   }
-  best
+  if standing >= 0 && camp_side(standing) == team {
+    return standing
+  }
+  if standing >= 0 && (soon < 0 || soon_at > hops(from, standing)) {
+    return standing
+  }
+  soon
 }
 
 ///|
 /// Whether crossing into the enemy's half is the better use of the next few
-/// ticks: none of ours is up, at least one of theirs is, and we can get there.
+/// ticks: the route says theirs, and it is a short walk.
+///
+/// Which, since the route reads the timers, now means: none of ours is
+/// standing, none of ours is back before we could get to theirs, and one of
+/// theirs is standing within three hops.
 ///
 /// The denial is the point and it is not in this function — it is in the
 /// enemy's gold, which `position_score` already counts. A camp we take is a
 /// camp they do not, for `CAMP_RESPAWN` ticks.
 pub fn Game::counter_jungle_worth(self : Game, team : Int, from : Int) -> Bool {
-  if !self.camps_up(team).is_empty() {
-    return false
-  }
-  for c in self.camps {
-    if c.side != team && c.up() && hops(from, c.node) <= 3 {
-      return true
-    }
-  }
-  false
+  let n = self.next_camp(team, from)
+  n >= 0 && camp_side(n) != team && hops(from, n) <= 3
 }
 
 // ------------------------------------------------------------------- drakes
@@ -1753,6 +1810,37 @@ pub fn Game::enemy_ward_near(self : Game, team : Int, node : Int) -> Bool {
     }
   }
   false
+}
+
+///|
+/// How many of the enemy's wards a control ward on `spot` would destroy,
+/// counting only the ones `team` can see.
+///
+/// `enemy_ward_near` is the rules' question and reads every ward on the map,
+/// which is right for a truth and wrong for a player: a stealth ward in a
+/// brush nobody is standing in is invisible, and the observation lists
+/// `their_wards_we_can_see` and nothing else. This is the same count through
+/// that same filter, so a policy asking it knows exactly what a policy under
+/// test could know.
+pub fn Game::visible_clears(self : Game, team : Int, spot : Int) -> Int {
+  let seen = self.vision(team)
+  let mut n = 0
+  for w in self.wards {
+    if w.team != team &&
+      w.ttl > 0 &&
+      seen[w.node] &&
+      (w.node == spot || adjacency[spot].contains(w.node)) {
+      n += 1
+    }
+  }
+  n
+}
+
+///|
+/// Whether `team` can SEE an enemy ward watching `node`. The player's half of
+/// `enemy_ward_near`.
+pub fn Game::enemy_ward_seen_near(self : Game, team : Int, node : Int) -> Bool {
+  self.visible_clears(team, node) > 0
 }
 
 ///|
