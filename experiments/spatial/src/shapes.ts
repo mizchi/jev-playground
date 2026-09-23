@@ -1,5 +1,5 @@
 /**
- * Shapes and a third dimension -- the two questions docs/63 could not ask.
+ * Shapes and a third dimension -- the two questions docs/64 could not ask.
  *
  *   npx tsx src/shapes.ts --sample        # one case of each part, every encoding, no API
  *   npx tsx src/shapes.ts --instruments   # the generators' balance, no API
@@ -7,7 +7,7 @@
  *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --rects   # §1, two rectangles
  *   TYPESAFEAI_API_KEY=... npx tsx src/shapes.ts --solid   # §2, a stack of layers
  *
- * [docs/63](../../../docs/63-spatial.md) measured relations between the
+ * [docs/64](../../../docs/64-spatial.md) measured relations between the
  * OBSERVER and one thing, on a two-dimensional picture. Two of its limits are
  * about what the corpus could not contain:
  *
@@ -76,9 +76,9 @@ import {
 /**
  * §1's encodings.
  *
- * The first four are docs/63's, applied to this picture unchanged -- `ascii`
+ * The first four are docs/64's, applied to this picture unchanged -- `ascii`
  * is the raster, `coords` and `sparse` are the pixels with coordinates, `runs`
- * is the compressed code form that docs/63 §2.4 ended up recommending.
+ * is the compressed code form that docs/64 §2.4 ended up recommending.
  * `relative` is absent because there is no observer to be relative to, which
  * is the point of this corpus.
  *
@@ -142,7 +142,7 @@ async function runRects(reps: number): Promise<void> {
         input: o.input,
         ms: o.ms,
         width: c.gridWidth,
-        // `margin` rides in the field docs/63 used for its near/far factor, so
+        // `margin` rides in the field docs/64 used for its near/far factor, so
         // the report can split by it with the machinery that already exists.
         range: c.margin as unknown as Row["range"],
       });

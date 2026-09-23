@@ -148,7 +148,7 @@ for (const file of files) {
   // The scan below stops a target at whitespace (`[^)#\s]*`), so
   // `](#a b)` never matches and is skipped in silence -- counted as nothing,
   // reported as nothing. `check-doc-anchors.mjs` uses `[^)]+` and catches it.
-  // docs/63 shipped with exactly that: a space where a hyphen belonged in its
+  // docs/64 shipped with exactly that: a space where a hyphen belonged in its
   // own section link, reported by the sibling and invisible here. That is the
   // same divergence between these two scripts as the underscore in `slug()`,
   // in the other direction.

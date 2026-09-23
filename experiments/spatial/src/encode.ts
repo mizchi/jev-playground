@@ -128,7 +128,7 @@ const FORM: Record<ArmName, string> = {
 /**
  * WHAT `sparse` IS FOR, AND WHAT IT MUST BREAK -- WRITTEN BEFORE THE RUN.
  *
- * docs/63 §2.3 measured a trade: the coordinate table fixed the column axis
+ * docs/64 §2.3 measured a trade: the coordinate table fixed the column axis
  * (74% -> 99%) and dropped `monster_count`'s AUC from 0.926 to 0.781. I called
  * that "no free lunch", and [TODO §1.13](../../../TODO.md) says why that
  * reading is not yet earned: the table carries ONE ENTRY PER DRAWN CELL and
@@ -138,7 +138,7 @@ const FORM: Record<ArmName, string> = {
  * `sparse` separates them. Same coordinates, same order, floor omitted.
  *
  *   If the counting loss is about VOLUME, `sparse` recovers `monster_count`
- *   while keeping the column axis, and docs/63 §2.3's "no free lunch" was
+ *   while keeping the column axis, and docs/64 §2.3's "no free lunch" was
  *   wrong -- the lunch was just badly packed.
  *   If the loss is about the COORDINATE FORM, `sparse` stays at ~0.78 and
  *   §2.3 stands.
@@ -168,7 +168,7 @@ function sparseNote(rows: readonly string[], floor: string): string {
 /**
  * WHAT `runs` IS FOR -- ALSO WRITTEN BEFORE THE RUN.
  *
- * docs/63 §2.4 found the code form 47% cheaper in tokens than the JSON table
+ * docs/64 §2.4 found the code form 47% cheaper in tokens than the JSON table
  * at the same byte count. `runs` compresses the same form again, one statement
  * per run of identical characters instead of per character, and sits exactly
  * between `ascii` (no coordinate anywhere) and `code` (a coordinate on every

@@ -704,7 +704,7 @@ function cutReport(rec: Record_): void {
 export function costTable(rec: Record_, arms: readonly string[] = ARMS): void {
   console.log("\n  what each encoding cost\n");
   console.log(`  ${"encoding".padEnd(10)}  requests   input tokens   per request     ms/request`);
-  // The arm list is a PARAMETER because docs/64 has its own arms. Hardcoding
+  // The arm list is a PARAMETER because docs/65 has its own arms. Hardcoding
   // `ARMS` here silently dropped `rects` and `bounds` from that report's cost
   // table -- a missing row, which is the kind of omission a reader cannot see.
   for (const arm of arms) {

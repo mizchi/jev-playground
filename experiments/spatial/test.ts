@@ -610,7 +610,7 @@ if (SCREENS.length > 0) {
 }
 
 
-// ------------------------------------------------------ docs/64: rectangles
+// ------------------------------------------------------ docs/65: rectangles
 
 const RECTS = rectCorpus();
 
@@ -725,7 +725,7 @@ check("the pixel arms of the rectangle corpus carry no answer", () => {
   }
 });
 
-// ---------------------------------------------------- docs/64: three dimensions
+// ---------------------------------------------------- docs/65: three dimensions
 
 const BLOCKS = solidCorpus();
 

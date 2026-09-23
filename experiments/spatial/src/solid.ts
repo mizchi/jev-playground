@@ -1,7 +1,7 @@
 /**
  * Three dimensions, where a list of strings has no third axis at all.
  *
- * [docs/63](../../../docs/63-spatial.md) found one mechanism and measured it
+ * [docs/64](../../../docs/64-spatial.md) found one mechanism and measured it
  * three ways: an axis that is an ARRAY INDEX is free (rows: 100% under every
  * encoding, at every width), and an axis that must be COUNTED INSIDE A STRING
  * is not (columns: 74% in the picture, 100% with coordinates, and decaying
@@ -16,20 +16,20 @@
  *   y  the row inside a slice -- the INNER array index
  *   x  the column -- a character position inside a string
  *
- * SO THE PREDICTION IS: `above` (z) and `south` (y) both read like docs/63's
+ * SO THE PREDICTION IS: `above` (z) and `south` (y) both read like docs/64's
  * row axis and come out at or near 100%, and `east` (x) is the only axis that
  * costs anything. If instead z is WORSE than y, then nesting costs something
- * that indexing does not, and docs/63's "index versus count" reading is
+ * that indexing does not, and docs/64's "index versus count" reading is
  * incomplete rather than wrong. Either result says something; that is the
  * point of writing it here first.
  *
  * NO EXPLICIT z LABELS IN THE PICTURE ARM. The slices go in as a plain array of
- * arrays of strings, because `ascii` in docs/63 did not number its rows either
+ * arrays of strings, because `ascii` in docs/64 did not number its rows either
  * -- numbering was `ruler`'s job, and it did not help. Labelling z but not y
  * would hand one of the two index axes an advantage the other does not have,
  * and the comparison between them is the measurement.
  *
- * THE BOX IS MOSTLY AIR. Filling it would put docs/63's haystack confound back
+ * THE BOX IS MOSTLY AIR. Filling it would put docs/64's haystack confound back
  * in (a 20x7x5 box is 700 cells), and the question here is about locating
  * things across three axes, not about volume. Clutter is added so that every
  * slice has something in it -- otherwise "which slice is the `*` on" would be
@@ -102,7 +102,7 @@ export function chebyshev3(a: Point, b: Point): number {
  * Eight octants with equal counts makes each of the three axis questions
  * exactly 50/50 AND mutually independent -- knowing the answer to `east` says
  * nothing about `south` or `above`. Rejection sampling for the same reason as
- * docs/63's rooms: a hand-derived placement rule is where a bias hides.
+ * docs/64's rooms: a hand-derived placement rule is where a bias hides.
  */
 export function corpus(reps = 4, seed = 20260922): SolidCase[] {
   const rnd = mulberry32(seed);
@@ -181,7 +181,7 @@ export const LEGEND: Record<string, string> = {
 
 export type SolidArm = "layers" | "coords" | "code" | "relative";
 export const SOLID_ARMS: readonly SolidArm[] = ["layers", "coords", "code", "relative"] as const;
-/** `relative` hands over the sign of every axis, exactly as in docs/63. */
+/** `relative` hands over the sign of every axis, exactly as in docs/64. */
 export const SOLID_LEAKY: ReadonlySet<SolidArm> = new Set<SolidArm>(["relative"]);
 
 const SUBJECT = "a rectangular block of air inside a dungeon, sliced into horizontal layers";
@@ -293,7 +293,7 @@ const noul = (instructions: string, t: string, f: string): Question => ({
  *
  * `east`, `south` and `above` are deliberately the SAME SENTENCE with one word
  * changed -- "find the * and compare its column / row / layer with the @'s".
- * docs/63's two axis questions were already built that way, and the third one
+ * docs/64's two axis questions were already built that way, and the third one
  * has to join them or a difference between the axes could be my wording.
  */
 export function probesFor(c: SolidCase): { nouls: SolidProbe[]; scores: SolidScore[] } {

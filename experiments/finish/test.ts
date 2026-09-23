@@ -1843,7 +1843,7 @@ check("both doc checkers SEE a link target containing whitespace", () => {
    * nothing and was skipped in silence -- not counted, not reported.
    * `check-doc-anchors.mjs` uses `[^)]+` and saw it.
    *
-   * docs/63 shipped with exactly that: a space where a hyphen belonged in its
+   * docs/64 shipped with exactly that: a space where a hyphen belonged in its
    * own section link. One checker named it, the other said the repository was
    * clean. A blind spot reports zero for the same reason a working tool does.
    *

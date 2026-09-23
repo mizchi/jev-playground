@@ -1,7 +1,7 @@
 /**
  * Two rectangles. Do they overlap?
  *
- * [docs/63](../../../docs/63-spatial.md) measured relations between the
+ * [docs/64](../../../docs/64-spatial.md) measured relations between the
  * OBSERVER and one thing: "is the `<` to my right", "is the `*` next to me".
  * It found two shapes of answer -- the axis that is an array index is free,
  * the axis that must be counted inside a string is not -- and one limit that
@@ -11,14 +11,14 @@
  * it is worth its own corpus:
  *
  *   THE RELATION IS BETWEEN TWO THINGS, neither of which is the observer. There
- *     is no `@` here at all. If docs/63's "compute the relation for it" result
+ *     is no `@` here at all. If docs/64's "compute the relation for it" result
  *     is about egocentricity, object-to-object relations should behave better;
  *     if it is about relations generally, they should behave the same.
  *   THE ANSWER HAS A ONE-CELL BOUNDARY. Overlapping by one column, touching
  *     with no gap, and missing by one column are three different answers to
  *     three nearly identical pictures. The margin is a difficulty dial I can
- *     turn, which docs/63 had no equivalent of.
- *   THE OBJECT IS A SHAPE, so there is an encoding docs/63 could not have:
+ *     turn, which docs/64 had no equivalent of.
+ *   THE OBJECT IS A SHAPE, so there is an encoding docs/64 could not have:
  *     the figure itself, `{x, y, width, height}`. That is the rung above
  *     coordinates on the same ladder -- pixels, then pixels with coordinates,
  *     then the shape -- and it is the encoding a program would actually use.
@@ -122,7 +122,7 @@ function marginOf(a: Rect, b: Rect, axis: Axis): Margin | null {
 /**
  * The corpus: `reps` cases for each (width x axis x margin) cell.
  *
- * REJECTION SAMPLING, for the same reason as docs/63's rooms: deriving the
+ * REJECTION SAMPLING, for the same reason as docs/64's rooms: deriving the
  * legal placements per cell by hand is where a bias hides, and a constraint
  * that (say) always put A on the left would silently make one directional
  * question trivial.
@@ -247,7 +247,7 @@ export function sceneOf(c: RectCase): Scene {
  * one of them perception and the other a leak would have been a distinction
  * about my arithmetic rather than about the encoding. Both are named here.
  *
- * WHICH MAKES THE PAIR ITS OWN MEASUREMENT. docs/63 found that reading the
+ * WHICH MAKES THE PAIR ITS OWN MEASUREMENT. docs/64 found that reading the
  * SIGN of a number handed over was free (`relative` scored 100%). Here the two
  * ceiling arms differ by exactly one addition per rectangle, so `rects`
  * against `bounds` asks whether that addition is free too. And `ascii` against
@@ -306,7 +306,7 @@ const noul = (instructions: string, t: string, f: string): Question => ({
 /**
  * The questions.
  *
- * `a_starts_left` is deliberately the same SHAPE as docs/63's `east` -- compare
+ * `a_starts_left` is deliberately the same SHAPE as docs/64's `east` -- compare
  * one column number with another -- so the column axis can be read across the
  * two corpora. The difference is that neither rectangle is the observer.
  */
