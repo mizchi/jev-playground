@@ -195,7 +195,8 @@ moon run --target native cmd/patterns --                   # 公式パターン�
 moon run --target native cmd/shellrisk --                  # シェルコマンド判定
 moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
 moon run --target native cmd/moba5 -- --bench --dry         # 5v5 の採点表と床(API 不要)
-moon run --target native cmd/moba5 -- --bench --repeat 5     # 5v5 を 124 問 × 5 回で採点
+moon run --target native cmd/moba5 -- --bench --repeat 5     # 5v5 を 170 問 × 5 回で採点
+moon run --target native cmd/moba5 -- --audit                # 5v5 を遊んだら金と経験値がどこから来るか(API 不要。LoL との比較は docs/64)
 moon run --target native cmd/moba5 -- --a jev --b smart     # 5v5 MOBA
 ```
 
@@ -511,13 +512,14 @@ pi install ./packages/jev-guard   # 1 つだけ入れることもできる
 
 ```bash
 moon run --target native cmd/moba5 -- --bench --dry        # 採点表と床(API キー不要)
-moon run --target native cmd/moba5 -- --bench --repeat 5   # 同じ 124 問を 5 回、採点
+moon run --target native cmd/moba5 -- --bench --repeat 5   # 同じ 170 問を 5 回、採点
 moon run --target native cmd/moba5 -- --arena              # 5v5 集団戦の総当たり(API 不要)
 moon run --target native cmd/moba5 -- --tournament         # 全試合の総当たり(API 不要)
+moon run --target native cmd/moba5 -- --audit              # 72 試合の金と経験値の出所、レベルと装備の到達、タワー(API 不要)
 moon run --target native cmd/moba5 -- --draft              # 生のステータスから編成を選ばせる
 moon run --target native cmd/moba5 -- --a jev --b smart --games 2 --max-ticks 30
 moon run --target native cmd/moba5 -- --a jev --b smart --verbose --replay r.jsonl
-moon test --target native -p moba5                         # 45 件。API キー不要
+moon test --target native -p moba5                         # 135 件。API キー不要
 ```
 
 増えた機構は**どれも判断を 1 つ作るために**入れてあります ——
@@ -555,8 +557,9 @@ moon test --target native -p moba5                         # 45 件。API キー
 | **ゴム印より下のクラス** | **3 つ**(`focus` 0.26 / `item` 0.33 / `ability` 0.40) |
 | 自己一致 | **155/170** |
 | 戦場の霧の読み(23 択) | **A 側 0.25 対 B 側 0.008** —— 同じ相手で、2 巡とも |
-| 環境のバグ(全部テストで) | **8 件**。うち 1 件は**チーム A が互角の集団戦に必ず勝つ**、もう 1 件は**同点を隣接リストの並び順で割っていた**(3 件目) |
+| 環境のバグ(全部テストで) | **9 件**。うち 1 件は**チーム A が互角の集団戦に必ず勝つ**、もう 1 件は**同点を隣接リストの並び順で割っていた**(3 件目)、9 件目は**同じ tick の制御ワードの取り合いが必ず B の勝ち**(mirror 戦では起きないので対称性のテストに出ず、[64](docs/64-moba5-lol.md) で値段を変えた試しで出た) |
 | 見えないワードの漏れ | **3 か所** —— baseline 自身の判断、問いの選択肢、行動の説明文。**両側に対称なので対称性の検査には出ない**。モデルは使っていなかった(直して聞き直した 20 答えが全部同じ) |
+| **LoL と照らしたら**([64](docs/64-moba5-lol.md)) | **装備 ✗・チャンピオン △・タワー ✗・レベル △・時計 ✗** —— **720 中 344 の champion が完成品 0** で終わり、収入の **30.5% が制御ワード**、**23.4% がエピックモンスター**、ネクサスは 72 試合で 0。候補を 1 つずつ入れて測ると、**装備を半額にするだけで最初の完成品が試合の 77% → 40%**(truth 5 問)。ルールは変えていない |
 
 **そして一番はっきり出たのは正解率ではなく整合性でした** ——
 **16 局面のうち 13 で、「この集団戦は勝てない」と答えた直後に
