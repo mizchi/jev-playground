@@ -1833,6 +1833,63 @@ check("the two doc-link checkers agree, and neither drops `_` from a slug", () =
   }
 });
 
+check("both doc checkers SEE a link target containing whitespace", () => {
+  /**
+   * THE DIVERGENCE CAME BACK, IN THE OTHER DIRECTION.
+   *
+   * The test above pins the two scripts' slug and code-span rules, and it
+   * passes while they disagree about something else: `check-doc-links.mjs`
+   * ended a link target at whitespace (`[^)#\s]*`), so `](#a b)` matched
+   * nothing and was skipped in silence -- not counted, not reported.
+   * `check-doc-anchors.mjs` uses `[^)]+` and saw it.
+   *
+   * docs/64 shipped with exactly that: a space where a hyphen belonged in its
+   * own section link. One checker named it, the other said the repository was
+   * clean. A blind spot reports zero for the same reason a working tool does.
+   *
+   * THIS IS BEHAVIOURAL ON PURPOSE. The sibling test asserts on the scripts'
+   * SOURCE, which is the kind of assertion that passes by accident when the
+   * shape of the code moves. Here a fixture with a known-bad link goes into
+   * the tree, both scripts run, and both have to fail -- so the check cannot
+   * be satisfied by text that merely looks like a rule.
+   *
+   * THE FIXTURE IS A FILE DIRECTLY IN `docs/` BECAUSE THE TWO SCRIPTS SHARE
+   * NEITHER SCOPE NOR DEPTH. `check-doc-anchors.mjs` reads the root
+   * `README.md` plus a FLAT `readdirSync(docs)`; `check-doc-links.mjs` walks
+   * the whole repository. Two earlier versions of this test measured that
+   * instead of the rule: one put the fixture at the repository root, the other
+   * in a subdirectory of `docs/`, and both "proved" the anchors checker blind
+   * to a file it is not meant to read.
+   */
+  const root = resolve(import.meta.dirname, "../..");
+  const fixture = resolve(root, "docs", "tmp-doc-checker-fixture.md");
+  const both = ["check-doc-links.mjs", "check-doc-anchors.mjs"];
+  const run = (f: string): { status: number | null; tail: string } => {
+    const out = spawnSync("node", [resolve(root, "scripts", f)], { encoding: "utf8", timeout: 120_000 });
+    return { status: out.status, tail: (out.stdout ?? "").trim().split("\n").pop() ?? "" };
+  };
+  ok(!existsSync(fixture), "the fixture path is already taken by a real file");
+  try {
+    // A heading, and a link to it with a space where a hyphen belongs. The
+    // heading exists, so nothing here is a missing anchor -- the only defect
+    // is the whitespace, which is what makes it the case that was invisible.
+    writeFileSync(fixture, "# Fixture\n\n## A Section\n\n[go](#a section)\n", "utf8");
+    for (const f of both) {
+      const { status, tail } = run(f);
+      eq(status, 1, `${f} passed a markdown destination containing a space: ${tail}`);
+      ok(!/, 0 broken$/.test(tail), `${f} reported the fixture clean: ${tail}`);
+    }
+  } finally {
+    rmSync(fixture, { force: true });
+  }
+  // And the tree is clean again once the fixture is gone, so the check above
+  // failed on the fixture rather than on something it left behind.
+  for (const f of both) {
+    const { status, tail } = run(f);
+    eq(status, 0, `${f} is not clean after the fixture was removed: ${tail}`);
+  }
+});
+
 check("the fence protects the harness's own directories, and nothing else new", () => {
   /**
    * THE `/tmp` GAP, CLOSED. The fence covered `/home/` and `/root/` and

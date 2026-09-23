@@ -143,6 +143,26 @@ for (const file of files) {
   const source = withoutCodeSpans(readFileSync(file, "utf8"));
   const here = dirname(file);
   const name = relative(REPO, file);
+  // A LINK THIS FILE CANNOT SEE IS WORSE THAN A LINK IT GETS WRONG.
+  //
+  // The scan below stops a target at whitespace (`[^)#\s]*`), so
+  // `](#a b)` never matches and is skipped in silence -- counted as nothing,
+  // reported as nothing. `check-doc-anchors.mjs` uses `[^)]+` and catches it.
+  // docs/64 shipped with exactly that: a space where a hyphen belonged in its
+  // own section link, reported by the sibling and invisible here. That is the
+  // same divergence between these two scripts as the underscore in `slug()`,
+  // in the other direction.
+  //
+  // A markdown destination containing a space is not a link at all unless it
+  // is bracketed, so the text renders literally and the reader gets no
+  // navigation -- which is why this counts as broken rather than as a warning.
+  // At the time it was added the repository had no such target and no link
+  // titles (`](x "T")` would look the same), so it starts at zero and can only
+  // catch what arrives later.
+  for (const m of source.matchAll(/\]\((?!https?:|mailto:)([^)]*\s[^)]*)\)/g)) {
+    console.log(`  MALFORMED     ${name} -> (${m[1]}) -- whitespace in a link target`);
+    broken += 1;
+  }
   for (const m of source.matchAll(/\]\((?!https?:|mailto:)([^)#\s]*)(#[^)\s]*)?\)/g)) {
     const [, target, hash] = m;
     checked += 1;
