@@ -4,6 +4,7 @@
  *   npx tsx src/spatial.ts --sample        # every encoding of one space, side by side, no API
  *   npx tsx src/spatial.ts --instruments   # what the harness checks about itself, no API
  *   npx tsx src/spatial.ts --report        # every table below, from the records, no API
+ *   npx tsx src/spatial.ts --report --superseded   # the same tables from the sweep §2.3 retracted
  *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --grid      # §1, the drawn rooms
  *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --screens   # §2, the 244 NetHack screens
  *   TYPESAFEAI_API_KEY=... npx tsx src/spatial.ts --cut       # §3, the nine-square crop
@@ -20,7 +21,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { Jev, type Answer, type Question } from "../../shared/jev.js";
-import { auc as aucOf, pairedPermutation, separation } from "../../shared/thresholds.js";
+import { auc as aucOf, crossValidate, pairedPermutation, separation, type Sample } from "../../shared/thresholds.js";
 import { glyphAt, heroAt, mapOf, type Screen } from "../../roguelike/src/nethack.js";
 import { probesFor as screenProbes } from "../../roguelike/src/perceive.js";
 import { rehydrate } from "../../roguelike/src/run.js";
@@ -30,6 +31,7 @@ import {
   type Quadrant,
   type Range,
   WIDTHS,
+  chebyshev,
   corpus,
   draw,
   probesFor as gridProbes,
@@ -38,6 +40,17 @@ import {
 
 const HERE = resolve(import.meta.dirname, "..");
 const RECORDS = resolve(HERE, "records");
+/**
+ * Records a re-take overwrote, kept rather than deleted (TODO §3.4).
+ *
+ * docs/64 §2.3 retracts a conclusion drawn from the first sweep, and until
+ * this directory existed the only copy of that sweep was an old commit -- a
+ * squash merge, a shallow clone or a rewritten history away from gone. A file
+ * here says in its own header what superseded it and which commit it came
+ * from, and it is only ever read on its own: pooling it with `records/` would
+ * set two runs of two different sets of arms side by side.
+ */
+export const SUPERSEDED = resolve(RECORDS, "superseded");
 const WALK = resolve(HERE, "../roguelike/records/walk.json");
 
 // --------------------------------------------------------------------- records
@@ -81,6 +94,10 @@ export interface Record_ {
   model: string;
   usage: { input: number; output: number; calls: number; ms: number };
   rows: Row[];
+  /** Superseded records only: why the file is kept, what replaced it, and where it came from. */
+  note?: string;
+  supersededBy?: string;
+  commit?: string;
 }
 
 export function write(name: string, rec: Record_): void {
@@ -93,8 +110,8 @@ export function write(name: string, rec: Record_): void {
   );
 }
 
-export function read(name: string): Record_ | null {
-  const p = resolve(RECORDS, name);
+export function read(name: string, dir: string = RECORDS): Record_ | null {
+  const p = resolve(dir, name);
   return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as Record_) : null;
 }
 
@@ -237,8 +254,11 @@ async function runScreens(limit: number): Promise<void> {
  * The nine squares around the `@`, cropped out of the 21x80 map.
  *
  * docs/34's SECOND suggestion, and the one §2 could not settle. `adjacent_monster`
- * sits at 63% on the full picture and coordinates made it WORSE (53%); only the
- * `@`-relative arm helped (74%). Two explanations survive that:
+ * sits at 62% on the full picture and coordinates made it WORSE (53%); only the
+ * `@`-relative arm helped (76%). (Those three read 63%, 53% and 74% when this
+ * was written -- the five-arm sweep now in `records/superseded/`. The re-take
+ * moved them and this docblock kept the old ones until TODO §3.4's pass.)
+ * Two explanations survive that:
  *
  *   LOCALISATION -- finding the `@` inside 21 rows of 80 characters is the hard
  *     part, and once the nine squares are handed over the question is easy;
@@ -498,8 +518,11 @@ export function pairedLine(label: string, pairs: { a: number; b: number }[]): vo
   const gap = ((a - b) / pairs.length) * 100;
   const t = pairedPermutation(pairs, SPLITS);
   const agree = t.n === 0;
+  // A label as long as the column ran into a "100%" and read as one token
+  // ("cut/relative*100%"); a long label now keeps one space after it.
+  const name = label.length >= 12 ? `${label} ` : label.padEnd(12);
   console.log(
-    `  ${label.padEnd(12)}${pct(a, pairs.length)}  ${pct(b, pairs.length)}  ${String(pairs.length).padStart(5)}  ` +
+    `  ${name}${pct(a, pairs.length)}  ${pct(b, pairs.length)}  ${String(pairs.length).padStart(5)}  ` +
       `${`${gap >= 0 ? "+" : ""}${gap.toFixed(1)}pp`.padStart(9)}  ${String(t.n).padStart(10)}  ` +
       `${agree ? "    -" : String(t.wins).padStart(5)}  ${agree ? "     -" : p4(t.p)}  ` +
       `${agree ? "     -" : p4(t.floor)}  ${agree ? " -" : t.exact ? "yes" : " no"}`,
@@ -710,6 +733,276 @@ function cutReport(rec: Record_): void {
   }
 }
 
+// ------------------------------------------- TODO §1.17: the cut, held out
+
+/**
+ * "Separated but miscalibrated", checked instead of inferred.
+ *
+ * docs/64 and docs/65 read a high AUC beside a low accuracy at 0.5 as a
+ * calibration offset -- `distance`, the cropped `in_room`, `overlap` under
+ * `sparse` -- and every one of those readings came from the AUC alone. The
+ * best cut fitted and scored on the same sample is optimistic (docs/25 §2),
+ * so the cut here is fitted on four folds and scored on the fifth: the number
+ * printed is what a calibrated reader gets on cases it never fitted on.
+ *
+ * The rule is `accuracy` and not `youden` because the number it sits beside
+ * is plain accuracy at 0.5. And on a lopsided probe the accuracy-maximising
+ * cut is "call every case the common answer", so the majority share is
+ * printed beside it: a held-out number at or below that share is the cut
+ * collapsing onto the base rate, not a reading recovered, and the table says
+ * which cells those are rather than leaving it to the reader.
+ *
+ * Folds are cut along CASES -- `group` is the case key -- so every arm of a
+ * case sits in the same fold. That is what lets two arms' held-out outcomes
+ * pair case by case in `heldOutAgainst`.
+ */
+export const FOLDS = 5;
+
+export interface Held {
+  n: number;
+  atHalf: number;
+  held: number;
+  majority: number;
+  auc: number;
+  cuts: number[];
+  /** Per case: was the held-out cut right? */
+  right: Map<string, boolean>;
+}
+
+export function heldOut(rec: Record_, label: (r: Row) => string, combo: string, key: string): Held | null {
+  const samples: Sample[] = [];
+  let hit = 0;
+  for (const r of rec.rows) {
+    if (label(r) !== combo) continue;
+    for (const p of r.probes) {
+      if (p.key !== key || p.level !== undefined) continue;
+      samples.push({ value: p.answer, positive: p.truth, group: r.case });
+      if (right(p)) hit += 1;
+    }
+  }
+  if (samples.length === 0) return null;
+  const cv = crossValidate(samples, { rule: "accuracy" }, { folds: FOLDS });
+  const outcome = new Map<string, boolean>();
+  samples.forEach((s, i) => {
+    const fired = cv.fired[i];
+    if (fired !== null && s.group !== undefined) outcome.set(s.group, fired === s.positive);
+  });
+  const pos = samples.filter((s) => s.positive).length;
+  return {
+    n: samples.length,
+    atHalf: hit / samples.length,
+    held: (cv.heldOut.tp + cv.heldOut.tn) / cv.heldOut.n,
+    majority: Math.max(pos, samples.length - pos) / samples.length,
+    auc: aucOf(samples),
+    cuts: cv.cutoffs,
+    right: outcome,
+  };
+}
+
+const share = (x: number): string => (Number.isFinite(x) ? `${Math.round(x * 100)}%` : "-");
+
+/** Every question but the control band: accuracy at 0.5 and at the held-out cut. */
+export function calibrationTable(
+  rec: Record_,
+  combos: readonly string[],
+  label: (r: Row) => string,
+  leaky: (c: string) => boolean,
+): void {
+  const keys = [
+    ...new Set(rec.rows.flatMap((r) => r.probes.filter((p) => p.level === undefined && p.band !== "status").map((p) => p.key))),
+  ];
+  // Wide enough for the longest label: `object/block/coords` ran into its
+  // neighbours at a fixed 14 and the header read as one word.
+  const width = Math.max(14, ...combos.map((c) => c.length + 3));
+  console.log(`\n  accuracy at 0.5 -> at a cut fitted on the other ${FOLDS - 1} folds, never on the case it scores (TODO §1.17)\n`);
+  console.log(`  ${"probe".padEnd(20)}${"majority".padStart(9)}${combos.map((c) => (leaky(c) ? `${c}*` : c).padStart(width)).join("")}`);
+  const collapsed: string[] = [];
+  for (const key of keys) {
+    let majority = Number.NaN;
+    const cells = combos.map((c) => {
+      const h = heldOut(rec, label, c, key);
+      if (!h) return "-".padStart(width);
+      majority = h.majority;
+      if (h.held <= h.majority + 1e-9) collapsed.push(`${key} ${c}`);
+      return `${share(h.atHalf)} -> ${share(h.held)}`.padStart(width);
+    });
+    console.log(`  ${key.padEnd(20)}${share(majority).padStart(9)}${cells.join("")}`);
+  }
+  console.log("\n  `status` is the control band and is not refitted. `majority` is the share of the commoner answer.");
+  if (collapsed.length > 0) {
+    console.log("  AT OR BELOW THE MAJORITY SHARE -- the fitted cut does no better than one answer for every case,");
+    console.log("  so these cells say nothing about calibration:");
+    for (let i = 0; i < collapsed.length; i += 4) console.log(`    ${collapsed.slice(i, i + 4).join(", ")}`);
+  }
+}
+
+/** The paired test again, on held-out outcomes: the same folds, the same cases. */
+export function heldOutAgainst(
+  rec: Record_,
+  combos: readonly string[],
+  label: (r: Row) => string,
+  leaky: (c: string) => boolean,
+  baseline: string,
+  key: string,
+): void {
+  const base = heldOut(rec, label, baseline, key);
+  if (!base) return;
+  console.log(`\n  \`${key}\` at the held-out cut: does the encoding beat \`${baseline}\` on the same cases?\n`);
+  console.log(PAIRED_HEAD("arm", "base"));
+  for (const c of combos) {
+    if (c === baseline) continue;
+    const h = heldOut(rec, label, c, key);
+    if (!h) continue;
+    const pairs: { a: number; b: number }[] = [];
+    for (const [k, v] of h.right) {
+      const w = base.right.get(k);
+      if (w !== undefined) pairs.push({ a: v ? 1 : 0, b: w ? 1 : 0 });
+    }
+    pairedLine(leaky(c) ? `${c}*` : c, pairs);
+  }
+  console.log("\n  each arm's cut is fitted on its own training folds; wins = held-out right where the baseline was wrong.");
+}
+
+/**
+ * A `score` probe, held out.
+ *
+ * "The band hits" means `round(answer)` is the level, which puts the cuts at
+ * 0.5, 1.5 and 2.5 by fiat. Fitting them instead is three binary cuts --
+ * level >= 1, >= 2, >= 3 -- each held out by `crossValidate` on the same
+ * folds, and the held-out band is how many of them fire. So "separated but
+ * miscalibrated" gets the same test on a score as on a yes/no question.
+ */
+export function scoreHeldOut(
+  rec: Record_,
+  combos: readonly string[],
+  label: (r: Row) => string,
+  leaky: (c: string) => boolean,
+  key: string,
+): void {
+  const all = rec.rows.flatMap((r) => r.probes.filter((p) => p.key === key && p.level !== undefined));
+  if (all.length === 0) return;
+  const levels = Math.max(...all.map((p) => p.level ?? 0)) + 1;
+  console.log(`\n  \`${key}\` with its ${levels - 1} band boundaries fitted, held out\n`);
+  console.log(
+    `  ${"encoding".padEnd(12)}${"band hit: rounded -> held out".padStart(31)}${"modal".padStart(8)}${"   >=2: at 1.5 -> held out".padStart(28)}${"base".padStart(7)}`,
+  );
+  for (const c of combos) {
+    const rows: { value: number; level: number; group: string; truth: boolean }[] = [];
+    for (const r of rec.rows) {
+      if (label(r) !== c) continue;
+      for (const p of r.probes) {
+        if (p.key === key && p.level !== undefined) rows.push({ value: p.answer, level: p.level, group: r.case, truth: p.truth });
+      }
+    }
+    if (rows.length === 0) continue;
+    const fired: (boolean | null)[][] = [];
+    for (let k = 1; k < levels; k += 1) {
+      fired.push(crossValidate(rows.map((x) => ({ value: x.value, positive: x.level >= k, group: x.group })), { rule: "accuracy" }, { folds: FOLDS }).fired);
+    }
+    const bandHeld = rows.filter((x, i) => fired.every((f) => f[i] !== null) && fired.filter((f) => f[i]).length === x.level).length;
+    const ge2 = fired[1];
+    const n = rows.length;
+    const counts = Array.from({ length: levels }, (_, l) => rows.filter((x) => x.level === l).length);
+    const pos2 = rows.filter((x) => x.level >= 2).length;
+    console.log(
+      `  ${(leaky(c) ? `${c}*` : c).padEnd(12)}` +
+        `${`${share(rows.filter((x) => x.truth).length / n)} -> ${share(bandHeld / n)}`.padStart(31)}` +
+        `${share(Math.max(...counts) / n).padStart(8)}` +
+        `${`${share(rows.filter((x) => (x.value >= 1.5) === x.level >= 2).length / n)} -> ${share(rows.filter((x, i) => ge2 !== undefined && ge2[i] !== null && ge2[i] === x.level >= 2).length / n)}`.padStart(28)}` +
+        `${share(Math.max(pos2, n - pos2) / n).padStart(7)}`,
+    );
+  }
+  console.log("\n  `modal` is the share of the commonest level: a held-out band hit at or below it is the cuts collapsing.");
+}
+
+// ------------------------------- TODO §1.18: `adjacent` against the width
+
+/**
+ * Why does `adjacent` go UP with the width under `coords` and `sparse`?
+ *
+ * docs/64's limits guessed: "far" is Chebyshev 3 or more, the far targets of
+ * a 60-wide room are much further away than a 12-wide room's, and further is
+ * easier. That guess makes a prediction the records can check without a
+ * request: the rise lives in the FAR half and vanishes at equal distance. The
+ * near half cannot carry it -- a near target is at distance 1 at every width
+ * (and always diagonal, because the quadrant needs dx and dy both non-zero).
+ */
+function adjacentSplit(rec: Record_): void {
+  const cases = new Map(corpus().map((c) => [c.key, c]));
+  const distance = (r: Row): number => {
+    const c = cases.get(r.case);
+    return c ? chebyshev(c.observer, c.target) : Number.NaN;
+  };
+  const arms = ARMS.filter((a) => rec.rows.some((r) => r.arm === a));
+  const name = (a: ArmName): string => (LEAKY.has(a) ? `${a}*` : a);
+  const answerOf = (r: Row): ProbeRow | undefined => r.probes.find((p) => p.key === "adjacent");
+  console.log("\n  TODO §1.18: `adjacent` by width -- the far targets' distance, or the width itself?\n");
+  console.log("  the far targets' Chebyshev distance, by width");
+  for (const w of WIDTHS) {
+    const ds = [...cases.values()].filter((c) => c.width === w && c.range === "far").map((c) => chebyshev(c.observer, c.target));
+    ds.sort((x, y) => x - y);
+    console.log(`    w=${String(w).padEnd(3)} ${ds.length} rooms, ${ds[0]}..${ds[ds.length - 1]}, median ${(ds[(ds.length - 1) >> 1] + ds[ds.length >> 1]) / 2}`);
+  }
+  console.log(`\n  ${"accuracy at 0.5".padEnd(14)}${"near (distance 1)".padStart(24)}${"far (distance 3+)".padStart(27)}`);
+  console.log(`  ${"encoding".padEnd(14)}${WIDTHS.map((w) => `w=${w}`.padStart(8)).join("")}   ${WIDTHS.map((w) => `w=${w}`.padStart(8)).join("")}`);
+  for (const arm of arms) {
+    const at = (w: number, range: Range): string => {
+      const cell = blank();
+      for (const r of rec.rows) {
+        if (r.arm !== arm || r.width !== w || r.range !== range) continue;
+        const p = answerOf(r);
+        if (p) add(cell, p);
+      }
+      return pct(cell.hit, cell.n).padStart(8);
+    };
+    console.log(`  ${name(arm).padEnd(14)}${WIDTHS.map((w) => at(w, "near")).join("")}   ${WIDTHS.map((w) => at(w, "far")).join("")}`);
+  }
+  const bands = [
+    ["3-4", 3, 4],
+    ["5-9", 5, 9],
+    ["10-19", 10, 19],
+    ["20+", 20, Number.POSITIVE_INFINITY],
+  ] as const;
+  const far = rec.rows.filter((r) => r.range === "far");
+  console.log("\n  the far half by distance, every encoding and width pooled");
+  for (const [b, lo, hi] of bands) {
+    const cell = blank();
+    for (const r of far) {
+      const d = distance(r);
+      const p = answerOf(r);
+      if (p && d >= lo && d <= hi) add(cell, p);
+    }
+    console.log(`    distance ${b.padEnd(6)}${pct(cell.hit, cell.n)} of ${cell.n}`);
+  }
+  console.log("\n  the answers themselves -- mean on near / mean on far / AUC, per width");
+  console.log(`  ${"encoding".padEnd(14)}${WIDTHS.map((w) => `w=${w}`.padStart(19)).join("")}`);
+  for (const arm of arms) {
+    const line = WIDTHS.map((w) => {
+      const rows = rec.rows.filter((r) => r.arm === arm && r.width === w);
+      const near = rows.filter((r) => r.range === "near").map((r) => answerOf(r)?.answer ?? Number.NaN);
+      const farA = rows.filter((r) => r.range === "far").map((r) => answerOf(r)?.answer ?? Number.NaN);
+      const a = aucOf(rows.flatMap((r) => {
+        const p = answerOf(r);
+        return p ? [{ value: p.answer, positive: p.truth }] : [];
+      }));
+      const m = (xs: number[]): string => (xs.reduce((s, x) => s + x, 0) / xs.length).toFixed(2);
+      return `${m(near)}/${m(farA)}/${a.toFixed(2)}`.padStart(19);
+    }).join("");
+    console.log(`  ${name(arm).padEnd(14)}${line}`);
+  }
+  console.log("\n  the near half at the held-out cut (one cut per encoding, fitted with all widths pooled)");
+  console.log(`  ${"encoding".padEnd(14)}${WIDTHS.map((w) => `w=${w}`.padStart(8)).join("")}`);
+  for (const arm of arms) {
+    const h = heldOut(rec, (r) => r.arm, arm, "adjacent");
+    if (!h) continue;
+    const line = WIDTHS.map((w) => {
+      const keys = [...h.right.keys()].filter((k) => cases.get(k)?.width === w && cases.get(k)?.range === "near");
+      return pct(keys.filter((k) => h.right.get(k)).length, keys.length).padStart(8);
+    }).join("");
+    console.log(`  ${name(arm).padEnd(14)}${line}`);
+  }
+}
+
 /** What each encoding cost, which is a result and not an aside. */
 export function costTable(rec: Record_, arms: readonly string[] = ARMS): void {
   console.log("\n  what each encoding cost\n");
@@ -729,15 +1022,23 @@ export function costTable(rec: Record_, arms: readonly string[] = ARMS): void {
   }
 }
 
-function report(): void {
-  const grid = read("grid.json");
-  const screens = read("screens.json");
-  if (!grid && !screens && !read("cut.json")) {
+function report(dir: string = RECORDS): void {
+  const grid = read("grid.json", dir);
+  const screens = read("screens.json", dir);
+  if (!grid && !screens && !read("cut.json", dir)) {
     console.log("no records yet; run with --grid, --screens and --cut");
     return;
   }
+  if (dir === SUPERSEDED) {
+    // Said before any table, so nobody reads these numbers as the live ones.
+    const any = grid ?? screens;
+    console.log("\n=== SUPERSEDED RECORDS -- not the live result, and never pooled with it");
+    console.log(`  from commit ${any?.commit ?? "?"}; replaced by ${[grid, screens].map((r) => r?.supersededBy).filter(Boolean).join(" and ")}`);
+    console.log("  docs/64 §2.3 retracts the reading of `monster_count` below (AUC ascii 0.926 -> coords 0.781).");
+    console.log("  Arms missing from this sweep print as `-`: it predates `sparse` and `runs`.");
+  }
   if (grid) {
-    console.log(`\n=== §1  drawn rooms -- ${new Set(grid.rows.map((r) => r.case)).size} rooms x ${ARMS.length} encodings, ${grid.usage.calls} requests`);
+    console.log(`\n=== §1  drawn rooms -- ${new Set(grid.rows.map((r) => r.case)).size} rooms x ${new Set(grid.rows.map((r) => r.arm)).size} encodings, ${grid.usage.calls} requests`);
     armXquestion(grid, "  every question, every encoding");
     bands(grid);
     axisTests(grid, "east", "south", "drawn rooms");
@@ -745,28 +1046,49 @@ function report(): void {
     armTests(grid, "adjacent");
     widthTable(grid);
     scoreTable(grid, "distance", ["1 step", "2-4", "5-9", "10+"]);
+    const arms = armsIn(grid);
+    calibrationTable(grid, arms, byArm, isLeaky);
+    heldOutAgainst(grid, arms, byArm, isLeaky, "ascii", "east");
+    heldOutAgainst(grid, arms, byArm, isLeaky, "ascii", "adjacent");
+    scoreHeldOut(grid, arms, byArm, isLeaky, "distance");
+    adjacentSplit(grid);
     costTable(grid);
   }
   if (screens) {
-    console.log(`\n\n=== §2  real NetHack screens -- ${new Set(screens.rows.map((r) => r.case)).size} screens x ${ARMS.length} encodings, ${screens.usage.calls} requests`);
+    console.log(`\n\n=== §2  real NetHack screens -- ${new Set(screens.rows.map((r) => r.case)).size} screens x ${new Set(screens.rows.map((r) => r.arm)).size} encodings, ${screens.usage.calls} requests`);
     armXquestion(screens, "  every question, every encoding");
     bands(screens);
     axisTests(screens, "upstairs_east", "upstairs_south", "NetHack screens");
     armTests(screens, "upstairs_east");
     armTests(screens, "adjacent_monster");
     scoreTable(screens, "monster_count", ["0", "1", "2", "3+"]);
+    const arms = armsIn(screens);
+    calibrationTable(screens, arms, byArm, isLeaky);
+    heldOutAgainst(screens, arms, byArm, isLeaky, "ascii", "upstairs_east");
+    heldOutAgainst(screens, arms, byArm, isLeaky, "ascii", "adjacent_monster");
+    scoreHeldOut(screens, arms, byArm, isLeaky, "monster_count");
     replication(screens);
     costTable(screens);
   }
-  const cut = read("cut.json");
+  const cut = read("cut.json", dir);
   if (cut) {
     console.log(
       `\n\n=== §3  the nine-square crop -- ${new Set(cut.rows.map((r) => r.case)).size} screens x ${CUT_ARMS.length} states, ${cut.usage.calls} requests`,
     );
     cutReport(cut);
+    const scoped = (r: Row): string => `${r.scope ?? "full"}/${r.arm}`;
+    const combos = CUT_ARMS.map(({ scope, arm }) => `${scope}/${arm}`);
+    const leaky = (c: string): boolean => LEAKY.has(c.split("/")[1] as ArmName);
+    calibrationTable(cut, combos, scoped, leaky);
+    for (const key of ["adjacent_monster", "dead_end", "in_room"]) heldOutAgainst(cut, combos, scoped, leaky, "full/ascii", key);
     costTable(cut);
   }
 }
+
+/** The arms a record actually holds, in `ARMS` order -- a superseded sweep has fewer. */
+const armsIn = (rec: Record_): ArmName[] => ARMS.filter((a) => rec.rows.some((r) => r.arm === a));
+const byArm = (r: Row): string => r.arm;
+const isLeaky = (a: string): boolean => LEAKY.has(a as ArmName);
 
 // ---------------------------------------------------------------- no-API views
 
@@ -834,6 +1156,7 @@ async function main(): Promise<void> {
   };
   if (argv.includes("--sample")) return sample();
   if (argv.includes("--instruments")) return instruments();
+  if (argv.includes("--superseded")) return report(SUPERSEDED);
   if (argv.includes("--report") || argv.length === 0) return report();
   if (argv.includes("--grid")) await runGrid(Number(arg("reps", "6")));
   if (argv.includes("--cut")) await runCut(Number(arg("screens", "244")));

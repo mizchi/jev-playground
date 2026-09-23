@@ -2,12 +2,12 @@
   "name": "jev-spatial",
   "private": true,
   "version": "0.0.0",
-  "description": "One space, five encodings: can judgment read a picture, a coordinate table, or code? (docs/63-spatial.md)",
+  "description": "One space, seven encodings: can judgment read a picture, a coordinate table, or code? (docs/64-spatial.md, docs/65-shapes.md)",
   "type": "module",
   "scripts": {
-    "report": "tsx src/run.ts --report",
-    "sample": "tsx src/run.ts --sample",
-    "instruments": "tsx src/run.ts --instruments",
+    "report": "tsx src/spatial.ts --report",
+    "sample": "tsx src/spatial.ts --sample",
+    "instruments": "tsx src/spatial.ts --instruments",
     "test": "tsx test.ts"
   },
   "devDependencies": {

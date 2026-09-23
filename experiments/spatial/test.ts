@@ -74,7 +74,8 @@ import {
   probesFor as pairProbes,
   sceneOf as pairScene,
 } from "./src/pairs.js";
-import { screenScene } from "./src/spatial.js";
+import { auc } from "../shared/thresholds.js";
+import { FOLDS, type Record_, type Row, SUPERSEDED, heldOut, read, screenScene } from "./src/spatial.js";
 
 let pass = 0;
 let fail = 0;
@@ -971,6 +972,94 @@ check("the swapped block corpus has five rows and seven layers, and the original
     swapped.length,
     "the swapped axes are not independent",
   );
+});
+
+// ---------------------------------------------------------------- the records
+
+check("the superseded sweep is kept, says what replaced it, and still gives §2.3's retracted numbers", () => {
+  /**
+   * TODO §3.4. docs/64 §2.3 retracts "coordinates break counting", and the
+   * numbers it retracts (0.926 -> 0.781) came from a sweep the re-take
+   * overwrote. Before `records/superseded/` they lived only in commit
+   * b04c250 -- one squash merge from gone. This pins both ends: the old record
+   * still produces the retracted pair, and the live one produces the pair the
+   * correction quotes, so neither number in §2.3 is typed out of prose.
+   */
+  const aucOf = (rec: Record_, arm: string): string =>
+    auc(
+      rec.rows
+        .filter((r) => r.arm === arm)
+        .flatMap((r) => r.probes.filter((p) => p.key === "monster_count" && p.level !== undefined))
+        .map((p) => ({ value: p.answer, positive: (p.level ?? 0) >= 2 })),
+    ).toFixed(3);
+  const old = read("screens.json", SUPERSEDED);
+  const live = read("screens.json");
+  if (!old || !live) return skip("superseded screens", "a record is not checked out");
+  eq(aucOf(old, "ascii"), "0.926", "the retracted ascii AUC");
+  eq(aucOf(old, "coords"), "0.781", "the retracted coords AUC");
+  eq(aucOf(live, "ascii"), "0.934", "the corrected ascii AUC");
+  eq(aucOf(live, "coords"), "0.744", "the corrected coords AUC");
+  for (const name of ["grid.json", "screens.json"]) {
+    const dead = read(name, SUPERSEDED);
+    const now = read(name);
+    ok(dead !== null && now !== null, `${name}: both records must exist`);
+    eq(dead?.supersededBy, `records/${name}`, `${name}: a superseded record must say what replaced it`);
+    ok(/^[0-9a-f]{40}$/.test(dead?.commit ?? ""), `${name}: and which commit it came from`);
+    // The sweep predates two arms. If they ever appear here, someone pooled.
+    const arms = [...new Set(dead?.rows.map((r) => r.arm))].sort().join(",");
+    eq(arms, "ascii,code,coords,relative,ruler", `${name}: the superseded sweep's arms`);
+    ok(JSON.stringify(dead?.rows) !== JSON.stringify(now?.rows), `${name}: the live record is a copy of the dead one`);
+  }
+});
+
+check("the held-out column finds a shifted-but-separated arm, and cannot invent a signal", () => {
+  /**
+   * TODO §1.17's instrument, on answers whose calibration is known. `shifted`
+   * separates perfectly and says "no" to everything at 0.5 -- the shape docs/64
+   * kept reading off AUC -- so its held-out accuracy must be 100% against 50%
+   * at 0.5. `flat` answers the same number every time: no cut can beat the
+   * majority on it, and the table has to be able to say so.
+   *
+   * `twin` answers exactly as `shifted` does. Folds are cut along CASES, so
+   * the two are held out on the same folds and must come back identical --
+   * if the fold ever depended on the arm, the paired test on held-out
+   * outcomes would be pairing cases scored under different splits.
+   */
+  const rows: Row[] = [];
+  for (let i = 0; i < 40; i += 1) {
+    const truth = i % 2 === 0;
+    const probe = (answer: number) => [{ key: "adjacent", band: "local", truth, answer }];
+    const base = { case: `c${i}`, input: 0, ms: 0 };
+    rows.push({ ...base, arm: "coords", probes: probe(truth ? 0.3 : 0.1) });
+    rows.push({ ...base, arm: "code", probes: probe(truth ? 0.3 : 0.1) });
+    rows.push({ ...base, arm: "ruler", probes: probe(0.3) });
+  }
+  const rec: Record_ = { model: "test", usage: { input: 0, output: 0, calls: 0, ms: 0 }, rows };
+  const byArm = (r: Row): string => r.arm;
+  const shifted = heldOut(rec, byArm, "coords", "adjacent");
+  const twin = heldOut(rec, byArm, "code", "adjacent");
+  const flat = heldOut(rec, byArm, "ruler", "adjacent");
+  ok(shifted !== null && twin !== null && flat !== null, "all three arms were read");
+  eq(shifted?.atHalf, 0.5, "every positive sits below 0.5");
+  eq(shifted?.held, 1, "and a fitted cut recovers all of them");
+  eq(shifted?.cuts.length, FOLDS, "one cut per fold");
+  eq(JSON.stringify([...(twin?.right ?? [])]), JSON.stringify([...(shifted?.right ?? [])]), "identical answers, identical folds");
+  ok((flat?.held ?? 1) <= (flat?.majority ?? 0), `a constant answer cannot beat the majority: ${flat?.held}`);
+});
+
+check("a near target is one diagonal step from the observer at every width", () => {
+  // TODO §1.18's premise: the near half cannot carry a distance effect, because
+  // its distance never moves. The quadrant needs dx and dy both non-zero, so a
+  // near target is always a diagonal neighbour -- at every width.
+  for (const w of WIDTHS) {
+    const near = CASES.filter((c) => c.width === w && c.range === "near");
+    ok(near.length > 0, `width ${w} has near rooms`);
+    for (const c of near) {
+      eq(Math.abs(c.target.x - c.observer.x), 1, `${c.key}: dx`);
+      eq(Math.abs(c.target.y - c.observer.y), 1, `${c.key}: dy`);
+    }
+    ok(CASES.filter((c) => c.width === w && c.range === "far").every((c) => chebyshev(c.observer, c.target) >= 3), `width ${w}: far is 3+`);
+  }
 });
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
