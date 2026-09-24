@@ -64,7 +64,7 @@ large はその半分強 —— 実際の monorepo の script 一覧が届く程
 
 - **`choice` の criteria はその場の合法手だけ。** 実在するタスク名を**説明なしで**並べる
   ([00](00-api-notes.md#name-only) の name-only choice)。
-  ロスターに無いタスクは**表現不能**になる([02](02-moba.md#2-結果)・
+  ロスターに無いタスクは**表現不能**になる([02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#2-結果)・
   [03](03-chess.md#2-一番の発見-反則手が表現できないことの価値))。
 - **判断に要る文脈は構造化 state に載せる**([01](01-shell-risk.md#2-同じコマンドでも文脈で判断が変わる))。
   arm が変えるのは **state のタスク表の詳しさ**で、criteria は全 arm で同じ。

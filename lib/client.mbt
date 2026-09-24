@@ -55,7 +55,8 @@ pub async fn Client::list_models(self : Client) -> Array[Model] {
 /// exponential backoff; everything else is returned/raised immediately. This
 /// mirrors the retry the TS client already had — without it, a burst of Jev
 /// calls (e.g. two MOBA players hammering the API every tick) trips a rate
-/// limit and every caller falls back to holding, as docs/10 §5 flagged.
+/// limit and every caller falls back to holding, as docs/10 §5 flagged
+/// (docs/10 is in mizchi/jev-playground-moba now).
 const MAX_ATTEMPTS = 5
 
 ///|

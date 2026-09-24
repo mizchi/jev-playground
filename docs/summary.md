@@ -1,13 +1,13 @@
-# まとめ — Jev で 63 本作って測って分かったこと
+# まとめ — Jev で 58 本作って測って分かったこと
 
 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)(TypeSafe AI の System One モデル)は
 **文字列ではなく型付きの確率判断を返す**意思決定専用モデルです。
 noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3 種だけ。
 入力 $0.042/MTok・出力無料・レイテンシ 125〜730 ms。
 
-**この速度と価格が何を可能にするのか**を、**63 本**のレポートで測りました。
-番号は 00〜65 で、**13〜15 は欠番**。63 本のうち **2 本は提案**([06](06-ideas.md) [20](20-jevdsl.md))で、
-残り 61 本が実測です。各レポートは生の数値と再現コマンド付き([索引](README.md))。
+**この速度と価格が何を可能にするのか**を、**58 本**のレポートで測りました。
+番号は 00〜65 で、**13〜15 は欠番**、**02・10・11・12・56 は MOBA ごと [jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移しました**。
+58 本のうち **2 本は提案**([06](06-ideas.md) [20](20-jevdsl.md))で、残り 56 本が実測です。各レポートは生の数値と再現コマンド付き([索引](README.md))。
 
 > この数字を更新するとき、一度間違えました。前の版の「36 本」は**本数として正しかった**(当時 36 ファイル)のですが、
 > それを**その時点の最大番号 44** に置き換えてしまい、**欠番 3 つを数え込んだ「44 本」**になっていました。
@@ -47,9 +47,7 @@ noul(確率)/ choice(選択 + confidence)/ score(順序つき + confidence)の 3
 | | 何 | 結果 | 出典 |
 | --- | --- | --- | --- |
 | **五目並べ** | Jev 同士で対戦、**実時間再生の GIF** 化(フレーム遅延 = その手の実測 ms) | 1 手 ≈ 1 リクエスト | [README](../README.md#3-jev-vs-jev-五目並べ) |
-| **3v3 MOBA** | 2 レーン + ジャングル、視界と戦場の霧。チーム視界 = **1 state に 3 質問** | **73 ms/キャラ判断**、489 判断で反則 0 | [02](02-moba.md) |
-| **MOBA を独立プロセス化** | referee + player ×2。視界の霧を**配線で強制** | scripted 3/3 引き分け → **Jev 同士 6/6 決着** | [10](10-jev-vs-jev.md) |
-| **シナジーと取り返し** | AD/AP・前衛の機構を実装、handicap sweep | 弱い編成+Jev が 強い編成+scripted に **5-1** | [11](11-synergy.md) [12](12-comeback.md) |
+| **MOBA(3v3・5v5)** | 3v3 は**チーム視界 = 1 state に 3 質問**、独立プロセスの Jev 同士、シナジーと取り返し。5v5 は**シミュレータが正解を出す採点ベンチマーク** | **73 ms/キャラ判断**、Jev 同士 **6/6 決着**、弱い編成+Jev が 強い編成+scripted に **5-1** —— **[jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移した** | [索引](https://github.com/mizchi/jev-playground-moba/blob/main/docs/README.md) |
 | **チェス** | Jev vs Claude Sonnet 5、**同じ合法手リスト**を渡す | **両サイドで Jev の勝ち**、0.3 s/手 対 13〜24 s/手 | [03](03-chess.md) |
 | **ブラウザ探索** | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に | 8 手深いゴール到達 **0/3 → 3/3** | [05](05-browser-chaos.md) |
 
@@ -253,7 +251,7 @@ score を確率に直して「閉包の秒数 + penalty × P(見逃し)」を最
 さらに**答えのある難問までそこへ逃げる**(conf 0.50 で「該当なし」)。
 
 **11. 候補をその場の合法手にすると、不正な答えが表現不能になる。**
-MOBA **489 判断**・チェス **37 手**で**反則 0**。
+[MOBA](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#2-結果) **489 判断**・チェス **37 手**で**反則 0**。
 バリデーションではなく**型で消す**のと同じ効き方。
 
 ### 何を渡すか

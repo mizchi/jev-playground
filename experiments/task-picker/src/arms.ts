@@ -42,7 +42,7 @@ export function questionsFor(arm: ArmName, tasks: Task[]): Record<string, Questi
   }
   return {
     // The legal moves, and only the legal moves: a task that is not in the
-    // roster cannot be expressed (docs/02, docs/03).
+    // roster cannot be expressed (jev-playground-moba's docs/02, docs/03).
     pick: {
       type: "choice",
       instructions: "Which task should be run to accomplish the goal in the state?",

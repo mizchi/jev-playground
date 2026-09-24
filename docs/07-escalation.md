@@ -1,7 +1,7 @@
 # 07. confidence でエスカレーションする二層構成
 
 [06 の提案 A](06-ideas.md#a-confidence-でエスカレーションする二層構成-検証済み--07)。
-[02](02-moba.md#confidence-が判断の質を区別している) と
+[02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#confidence-が判断の質を区別している) と
 [03](03-chess.md#3-confidence-が難しさを測っている) で
 confidence が「局面の難しさ」ではなく**「判断の難しさ」**を測っているように見えたので、
 **Jev が迷った判断だけを重い第二段に回す**構成が成立するかを測った。

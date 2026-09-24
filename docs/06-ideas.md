@@ -16,7 +16,7 @@
 [03](03-chess.md#3-confidence-が難しさを測っている) で、confidence が
 **局面の難しさではなく判断の難しさ**を測っていることが見えました。
 序盤の展開手は 0.14〜0.31、駒の取り合いは 0.81〜0.93。
-[02](02-moba.md#confidence-が判断の質を区別している) でも同じで、
+[02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#confidence-が判断の質を区別している) でも同じで、
 建物攻撃 0.68〜0.84 に対し殴り合いは 0.27〜0.52。
 
 つまり **「Jev が迷った局面だけ高いモデルか探索に回す」** が素直に書けます。
@@ -62,7 +62,7 @@ pub fn fit_thresholds(
 ) -> Array[Double]
 ```
 
-これがあると [01](01-shell-risk.md)・[02](02-moba.md)・[04](04-agent-built-prompts.md) が
+これがあると [01](01-shell-risk.md)・[02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md)・[04](04-agent-built-prompts.md) が
 同じ形で校正できます。実測では閾値を合わせ直すだけで **10〜22 → 21〜22 に収束**しました。
 **設計より校正のほうが効く**ので、部品にする価値がある。
 
@@ -185,7 +185,7 @@ launch post の "score, judge, verify, guardrail"。CI で毎 diff に対して�
 
 ## H. 役割分担を先に決める二段構え(MOBA の続き)
 
-[02 の 6 節](02-moba.md#6-次に試すこと)に書いた話。今は 3 体の行動を独立に聞いているので、
+[02 の 6 節](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#6-次に試すこと)に書いた話。今は 3 体の行動を独立に聞いているので、
 **3 体が同時に「自分が足止めする」と答える**可能性が構造的にあります。
 
 1 問目で `choice`「誰が足止めするか」を決め、2 問目以降で各自の行動を聞く二段構え
@@ -226,7 +226,7 @@ MOBA 以外にも効く知見になりそうです。
 
 - state = 何をしたいか + リポジトリの状況(変更ファイル、直前のコマンドと終了コード)
 - criteria = 実在するタスク名(名前だけ、説明なし)。**候補をその場の実在タスクに限る**と
-  [02](02-moba.md#2-結果)・[03](03-chess.md#2-一番の発見-反則手が表現できないことの価値) と同じで
+  [02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md#2-結果)・[03](03-chess.md#2-一番の発見-反則手が表現できないことの価値) と同じで
   **存在しないタスクが表現不能**になる
 - 正解ラベルは人手か、`scripts` のコメント/CI 設定から作る
 
