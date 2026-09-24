@@ -133,6 +133,40 @@ check("a rule that needs a positive says so instead of returning a number", () =
   ok(place(neg(0.1), { rule: "boundary" }).fittable, "the clean side alone is enough for boundary");
 });
 
+check("the accuracy rule keeps the plain accuracy that youden trades for balance", () => {
+  // Two positives, one of them low. Youden buys it with false positives
+  // (balanced 0.81); plain accuracy gives it up (0.90). Which one a report
+  // fits decides what its held-out column means, so the difference is pinned
+  // rather than assumed (TODO §1.17).
+  const samples = [...pos(0.9, 0.3), ...neg(0.1, 0.1, 0.2, 0.2, 0.25, 0.35, 0.4, 0.45)];
+  const y = place(samples, { rule: "youden" });
+  const a = place(samples, { rule: "accuracy" });
+  const plain = (at: number): number => {
+    const c = confusion(samples, at);
+    return (c.tp + c.tn) / c.n;
+  };
+  ok(plain(y.at) < 0.9, `youden's cut should give plain accuracy away, got ${plain(y.at)}`);
+  near(a.at, 0.46, 1e-9, "the lowest cut that stops firing on 0.45");
+  near(plain(a.at), 0.9, 1e-9, "the accuracy rule's own objective");
+  // The cut returned is the cut that was scored. `youden` does not have this
+  // property -- its accumulated `t += step` reaches 0.2500000000000001, scores
+  // the partition that leaves 0.25 out (balanced 0.81, plain 0.70), and
+  // returns 0.25, which puts it back in (0.75 and 0.60) -- TODO §3.6.
+  eq(a.why, "accuracy 0.90", "the scored objective, as the rule reports it");
+});
+
+check("the accuracy rule can call everything negative, and refuses a missing answer", () => {
+  // One positive buried among negatives: every cut inside the values loses to
+  // "nothing fires", so the rule has to be able to sit above the top answer.
+  const buried = [...pos(0.2), ...neg(0.1, 0.3, 0.4, 0.5)];
+  const fit = place(buried, { rule: "accuracy" });
+  const c = confusion(buried, fit.at);
+  eq(c.tp + c.fp, 0, "nothing fires at the chosen cut");
+  eq(c.tn, 4, "the four negatives are all kept");
+  const broken = place([...pos(Number.NaN), ...neg(0.1)], { rule: "accuracy" });
+  ok(!broken.fittable && Number.isNaN(broken.at), "a NaN answer is refused, not scanned forever");
+});
+
 // ---------------------------------------------------------------- folds
 
 check("folds are cut along groups, never through them", () => {
@@ -160,6 +194,25 @@ check("crossValidate never fits on the sample it scores", () => {
   const cv = crossValidate(samples, { rule: "boundary", margin: 0.01 }, { folds: 6, seed: 2 });
   eq(cv.inSample.fp, 0, "nothing fires when the fit saw everything");
   ok(cv.heldOut.fp > 0, "the loud negative fires when it is held out");
+});
+
+check("crossValidate's per-sample outcomes sum to its held-out confusion", () => {
+  // `fired` exists so a paired test can read per-case outcomes out of the same
+  // loop; if it ever disagreed with `heldOut` there would be two answers to
+  // "what did the held-out cut do", which is the thing it was added to avoid.
+  const samples = [...pos(0.9, 0.6, 0.3, 0.8), ...neg(0.1, 0.5, 0.2, 0.7, 0.35, 0.05)];
+  const cv = crossValidate(samples, { rule: "accuracy" }, { folds: 3, seed: 4 });
+  eq(cv.fired.length, samples.length, "one outcome per sample, in input order");
+  ok(cv.fired.every((f) => f !== null), "the accuracy rule fits every fold");
+  const count = (fires: boolean, positive: boolean): number =>
+    samples.filter((s, i) => cv.fired[i] === fires && s.positive === positive).length;
+  eq(
+    [count(true, true), count(true, false), count(false, true), count(false, false)],
+    [cv.heldOut.tp, cv.heldOut.fp, cv.heldOut.fn, cv.heldOut.tn],
+    "tp/fp/fn/tn",
+  );
+  const unfit = crossValidate([...pos(0.9), ...neg(0.1, 0.2, 0.3, 0.4)], { rule: "midgap" }, { folds: 5, seed: 1 });
+  ok(unfit.fired.some((f) => f === null), "a fold that could not be fitted leaves its samples unscored");
 });
 
 check("crossValidate counts the folds it could not fit", () => {

@@ -148,6 +148,19 @@ export type Placement =
   | { rule: "midgap" }
   | { rule: "youden"; step?: number }
   /**
+   * Maximises PLAIN accuracy. The rule to fit when the number it will be set
+   * beside is plain accuracy at a fixed cut, as docs/64's "accuracy at 0.5"
+   * is: `youden` maximises BALANCED accuracy, which on a lopsided sample gives
+   * plain accuracy away on purpose, so its held-out accuracy set beside
+   * accuracy at 0.5 would compare two objectives (TODO §1.17).
+   *
+   * The price of the same choice: on a lopsided sample this rule will sit
+   * below or above every answer and call everything the majority class,
+   * because that IS the accuracy-maximising cut. That says nothing about
+   * calibration, so a caller has to print the base rate beside it.
+   */
+  | { rule: "accuracy"; step?: number }
+  /**
    * The rule to reach for: sit in the middle of the gap when there is one, and
    * fall back to the clean side plus a margin when the classes overlap. It is
    * `advise` and `place` wired together, because "is there a gap" is the
@@ -174,6 +187,8 @@ export function placementName(p: Placement): string {
       return "midgap";
     case "youden":
       return "youden";
+    case "accuracy":
+      return "accuracy";
     case "auto":
       return `auto+${(p.margin ?? 0.01).toFixed(2)}`;
   }
@@ -223,6 +238,30 @@ export function place(samples: readonly Sample[], placement: Placement): Placed 
         if (c.balanced > best.balanced) best = { at: Number(t.toFixed(4)), balanced: c.balanced };
       }
       return { at: best.at, fittable: true, why: `balanced accuracy ${best.balanced.toFixed(2)}` };
+    }
+    case "accuracy": {
+      if (samples.length === 0) return { at: Number.NaN, fittable: false, why: "no samples to fit" };
+      const step = placement.step ?? 0.01;
+      const lo = Math.min(...samples.map((s) => s.value));
+      const hi = Math.max(...samples.map((s) => s.value));
+      // A missing answer would make every bound below NaN, and a scan that
+      // cannot compare its way to the end does not end. Refuse instead.
+      if (!Number.isFinite(lo) || !Number.isFinite(hi) || !(step > 0)) {
+        return { at: Number.NaN, fittable: false, why: "an answer is not a number, or the step is not positive" };
+      }
+      // Candidates are rounded BEFORE they are scored, so the cut returned is
+      // the cut that was scored -- an accumulated `t += step` can land a hair
+      // above a recorded 0.15 and score a partition that `at: 0.15` does not
+      // reproduce. The last candidate sits above every answer, because "call
+      // everything negative" is a cut this rule has to be able to choose.
+      const last = Math.ceil((hi - lo) / step) + 1;
+      let best = { at: lo, hit: -1 };
+      for (let k = 0; k <= last; k += 1) {
+        const t = Number((lo + k * step).toFixed(4));
+        const c = confusion(samples, t);
+        if (c.tp + c.tn > best.hit) best = { at: t, hit: c.tp + c.tn };
+      }
+      return { at: best.at, fittable: true, why: `accuracy ${(best.hit / samples.length).toFixed(2)}` };
     }
     case "auto": {
       const verdict = advise(samples, { range: placement.range, wide: placement.wide }).verdict;
@@ -333,6 +372,14 @@ export interface CrossValidated {
   cutoffs: number[];
   /** Folds whose training half could not support the rule at all. */
   unfittable: number;
+  /**
+   * Per sample, in input order: did the cut fitted WITHOUT it fire on it?
+   * `null` when its fold could not be fitted. This is `heldOut` before it is
+   * summed, and it is here so a caller that needs per-case outcomes -- a
+   * paired test between two arms scored on the same folds -- reads them from
+   * the same loop instead of re-implementing the folds beside it.
+   */
+  fired: (boolean | null)[];
 }
 
 /**
@@ -356,6 +403,7 @@ export function crossValidate(
   let heldOut = EMPTY;
   let unfittable = 0;
   const cutoffs: number[] = [];
+  const fired: (boolean | null)[] = samples.map(() => null);
   for (const held of split) {
     if (held.length === 0) continue;
     const inHeld = new Set(held);
@@ -368,6 +416,9 @@ export function crossValidate(
     }
     cutoffs.push(fit.at);
     heldOut = addConfusion(heldOut, confusion(test, fit.at));
+    samples.forEach((s, i) => {
+      if (inHeld.has(keyOf(s, i))) fired[i] = s.value >= fit.at;
+    });
   }
   const all = place(samples, placement);
   return {
@@ -376,6 +427,7 @@ export function crossValidate(
     heldOut,
     cutoffs,
     unfittable,
+    fired,
   };
 }
 
