@@ -29,11 +29,14 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 
 **どのパターンが優位かの実測レポートは [`docs/`](docs/) にあります**
 ([索引](docs/README.md))。
-読む順に 4 つの入口があります:
+入口は問いごとに 4 本です:
 
 | | 何が書いてあるか |
 | --- | --- |
-| [**docs/practice.md**](docs/practice.md) | **Jev を使うときに順番に決めること**(手順書・やってはいけないこと一覧) |
+| [**docs/when-to-use.md**](docs/when-to-use.md) | **どういう時に使えるか** —— 入れる条件と入れない条件、置き場所の決め方 |
+| [**docs/fit.md**](docs/fit.md) | **向いているケース** —— 効く問題の形と効かない問題の形(実測つきの早見表) |
+| [**docs/tuning.md**](docs/tuning.md) | **チューニング** —— 決める順に(答えの形・質問・state・閾値・合成・運用・計測・行動)、やってはいけないこと一覧つき |
+| [**docs/case-studies.md**](docs/case-studies.md) | **ケーススタディ** —— 題材 13 件(MOBA を含む)で、何が効いて何が効かなかったか |
 | [**docs/findings.md**](docs/findings.md) | **実験ごとに何がわかったか**(1 本 = 1 ブロック) |
 | [**docs/summary.md**](docs/summary.md) | やったこと / わかったことの端的な要約 |
 | [**TODO.md**](TODO.md) | **残作業。** 「なぜ開いているか」と「何があれば閉じるか」を項目ごとに。**閉じ方が分からないものはそう書いてあります** |
@@ -154,7 +157,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 
 | # | 内容 |
 | --- | --- |
-| [practice](docs/practice.md) | **実践ガイド** — 使うときに順番に決めること |
+| [when-to-use](docs/when-to-use.md) · [fit](docs/fit.md) · [tuning](docs/tuning.md) · [case-studies](docs/case-studies.md) | **ガイド 4 本** —— 使える条件・向いているケース・チューニング・ケーススタディ |
 | [findings](docs/findings.md) | **実験ごとに何がわかったか** |
 | [summary](docs/summary.md) | やったこと / わかったことの要約 |
 | [00](docs/00-api-notes.md) | API の実挙動(スキーマに書かれていない上限・挙動、公式パターン集の実測) |
