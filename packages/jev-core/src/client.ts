@@ -11,7 +11,7 @@
  *     (docs/00). Tokens are not countable client-side, so the budget here is
  *     in BYTES and deliberately conservative.
  *   - When the estimate is wrong anyway, the fix that works is to split the
- *     question set and ask again (docs/practice §3). A router cannot ask the
+ *     question set and ask again (docs/tuning §3). A router cannot ask the
  *     caller to shorten their task.
  */
 

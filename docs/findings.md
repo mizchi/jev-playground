@@ -3,7 +3,7 @@
 **57 本**の実験を **1 本 = 1 ブロック**で(番号は 00〜65、**13〜15・56・63 は欠番**、**02・10・11・12 は MOBA ごと [jev-playground-moba](https://github.com/mizchi/jev-playground-moba/blob/main/docs/findings.md) に移した**)。
 「何を試したか / 結果 / わかったこと / 効かなかったこと」の 4 つだけ書きます。
 
-手順の形に直したものは [practice.md](practice.md)、ブログ用の要約は [summary.md](summary.md)、
+手順の形に直したものは [tuning.md](tuning.md)(チューニング)・[fit.md](fit.md)(向いているケース)・[when-to-use.md](when-to-use.md)(使える条件)・[case-studies.md](case-studies.md)(事例)、ブログ用の要約は [summary.md](summary.md)、
 各実験の全文は [索引](README.md) から。
 
 ---
