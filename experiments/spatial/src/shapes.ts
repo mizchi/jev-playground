@@ -45,12 +45,16 @@ import {
   type Row,
   add,
   blank,
+  calibrationTable,
   type Cell,
   costTable,
+  heldOut,
+  heldOutAgainst,
   pairedLine,
   pct,
   read,
   right,
+  scoreHeldOut,
   write,
 } from "./spatial.js";
 import {
@@ -109,6 +113,7 @@ const RECT_ARMS: readonly RectArm[] = [...PIXEL_ARMS, ...SHAPE_ARMS] as const;
 const RECT_LEAKY = (a: RectArm): boolean => SHAPE_LEAKY.has(a as ShapeArm);
 
 const star = (a: string, leaky: boolean): string => (leaky ? `${a}*` : a);
+const byArm = (r: Row): string => r.arm;
 
 // ------------------------------------------------------------- §1 rectangles
 
@@ -517,6 +522,56 @@ function swapReport(rec: Record_): void {
 }
 
 /**
+ * §1.2's margin sweep at the held-out cut (TODO §1.17).
+ *
+ * The picture arms say "overlapping" to rectangles that only touch, and §1.2
+ * read that as calibration because `sparse` has the best AUC while scoring 3%
+ * on `touch`. A fitted cut moves the yes/no line; if the one-cell boundary
+ * were only a calibration problem, `edge1` and `touch` would both come back.
+ */
+function marginHeldOut(rec: Record_): void {
+  const margin = new Map(rectCorpus().map((c) => [c.key, c.margin]));
+  console.log("\n  the margin sweep at the held-out cut -- one cut per encoding, all margins pooled\n");
+  console.log(`  ${"encoding".padEnd(12)}${MARGINS.map((m) => m.padStart(9)).join("")}   overlap`);
+  for (const arm of RECT_ARMS) {
+    const h = heldOut(rec, (r) => r.arm, arm, "overlap");
+    if (!h) continue;
+    const share = (keep: (k: string) => boolean): string => {
+      const keys = [...h.right.keys()].filter(keep);
+      return pct(keys.filter((k) => h.right.get(k)).length, keys.length);
+    };
+    const line = MARGINS.map((m) => share((k) => margin.get(k) === m).padStart(9)).join("");
+    console.log(`  ${star(arm, RECT_LEAKY(arm)).padEnd(12)}${line}   ${share(() => true)}`);
+  }
+}
+
+/**
+ * §3.1's gap columns at the held-out cut (TODO §1.17): does the gap still
+ * dominate once 0.5 is not the cut? One cut per (variant, encoding), fitted
+ * with every gap pooled, then split -- so the gap is not fitted around.
+ */
+function pairsHeldOut(rec: Record_): void {
+  const gapOf = new Map(pairCorpus().map((c) => [c.key, c.gap]));
+  const label = (r: Row): string => `${r.variant}/${r.arm}`;
+  console.log("\n  `a_right` by the column gap at the held-out cut\n");
+  console.log(`  ${"variant".padEnd(22)}${GAPS.map((g) => `gap ${g}`.padStart(8)).join("")}     all`);
+  for (const arm of PAIR_ARMS) {
+    for (const v of VARIANTS) {
+      const h = heldOut(rec, label, `${v}/${arm}`, "a_right");
+      if (!h) continue;
+      const share = (keep: (k: string) => boolean): string => {
+        const keys = [...h.right.keys()].filter(keep);
+        return pct(keys.filter((k) => h.right.get(k)).length, keys.length);
+      };
+      console.log(`  ${`${v}/${arm}`.padEnd(22)}${GAPS.map((g) => share((k) => gapOf.get(k) === g).padStart(8)).join("")}   ${share(() => true).padStart(5)}`);
+    }
+  }
+  const combos = VARIANTS.map((v) => `${v}/ascii`);
+  heldOutAgainst(rec, combos, label, () => false, "object/cell/ascii", "a_right");
+  console.log("  you/cell against object/cell is the observer comparison; object/block against it is the size one.");
+}
+
+/**
  * The same column question in three corpora, split by how far apart the two
  * things are. Read from records already committed -- no request is made.
  *
@@ -597,6 +652,11 @@ function report(): void {
     marginTable(rects);
     againstBaseline(rects, RECT_ARMS, (a) => RECT_LEAKY(a as RectArm), "ascii", ["overlap", "a_starts_left"]);
     scoreTable(rects, RECT_ARMS, (a) => RECT_LEAKY(a as RectArm), "shared_cells", ["none", "1-2", "3-8", "9+"]);
+    const leaky = (a: string): boolean => RECT_LEAKY(a as RectArm);
+    calibrationTable(rects, RECT_ARMS, byArm, leaky);
+    heldOutAgainst(rects, RECT_ARMS, byArm, leaky, "ascii", "overlap");
+    marginHeldOut(rects);
+    scoreHeldOut(rects, RECT_ARMS, byArm, leaky, "shared_cells");
     costTable(rects, RECT_ARMS);
   }
   if (solid) {
@@ -605,15 +665,26 @@ function report(): void {
     axisTable(solid);
     againstBaseline(solid, SOLID_ARMS, (a) => SOLID_LEAKY.has(a as SolidArm), "layers", ["east", "above", "adjacent"]);
     scoreTable(solid, SOLID_ARMS, (a) => SOLID_LEAKY.has(a as SolidArm), "distance", ["1 step", "2-4", "5-9", "10+"]);
+    const leaky = (a: string): boolean => SOLID_LEAKY.has(a as SolidArm);
+    calibrationTable(solid, SOLID_ARMS, byArm, leaky);
+    heldOutAgainst(solid, SOLID_ARMS, byArm, leaky, "layers", "east");
+    heldOutAgainst(solid, SOLID_ARMS, byArm, leaky, "layers", "adjacent");
+    heldOutAgainst(solid, SOLID_ARMS, byArm, leaky, "coords", "adjacent");
+    scoreHeldOut(solid, SOLID_ARMS, byArm, leaky, "distance");
     costTable(solid, SOLID_ARMS);
   }
   if (pairs) {
     console.log(`\n\n=== §3.1  observer, size or gap -- ${new Set(pairs.rows.map((r) => r.case)).size} geometries x ${VARIANTS.length} variants x ${PAIR_ARMS.length} encodings, ${pairs.usage.calls} requests`);
     pairsReport(pairs);
+    const combos = PAIR_ARMS.flatMap((arm) => VARIANTS.map((v) => `${v}/${arm}`));
+    calibrationTable(pairs, combos, (r) => `${r.variant}/${r.arm}`, () => false);
+    pairsHeldOut(pairs);
   }
   if (swap) {
     console.log(`\n\n=== §3.2  rows and layers swapped -- ${swap.usage.calls} requests`);
     swapReport(swap);
+    const combos = SWAP_ARMS.flatMap((arm) => Object.keys(SHAPES_OF).map((v) => `${v}/${arm}`));
+    calibrationTable(swap, combos, (r) => `${r.variant}/${r.arm}`, () => false);
   }
   console.log("\n\n=== §3.3  the column question split by gap, from the records already committed (no requests)");
   gapSplit();
