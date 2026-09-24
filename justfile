@@ -30,8 +30,8 @@
 moon-deps:
     moon update
 
-# @inputs: lib/** cmd/** moba/** moba5/** report/** jevlang/** jevdsl/** moon.mod
-# @cost: 12.8
+# @inputs: lib/** cmd/** report/** jevlang/** jevdsl/** moon.mod
+# @cost: 7.7
 # @reset: moon clean
 # Compile every MoonBit package to a native binary
 moon-build: moon-deps
@@ -117,7 +117,7 @@ install-packages:
 
 # ---------------------------------------------------------------- MoonBit checks
 
-# @inputs: lib/** cmd/** moba/** moba5/** report/** jevlang/** jevdsl/** moon.mod
+# @inputs: lib/** cmd/** report/** jevlang/** jevdsl/** moon.mod
 # @cost: 0.9
 # @reset: moon clean
 # Type-check every MoonBit package without producing a binary
@@ -144,57 +144,6 @@ test-jevlang: moon-deps
 # Run the tests for the match-able wrapper around a judgment
 test-jevdsl: moon-deps
     moon test --target native -p jevdsl
-
-# @inputs: moba5/**
-# @cost: 10.4
-# @reset: moon clean
-# Run the 5v5 MOBA's rules, map-symmetry and benchmark-integrity tests
-test-moba5: moon-deps
-    moon test --target native -p moba5
-
-# @inputs: moba5/** cmd/moba5/**
-# @cost: 3.6
-# Re-derive docs/56's benchmark suite and the heuristic floor's score, no API
-replay-moba5-bench: moon-build
-    moon run --target native cmd/moba5 -- --bench --dry
-
-# @inputs: moba5/** cmd/moba5/**
-# @cost: 1.7
-# Re-derive docs/56's two composition tables (teamfights and whole games), no API
-replay-moba5-comps: moon-build
-    moon run --target native cmd/moba5 -- --arena
-    moon run --target native cmd/moba5 -- --tournament
-
-# @inputs: moba5/** cmd/moba5/** moba5/runs/**
-# @cost: 2.9
-# Re-derive docs/56 §1.12 items 1 and 3: the fight and retreat truths side by
-# side, and the recorded run laid over them, no API
-replay-moba5-coherence: moon-build
-    moon run --target native cmd/moba5 -- --coherence --from-answers moba5/runs/wording.jsonl
-
-# @inputs: moba5/** cmd/moba5/** moba5/runs/**
-# @cost: 0.4
-# Re-derive docs/56 §1.12 item 2 from the recorded answers: the retreat question
-# as two options and as three, and then the three options described four ways
-replay-moba5-wording: moon-build
-    moon run --target native cmd/moba5 -- --from-answers moba5/runs/wording.jsonl
-    moon run --target native cmd/moba5 -- --from-answers moba5/runs/descriptions.jsonl
-
-# @inputs: moba5/** cmd/moba5/** moba5/runs/**
-# @cost: 3.6
-# Re-mark docs/56's recorded benchmark run (165 questions x 5) against today's
-# truths and today's floor, no API. Fails if any recorded answer no longer
-# matches the question the suite asks
-replay-moba5-bench-answers: moon-build
-    moon run --target native cmd/moba5 -- --bench --from-answers moba5/runs/bench.jsonl
-
-# @inputs: moba5/** cmd/moba5/**
-# @cost: 11.3
-# Re-derive docs/64's audit of the rules as played: where the gold and the
-# experience come from, when levels and items arrive, how many towers fall, and
-# the champions' curves by level and build, no API
-replay-moba5-audit: moon-build
-    moon run --target native cmd/moba5 -- --audit
 
 # ---------------------------------------------------------------- JS checks
 
@@ -546,5 +495,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-moba5 replay-moba5-bench replay-moba5-comps replay-moba5-coherence replay-moba5-wording replay-moba5-bench-answers replay-moba5-audit test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
     @echo "all green"
