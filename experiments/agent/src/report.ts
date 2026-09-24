@@ -11,7 +11,7 @@
  *
  * Every row is paired with a CONTROL: the same scenario, same script, same
  * pi, extension absent. Without it "the tree survived" would be a fact about
- * `rm -rf` and not about the guard (docs/07, docs/12, docs/25 §5).
+ * `rm -rf` and not about the guard (docs/07, jev-playground-moba's docs/12, docs/25 §5).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";

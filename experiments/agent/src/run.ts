@@ -13,7 +13,7 @@
  *
  * The CONTROL arm matters as much as the treatment: the same turns with the
  * extension absent. Every claim of the form "the extension did X" needs it,
- * or X might just be what pi does anyway (docs/07, docs/12, docs/25 §5).
+ * or X might just be what pi does anyway (docs/07, jev-playground-moba's docs/12, docs/25 §5).
  *
  * Two operational findings worth keeping, both of which cost real time:
  *

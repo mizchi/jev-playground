@@ -13,15 +13,14 @@ Jev は「文字列ではなく**型付きの確率判断**を返す」意思決
 | `cmd/gomoku_gif` | 対局ログ(各手の実測ミリ秒付き)を**実時間再生の GIF** に変換するツール |
 | `cmd/patterns` | 公式ドキュメントの[意思決定パターン](https://docs.typesafe.ai/patterns)を実 API に対して走らせ、効果を実測する CLI |
 | `cmd/shellrisk` | シェルコマンドの危険度判定(エージェントの実行許可ゲート) |
-| `moba/`, `cmd/moba` | ヘッドレス 3v3 MOBA(2 レーン + ジャングル、視界と戦場の霧)を Jev に操作させる |
-| `moba5/`, `cmd/moba5` | **ヘッドレス 5v5 MOBA**(3 レーン + 両サイドのジャングル + 川、レベル・アイテム・スキル・目標・ミニオン・ワード)と、**シミュレータ自身が正解を出す採点ベンチマーク** |
+| MOBA(3v3・5v5) | **[mizchi/jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移しました** —— `moba/` `moba5/` `cmd/moba*`、レポート 02・10・11・12・56、採点できるベンチマークとその記録 |
 | `report/` | 実験 CLI 共通の整形と応答アクセサ |
 | `experiments/` | TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成プロンプト・ESLint 合否予測) |
 | `experiments/eslint-plugin-jev` | **eslint-plugin-jev** — 判定を Jev がやる ESLint プラグイン(関数ごとの score と名前付きレビュー指標 + **セレクタ 1 個と 1 文で書く ad-hoc ルール**、ファイル単位でバッチ) |
 | `experiments/task-filter` | **タスク/テストランナーの filter** — `just` の依存グラフ + diff で「今何を走らせるか」を採点 |
 | `experiments/browser-chaos` | **ブラウザ操作** — 操作ごとに分けた action space を投機的に 1 リクエストで聞く driver。ベンチ用アプリと**モデル不要の検査 7 本**つき |
 | `justfile` | このリポジトリのチェックをタスクグラフにしたもの(`just ci` で全部、`just test-lib` で 1 つ) |
-| `scripts/` | 依存ゼロのリポジトリ検査(doc アンカー、jevlang 2 実装の一致、Jev vs Jev の対戦) |
+| `scripts/` | 依存ゼロのリポジトリ検査(doc アンカー、jevlang 2 実装の一致) |
 | `hooks/` | Claude Code の `PreToolUse` hook(Bash コマンドの実行許可ゲート。依存ゼロの Node スクリプト) |
 | `jevdsl/`, `cmd/jevdsl` | **jevdsl** — 判断を `match` できる値にする薄いラッパー(MoonBit) |
 | `jevlang/`, `cmd/jevlang` | **jevlang**(MoonBit 版)— 条件が Jev の判断である小さな言語 |
@@ -160,7 +159,7 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [summary](docs/summary.md) | やったこと / わかったことの要約 |
 | [00](docs/00-api-notes.md) | API の実挙動(スキーマに書かれていない上限・挙動、公式パターン集の実測) |
 | [01](docs/01-shell-risk.md) | シェルコマンドの危険度判定 — エージェントの実行許可ゲート |
-| [02](docs/02-moba.md) | ヘッドレス 3v3 MOBA(視界と戦場の霧)を Jev にチーム操作させる |
+| 02・10・11・12・56 | **MOBA(3v3・5v5)と採点できるベンチマーク** —— [jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移しました([索引](https://github.com/mizchi/jev-playground-moba/blob/main/docs/README.md)) |
 | [03](docs/03-chess.md) | チェス、Jev vs Claude Sonnet 5 |
 | [04](docs/04-agent-built-prompts.md) | エージェントに質問を設計させて動的にパイプラインを組む |
 | [05](docs/05-browser-chaos.md) | [chaosbringer](https://github.com/mizchi/chaosbringer) の次操作選択を Jev に |
@@ -168,9 +167,6 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [07](docs/07-escalation.md) | confidence でエスカレーションする二層構成 — 成立条件は 3 つある |
 | [08](docs/08-skill-suggestion.md) | [skill suggestion cookbook](https://docs.typesafe.ai/cookbooks/skill_suggestion) の追試(68 スキル) |
 | [09](docs/09-guardrails.md) | [LLM guardrails cookbook](https://docs.typesafe.ai/cookbooks/llm_guardrails) の追試(入出力スクリーニング) |
-| [10](docs/10-jev-vs-jev.md) | Jev vs Jev を独立プロセスで対戦させる(referee + player ×2) |
-| [11](docs/11-synergy.md) | チャンピオンのシナジーと相互キルの同時処理 — 機構を入れないと編成は測れない |
-| [12](docs/12-comeback.md) | 間違ったドラフトを正しいアクションで取り返せるか(基準を上げると反転する) |
 | [16](docs/16-eslint-oracle.md) | コードと ESLint ルールの評価基準だけ渡し、実装を伏せて合否を当てさせる |
 | [17](docs/17-task-picker.md) | タスクランナーの大量のタスクから正しいものを選べるか |
 | [18](docs/18-permission-hook.md) | Claude Code の `PreToolUse` hook にして、Bash の実行許可をゲートする |
@@ -180,7 +176,6 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 | [22](docs/22-code-criteria.md) | 具体的な「良いコード」の指標を名前で聞くと何が変わるか + 列挙の穴の深さ |
 | [23](docs/23-task-filter.md) | タスク/テストランナーの filter — グラフが「走れるもの」、Jev が「走るべきもの」 |
 | [24](docs/24-adhoc-rules.md) | まだ存在しないルールを自然言語で書く — セレクタだけコードで書き、述語は 1 文 |
-| [56](docs/56-moba5.md) | **本格的な 5v5 MOBA と採点できるベンチマーク** — 試合は 6-0 で勝つが、16 局面のうち 13 で「勝てない」と答えて「殴れ」と答える(**その 13 は周辺度数が強制していて、内訳の割合は私の説明文の関数だった**) |
 
 (索引の全文は [docs/README.md](docs/README.md) にあります。)
 
@@ -193,10 +188,6 @@ moon run --target native cmd/gomoku_gif -- --log game15.jsonl --out gomoku.gif
 ```bash
 moon run --target native cmd/patterns --                   # 公式パターン集の実測
 moon run --target native cmd/shellrisk --                  # シェルコマンド判定
-moon run --target native cmd/moba -- --a jev --b scripted   # 3v3 MOBA
-moon run --target native cmd/moba5 -- --bench --dry         # 5v5 の採点表と床(API 不要)
-moon run --target native cmd/moba5 -- --bench --repeat 5     # 5v5 を 124 問 × 5 回で採点
-moon run --target native cmd/moba5 -- --a jev --b smart     # 5v5 MOBA
 ```
 
 TypeScript / JS 側の実験(チェス・ブラウザ探索・エージェント生成・ESLint 合否予測・
@@ -503,103 +494,15 @@ pi install ./packages/jev-guard   # 1 つだけ入れることもできる
 **コードブロックに `npm:<このリポジトリの名前>` が現れたらテストが落ちます**。
 詳細は [`pi/README.md`](pi/README.md)。
 
-## 12. 5v5 MOBA と採点できるベンチマーク —— [`moba5/`](moba5/)
+## 12. MOBA —— [mizchi/jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移しました
 
-§5 の [02](docs/02-moba.md) は 3v3 で、**測れるものが勝敗しかありませんでした**。
-[`moba5/`](moba5/) はそれを**ジャンルが実際に遊ばれているサイズと機構**まで広げた
-別パッケージで、**3v3 側(`moba/`, `cmd/moba`)は 1 行も変えていません**。
+3v3([02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md)・[10](https://github.com/mizchi/jev-playground-moba/blob/main/docs/10-jev-vs-jev.md)・[11](https://github.com/mizchi/jev-playground-moba/blob/main/docs/11-synergy.md)・[12](https://github.com/mizchi/jev-playground-moba/blob/main/docs/12-comeback.md))と、
+5v5 と採点できるベンチマーク([56](https://github.com/mizchi/jev-playground-moba/blob/main/docs/56-moba5.md))は、
+**コード・レポート・記録した答え・残作業ごと [jev-playground-moba](https://github.com/mizchi/jev-playground-moba) に移しました**(2026-09)。
+他の評価と混ざって大きくなりすぎたためで、MOBA のファイルの git の履歴も向こうに引き継いでいます。
 
-```bash
-moon run --target native cmd/moba5 -- --bench --dry        # 採点表と床(API キー不要)
-moon run --target native cmd/moba5 -- --bench --repeat 5   # 同じ 124 問を 5 回、採点
-moon run --target native cmd/moba5 -- --arena              # 5v5 集団戦の総当たり(API 不要)
-moon run --target native cmd/moba5 -- --tournament         # 全試合の総当たり(API 不要)
-moon run --target native cmd/moba5 -- --draft              # 生のステータスから編成を選ばせる
-moon run --target native cmd/moba5 -- --a jev --b smart --games 2 --max-ticks 30
-moon run --target native cmd/moba5 -- --a jev --b smart --verbose --replay r.jsonl
-moon test --target native -p moba5                         # 45 件。API キー不要
-```
-
-増えた機構は**どれも判断を 1 つ作るために**入れてあります ——
-3 レーン + 両サイドのジャングル + 川(23 ノード)、レベルと経験値、
-アイテム 5 種(装備枠 3)、クールダウン付きの固有スキル、
-**相手の 1 ターンを消すスタン**、遠距離の `poke`、
-ドラゴン(永続)とバロン(短時間・強)、ミニオンの押し合い、ワード、2 段のタワー。
-
-構造として一番効いているのは 1 行の規則です:
-
-> **自陣のウェーブが居るレーンのタワーは、その champion を撃たない**(撃つ対象がミニオンになる)。
-
-これで「タワーに単騎で立つ」は必ず負ける取引になり、
-**`Farm` でウェーブを押してから殴る**が正しい手順になります。
-ミニオンは**タワーしか割れない**ので、試合を終わらせるのは必ず champion です。
-
-**`--bench` が本題です。** 31 シナリオに 124 問、**答えは全部シミュレータが出します** ——
-ルールが決定的なので「この集団戦は勝てるか」は**再生すれば分かる**。
-正解の出し方は `rules`(再生した)/ `arith`(ルールの算術)/ `score`(明示した目的関数)の
-3 段階に分けて**問ごとに明記**し、**同点は両方正解**にします。
-**`--repeat N` で同じ問いを N 回**聞き(1 回では差と引き分けが区別できないので)、
-そして**出力に 2 本の基準線を並べます** ——
-**床**(状態を読む手書きヒューリスティック)と
-**`const`**(そのクラスで一番多い正解を機械的に答えたときの点)。
-
-実測(`jev-latest`、2026-09、詳細は [56](docs/56-moba5.md)):
-
-| | 結果 |
-| --- | --- |
-| 試合(両サイド × 2 種の bot、各 2 戦) | **6-0**、6 試合すべて自陣の構造物は満額 |
-| 1 リクエストが決めたキャラ行動 | **4.86**(3v3 は 2.76)、**52 ms/体**(3v3 は 76) |
-| 不正な手 | **874 判断で 0 件** |
-| **124 問 × 5 回の採点** | **0.48**(class mean 0.51)対 床 **0.51**(同 0.55) |
-| **ゴム印より明確に上のクラス** | **10 のうち 1 つ**(`lane` 1.00 対 const 0.71) |
-| **ゴム印より下のクラス** | **3 つ**(`focus` 0.26 / `retreat` 0.41 / `item` 0.17) |
-| 自己一致 | **109/124** |
-| 戦場の霧の読み(23 択) | **139 tick で 14 正解 = 0.10**、相手次第で **0.02〜0.36** |
-
-**そして一番はっきり出たのは正解率ではなく整合性でした** ——
-**16 局面のうち 13 で、「この集団戦は勝てない」と答えた直後に
-「いま殴れ」と答えています。** 同じ state・同じリクエスト・同じノードについて。
-**2 つの問いを同じリクエストに入れていなければ見えません** ——
-[02](docs/02-moba.md) が効率の話として始めた fan-out が、そのまま矛盾の検出器でした。
-
-**ただし数えたら、その 13 は最初から情報を持っていませんでした** ——
-`false` 14/16 と `fight_now` 15/16 から **14 + 15 − 16 = 13** が強制されるので、
-**共起が周辺度数の下限に等しいとき、それは 2 つのゴム印の言い換え**です。
-**読めるのは真値との比較**で、ルールが両立を許すのは 4 局面
-(下限 0・上限 7 の内側なので**そちらは情報を持っている**)——
-**13 組のうち少なくとも 9 組は間違い**(符号検定 p = 0.004〜0.012)、
-**ただしどちらの問いの答えが間違っているかは、この数字は言いません。**
-`fight` の閾値を「outright に勝つ」から「体の交換で負けない」に緩めても
-**ゴム印に対する差は両方 +2** で、**逃げ道はその方向には無い**
-(`--coherence`、API 不要)。
-
-**そして 2 択を 3 択に割ったら、答えは「どちらか」ではなく割合になりました。**
-`fight_now` を「勝つから殴る」/「勝てないが殴る価値がある」に分けて
-**同じ 16 局面を同じ run の中で両方の文言で**聞くと(オラクルは同一):
-**周辺度数は動かない**のに、
-**「勝てない」と言って殴った 41 局面のうち 30(73%)が中央を選び**、
-**残り 27% は同じリクエストで「勝つから殴る」**と答えました。
-**ただし正解率は 0.50 → 0.29 に下がりました** ——
-**articulate になったことと正確になったことは別**です。
-
-**そしてその 27% も撤回になりました。** 同じ 3 択を
-**4 通りの説明文**で聞き直すと(選択肢名・オラクル・truth・他の問いは全部同じ、
-動かしたのは説明文と 1 本だけ並び順)、中央の割合は
-**56% / 59% / 74% / 100%** に動きます ——
-**1 つの文言では矛盾が 48 答え中 0 件**、別の文言では **44%**、
-**並び順だけでも 74% → 59%**(文は 1 字も変えていない)。
-**「モデルが矛盾しているか、私の選択肢が粗いか」の割合そのものが、
-私の 3 文の関数**でした。
-**文言を 6 通り変えて動かなかったのは周辺度数だけ**です。
-
-> **このレポートは 2 度書き直しています。**
-> 1 度目は `--repeat` が無く、22 問を 1 回ずつ測って
-> 「calibration の向きが反転する」を所見にしていました(**標本の小ささの産物**)。
-> 2 度目は `fight` クラスが偏っていました ——
-> **8 問中 7 問が「体の数が多い側が勝つ」**で、床の 0.88 はほぼそれだけ。
-> いまは **540 通りを再生して 4 つのバケツに分け、同数取って
-> 「体を数える戦略が正確に 0.50」**にしてあります(テストで等式として固定)。
-> **そして `const` 列を足した瞬間に `retreat` も 0.83 で引っかかりました。**
+レポートの番号は向こうでもそのままなので、**このリポジトリでは 02・10・11・12・56 が欠番**です。
+向こうには続きの 1 本(LoL と照らした `64-moba5-lol`)があり、**こちらの [64](docs/64-spatial.md) とは別物**です。
 
 ## 13. ブラウザを操作させる — 操作ごとに分けた action space
 
@@ -674,7 +577,7 @@ API キーが要るのは `run-*` だけです。
 
 ## 補足
 
-- **料金**(2026-09 時点): 入力トークン `$0.042 / MTok`、出力トークン無料。15×15 の五目並べ 1 局で入力約 5.8 万トークン(≈ $0.0024)程度。5v5 MOBA は 30 tick の 1 試合で入力約 20 万トークン(≈ $0.008)、`--bench --repeat 5` は 155 リクエストで約 77 万トークン(≈ $0.032)。
+- **料金**(2026-09 時点): 入力トークン `$0.042 / MTok`、出力トークン無料。15×15 の五目並べ 1 局で入力約 5.8 万トークン(≈ $0.0024)程度。
 - Jev の応答は毎回 1 回の `POST /v1/systemone`(約 0.5 秒/手)。
 - GIF エンジン(`WGYo90/moonbit-gif`)はバリデータ上は有効な GIF を出力しますが、**同エンジンのデコーダーは自分の出力を再デコードできません**(標準のブラウザ/ビューアでは再生可能)。
 - 参考: Jev に関する解説は [Introducing System One Models & Jev(TypeSafe AI ブログ)](https://typesafe.ai/blog/introducing-system-one-models-and-jev)、API 仕様は [docs.typesafe.ai](https://docs.typesafe.ai/introduction) と `https://api.typesafe.ai/openapi.json`。

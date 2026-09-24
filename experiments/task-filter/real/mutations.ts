@@ -105,6 +105,9 @@ export const MUTATIONS: Mutation[] = [
   },
 
   // -------------------------------------------------- code no test covers
+  // cmd/moba moved to mizchi/jev-playground-moba in 2026-09, so this edit no
+  // longer applies to this tree. real/runs.json keeps what it observed;
+  // re-observing the whole set needs a checkout from before the move.
   {
     id: "moba_counter_type",
     branch: "refactor/moba-scoring",

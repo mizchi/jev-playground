@@ -286,7 +286,7 @@ worst case log_flood dropped 15093 records
 ## 次に試すこと
 
 - **窓を時系列にする。** ここは 1 窓 1 判定ですが、実際のトリアージは
-  「5 分前と比べて」の連続判断です。[02](02-moba.md) の tick と同じ形で、
+  「5 分前と比べて」の連続判断です。[02](https://github.com/mizchi/jev-playground-moba/blob/main/docs/02-moba.md) の tick と同じ形で、
   **同じ state に「前の窓の判定」を足すと何が変わるか**。
 - **4xx を含む SLO でラベルを作り直す。** §7 の `auth_misconfig` のねじれは
   ラベルの定義の問題で、定義を変えれば消えます。消したときに
