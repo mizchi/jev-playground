@@ -1,5 +1,5 @@
 /**
- * Score the 2023+ posts (docs/66 §9) with the same three requests every
+ * Score the 2023+ posts (docs/66 §8) with the same three requests every
  * pre-2022 post got, in the same form: body text only, no title, because the
  * detectors were fitted on human posts scored that way.
  *

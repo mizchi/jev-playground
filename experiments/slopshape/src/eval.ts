@@ -15,6 +15,7 @@
  *   B          Jev as the detector, with the paper handed over as context
  *   title      the release's human posts reach the scorer without a title
  *   reword     every mirror rewritten by its own writer (paper Table 4)
+ *   §8         the companies' own 2023+ posts, at cutoffs set on pre-2022 data
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -384,7 +385,7 @@ function repeatability() {
   return { posts: reps.length, items: A.length, exact: A.filter((x, i) => x === B[i]).length / A.length, kappa: kappa(A, B) };
 }
 
-// ------------------------------------------------------ §9: posts from 2023 on
+// ------------------------------------------------------ §8: posts from 2023 on
 
 interface RecentMeta {
   id: string;
@@ -663,7 +664,7 @@ function markdown(r: ReturnType<typeof report>): string {
   L.push("");
   const rc = r.recent;
   if (rc) {
-    L.push("## §9: the companies' own posts from 2023 on (flag rate = upper bound on false positives)");
+    L.push("## §8: the companies' own posts from 2023 on (flag rate = upper bound on false positives)");
     L.push(`posts ${rc.posts} from ${rc.companies} companies (${rc.matched_posts} from the 33 pre-2022 companies), by year ${JSON.stringify(rc.by_year)}, mean words ${rc.mean_words.toFixed(0)}`);
     L.push("");
     L.push("| detector | AUC ai vs old human | AUC 2023+ vs old human | cutoff fpr10: old human / AI recall / **2023+** [CI] / matched | by year | cutoff F1: old human / AI recall / **2023+** [CI] |");

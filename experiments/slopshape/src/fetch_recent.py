@@ -1,4 +1,4 @@
-"""Posts the same companies published from 2023 on: the false-positive probe (docs/66 §9).
+"""Posts the same companies published from 2023 on: the false-positive probe (docs/66 §8).
 
 The detectors in docs/66 were measured against human posts from before
 ChatGPT. A detector in use meets posts written now, by humans who have read

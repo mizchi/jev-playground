@@ -23,7 +23,7 @@ export const REL = resolve(ROOT, "vendor/slopshape");
 export const DATA = resolve(ROOT, "data");
 export const RECORDS = resolve(ROOT, "records");
 
-/** `recent` is a company's own post dated 2023 or later (docs/66 §9): unpaired, presumed human. */
+/** `recent` is a company's own post dated 2023 or later (docs/66 §8): unpaired, presumed human. */
 export type Source = "human" | "titled" | "ai" | "reworded" | "recent";
 export const SOURCES: Source[] = ["human", "titled", "ai", "reworded"];
 /** Which sources are human-written, for every metric. */
