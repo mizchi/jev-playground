@@ -12,6 +12,7 @@
     "judge": "tsx src/judge.ts",
     "fetch:recent": "python3 src/fetch_recent.py",
     "recent": "tsx src/recent.ts",
+    "suspect": "tsx src/suspect.ts",
     "report": "tsx src/eval.ts",
     "test": "tsx test.ts"
   },

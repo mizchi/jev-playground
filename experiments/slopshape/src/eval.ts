@@ -22,44 +22,12 @@ import { resolve } from "node:path";
 
 import type { Answer } from "../../shared/jev.js";
 import { DATA, REL, RECORDS, type Source, isHuman, loadIndex, normalize, wordCount } from "./corpus.js";
-import { type Feature, type Variant, coreSelection, instrument, label, slug, variantSets } from "./instrument.js";
+import { type Feature, type Variant, coreSelection, encode, instrument, variantSets } from "./instrument.js";
 import { ARMS } from "./judge.js";
 import { type Row, key, load } from "./records.js";
 import { auc, clusterCI, cohenD, fitLogistic, kappa, macroF1, mean } from "./stats.js";
 
-// ---------------------------------------------------------------- encoding
-
-export type Encoded = Record<string, number>;
-
-/** The release's encoding (r6_build.py): one-hot, multi-hot, ordinal position. */
-export function encode(answers: Record<string, Answer>, features: Feature[], soft = false): Encoded {
-  const x: Encoded = {};
-  for (const f of features) {
-    if (f.type === "multi_select") {
-      for (const v of f.values) {
-        const a = answers[`${f.id}__${slug(v)}`];
-        const p = a?.type === "noul" ? a.noul : NaN;
-        x[`${f.id}__${v}`] = soft ? p : p >= 0.5 ? 1 : 0;
-      }
-    } else if (f.type === "ordinal" || f.type === "scale") {
-      const a = answers[f.id];
-      if (a?.type !== "score") {
-        x[`${f.id}__ord`] = NaN;
-        continue;
-      }
-      const probs = Object.entries(a.probabilities).map(([k, p]) => [Number(k), p] as const);
-      const top = probs.reduce((b, c) => (c[1] > b[1] ? c : b))[0];
-      x[`${f.id}__ord`] = soft ? a.score : top;
-    } else {
-      const a = answers[f.id];
-      for (const v of f.values) {
-        const p = a?.type === "choice" ? (a.probabilities[label(v)] ?? 0) : NaN;
-        x[`${f.id}__${v}`] = soft ? p : a?.type === "choice" && a.choice === label(v) ? 1 : 0;
-      }
-    }
-  }
-  return x;
-}
+export { type Encoded, encode } from "./instrument.js";
 
 // ------------------------------------------------------------------ data
 

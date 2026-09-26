@@ -133,6 +133,17 @@ else {
   check("every mirror begins with a title line", oneline.every((l) => l.length > 0 && l.length < 200));
 }
 
+// ---- the shipped suspicion model (src/suspect.ts --fit)
+{
+  const m = JSON.parse(readFileSync(resolve(DATA, "../records/suspect-model.json"), "utf8"));
+  const struct = instrument().filter((f) => new Set(variantSets().narrative_strict).has(f.id));
+  const blank = Object.fromEntries(Object.keys(questionsFor(struct)).map((k) => [k, undefined])) as never;
+  const cols = Object.keys(encode(blank, struct, true)).sort();
+  check("suspect model columns are the structural encoding", JSON.stringify(cols) === JSON.stringify(m.cols) && m.w.length === cols.length);
+  const flagged = m.human_scores.filter((p: number) => p > m.cutoff).length / m.human_scores.length;
+  check("suspect cutoff flags at most 10% of pre-2022 human posts", flagged <= 0.1, flagged.toFixed(3));
+}
+
 // ---- statistics
 {
   check("auc: perfect / reversed / ties", auc([2, 3], [0, 1]) === 1 && auc([0], [1]) === 0 && auc([1], [1]) === 0.5);

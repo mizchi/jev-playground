@@ -98,11 +98,13 @@ export function fitLogistic(X: number[][], y: number[], lambda = 1, iters = 600,
     for (let j = 0; j < d; j++) w[j] -= lr * (gw[j] / n + (lambda * w[j]) / n);
     b -= lr * (gb / n);
   }
-  return (x: number[]) => {
+  const f = (x: number[]) => {
     let z = b;
     for (let j = 0; j < d; j++) if (sc[j] > 1e-9) z += w[j] * ((x[j] - mu[j]) / sc[j]);
     return 1 / (1 + Math.exp(-z));
   };
+  // The parameters ride along, so a fitted model can be written to disk (src/suspect.ts).
+  return Object.assign(f, { mu, sc, w, b });
 }
 
 /** Pooled Cohen's kappa over paired categorical labels. */

@@ -135,6 +135,7 @@ cd experiments/slopshape       && npm run report                    # 66: 記録
 cd experiments/slopshape       && npm run fetch -- --target 55      # 66: 人間記事を live URL から(trafilatura 2.2.0)
 cd experiments/slopshape       && npm run score && npm run judge    # 66: 214 特徴を Jev で採点 / 判定機 3 腕
 cd experiments/slopshape       && npm run fetch:recent && npm run recent # 66 §8: 同じ会社の 2023+ 記事で誤検出の上限
+cd experiments/slopshape       && npm run suspect -- post.md        # 66 §9: 記事ファイル → 疑わしさのスコアと押し上げた値
 cd experiments/tension         && npm i && npm test                 # 35: 規則・solver・統計量の不変条件(API 不要)
 cd experiments/tension         && npm run demo                      # 35: 記録から再集計(API 不要)
 cd experiments/tension         && npx tsx src/run.ts --play --repeat 6 # 35: jev 同士で 5 種を対戦
