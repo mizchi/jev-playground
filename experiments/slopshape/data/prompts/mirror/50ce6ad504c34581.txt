@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for the publisher, a provider of RFID solutions for businesses, explaining what Near Field Communication is and how it relates to RFID. Define NFC as a set of short-range wireless standards built into modern smartphones, outline its three transaction modes (peer to peer, read/write, and card emulation), and clarify the common confusion between the two terms via RFID basics: chip, antenna, and reader; active versus passive tags; and the LF, HF, and UHF frequency bands, with NFC positioned as an extension of HF RFID at 13.56 MHz. Close with enterprise takeaways on where NFC fits (one-to-one uses such as access and ticketing) and where passive UHF RFID is the better choice.
+
+Your article must be approximately 800 words long.
+Write only the article, beginning with a title line.

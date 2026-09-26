@@ -1,0 +1,607 @@
+[
+ {
+  "id": "027e8927f2762567",
+  "domain": "demandsphere.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 985,
+   "titled": 992,
+   "ai": 1139,
+   "reworded": 1128
+  }
+ },
+ {
+  "id": "05213e79bc2f9992",
+  "domain": "infoverity.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 769,
+   "titled": 782,
+   "ai": 916,
+   "reworded": 930
+  }
+ },
+ {
+  "id": "070f4fcc7b019865",
+  "domain": "eatwellnashville.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 796,
+   "titled": 805,
+   "ai": 872,
+   "reworded": 857
+  }
+ },
+ {
+  "id": "0a2ab7d9b9c9071e",
+  "domain": "flexfits.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 777,
+   "titled": 792,
+   "ai": 930,
+   "reworded": 935
+  }
+ },
+ {
+  "id": "0d6a124fb9c7946d",
+  "domain": "pfleet.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 1082,
+   "titled": 1091,
+   "ai": 1258,
+   "reworded": 1236
+  }
+ },
+ {
+  "id": "0f74e3e13b6c95df",
+  "domain": "somatechnology.com",
+  "vertical": "health",
+  "words": {
+   "human": 952,
+   "titled": 957,
+   "ai": 950,
+   "reworded": 922
+  }
+ },
+ {
+  "id": "11eba0e6a541faac",
+  "domain": "sstid.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 864,
+   "titled": 875,
+   "ai": 866,
+   "reworded": 850
+  }
+ },
+ {
+  "id": "123482dfd7184355",
+  "domain": "popularpays.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1637,
+   "titled": 1648,
+   "ai": 1425,
+   "reworded": 1369
+  }
+ },
+ {
+  "id": "12aea94e150d9970",
+  "domain": "hatchways.io",
+  "vertical": "software_saas",
+  "words": {
+   "human": 797,
+   "titled": 801,
+   "ai": 809,
+   "reworded": 790
+  }
+ },
+ {
+  "id": "172a594a8bb2426e",
+  "domain": "sellvia.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1219,
+   "titled": 1229,
+   "ai": 1393,
+   "reworded": 1262
+  }
+ },
+ {
+  "id": "28155171f4c70559",
+  "domain": "popularpays.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1714,
+   "titled": 1725,
+   "ai": 1866,
+   "reworded": 1747
+  }
+ },
+ {
+  "id": "299d6b15a6812242",
+  "domain": "breadcrumbs.io",
+  "vertical": "software_saas",
+  "words": {
+   "human": 2664,
+   "titled": 2674,
+   "ai": 2376,
+   "reworded": 2214
+  }
+ },
+ {
+  "id": "2f1f2ab0902e421b",
+  "domain": "boldrimpact.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 1274,
+   "titled": 1284,
+   "ai": 1517,
+   "reworded": 1470
+  }
+ },
+ {
+  "id": "30568161cf416390",
+  "domain": "creativealignments.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 793,
+   "titled": 804,
+   "ai": 873,
+   "reworded": 813
+  }
+ },
+ {
+  "id": "34c9036f1c5b4942",
+  "domain": "actioncleanup.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1047,
+   "titled": 1054,
+   "ai": 957,
+   "reworded": 913
+  }
+ },
+ {
+  "id": "3bb9a774386c3ed5",
+  "domain": "hackerrank.com",
+  "vertical": "devtools",
+  "words": {
+   "human": 1237,
+   "titled": 1248,
+   "ai": 1257,
+   "reworded": 1201
+  }
+ },
+ {
+  "id": "3bcc3b80166729a0",
+  "domain": "somatechnology.com",
+  "vertical": "health",
+  "words": {
+   "human": 2222,
+   "titled": 2229,
+   "ai": 2051,
+   "reworded": 1962
+  }
+ },
+ {
+  "id": "4119e517d178a12f",
+  "domain": "flexfits.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1309,
+   "titled": 1323,
+   "ai": 1366,
+   "reworded": 1279
+  }
+ },
+ {
+  "id": "4379700312393f11",
+  "domain": "drinksupercoffee.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 749,
+   "titled": 757,
+   "ai": 830,
+   "reworded": 860
+  }
+ },
+ {
+  "id": "44250121645aa731",
+  "domain": "cognitohq.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 1135,
+   "titled": 1149,
+   "ai": 1174,
+   "reworded": 1189
+  }
+ },
+ {
+  "id": "46dbdbe15cffaaa0",
+  "domain": "oxylabs.io",
+  "vertical": "devtools",
+  "words": {
+   "human": 1090,
+   "titled": 1094,
+   "ai": 1025,
+   "reworded": 1075
+  }
+ },
+ {
+  "id": "50a06c3e904a31d1",
+  "domain": "yourmechanic.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 627,
+   "titled": 637,
+   "ai": 645,
+   "reworded": 636
+  }
+ },
+ {
+  "id": "50ce6ad504c34581",
+  "domain": "sstid.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 784,
+   "titled": 791,
+   "ai": 881,
+   "reworded": 880
+  }
+ },
+ {
+  "id": "54734b95a0a5bdb0",
+  "domain": "xevant.com",
+  "vertical": "health",
+  "words": {
+   "human": 1079,
+   "titled": 1090,
+   "ai": 1135,
+   "reworded": 1107
+  }
+ },
+ {
+  "id": "5a4241a38d40e85d",
+  "domain": "breadcrumbs.io",
+  "vertical": "software_saas",
+  "words": {
+   "human": 2029,
+   "titled": 2035,
+   "ai": 1825,
+   "reworded": 1774
+  }
+ },
+ {
+  "id": "5b108fcc35080070",
+  "domain": "juliannarae.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 827,
+   "titled": 829,
+   "ai": 853,
+   "reworded": 806
+  }
+ },
+ {
+  "id": "5f96413d213354a8",
+  "domain": "atlassian.com",
+  "vertical": "devtools",
+  "words": {
+   "human": 1132,
+   "titled": 1146,
+   "ai": 1291,
+   "reworded": 1275
+  }
+ },
+ {
+  "id": "691e4bc75a898f6e",
+  "domain": "instapainting.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 754,
+   "titled": 765,
+   "ai": 910,
+   "reworded": 891
+  }
+ },
+ {
+  "id": "700207bd0def30e4",
+  "domain": "oxylabs.io",
+  "vertical": "devtools",
+  "words": {
+   "human": 1395,
+   "titled": 1400,
+   "ai": 1446,
+   "reworded": 1382
+  }
+ },
+ {
+  "id": "7255e0d793d7031a",
+  "domain": "geturns.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 929,
+   "titled": 937,
+   "ai": 942,
+   "reworded": 868
+  }
+ },
+ {
+  "id": "738c39867f9e40d8",
+  "domain": "xevant.com",
+  "vertical": "health",
+  "words": {
+   "human": 896,
+   "titled": 907,
+   "ai": 960,
+   "reworded": 985
+  }
+ },
+ {
+  "id": "73d61d3717dae0df",
+  "domain": "distillery.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 1025,
+   "titled": 1034,
+   "ai": 1017,
+   "reworded": 1007
+  }
+ },
+ {
+  "id": "7428572236f73664",
+  "domain": "atlassian.com",
+  "vertical": "devtools",
+  "words": {
+   "human": 718,
+   "titled": 733,
+   "ai": 749,
+   "reworded": 726
+  }
+ },
+ {
+  "id": "7e5d4da7757fa316",
+  "domain": "pfleet.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 928,
+   "titled": 935,
+   "ai": 927,
+   "reworded": 910
+  }
+ },
+ {
+  "id": "82a398d7e4610622",
+  "domain": "hackerrank.com",
+  "vertical": "devtools",
+  "words": {
+   "human": 1312,
+   "titled": 1322,
+   "ai": 1262,
+   "reworded": 1258
+  }
+ },
+ {
+  "id": "8376c0a05c907979",
+  "domain": "cognitohq.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 1058,
+   "titled": 1072,
+   "ai": 1053,
+   "reworded": 1044
+  }
+ },
+ {
+  "id": "84e2c6956b524cfd",
+  "domain": "getlago.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 921,
+   "titled": 933,
+   "ai": 980,
+   "reworded": 966
+  }
+ },
+ {
+  "id": "92618ed4f6e15a60",
+  "domain": "geturns.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1354,
+   "titled": 1360,
+   "ai": 1429,
+   "reworded": 1352
+  }
+ },
+ {
+  "id": "92fe380aa11e3b91",
+  "domain": "creativealignments.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 1488,
+   "titled": 1497,
+   "ai": 1532,
+   "reworded": 1456
+  }
+ },
+ {
+  "id": "969e8a543ece4d70",
+  "domain": "manatal.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 2033,
+   "titled": 2044,
+   "ai": 1934,
+   "reworded": 1833
+  }
+ },
+ {
+  "id": "97e1b93cb2572671",
+  "domain": "demandsphere.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1941,
+   "titled": 1951,
+   "ai": 1885,
+   "reworded": 1738
+  }
+ },
+ {
+  "id": "a218f3d6dd7c1369",
+  "domain": "eatwellnashville.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 973,
+   "titled": 976,
+   "ai": 956,
+   "reworded": 934
+  }
+ },
+ {
+  "id": "a7e558a9302ab516",
+  "domain": "juliannarae.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1103,
+   "titled": 1115,
+   "ai": 1105,
+   "reworded": 1065
+  }
+ },
+ {
+  "id": "a9eb318733dbbc6d",
+  "domain": "papa.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 778,
+   "titled": 790,
+   "ai": 777,
+   "reworded": 751
+  }
+ },
+ {
+  "id": "b54398a089a6b0e1",
+  "domain": "boldrimpact.com",
+  "vertical": "services_other",
+  "words": {
+   "human": 1580,
+   "titled": 1585,
+   "ai": 1436,
+   "reworded": 1370
+  }
+ },
+ {
+  "id": "b79c0e9ddd05e81f",
+  "domain": "adyn.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1437,
+   "titled": 1444,
+   "ai": 1593,
+   "reworded": 1532
+  }
+ },
+ {
+  "id": "bf36bb8ad188fc1d",
+  "domain": "adyn.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1380,
+   "titled": 1394,
+   "ai": 1348,
+   "reworded": 1269
+  }
+ },
+ {
+  "id": "c364e30e6edf0f0e",
+  "domain": "papa.com",
+  "vertical": "ecommerce_retail",
+  "words": {
+   "human": 1095,
+   "titled": 1109,
+   "ai": 1116,
+   "reworded": 1056
+  }
+ },
+ {
+  "id": "c3f4979a9e8d816d",
+  "domain": "castle.io",
+  "vertical": "devtools",
+  "words": {
+   "human": 997,
+   "titled": 1008,
+   "ai": 1093,
+   "reworded": 1007
+  }
+ },
+ {
+  "id": "c5961f9b5aae4b54",
+  "domain": "giveffect.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1279,
+   "titled": 1287,
+   "ai": 1260,
+   "reworded": 1219
+  }
+ },
+ {
+  "id": "c802a589242a7e71",
+  "domain": "manatal.com",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1700,
+   "titled": 1707,
+   "ai": 1665,
+   "reworded": 1531
+  }
+ },
+ {
+  "id": "cf2dac6bf446c21e",
+  "domain": "castle.io",
+  "vertical": "devtools",
+  "words": {
+   "human": 1081,
+   "titled": 1090,
+   "ai": 1019,
+   "reworded": 944
+  }
+ },
+ {
+  "id": "d0600dc7796bd6ae",
+  "domain": "truelinkfinancial.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 745,
+   "titled": 755,
+   "ai": 752,
+   "reworded": 745
+  }
+ },
+ {
+  "id": "f154967c473d9dab",
+  "domain": "hatchways.io",
+  "vertical": "software_saas",
+  "words": {
+   "human": 1121,
+   "titled": 1129,
+   "ai": 1123,
+   "reworded": 1039
+  }
+ },
+ {
+  "id": "f3e7ca60c843f765",
+  "domain": "junipersquare.com",
+  "vertical": "fintech_insurance",
+  "words": {
+   "human": 1254,
+   "titled": 1266,
+   "ai": 1277,
+   "reworded": 1231
+  }
+ }
+]

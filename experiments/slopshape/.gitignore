@@ -1,0 +1,7 @@
+vendor/
+node_modules/
+# Copyrighted human posts, and prompts that embed them.
+data/human/
+data/prompts/brief/
+# Embeds the release's LAMP prompt (prompts/ is all rights reserved); `npm run prompts` rebuilds it.
+data/prompts/reword/

@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Geturns, an online retailer of cremation urns and memorial keepsakes, about distinctive urn styles that help grieving families honor someone they have lost. Open with gentle, compassionate acknowledgment of grief before turning to the idea that an urn can carry personality and meaning. Tour several categories, including small keepsake urns that let relatives share ashes or wear them as jewelry, pet urns for those mourning animal companions, butterfly designs and the symbolism of transformation across cultures, and heart-shaped pieces that allow engraving and personal touches. Keep the voice warm, consoling, and sincere, weaving in customization options and product quality without sounding pushy, and end on the theme of keeping memories alive.
+
+Your article must be approximately 900 words long.
+Write only the article, beginning with a title line.

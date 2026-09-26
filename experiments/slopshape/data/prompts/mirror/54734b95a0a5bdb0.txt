@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Xevant, a pharmacy benefit analytics company that helps organizations understand and manage drug spend, explaining the differences between biologics and biosimilars and why they matter for healthcare costs. Aim at plan sponsors and benefits decision-makers facing rising specialty drug prices and expiring biologic patents. Cover what biologics are, what biosimilars are and how they relate to a reference product, how biosimilars differ from generics, and what FDA interchangeability designation means for pharmacy substitution. Use Humira and its approved biosimilars as the central example of cost pressure and savings potential, cite market growth projections, and keep the tone informative and accessible, with a brief prompt to contact Xevant about forecasting spend.
+
+Your article must be approximately 1100 words long.
+Write only the article, beginning with a title line.

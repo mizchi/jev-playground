@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for The Flex Company, a maker of menstrual products, in the voice of a board-certified OB-GYN responding to a wave of media coverage about toxic shock syndrome. Open by pushing back against the public shaming of people who forget a tampon, framing it as an ordinary mistake. Then explain what TSS is, how it develops, why its early symptoms blend in with normal period discomfort, and why tracking lapses made it seem to vanish. Dismantle the belief that organic or all-cotton tampons remove the risk. Keep the tone compassionate, frank, and clinically grounded, finish with a short recap and a call to stop judging, and include a medical disclaimer.
+
+Your article must be approximately 800 words long.
+Write only the article, beginning with a title line.

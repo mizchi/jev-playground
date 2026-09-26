@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for the publisher, a commercial cleaning and floor maintenance company, about choosing easy-to-maintain flooring for office buildings. Address facility managers and building owners weighing cost, looks, and upkeep, and draw on the company's hands-on cleaning experience to give room-by-room recommendations: individual offices, cubicles, conference rooms, break rooms, reception, and multi-tenant common areas such as hallways, washrooms, stairwells, and elevator lobbies. Compare commercial carpet tile, sheet vinyl, and porcelain or ceramic tile on durability, noise, cleanability, and budget, naming Mohawk and Armstrong as trusted brands. Keep the tone friendly, practical, and conversational, open with a relatable everyday hook, and close by stressing that regular cleaning with proper products protects any floor.
+
+Your article must be approximately 1000 words long.
+Write only the article, beginning with a title line.

@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for the publisher, a resource serving truck drivers and small trucking businesses, explaining the step-by-step process of obtaining trucking authority to operate legally in the United States. Target drivers ready to run their own operation for the independence it offers. Lay out the sequence clearly: registering the company with FMCSA and filing the required OP-1 and BOC-3 forms, securing MC and USDOT numbers, buying adequate insurance, setting up IRP registration and an IFTA account for interstate travel, enrolling in drug and alcohol testing, and finally paying the fee and tracking approval through SAFER. Keep the tone encouraging, plain-spoken, and procedural, and set realistic expectations about how long approval takes so readers plan ahead.
+
+Your article must be approximately 900 words long.
+Write only the article, beginning with a title line.

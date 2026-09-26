@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Sellvia, a dropshipping platform supplying a catalog of trending products, store pages, and marketing materials, about how to price products profitably. Address new ecommerce entrepreneurs who tend to guess or copy competitor prices. Start with general principles: knowing the audience, accounting for costs and overhead, watching competitors, and following market trends. Then explain how Sellvia's recommended price is built from product cost, domestic shipping, and ad spend per product, and contrast its offer against large marketplaces on price and delivery speed. Keep the tone upbeat and promotional, stressing that sellers keep full control over markups while benefiting from the platform's guidance.
+
+Your article must be approximately 1200 words long.
+Write only the article, beginning with a title line.

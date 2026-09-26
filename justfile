@@ -55,6 +55,18 @@ install-task-filter:
 install-threshold-fit:
     npm --prefix experiments/threshold-fit install
 
+# @inputs: experiments/slopshape/package.json experiments/slopshape/package-lock.json
+# @cost: 0.4
+# Install the SlopShape replication's dev dependencies
+install-slopshape:
+    npm --prefix experiments/slopshape install
+
+# @inputs: experiments/slopshape/scripts/release.sh
+# @cost: 0.8
+# Fetch the SlopShape release at its pinned commit and check it against MANIFEST.md (network)
+release-slopshape:
+    bash experiments/slopshape/scripts/release.sh
+
 # @inputs: experiments/otel-triage/package.json experiments/otel-triage/package-lock.json
 # @cost: 0.6
 # Install the triage experiment's dev dependencies
@@ -445,6 +457,18 @@ test-agent: install-agent
 replay-agent: install-agent
     npm --prefix experiments/agent run demo
 
+# @inputs: experiments/slopshape/** experiments/shared/**
+# @cost: 1.1
+# Check docs/66's instrument, normalizer parity with the release's Python, and prompt hygiene. No API key.
+test-slopshape: install-slopshape release-slopshape
+    npm --prefix experiments/slopshape test
+
+# @inputs: experiments/slopshape/** experiments/shared/**
+# @cost: 53.3
+# Re-derive docs/66's tables from the recorded Jev answers. No API key, no human post text.
+replay-slopshape: install-slopshape release-slopshape
+    npm --prefix experiments/slopshape run report
+
 # @inputs: experiments/hermes/** packages/**
 # @cost: 1.0
 # Check the combine record: the turns differ, both ways ask the same questions,
@@ -495,5 +519,5 @@ replay-threshold-fit: install-threshold-fit
 
 # Everything that has to be green
 [group('meta')]
-ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent check-links
+ci: moon-check test-lib test-jevlang test-jevdsl test-jevlang-js conformance check-doc-anchors test-hooks-failsafe test-hooks-policy test-eslint-plugin replay-eslint-plugin replay-criteria replay-tiers replay-loo replay-rules lint-repo-rules replay-repo-rules test-task-filter replay-task-filter test-threshold-fit replay-threshold-fit test-otel-triage replay-otel-triage test-bilingual replay-bilingual test-skill-select replay-skill-select fit-skill-select test-skill-pick replay-skill-pick test-orchestration replay-orchestration fit-orchestration test-repair replay-repair test-review replay-review test-roguelike replay-roguelike test-tension replay-tension test-packages typecheck-packages test-router replay-router test-hermes replay-hermes test-agent replay-agent test-slopshape replay-slopshape check-links
     @echo "all green"

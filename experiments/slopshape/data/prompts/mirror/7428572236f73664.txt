@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Atlassian, maker of developer collaboration tools including Stash, about the notable changes in the git 1.8.4 release. Give working developers a quick, opinionated tour rather than the full changelog. Open with brief upgrade pointers for Homebrew, Ubuntu, and Windows users, then highlight the standout improvements: easier submodule handling, rebase gaining autostash and better option support, new configuration and ordering options for status, log, and diff, and a friendlier color default. Round up smaller UI and workflow additions, noting where an Atlassian Stash add-on connects to one of them. Keep the voice enthusiastic, informal, and personal from a git advocate who enjoys release notes, and end with an invitation for readers to flag anything missed.
+
+Your article must be approximately 700 words long.
+Write only the article, beginning with a title line.

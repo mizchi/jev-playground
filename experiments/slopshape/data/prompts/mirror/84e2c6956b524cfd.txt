@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Lago, an open-source billing platform for usage-based pricing, presenting a Q&A interview with Algolia co-founder Nicolas Dessaigne on pricing, billing infrastructure, and open source. Set up Algolia's growth and its shift to usage-based pricing, then let the conversation trace how the company chose early plans, why it built billing in-house, a pricing experiment that backfired, and the lesson that price should follow customer value rather than internal costs. Draw out the escalating burden of maintaining homegrown billing as finance requirements, grandfathered plans, and fundraising reporting piled up, and his advice to founders on buying versus building. End with his view on open-sourcing billing and how open-core companies monetize. Keep the voice candid, conversational, and founder-to-founder.
+
+Your article must be approximately 900 words long.
+Write only the article, beginning with a title line.

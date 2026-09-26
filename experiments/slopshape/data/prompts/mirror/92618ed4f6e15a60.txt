@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Geturns, an online retailer of cremation urns, keepsakes, and memorial jewelry, explaining how families can choose the right size urn for a loved one's ashes. Open with context on why cremation keeps growing in popularity, then move through the size range from largest to smallest: standard adult and extra-large urns, medium urns suited to small children or shared ashes, tealight urns, keepsake urns, and cremation jewelry. For each, give practical guidance on capacity and dimensions and describe who it suits, including matching sets for dividing ashes. Keep the tone gentle and reassuring for grieving readers facing an unfamiliar decision, and close by encouraging a family conversation about whether ashes will be kept, shared, or scattered.
+
+Your article must be approximately 1300 words long.
+Write only the article, beginning with a title line.
