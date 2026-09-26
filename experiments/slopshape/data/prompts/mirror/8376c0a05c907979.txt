@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Cognito, a provider of identity verification and AML watchlist screening software, arguing that enhanced due diligence is a routine obligation for financial institutions rather than a rare escalation. Address compliance teams already running customer due diligence who need clarity on when to step up scrutiny. Ground the piece in the KYC regulatory backdrop, including FinCEN rules, then organize high-risk triggers around the FFIEC categories of customers and entities, geographic locations, and products and services, covering PEPs, beneficial ownership, FATF-monitored jurisdictions, sanctions, correspondent banking, and cash-intensive businesses. Close with regulator expectations for a risk-based approach, documentation, and ongoing monitoring, positioning automated screening as the practical answer. Keep the tone authoritative, direct, and compliance-minded.
+
+Your article must be approximately 1100 words long.
+Write only the article, beginning with a title line.

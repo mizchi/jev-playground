@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Castle, a provider of account takeover detection and user security tools for applications, explaining GDPR and how Castle supports customers' compliance as a data processor. Give developers and product teams a compact overview of the regulation: its scope beyond EU borders, enforcement and headline fines, and the surprisingly broad definition of personal data, including indirect identifiers. Then describe Castle's privacy-by-design approach and clarify the controller-processor relationship. Walk through specific obligations where Castle plays a role, namely data access requests, erasure requests via dedicated API endpoints, and breach notification aided by real-time anomaly alerts. Keep the tone clear, helpful, and technically grounded, ending with a commitment to user privacy and an invitation for customer feedback.
+
+Your article must be approximately 1000 words long.
+Write only the article, beginning with a title line.

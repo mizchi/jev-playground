@@ -1,0 +1,16 @@
+{
+  "about": "What the generation steps (Claude Code subagents, one per batch of 9-13 prompts) reported doing beyond the prompt. Kept so no deviation lives only in a chat log.",
+  "writer": "Claude Code general-purpose subagents, each told to read only its prompt files and answer them as the only request (src/prompts.ts renders the files).",
+  "not_single_pass_mirrors": {
+    "ids": ["84e2c6956b524cfd", "969e8a543ece4d70", "a7e558a9302ab516"],
+    "what": "the writer cut or extended the first draft to get closer to the target word count; every other mirror is a first draft",
+    "handled": "eval.ts reports the structural classifier with these three prompts removed as a sensitivity row"
+  },
+  "writer_notes": [
+    "84e2c6956b524cfd: interview answers attributed to a real founder are invented (no transcript)",
+    "92fe380aa11e3b91: quotes attributed to unnamed 'outside advisors' are invented",
+    "4119e517d178a12f: two real doctors' advice summarised rather than quoted",
+    "2f1f2ab0902e421b: quotes attributed to job titles, not invented names",
+    "3bcc3b80166729a0: device specifications written from memory, flagged in the text as approximate"
+  ]
+}

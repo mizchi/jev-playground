@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Super Coffee, a maker of protein-enriched, no-added-sugar ready-to-drink coffee, about a homemade, low-sugar take on the classic caramel cookie candy bar flavored with its Mocha Latte. Open with a playful, upbeat hook that promises indulgence without the sugar, then present a full recipe card: prep and cook times, yield, ingredients grouped by layer (almond flour shortbread, nut-butter caramel, sugar-free dark chocolate coating), step-by-step instructions with freezer chilling between layers, and per-bar nutrition figures. Weave the Mocha Latte into each component and finish with a short, energetic product plug stressing its protein, MCT oil, and absence of added sugar for health-minded, low-carb snackers.
+
+Your article must be approximately 700 words long.
+Write only the article, beginning with a title line.

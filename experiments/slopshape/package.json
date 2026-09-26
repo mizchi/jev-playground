@@ -1,0 +1,23 @@
+{
+  "name": "jev-slopshape",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SlopShape (arXiv:2609.15369) replicated with Jev as the scorer, and Jev as the detector (docs/66-slopshape.md)",
+  "type": "module",
+  "scripts": {
+    "release": "bash scripts/release.sh",
+    "fetch": "python3 src/fetch_humans.py",
+    "prompts": "tsx src/prompts.ts",
+    "score": "tsx src/score.ts",
+    "judge": "tsx src/judge.ts",
+    "fetch:recent": "python3 src/fetch_recent.py",
+    "recent": "tsx src/recent.ts",
+    "suspect": "tsx src/suspect.ts",
+    "report": "tsx src/eval.ts",
+    "test": "tsx test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

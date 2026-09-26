@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Instapainting, a service that matches customers with artists who turn photos into hand-painted portraits, about transforming the pet photos crowding a phone's camera roll into custom pet portrait paintings. Present a playful tour of portrait styles: a humorous Dutch Golden Age scene with owner and pet in period costume, colorful abstract treatments for dull backgrounds, collages for multi-pet households whose animals refuse to pose together, and edits that remove background clutter or swap in a new setting. Mention portraits as memorial gifts for people who have lost a pet. Keep the tone cheerful, pun-friendly, and pet-loving, and end with a simple step-by-step outline of ordering, from choosing a medium to receiving the shipped artwork.
+
+Your article must be approximately 800 words long.
+Write only the article, beginning with a title line.

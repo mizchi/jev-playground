@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Popular Pays, an influencer marketing platform that connects brands with content creators, offering nine practical tips for shooting high-quality Instagram product photos. Aim it at small business owners handling their own photography with a smartphone during the rise of social commerce. Open by explaining why polished product images build buyer confidence and brand recognition, then cover lighting, flat lays, white backgrounds, a consistent visual theme, varied angles, phone camera tools and editing apps, the rule of thirds, hashtags, and resolution. Keep the tone friendly, encouraging, and budget-conscious, and conclude by pitching Popular Pays as a way to hand content creation to skilled influencers.
+
+Your article must be approximately 1600 words long.
+Write only the article, beginning with a title line.

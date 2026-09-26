@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Manatal, an applicant tracking system for recruiters and HR teams, about the recruitment trends shaping 2023 and how an ATS helps hiring teams turn them into advantages. Address HR professionals and agencies stuck with outdated tools, first outlining three trends: rising expectations around employee well-being, demand for hybrid and remote work, and the shift toward skills-based hiring. Then pair each with a matching challenge, covering turnover tied to poor well-being, fragmented collaboration across distributed teams, and difficulty surfacing qualified candidates, and show how specific Manatal features, including a customizable career page, multi-board job posting, team chat and calendar, and AI candidate matching, address it. Keep the tone upbeat, ending with a free trial invitation.
+
+Your article must be approximately 2000 words long.
+Write only the article, beginning with a title line.

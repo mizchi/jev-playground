@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for the publisher, a content and search marketing provider, arguing that B2B and B2C companies must plan their fourth-quarter content and SEO strategy well before October arrives. Address marketers staring down the October-to-December peak who either planned early or now fear they are off target. Cover reviewing what converted last year, pairing long-range planning with daily monitoring, rescue tactics for brands behind their goals (sales incentives for consumers, flexible billing for business buyers, removing checkout friction), and a hypothesis-driven approach to analytics for non-specialists. Keep the tone brisk, practical, and mildly urgent, closing on a reflective call for cross-department alignment on next year's priorities.
+
+Your article must be approximately 1000 words long.
+Write only the article, beginning with a title line.

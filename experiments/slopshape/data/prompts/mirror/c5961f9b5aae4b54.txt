@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Giveffect, an all-in-one nonprofit management platform, sharing five lessons its clients reported learning during a pandemic-disrupted year. Build each section around short client survey quotes, then expand with practical advice for nonprofit leaders juggling limited staff and uncertain events. Cover personalized communication through constituent segmentation, planning campaigns months ahead with room for brainstorming and revision, staying flexible with virtual and hybrid formats while prioritizing safety, treating donor retention as the core fundraising priority, and supporting volunteers through schedule control and sincere acknowledgment. Keep the tone encouraging and practical, grounding the advice in real client voices. Close by connecting these lessons to Giveffect's segmentation and automation features and inviting readers to book a demo.
+
+Your article must be approximately 1300 words long.
+Write only the article, beginning with a title line.

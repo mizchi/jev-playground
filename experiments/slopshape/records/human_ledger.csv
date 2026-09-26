@@ -1,0 +1,366 @@
+doc_id,domain,split,vertical,url,snapshot_ts,manifest_words,live_words,title_overlap,kept,reason
+3b13a303a0081b63,geturns.com,test,ecommerce_retail,https://www.geturns.com/blogs/news/what-are-the-5-major-ideas-for-an-end-of-life-plan,20220808210014,1162,951,1.0,False,words
+cd1abfb1c1d2ebd8,pfleet.com,test,fintech_insurance,https://www.pfleet.com/blog/how-to-start-a-box-truck-business,20220701221148,1190,1008,1.0,False,words
+0af3bbcc31a94030,naborly.com,test,fintech_insurance,https://naborly.com/blog/dos-donts-tenant-screening/,20200807033207,1191,837,0.0,False,words
+2d13afcfd9131159,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/credit-card-reconciliation-everything-you-need-to-know,20220927074957,1203,,,False,fetch: HTTPError
+0bcb8a9a1aa710fe,humaans.io,test,software_saas,https://humaans.io/blog/hrms-vs-hris-the-difference/,20220816061905,1728,81,1.0,False,words
+299d6b15a6812242,breadcrumbs.io,test,software_saas,https://breadcrumbs.io/blog/best-upsell-examples/,20220113182822,2532,2678,1.0,True,
+13c54a11c667095a,incauthority.com,test,services_other,https://www.incauthority.com/blog/how-to-start-an-llc-in-nc-step-by-step/,20210619083230,2218,3047,0.75,False,words
+2f1f2ab0902e421b,boldrimpact.com,test,services_other,https://www.boldrimpact.com/blog/the-best-tips-to-engage-your-remote-teams/,20220701210100,1274,1287,0.89,True,
+8b722e1c0356523c,zeusliving.com,val,services_other,https://zeusliving.com/blog/a-guide-on-where-to-park-in-new-york-city,20210514100704,1453,,,False,fetch: URLError
+3aa0f81504b910ac,zeusliving.com,val,services_other,https://zeusliving.com/blog/what-is-corporate-housing,20210418172123,1465,,,False,fetch: URLError
+4f749f27c236934b,alluremedical.com,val,health,https://www.alluremedical.com/blog/healthy-living/get-super-ripped-fast/,20191121175800,1595,,,False,fetch: HTTPError
+02ae8cdcac329fd4,oxylabs.io,val,devtools,https://oxylabs.io/blog/web-scraping-in-automotive-industry,20191208163336,813,980,0.8,False,words
+0fe700a303a99e4a,berndtcpa.com,test,services_other,https://www.berndtcpa.com/blog/87-new-tax-bill-what-it-means-to-you,20200928231831,1545,,,False,fetch: HTTPError
+84e2c6956b524cfd,getlago.com,val,fintech_insurance,https://www.getlago.com/blog/pricing-billing-open-source-interview-with-algolias-co-founder,20220915162916,903,927,0.83,True,
+a9eb318733dbbc6d,papa.com,val,ecommerce_retail,https://www.papa.com/resources/blog/mind-the-gap-why-health-care-navigation-is-critical-for-health-plans/,20220523055055,778,784,1.0,True,
+e7bfcc7e431ea578,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-to-grow-a-passionate-following-with-ginny-hogan,20210517085245,745,,,False,fetch: HTTPError
+34dcda974bc43711,windsor.io,test,software_saas,https://www.windsor.io/blog/anatomy-of-a-great-thank-you-email,20220702150837,1127,,,False,fetch: URLError
+45302b53f3c1476b,foster.co,test,ecommerce_retail,https://www.foster.co/blog/tom-critchlow-the-compounding-effects-of-thinking-in-public,20210517102559,872,,,False,fetch: HTTPError
+cdb6bfad51a374b7,ambition.com,val,software_saas,https://ambition.com/blog/entry/2015-6-22-sales-management-lessons-nba-finals/,20210412064011,1670,831,0.0,False,words
+36487426cd525214,windsor.io,test,software_saas,https://www.windsor.io/blog/the-psychology-of-gratitude-for-online-stores,20220702135617,1282,,,False,fetch: URLError
+54734b95a0a5bdb0,xevant.com,val,health,https://www.xevant.com/blog/biologics-vs-biosimilars-the-differences-and-why-they-matter/,20220927034500,1079,1092,1.0,True,
+3e4ee1895837ff0e,manatal.com,test,software_saas,https://www.manatal.com/blog/9-reasons-need-ats,20220725130302,930,549,0.44,False,words
+8fe068db94ede664,sensehq.com,test,software_saas,https://blog.sensehq.com/when-it-comes-to-nps-timing-is-everything,20190917105504,983,,,False,fetch: URLError
+533798b85dcfeeb5,xevant.com,val,health,https://www.xevant.com/blog/top-4-pbm-industry-trends-in-2022-and-what-to-expect-next/,20220526081625,1367,1937,0.62,False,words
+55a55d421bf7267b,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/business-continuity/what-companies-get-wrong-about-business-continuity/,20201128221824,826,,,False,fetch: HTTPError
+7428572236f73664,atlassian.com,val,devtools,https://www.atlassian.com/blog/2013/08/what-you-need-to-know-about-the-new-git-1-8-4,20200809222455,718,743,0.81,True,
+0a3dd4a16eff1bbe,intimetec.com,val,services_other,https://blog.intimetec.com/blog/discover-yourself-as-a-leader,20210304120242,1580,,,False,fetch: HTTPError
+fe637ce841d7b784,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/low-carb-vs-keto/,20220524003620,2158,2961,0.82,False,words
+752bef376ec5df92,avocademy.com,val,edtech,https://www.avocademy.com/blog/how-to-write-a-ux-ui-design-resume-tips-and-tricks,20220704121911,1130,,,False,fetch: HTTPError
+d28f11fec7a4e8cd,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-to-build-a-writing-career-around-your-curiosity-with-taylor-pearson,20210517093020,1578,,,False,fetch: HTTPError
+07273e78514572c2,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/brexit-a-compliance-quagmire-for-the-healthcare-industry/,20200929114604,708,1132,0.64,False,words
+070f4fcc7b019865,eatwellnashville.com,val,ecommerce_retail,https://eatwellnashville.com/blogs/featured/health-hack-4-nutritious-swaps-for-common-unhealthy-ingredients,20190822025422,794,798,1.0,True,
+82a398d7e4610622,hackerrank.com,test,devtools,https://www.hackerrank.com/blog/database-interview-questions-you-should-know/,20220905145114,1312,1352,1.0,True,
+2c1ce4e246583eb1,naborly.com,test,fintech_insurance,https://naborly.com/blog/evicting-a-tenant-in-toronto/,20191021223754,695,198,0.0,False,words
+53fa4263aa2f052b,xevant.com,val,health,https://www.xevant.com/blog/the-top-innovation-trends-in-utilization-management/,20211205164332,1109,1245,0.5,False,words
+325d7e4f2799c0f0,lendingworks.co.uk,test,fintech_insurance,http://www.lendingworks.co.uk/blog-post/what-are-risks-involved-p2p-lending,20140719165947,1036,,,False,fetch: HTTPError
+92618ed4f6e15a60,geturns.com,test,ecommerce_retail,https://www.geturns.com/blogs/news/finding-the-right-size-cremation-urn,20201029131209,1296,1354,1.0,True,
+c439e757c23ed5fe,intimetec.com,val,services_other,https://blog.intimetec.com/blog/shifting-performance,20210304130355,796,,,False,fetch: HTTPError
+4119e517d178a12f,flexfits.com,val,ecommerce_retail,https://blog.flexfits.com/get-doctors-to-take-period-pain-seriously/,20210418203155,1311,1309,1.0,True,
+c37e9f2fa1043aa1,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/developing-data-centric-ai-applications-with-superb-ai-suite-and-pachyderm-hub,20210927050953,767,1161,0.92,False,words
+efa0a7d562734467,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cisco-solutions/factors-to-consider-before-adopting-platform-approach/,20210724002347,978,,,False,fetch: HTTPError
+675fa74e4744e16e,zeusliving.com,val,services_other,https://zeusliving.com/blog/16-jobs-that-allow-you-to-travel,20210514112903,1477,,,False,fetch: URLError
+efe9758f5ba99cca,liquipel.com,test,ecommerce_retail,https://blog.liquipel.com/2017/08/09/4-ways-you-break-your-phone-without-even-realizing-it/,20210228040234,656,,,False,fetch: HTTPError
+f54c414ab6969da2,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/why-reporting-analysing-ehs/,20211207180933,1213,1537,0.31,False,words
+e3dac963a67db60e,supertokens.com,val,devtools,https://supertokens.com/blog/how-to-deploy-supertokens-with-react-nodejs-express-on-vercel,20220418145808,901,638,0.2,False,words
+ee9b70a8b19c8355,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/how-to-grow-your-twitch-channel-with-reddit/,20211103223507,1550,269,0.11,False,words
+3d40a6d6af9f7821,adyn.com,val,ecommerce_retail,https://adyn.com/blog/whats-the-best-birth-control/,20220522082805,2261,1850,0.71,False,words
+b79c0e9ddd05e81f,adyn.com,val,ecommerce_retail,https://adyn.com/blog/gynecological-surgeries-procedures/,20220522085101,1417,1447,1.0,True,
+6647b5dbfeef5e6b,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/cloud-monitoring-for-enterprise-process-optimization/,20210123170148,913,,,False,fetch: HTTPError
+105326736a8aec51,demandsphere.com,val,software_saas,https://www.demandsphere.com/blog/use-local-search-data-to-create-local-visibility-for-your-brand/,20190820084008,1194,,,False,fetch: HTTPError
+c5acb4be2068a897,foster.co,test,ecommerce_retail,https://www.foster.co/blog/narrative-storytelling-and-the-news-with-byrne-hobart,20210517090118,1112,,,False,fetch: HTTPError
+027e8927f2762567,demandsphere.com,val,software_saas,https://www.demandsphere.com/blog/get-ahead-in-q4-with-a-strong-content-and-search-strategy/,20190723225403,969,985,1.0,True,
+f8b7f3a442986d0b,naborly.com,test,fintech_insurance,https://naborly.com/blog/5-steps-to-starting-your-rental-real-estate-empire/,20190817172138,812,837,0.09,False,title
+030d13d86fff2f01,alluremedical.com,val,health,https://www.alluremedical.com/blog/weightloss/is-wegovy-weight-loss-drug-really-better-than-the-generic-brands/,20220525221802,834,,,False,fetch: HTTPError
+5b108fcc35080070,juliannarae.com,test,ecommerce_retail,https://www.juliannarae.com/blog/hello-january,20191015090047,782,847,1.0,True,
+8397a3eb08cde44f,zeusliving.com,val,services_other,https://zeusliving.com/blog/what-is-the-best-time-of-the-year-to-visit-seattle,20210514113200,1556,,,False,fetch: URLError
+45cdba41d80fe4ea,infoverity.com,val,services_other,http://www.infoverity.com:80/blog/well-head-intelligence-big-data-shale/,20170421170923,643,345,0.89,False,words
+f154967c473d9dab,hatchways.io,val,software_saas,https://www.hatchways.io/blog/bootcamps-part-1-what-are-coding-bootcamps,20220521192108,1098,1121,1.0,True,
+0a2ab7d9b9c9071e,flexfits.com,val,ecommerce_retail,https://blog.flexfits.com/accidentally-left-tampon-in-tss/,20210618215739,804,781,1.0,True,
+bf36bb8ad188fc1d,adyn.com,val,ecommerce_retail,https://adyn.com/blog/beyond-the-birth-control-quiz/,20220522064942,1357,1394,1.0,True,
+5a4241a38d40e85d,breadcrumbs.io,test,software_saas,https://breadcrumbs.io/blog/customer-marketing-strategies/,20210624171806,2031,2045,1.0,True,
+9826a9c2e38236ee,sensehq.com,test,software_saas,https://blog.sensehq.com/focus-on-these-steps-to-modernize-your-staffing-operations-next-year,20190824223451,1381,,,False,fetch: URLError
+3a211153bb1f9643,iconicit.com,test,services_other,https://iconicit.com/blog/voip-the-pros-and-cons/,20210925202951,1226,,,False,fetch: HTTPError
+d4f0551f2eff8150,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/5-reasons-why-people-are-switching-to-super-coffee/,20210918175826,614,853,1.0,False,words
+e9183ff83b9aa9d4,atlassian.com,val,devtools,https://www.atlassian.com/blog/2013/01/atlassian-svn-to-git-migration-technical-side,20201126191546,1081,1133,0.06,False,title
+e3e67756d522c620,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/is-keto-safe,20220520175601,1856,2222,0.85,False,words
+97e1b93cb2572671,demandsphere.com,val,software_saas,https://www.demandsphere.com/blog/instagram-influencers-for-marketing/,20190820232651,1937,1941,0.6,True,
+3bcc3b80166729a0,somatechnology.com,test,health,https://www.somatechnology.com/blog/products/ekg-machines/,20181012124631,2219,2348,1.0,True,
+56d3a2076ee70551,iconicit.com,test,services_other,https://iconicit.com/blog/what-is-manufacturing-technology-going-to-look-like-in-the-future/,20210925221659,957,,,False,fetch: HTTPError
+398b5e36b4ae6540,geturns.com,test,ecommerce_retail,https://www.geturns.com/blogs/news/can-cremation-jewelry-help-you-overcome-grief,20210918205621,830,726,1.0,False,words
+3bb9a774386c3ed5,hackerrank.com,test,devtools,https://www.hackerrank.com/blog/cloud-computing-challenges/,20221128123532,1237,1245,1.0,True,
+ae8efb2e8c0120a2,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/computer-vision-and-ai-in-transportation-and-logistics-2022-use-case-overview,20221004074121,1191,1395,1.0,False,words
+e00fe62cfa4b3fda,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/safety-level-up/,20220122032426,1297,1778,0.4,False,words
+adca236fd49c7e29,liquipel.com,test,ecommerce_retail,https://blog.liquipel.com/2017/08/09/8-world-cuisines-you-need-to-try-right-now/,20210228042758,1187,,,False,fetch: HTTPError
+3a287121fb62b150,clear.co,test,fintech_insurance,https://clear.co/blog/learn/improve-ecommerce-customer-retention-rate/,20211125085230,1161,,,False,fetch: HTTPError
+27e374675bd9b961,humaans.io,test,software_saas,https://humaans.io/blog/how-to-provide-a-better-remote-onboarding-experience/,20210703121137,2017,72,1.0,False,words
+f7a8ec5899e33e41,iconicit.com,test,services_other,https://iconicit.com/blog/is-your-organization-eligible-for-the-nonprofit-security-grant-program/,20210728200233,701,,,False,fetch: HTTPError
+83083c12aeca469b,foster.co,test,ecommerce_retail,https://www.foster.co/blog/writing-a-must-read-newsletter,20210517201645,1085,,,False,fetch: HTTPError
+1e2c41bea0f00c55,oxylabs.io,val,devtools,https://oxylabs.io/blog/crawling-vs-scraping,20190718223523,895,1782,0.5,False,words
+4e3cef6e2aabd9f0,custora.com,test,ecommerce_retail,https://www.custora.com/blog/story/beyond-batch-and-blast-getting-started-with-smart-email-marketing,20191105230644,950,,,False,fetch: URLError
+6e145f7119781ccb,lendingworks.co.uk,test,fintech_insurance,https://www.lendingworks.co.uk/blog/peer-to-peer/ultimate-guide-your-first-p2p-investment,20190722003419,2048,,,False,fetch: HTTPError
+97925a5c0d553d6c,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/travel-booking-with-admin-support,20160808021058,795,,,False,fetch: URLError
+10ff6890f5543a12,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/dropshipping-suppliers-to-team-up-with/,20220517142925,1280,1275,0.0,False,title
+4dbce61230490581,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/travel-new-years-resolutions,20160806101054,1011,,,False,fetch: URLError
+5a83b742068e3dd5,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/is-royal-entry-the-new-meta,20210416211938,936,7409,0.0,False,words
+a7e558a9302ab516,juliannarae.com,test,ecommerce_retail,https://www.juliannarae.com/blog/14-songs-to-put-the-pow-in-empowerment-for-international-womens-day,20190823032311,1058,1123,1.0,True,
+415717f44fe40758,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/how-to-sell-your-ecommerce-business,20210623195911,2076,,,False,fetch: HTTPError
+6f6d322c30002fd6,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/procurement-vs-sourcing,20220816122849,1796,2254,0.56,False,words
+563f08969be83d88,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/source-to-pay-process,20220816134416,1591,,,False,fetch: HTTPError
+700207bd0def30e4,oxylabs.io,val,devtools,https://oxylabs.io/blog/etl-pipeline,20221027092253,1472,1398,1.0,True,
+c3f4979a9e8d816d,castle.io,test,devtools,https://blog.castle.io/leaked-credentials-database/,20210510083925,973,997,1.0,True,
+40cd2d02cfa69293,oxylabs.io,val,devtools,https://oxylabs.io/blog/what-is-curl,20201021163352,1082,1502,0.71,False,words
+172a594a8bb2426e,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/product-pricing-strategy/,20210803041853,1234,1226,1.0,True,
+a95c67426a84b458,bamboohr.com,val,software_saas,http://www.bamboohr.com:80/blog/aprils-foolish-day-hr-edition,20150127232312,727,,,False,fetch: HTTPError
+12aea94e150d9970,hatchways.io,val,software_saas,https://www.hatchways.io/blog/outsourcing-software-development-ethically,20220521184738,797,797,1.0,True,
+558af42bc2d707eb,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/what-are-these-blueprints-for-in-cod,20220928032815,676,7409,0.0,False,words
+377484f1cadeb792,castle.io,test,devtools,https://blog.castle.io/redefining-security-as-a-profit-driver/,20200616183131,978,,,False,fetch: HTTPError
+2ac6051c3e316b3d,lendingworks.co.uk,test,fintech_insurance,https://www.lendingworks.co.uk/blog/finance/are-personal-loans-better-secured-loans,20190722005146,1560,,,False,fetch: HTTPError
+7e5d4da7757fa316,pfleet.com,test,fintech_insurance,https://www.pfleet.com/blog/7-steps-to-get-your-trucking-authority,20220517201247,886,928,1.0,True,
+5dffcc7ec00aa647,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/best-internet-providers-near-me,20210803031703,1042,1418,1.0,False,words
+8c6891ba1ec19639,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-security/cloud-security-essentials-for-public-cloud-setup/,20210614232330,942,,,False,fetch: HTTPError
+444d9c20c489ceff,zeusliving.com,val,services_other,https://zeusliving.com/blog/a-foodie-s-guide-to-austin-texas-where-to-eat-drink,20210514102952,1460,,,False,fetch: URLError
+f3c8c7e0c58008e1,pieinsurance.com,test,fintech_insurance,https://pieinsurance.com/blog/safety/motor-vehicle-accidents-workplace/,20220216171623,641,377,1.0,False,words
+48310a0ae8fd5939,boldrimpact.com,test,services_other,https://www.boldrimpact.com/blog/quora-questions-customer-experience-strategy/,20220524021050,981,,,False,fetch: HTTPError
+a218f3d6dd7c1369,eatwellnashville.com,val,ecommerce_retail,https://eatwellnashville.com/blogs/featured/move-your-body,20220124042834,973,989,1.0,True,
+738c39867f9e40d8,xevant.com,val,health,https://www.xevant.com/blog/shortfalls-causing-medication-nonaderence-and-how-to-improve-them/,20211205174801,896,898,0.7,True,
+59cf43024d08afe8,storylane.io,val,software_saas,https://www.storylane.io/blog/what-is-a-lead-magnet-10-examples-you-can-use-now,20220429071241,1515,,,False,fetch: HTTPError
+ccb45f6b55b14aea,sensehq.com,test,software_saas,https://blog.sensehq.com/scaling-contractor-care,20190722074057,1251,,,False,fetch: URLError
+845dd85eebdeb048,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/the-best-time-to-post-on-tiktok-every-day-of-the-week/,20210928134411,2213,269,0.08,False,words
+8f62f4521eddaf7d,windsor.io,test,software_saas,https://www.windsor.io/blog/five-unique-ecommerce-email-campaigns,20220702141226,1181,,,False,fetch: URLError
+0640caadefb19ef6,oxylabs.io,val,devtools,https://oxylabs.io/blog/data-pipeline-architecture,20221005093009,1740,1495,1.0,False,words
+22c1491ad2c56f13,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/legionfarm-s-overview-of-fan-made-stat-trackers-for-apex-legends,20210416200036,1023,7409,0.0,False,words
+a288ccb9ec766125,queenly.com,val,ecommerce_retail,https://queenly.com/blog/sorority-rush-guide,20220817160126,1506,,,False,fetch: HTTPError
+9bae171afb7bf3d0,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/apex-legends-tournaments-overview,20220928034745,1473,7409,0.0,False,words
+f6a7b72623685781,iconicit.com,test,services_other,https://iconicit.com/blog/email-best-practices-for-businesses-covid-19-and-beyond/,20210222210432,927,,,False,fetch: HTTPError
+84a123637e11bbf0,geturns.com,test,ecommerce_retail,https://www.geturns.com/blogs/news/transferring-ashes-into-an-urn,20210616094211,905,681,1.0,False,words
+d83f12f4abe9278c,pfleet.com,test,fintech_insurance,https://www.pfleet.com/blog/fuel-card-fraud-policy-comparisons-and-what-the-risks-are,20190824204958,1117,1442,0.4,False,words
+19b61b9e38f1a617,lendingworks.co.uk,test,fintech_insurance,https://www.lendingworks.co.uk/blog/finance/dangers-facing-current-financial-system,20190820210902,1407,,,False,fetch: HTTPError
+0d6a124fb9c7946d,pfleet.com,test,fintech_insurance,https://www.pfleet.com/blog/how-a-diesel-fuel-card-can-help-your-business,20191015232813,1064,1082,1.0,True,
+f5fa2bd3739dbd94,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/re-invent-2020-realize-what-cloud-makes-possible/,20210104224747,714,,,False,fetch: HTTPError
+93202c5b52cad69b,naborly.com,test,fintech_insurance,https://naborly.com/blog/no-income-no-return/,20190920223406,1003,198,0.0,False,words
+1dfa524b167de2e5,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/business-exit-strategy,20210804212927,1269,,,False,fetch: HTTPError
+c489c55116d3cd0c,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/fda-regulation-medical-device/,20220122015857,878,1128,0.33,False,words
+28c1c8f0ab1fb7a5,sensehq.com,test,software_saas,https://blog.sensehq.com/different-ways-to-automatically-stay-engaged-with-your-talent-database,20200930104826,1567,,,False,fetch: URLError
+c5961f9b5aae4b54,giveffect.com,test,software_saas,https://www.giveffect.com/blog/top-5-tips-for-nonprofits-from-giveffect-clients/,20220128093806,1278,1279,0.75,True,
+123482dfd7184355,popularpays.com,val,software_saas,https://popularpays.com/blog/instagram-product-photography/,20220907193213,1626,1669,1.0,True,
+67839a0b48a2912c,incauthority.com,test,services_other,https://www.incauthority.com/blog/2020/11/19/starting-a-pressure-washing-business-a-step-by-step-guide/,20201119232216,887,,,False,fetch: HTTPError
+20956483ce384a63,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/the-grand-review-of-apex-legends-ranked-arenas,20220928024156,1035,7409,0.0,False,words
+9e16d4e69141808c,naborly.com,test,fintech_insurance,https://www.naborly.com/blog/5-tips-traveling-across-country,20220706162533,899,538,0.0,False,words
+94fe9a59c30198c1,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/business-intelligence/accelerating-growth-by-implementing-best-practices-for-business-intelligence/,20210921141729,762,,,False,fetch: HTTPError
+d943f7e506a8142b,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/the-role-of-accounting-departments-in-travel-management,20161217024509,762,,,False,fetch: URLError
+4effea8003940e1e,manatal.com,test,software_saas,https://www.manatal.com/blog/hris-vs-recruitment-app-which-solution-best,20220810085653,2411,1159,0.27,False,words
+e31615204e64bb23,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/understanding-cod-s-new-league-mode,20210226031009,1195,7409,0.0,False,words
+de39f2196c19de51,sensehq.com,test,software_saas,https://blog.sensehq.com/staying-connected-how-to-engage-and-communicate-with-furloughed-employees,20200930085905,1607,,,False,fetch: URLError
+6a9e2d6b41659d6f,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/credit-card-reconciliation-simple-guide-to-general-ledger-reconciliation,20220927085354,1385,5244,0.0,False,words
+e874b573ef846cfd,queenly.com,val,ecommerce_retail,https://queenly.com/blog/must-have-summer-formalwear,20220712140758,1091,,,False,fetch: HTTPError
+6a62f2a512387e31,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/what-is-voip-jitter,20221128215308,1287,821,1.0,False,words
+17641e727efab6af,alluremedical.com,val,health,https://www.alluremedical.com/blog/sleep-apnea/disordered-sleep-leading-to-weight-gain/,20220629065920,1365,,,False,fetch: HTTPError
+caa17d13da3bdbfd,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-service/cloud-software-licensing-offerings/,20211017092546,843,,,False,fetch: HTTPError
+e6cd88e835db396b,zeusliving.com,val,services_other,https://zeusliving.com/blog/14-questions-to-ask-about-a-rental-property,20210514104807,1466,,,False,fetch: URLError
+28155171f4c70559,popularpays.com,val,software_saas,https://popularpays.com/blog/influencers-brand-awareness/,20210507134819,1771,1723,1.0,True,
+a344d19de0681ea4,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/best-practices-for-video-annotation-for-computer-vision-datasets,20221027211422,2208,2479,1.0,False,words
+d8712bd6f800d4ba,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/what-is-monk-fruit-sweetener/,20210417112000,2310,,,False,fetch: HTTPError
+02c6d3f8a385845f,foster.co,test,ecommerce_retail,https://www.foster.co/blog/writing-a-paid-newsletter-on-the-side,20210615195610,1626,,,False,fetch: HTTPError
+37fab9d92776f151,sstid.com,val,services_other,http://www.sstid.com:80/blog/3-new-developments-that-will-disrupt-rfid-as-you-know-it/,20160730025439,960,924,0.27,False,title
+a2c7abe8812046cc,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-to-stand-out-in-your-industry-with-cherie-hu,20210517105442,898,,,False,fetch: HTTPError
+29ea121d1cf0dbd9,custora.com,test,ecommerce_retail,https://www.custora.com/blog/composing-multi-channel-harmony-for-a-single-customer-view,20190717205657,1030,,,False,fetch: URLError
+b87a3eb083e02e73,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/artificial-intelligence-and-the-future-of-travel,20160806212838,893,,,False,fetch: URLError
+bd0f4906dd7db36d,oxylabs.io,val,devtools,https://oxylabs.io/blog/ai-ml-in-2022,20220129045015,628,793,1.0,False,words
+dd218d111602480d,iconicit.com,test,services_other,https://iconicit.com/blog/labor-day-facts-why-a-day-of-rest-is-called-labor-day/,20200921093153,918,,,False,fetch: HTTPError
+05213e79bc2f9992,infoverity.com,val,services_other,http://www.infoverity.com/blog/using-data-move-product-centric-customer-centric-organization/,20180121072717,838,778,0.91,True,
+c364e30e6edf0f0e,papa.com,val,ecommerce_retail,https://www.papa.com/resources/blog/4-factors-that-lead-to-improved-member-experience-that-may-surprise-you,20220728150409,1095,1117,0.75,True,
+0e248ce80d75edfc,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/sale-price-amazon-fba,20220703060951,950,,,False,fetch: HTTPError
+0f74e3e13b6c95df,somatechnology.com,test,health,https://www.somatechnology.com/blog/products/different-oec-9900-elite-configurations/,20190819095519,965,952,1.0,True,
+c21801545e8f9ab1,queenly.com,val,ecommerce_retail,https://queenly.com/blog/why-you-dont-need-a-pageant-gown-to-be-successful-in-your-pageant,20211022192154,768,30,0.0,False,words
+013e55fdde147934,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/complete-guide-to-consumer-psychology,20210816180219,1668,,,False,fetch: HTTPError
+538e04f06ce18a9a,avocademy.com,val,edtech,https://www.avocademy.com/blog/designlab-ux-ui-bootcamp-review,20211021233602,643,,,False,fetch: HTTPError
+2a78b7b73f08e5c6,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/business-continuity/veritas-data-protection-and-governance/,20211206110314,834,,,False,fetch: HTTPError
+c802a589242a7e71,manatal.com,test,software_saas,https://www.manatal.com/blog/recruitment-strategies-facing-a-downturn,20220810082426,1652,1700,0.71,True,
+90838b8d655066c6,foster.co,test,ecommerce_retail,https://www.foster.co/blog/ways-to-supercharge-your-storytelling-output-with-christene-browne,20210517103154,824,,,False,fetch: HTTPError
+2652205e01cf9e44,custora.com,test,ecommerce_retail,https://www.custora.com/blog/discount-downward-spiral-part-3-full-price-growth,20190717205912,1109,,,False,fetch: URLError
+7255e0d793d7031a,geturns.com,test,ecommerce_retail,https://www.geturns.com/blogs/news/unique-cremation-urns-to-honor-the-departed-soul,20200927191903,871,929,1.0,True,
+a1d5013e8e093b79,zeusliving.com,val,services_other,https://zeusliving.com/blog/9-fun-things-to-do-in-san-diego,20210514102509,1421,,,False,fetch: URLError
+acdd2d58c24ab41d,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/automation/chatbots-new-customer-experience-in-manufacturing/,20210223212330,765,,,False,fetch: HTTPError
+fd0ccb0540a13790,custora.com,test,ecommerce_retail,https://www.custora.com/blog/story/what-marketers-need-to-know-about-1st-2nd-and-3rd-party-data,20190821035818,1109,,,False,fetch: URLError
+643cf82e512d984c,avocademy.com,val,edtech,https://www.avocademy.com/blog/why-psych-majors-make-great-ux-ui-designers,20220627165615,1228,,,False,fetch: HTTPError
+bfdf9d310252c056,iconicit.com,test,services_other,https://iconicit.com/blog/are-football-pools-a-good-idea-in-the-office/,20210129160627,1566,,,False,fetch: HTTPError
+bcec222977ffc128,humaans.io,test,software_saas,https://humaans.io/blog/hr-challenges-startup-solutions/,20220816064200,1696,1503,0.0,False,words
+46dbdbe15cffaaa0,oxylabs.io,val,devtools,https://oxylabs.io/blog/regex-web-scraping,20220521000537,1017,1095,1.0,True,
+92f9e0db02bf9953,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/osha-revises-maximum-penalty-amounts/,20210301170240,827,1130,1.0,False,words
+f6063b676eb450a8,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-to-use-writing-to-accelerate-your-career-with-sari-azout,20210517102519,868,,,False,fetch: HTTPError
+b185b5bf54af7bb0,sensehq.com,test,software_saas,https://blog.sensehq.com/5-reasons-why-top-candidates-drop-off,20210801164529,1027,,,False,fetch: URLError
+5c592a5d565ffdfc,windsor.io,test,software_saas,https://www.windsor.io/blog/3-ways-to-upgrade-your-email-marketing-using-ai-powered-videos,20220820003029,1551,,,False,fetch: URLError
+b3529306675d37de,truelinkfinancial.com,test,fintech_insurance,https://www.truelinkfinancial.com/blog/tough-stuff-take-difficult-discussions-aging-parents/,20191020192519,610,615,0.46,False,title
+618f1bc9515407d3,liquipel.com,test,ecommerce_retail,https://blog.liquipel.com/2017/11/16/7-expert-safety-tips-for-solo-female-travelers/,20190822002423,811,,,False,fetch: HTTPError
+3b9019d2810f26f2,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/expert-questions-to-ask-when-house-hunting-with-pets-in-mind/,20220518072147,1071,,,False,fetch: HTTPError
+d4e651ba423e0788,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/how-to-scale-your-amazon-fba-business,20211012172551,1467,,,False,fetch: HTTPError
+f5c9f71eb0fa4303,naborly.com,test,fintech_insurance,https://www.naborly.com/blog/technology-transforming-rentals-electronic-identity-verification,20211117162644,647,538,0.0,False,words
+c36cb35acded4d31,zeusliving.com,val,services_other,https://zeusliving.com/blog/holiday-guide-and-trends-to-watch,20220930180017,1614,,,False,fetch: URLError
+34c9036f1c5b4942,actioncleanup.com,test,ecommerce_retail,https://www.actioncleanup.com/blog-4/easy-to-maintain-flooring-for-commercial-spaces,20191115080622,1047,1047,1.0,True,
+508fdba9dcc8b180,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/referral-marketing-examples,20210924173432,1164,,,False,fetch: HTTPError
+a7547aaa83625d71,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/staying-hydrated-fueled/,20210918161923,899,1053,0.75,False,words
+2b28c72126189d17,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/urchase-order-vs-invoice,20220927091657,865,1127,1.0,False,words
+d0d99df83da4c94d,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/how-to-add-links-to-instagram-stories/,20210922065445,1802,269,0.1,False,words
+30568161cf416390,creativealignments.com,val,services_other,https://blog.creativealignments.com/blog/how-to-craft-a-job-description-that-attracts-your-ideal-employee,20200927200458,792,803,1.0,True,
+a9a6abed28e3db09,intimetec.com,val,services_other,https://blog.intimetec.com/behind-the-scenes-how-did-treefort-build-its-app,20220707135703,812,,,False,fetch: HTTPError
+50ce6ad504c34581,sstid.com,val,services_other,http://www.sstid.com:80/blog/what-is-near-field-communication/,20160412163017,804,787,0.71,True,
+30b04e4eca9b99fc,alluremedical.com,val,health,https://www.alluremedical.com/blog/weightloss/semiglutide-wegovy/,20220819025208,1359,,,False,fetch: HTTPError
+27f3d6a7f173c660,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/the-complete-final-walkthrough-checklist/,20220518064537,798,,,False,fetch: HTTPError
+d01032da06b87349,eatcaulipower.com,test,ecommerce_retail,http://eatcaulipower.com:80/blog/5-things-you-didnt-know-about-frozen-food,20180706045629,700,,,False,fetch: HTTPError
+74e8bd92455b783a,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com/leakage-and-invisible-travel-spending,20170915064720,1092,,,False,fetch: URLError
+50a06c3e904a31d1,yourmechanic.com,val,ecommerce_retail,https://www.yourmechanic.com/blog/how-yourmechanic-is-changing-customer-service-in-the-auto-industry-by-emily-edwards,20180111010259,627,630,1.0,True,
+3ddc7609bfaad479,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/best-cold-war-loadouts-for-all-weapon-classes,20210124163451,1051,7409,0.0,False,words
+87c30bf2c7c1a8dc,pieinsurance.com,test,fintech_insurance,https://pieinsurance.com/blog/small-business-insurance/business-owners-policy-vs-general-liability-insurance/,20220804221459,812,,,False,fetch: HTTPError
+cc7c090ed0c0b193,naborly.com,test,fintech_insurance,https://naborly.com/blog/2020-vacancy-rate-toronto/,20200807040251,688,198,0.0,False,words
+d0600dc7796bd6ae,truelinkfinancial.com,test,fintech_insurance,https://www.truelinkfinancial.com/blog/able-account-or-special-needs-trust-key-considerations-for-fiduciaries,20220528231852,719,745,1.0,True,
+8d69c48e83319e5f,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/how-to-become-a-twitch-affiliate-make-money/,20210928145157,1599,269,0.09,False,words
+d4a52a69b53a0d6e,iconicit.com,test,services_other,https://iconicit.com/blog/how-to-draft-an-acceptable-use-policy/,20220124171758,623,,,False,fetch: HTTPError
+e92cfbf38e1466d1,alluremedical.com,val,health,https://www.alluremedical.com/blog/preventative-medicine/the-future-is-now-slowing-down-and-reversing-disease-and-aging/,20210924210346,1291,,,False,fetch: HTTPError
+811f648fe3b7b18c,iconicit.com,test,services_other,https://iconicit.com/blog/how-to-hold-a-meeting-with-screen-sharing/,20210212170834,675,,,False,fetch: HTTPError
+5f96413d213354a8,atlassian.com,val,devtools,https://www.atlassian.com/blog/2013/05/git-branching-and-forking-in-the-enterprise-why-fork,20221008154114,1132,1143,0.77,True,
+7ed8c47d037a31a6,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/oberlo-shutdown-what-are-the-alternatives-h-3/,20220630192235,1750,1756,0.0,False,title
+969e8a543ece4d70,manatal.com,test,software_saas,https://www.manatal.com/blog/recruitment-trends-how-to-get-better-results-with-an-ats,20221128083539,1985,2033,1.0,True,
+0ad7364b70a4b5df,zeusliving.com,val,services_other,https://zeusliving.com/blog/5-ways-to-make-your-short-term-stay-environmentally-friendly,20220207200644,817,,,False,fetch: URLError
+094146c986a61edd,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/top-5-apex-legends-loadouts-from-legionfarm-pro-players,20210623215036,656,7409,0.22,False,words
+9c1dd005100345bf,mentorcollective.org,test,edtech,https://blog.mentorcollective.org/the-state-of-higher-education-in-texas,20221005230847,973,90,0.07,False,words
+108a4e9d077e4f68,sensehq.com,test,software_saas,https://blog.sensehq.com/top-10-resources-for-forward-thinking-staffing-pros,20190917103429,672,,,False,fetch: URLError
+d7502307a9698961,decisionlink.com,test,software_saas,https://www.decisionlink.com/blog/5-disruptive-trends-impacting-the-cro-role-today,20220518185049,889,,,False,fetch: HTTPError
+7a56721b7337dc85,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/credit-card-reconciliation-general-ledger-account-reconciliation-example,20220927083606,1388,2270,0.6,False,words
+f6ebb0eab81d3cbd,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/6-easy-cleaning-tasks-homeowners-shouldnt-overlook/,20220521081223,782,,,False,fetch: HTTPError
+d98108c61b82742f,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/digital-solutions-to-control-workplace-safety/,20210301154327,1022,1443,1.0,False,words
+47f0c9a5b89b7c72,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/automation-nonconformity-management/,20220518155953,928,1058,0.4,False,words
+46489cd7918f8e66,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/port-number-from-ooma,20221002101214,1274,1889,1.0,False,words
+5a4f88cd9ac224b2,naborly.com,test,fintech_insurance,https://www.naborly.com/blog/rental-trends-for-2022,20211215121746,1052,538,0.0,False,words
+8376c0a05c907979,cognitohq.com,test,fintech_insurance,https://cognitohq.com/blog/enhanced-due-diligence-is-non-negotiable,20210926063926,1058,1076,1.0,True,
+c4f85d09581287ce,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/safety-ai-digital-transformation/,20220122022537,850,864,0.27,False,title
+e455ccdf8c406381,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/legionfarm-weekly-game-news-1,20210618061946,665,7409,0.2,False,words
+5b1c4ce1f2930072,liquipel.com,test,ecommerce_retail,https://blog.liquipel.com/2017/08/09/5-reasons-why-you-need-to-book-your-next-trip-asap/,20210228034642,651,,,False,fetch: HTTPError
+b59708d673dd6762,zeusliving.com,val,services_other,https://zeusliving.com/blog/how-to-make-the-right-choice-in-a-zeus-home,20220404190542,834,,,False,fetch: URLError
+964f2560672c9d22,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/how-to-find-the-best-agent-for-a-short-sale/,20220518053624,839,,,False,fetch: HTTPError
+7b137015e8c7b94f,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/why-sell-unique-hoodies/,20220810105826,1026,1071,0.0,False,title
+77d529e385581179,alluremedical.com,val,health,https://www.alluremedical.com/blog/cosmetics/is-a-combituck(r)-right-for-you/,20191206215603,672,,,False,fetch: HTTPError
+c793aeec4d365915,supertokens.com,val,devtools,https://supertokens.com/blog/connect-supertokens-to-database,20220630163146,2229,2275,0.56,False,title
+fa2984f5076f7840,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/how-to-write-a-product-description-for-amazon,20211206235415,1126,,,False,fetch: HTTPError
+23c2533fe4cc3213,truelinkfinancial.com,test,fintech_insurance,https://www.truelinkfinancial.com/blog/survey-shows-financial-tools-can-better-support-adults-disabilities/,20191122180718,654,669,0.17,False,title
+bd48c393480c9eff,queenly.com,val,ecommerce_retail,https://queenly.com/blog/2022-pantone-color-very-peri,20220728160158,969,30,0.0,False,words
+cc6583a98338f507,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/3-huge-tips-for-refinancing-your-mortgage-even-if-you-have-bad-credit/,20220518074252,775,,,False,fetch: HTTPError
+95e1ad88d6bc17d4,pieinsurance.com,test,fintech_insurance,https://pieinsurance.com/blog/safety/working-in-the-heat/,20200812125144,682,478,1.0,False,words
+4788e577fd610dd6,foster.co,test,ecommerce_retail,https://www.foster.co/blog/writing-and-the-passion-economy,20210615182341,1124,,,False,fetch: HTTPError
+caad0e702e9a831c,bamboohr.com,val,software_saas,http://www.bamboohr.com:80/blog/3-tools-to-optimize-your-recruiting-process,20160305115028,738,1164,0.14,False,words
+e3d0b3ad153da1fc,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/tips-dropshipping-beauty-products/,20220517152604,2073,2270,0.0,False,title
+c9ef0d21937c638b,avocademy.com,val,edtech,https://www.avocademy.com/blog/springboard-ui-ux-bootcamp-review,20211021233743,902,,,False,fetch: HTTPError
+73d61d3717dae0df,distillery.com,test,services_other,https://distillery.com/blog/manual-auto-software-testing/,20210513150032,1025,1053,1.0,True,
+b7b7e6d157d848e0,distillery.com,test,services_other,https://distillery.com/blog/making-a-rails-app-move-faster-a-tale-of-lessons-learned/,20170620143426,1565,,,False,fetch: HTTPError
+32b50ffecb266ce9,sensehq.com,test,software_saas,https://blog.sensehq.com/how-conversational-recruiting-makes-staffing-more-personal,20200930101647,991,,,False,fetch: URLError
+f81597e008fae9eb,supertokens.com,val,devtools,https://supertokens.com/blog/revoking-access-with-a-jwt-blacklist,20220222053630,798,2944,0.5,False,words
+92fe380aa11e3b91,creativealignments.com,val,services_other,https://blog.creativealignments.com/blog/8-ways-scaling-companies-compete-for-hires-without-overspending,20220201183545,1516,1496,0.78,True,
+f0f6b3aa4889c496,giveffect.com,test,software_saas,https://www.giveffect.com/blog/how-giveffect-and-smart-automation-benefit-your-fall-fundraising-ideas/,20190715222331,1109,,,False,fetch: HTTPError
+a3d9693960410320,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/airbnb-for-business-travelers,20151127154123,1014,,,False,fetch: URLError
+6d06ad223fd164d3,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/credit-card-reconciliation-month-end-reconciliation,20220927070615,1889,1576,0.12,False,words
+d1337638a5ea5b38,rocketrip.com,test,fintech_insurance,https://blog.rocketrip.com/gain-acceptance-new-programs-reducing-status-quo-bias,20191113014540,1068,,,False,fetch: URLError
+1e539f1f3b169d9f,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/youtube-gaming-channel/,20210928130032,1925,269,0.11,False,words
+19ad0929447ae23b,naborly.com,test,fintech_insurance,https://www.naborly.com/blog/are-property-managers-entitled-to-pull-your-credit-score,20211115204806,890,538,0.0,False,words
+7de5fdd382684257,giveffect.com,test,software_saas,https://www.giveffect.com/blog/youth-development/,20201201083841,913,,,False,fetch: HTTPError
+ec1d21d607fcb18b,padmapper.com,val,ecommerce_retail,http://blog.padmapper.com:80/2010/07/22/how-to-find-free-moving-boxes/,20110523134111,787,234,0.0,False,words
+31342afc7fc154c7,bamboohr.com,val,software_saas,https://www.bamboohr.com/blog/11-poor-management-offenses-you-may-not-know-youre-committing/,20190817170950,1545,17,0.22,False,words
+c9a5a71d4dd695a8,avocademy.com,val,edtech,https://www.avocademy.com/blog/what-is-design-thinking,20220926193401,1185,,,False,fetch: HTTPError
+580ad20258db5ce6,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/pope-francis-visit,20151008132416,727,,,False,fetch: URLError
+7affc8ab3c7c55c3,naborly.com,test,fintech_insurance,https://www.naborly.com/blog/find-tenants-winter-months,20220706170646,855,538,0.0,False,words
+00485ffd67ec7e2b,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/how-to-audit-an-ecommerce-business,20210907161839,1050,,,False,fetch: HTTPError
+f308e90b48e40dbf,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/grow-your-online-business-on-autopilot/,20220122014631,867,855,0.0,False,title
+58c212ff47891b77,zeusliving.com,val,services_other,https://zeusliving.com/blog/7-vacation-rental-tips-for-owners,20210514095047,1638,,,False,fetch: URLError
+7cecf42ef826381b,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/16-things-to-know-for-sxsw-2016,20160318091537,902,,,False,fetch: URLError
+036b779bb1338b7d,queenly.com,val,ecommerce_retail,https://queenly.com/blog-archives/january-2022,20220527024229,965,,,False,fetch: HTTPError
+b301964563e8e280,moonshotbrands.com,test,fintech_insurance,https://www.moonshotbrands.com/blog/business-transfer-checklist,20210924175037,1012,,,False,fetch: HTTPError
+b362a93993a1ce25,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/business-phone-number,20220716144515,993,1668,1.0,False,words
+a72f5212706fa4a5,supertokens.com,val,devtools,https://supertokens.com/blog/all-you-need-to-know-about-user-session-security,20220205105124,1364,3382,0.33,False,words
+8a3cf27c407d7207,avocademy.com,val,edtech,https://www.avocademy.com/blog/iron-hack-bootcamp-review,20220817225132,849,,,False,fetch: HTTPError
+12d022051a46c22c,lendingworks.co.uk,test,fintech_insurance,http://www.lendingworks.co.uk:80/blog-post/innovative-finance-isa-debt-vs-equity-conundrum,20151208082500,788,,,False,fetch: HTTPError
+922e7319715dbc12,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/next-generation-dropshipping-business/,20220517144506,1272,1279,0.0,False,title
+9a7c64ea8fdd4447,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/quality-safety-leaders-audit/,20211026003028,754,904,1.0,False,words
+bec1b6d33ed55c8e,marcumllp.com,test,services_other,http://www.marcumllp.com:80/blog-tax-and-business/tax-treatment-of-stock-received-on-demutualization-of-insurance,20160112020602,780,,,False,fetch: HTTPError
+5d6a44a06fce21d0,bamboohr.com,val,software_saas,https://www.bamboohr.com/blog/ask-an-hr-expert-onboarding-program/,20200604040618,1228,17,0.18,False,words
+fd394fd5ee460f5b,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/business-calls,20221127054526,1147,367,0.56,False,words
+1c0ee82f6788d80c,foster.co,test,ecommerce_retail,https://www.foster.co/blog/why-you-should-give-away-your-secrets-with-mario-gabriele,20210517103541,1091,,,False,fetch: HTTPError
+e86c9cab78ef8a0f,ambition.com,val,software_saas,https://ambition.com/blog/2015/09/03/2015-fantasy-football-lovers-guide-your-salesforce-part-iv/,20160320043204,1589,,,False,fetch: HTTPError
+83cc1c573d7b0731,rocketrip.com,test,fintech_insurance,https://blog.rocketrip.com/international-sos-travel-manager-interview,20200809074857,965,,,False,fetch: URLError
+58894b23654d0fad,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-successful-writers-actually-picked-their-niche,20210517092826,631,,,False,fetch: HTTPError
+4611af26aa1b0989,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/switching-over-to-the-microsoft-cloud-solution-provider/,20210326162358,756,,,False,fetch: URLError
+ad337c0447854768,supertokens.com,val,devtools,https://supertokens.com/blog/cookies-vs-localstorage-for-sessions-everything-you-need-to-know,20220410055818,1162,2142,0.3,False,words
+691e4bc75a898f6e,instapainting.com,val,ecommerce_retail,https://www.instapainting.com/blog/how-to-showcase-your-pet-with-the-perfect-pet-portrait-painting/,20200507140641,754,759,1.0,True,
+588ceccdd6326a2d,liquipel.com,test,ecommerce_retail,https://blog.liquipel.com/2020/04/02/stay-healthy-home-during-covid-19-lockdown/,20200813052322,633,,,False,fetch: HTTPError
+c712247db758124d,sellvia.com,val,ecommerce_retail,https://sellvia.com/blog/how-to-start-a-car-accessories-business/,20210803050508,1092,1079,0.2,False,title
+811ebea89462d6ce,ambition.com,val,software_saas,https://ambition.com/blog/entry/2015-4-22-referendum-on-gamification/,20210412054939,1859,831,0.0,False,words
+3a31a2be51500525,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/our-first-impressions-and-5-things-you-need-to-know-about-season-of-the-chosen,20210226042449,1337,7409,0.0,False,words
+648448e420b100f5,zeusliving.com,val,services_other,https://zeusliving.com/blog/17-best-day-trips-from-boston-to-unwind,20200916063436,1622,,,False,fetch: URLError
+8b13aa9e9a46c7d0,queenly.com,val,ecommerce_retail,https://queenly.com/blog/girls-night-out-outfits,20220812130954,1572,30,0.0,False,words
+a288c14083a8bba1,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/6-staging-mistakes-to-avoid-when-selling-your-home/,20220518062404,986,,,False,fetch: HTTPError
+b9a77ebf88eef23b,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-service/enabling-cloud-resiliency-by-implementing-azure-resource-manager/,20210921144656,908,,,False,fetch: HTTPError
+c545ddd816e81256,incauthority.com,test,services_other,https://www.incauthority.com/blog/how-to-establish-and-build-business-credit/,20220516121520,974,4501,0.78,False,words
+aa4b12f9f18e2215,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/iso-9001-for-enhancing-customer-experience-cx/,20201024143016,615,847,0.4,False,words
+1ab7919f07a1717b,avocademy.com,val,edtech,https://www.avocademy.com/blog/ux-design-job-descriptions-explained,20220817214141,771,,,False,fetch: HTTPError
+5c2121930f939815,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/grappling-complaints-med-device-company/,20220518170254,675,971,0.48,False,words
+6946083013b957cb,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/7-steps-to-effective-spend-management,20220816132053,1690,2621,1.0,False,words
+fe0523aaceb3a611,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/keto-coffee-weight-loss,20210911072442,2219,2469,0.82,False,words
+e78ceecf5d2cde8d,castle.io,test,devtools,https://blog.castle.io/defining-attacker-experience/,20200616180212,1227,1373,1.0,False,words
+bb615a10b86e5fcb,foster.co,test,ecommerce_retail,https://www.foster.co/blog/discovering-your-signature-move-with-bill-grundfest,20210517093401,1134,,,False,fetch: HTTPError
+f434e21cc36f5bd4,iconicit.com,test,services_other,https://iconicit.com/blog/stay-connected-storm-business-power-outage/,20210423024051,987,,,False,fetch: HTTPError
+ecf655ead108b626,zeusliving.com,val,services_other,https://zeusliving.com/blog/best-restaurants-in-miami,20210514092336,1350,,,False,fetch: URLError
+c4b338e5115263fa,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/ask-your-employees-this-question,20181009070359,750,,,False,fetch: URLError
+5872dfce6f21e6c9,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/what-is-a-comparative-market-analysis-and-how-can-it-help-you-sell-your-home/,20220518071116,958,,,False,fetch: HTTPError
+8c9e2b77233e52ed,incauthority.com,test,services_other,https://www.incauthority.com/blog/how-to-start-a-bank/,20210507024345,2247,1023,1.0,False,words
+ffb458594faebee9,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/regulatory-requirements-in-the-supply-chain/,20210120183818,671,826,0.33,False,words
+ca76876ab0893068,queenly.com,val,ecommerce_retail,https://queenly.com/blog/7-pageant-trends-to-help-you-win,20220804232131,877,,,False,fetch: HTTPError
+abb823e6766cfe75,custora.com,test,ecommerce_retail,https://www.custora.com/blog/how-to-segment-to-increase-repeat-purchases,20190821031255,1217,,,False,fetch: URLError
+929dd82d16e455df,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/military-home-buyers-5-reasons-to-choose-a-va-loan-instead-of-a-conventional-loan/,20220518074058,909,,,False,fetch: HTTPError
+047ef9efdc777e46,windsor.io,test,software_saas,https://www.windsor.io/blog/five-ecommerce-email-campaigns-to-grow-your-online-store,20220702140338,1246,,,False,fetch: URLError
+04d23439be50582f,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/destiny-2-gambit-prime-how-to-play,20210518135739,971,7409,0.0,False,words
+44250121645aa731,cognitohq.com,test,fintech_insurance,https://cognitohq.com/blog/know-your-strategy-assessing-aml-compliance,20210926060619,1135,1154,1.0,True,
+328351e9f1d940c7,ambition.com,val,software_saas,https://ambition.com/blog/entry/2015-12-31-top-10-ambition-blog-posts-2015/,20210413015749,1645,831,0.12,False,words
+5bc60c4a52298e02,avocademy.com,val,edtech,https://www.avocademy.com/blog/what-is-typography-in-ux-ui-design,20220926192445,672,,,False,fetch: HTTPError
+05e4483cdac88daa,controlhub.com,val,fintech_insurance,https://www.controlhub.com/blog/procure-to-pay-process-optimization,20220816125612,1645,1088,1.0,False,words
+168456260aea1c42,naborly.com,test,fintech_insurance,https://naborly.com/blog/how-much-renters-insurance-do-i-need/,20191021222316,707,837,0.0,False,words
+26d0b4919d68c80e,zeusliving.com,val,services_other,https://zeusliving.com/blog/how-to-get-an-apartment-out-of-state-without-a-job,20210226224830,1583,,,False,fetch: URLError
+471714fbc3dd0d74,zeusliving.com,val,services_other,https://zeusliving.com/blog/ultimate-guide-to-temporary-housing-during-construction,20210514091806,1695,,,False,fetch: URLError
+0105edd750fda53f,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/how-to-prioritize-data-quality-for-computer-vision-an-expert-primer,20220519182619,2231,,,False,fetch: URLError
+b632bf06d491807d,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/inspection-readiness-why-collaboration-and-data-visibility-are-key-enablers/,20200929203632,1033,1215,0.46,False,words
+b777ea1b6e701c4a,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/the-complete-overview-of-apex-legends-weapons,20220928031102,1002,7409,0.0,False,words
+ed75cc392e1baefc,communityphone.org,test,ecommerce_retail,https://communityphone.org/blogs/news/how-to-cancel-vonage-phone-services,20201130194845,1094,3038,0.83,False,words
+cf2dac6bf446c21e,castle.io,test,devtools,https://blog.castle.io/how-to-think-about-gdpr-as-a-security-vendor/,20200813112424,1040,1092,1.0,True,
+03087077defcad31,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-service/leveraging-the-cloud-cost-optimization-with-capex-and-opex/,20210921131634,972,,,False,fetch: HTTPError
+d3058df6799cf917,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/is-dataprepops-the-missing-piece-of-the-ml-lifecycle-puzzle,20211027181705,1998,2343,1.0,False,words
+2d00dd3a0209fed0,avocademy.com,val,edtech,https://www.avocademy.com/blog/what-does-an-entry-level-ux-designer-do,20220926191454,915,,,False,fetch: HTTPError
+25593cb6b0bdb144,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/cgt-manufacturing-process-key-areas/,20220626085231,791,1197,0.3,False,words
+30fcf8a1b57c116a,foster.co,test,ecommerce_retail,https://www.foster.co/blog/winning-on-twitter-with-michell-clark,20210517100518,1462,,,False,fetch: HTTPError
+b5606101a830dcc7,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/the-need-for-data-migration-strategy-for-cloud-modernization/,20210921131820,723,,,False,fetch: HTTPError
+204bf5781b051b9a,everydoorrealestate.com,val,services_other,https://www.everydoorrealestate.com/blog/6-bizarre-real-estate-laws-across-the-us/,20220516114921,848,,,False,fetch: HTTPError
+ca37fcd2f418b5e0,humaans.io,test,software_saas,https://humaans.io/blog/how-hr-tech-can-help-your-startup-focus-on-people-and-scale-better/,20191020230341,764,1503,0.23,False,words
+c8b214cdd6737231,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/nutrition/l-theanine-pros-and-cons/,20210803071909,2040,2365,0.8,False,words
+b54398a089a6b0e1,boldrimpact.com,test,services_other,https://www.boldrimpact.com/blog/disaster-proofing-your-business/,20221005043853,1554,1580,0.8,True,
+de0e95889dd44c8f,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/send-letter-ceo-cell-phone-carrier,20210803031440,637,736,1.0,False,words
+6e5289fb2fe875f8,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/you-wanna-be-on-top-best-apex-streamers-reveal-their-secrets,20210119184340,1106,7409,0.0,False,words
+080ecba42b4c8358,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/the-dawning-2020-full-guide,20210124162254,1363,7409,0.0,False,words
+51c13353038ac53b,sensehq.com,test,software_saas,https://blog.sensehq.com/using-an-omni-channel-approach-to-candidate-engagement,20190824231037,842,,,False,fetch: URLError
+a461ad152202bd37,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/cloud-rises-to-the-top-of-the-cio-agenda/,20210103135034,814,,,False,fetch: HTTPError
+f3e7ca60c843f765,junipersquare.com,test,fintech_insurance,https://www.junipersquare.com/blog/what-the-changing-definition-of-accredited-investor-means-for-commercial-real-estate,20220630135404,1254,1262,1.0,True,
+832429fdf11afcd9,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/an-introduction-to-online-booking-tools-for-corporate-travel,20170128064819,824,,,False,fetch: URLError
+31d4c1391730fa85,sensehq.com,test,software_saas,https://blog.sensehq.com/the-secret-to-automation-done-right-for-staffing-firms,20210121132707,1091,,,False,fetch: URLError
+cc5ff1ec5a52022f,marcumllp.com,test,services_other,http://www.marcumllp.com:80/blog-assurance-services/coso-s-2013-internal-control-integrated-framework-21-years-later,20150827193203,917,,,False,fetch: HTTPError
+72a4276740d1683a,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/how-to-get-your-health-and-safety-digitalization-project-funded/,20210120184258,994,1266,0.62,False,words
+584d84cbe9401418,sensehq.com,test,software_saas,https://blog.sensehq.com/top-10-new-years-resolutions-for-staffing-firms,20200806013855,1336,,,False,fetch: URLError
+1a8c612c23556125,zeusliving.com,val,services_other,https://zeusliving.com/blog/what-is-a-long-term-rental,20210514112321,1536,,,False,fetch: URLError
+7246b8e102ec245f,humaans.io,test,software_saas,https://humaans.io/blog/how-to-build-a-people-operations-budget/,20191020230422,1586,84,0.89,False,words
+b929d05d585f874e,superb-ai.com,val,software_saas,https://www.superb-ai.com/blog/an-introduction-to-bounding-boxes-best-practices,20220218195736,1452,1716,1.0,False,words
+0ef775d1fb07ff2d,giveffect.com,test,software_saas,https://www.giveffect.com/blog/volunteer-engagement-smarter-strategies-and-a-better-way-to-be/,20201130172632,653,,,False,fetch: HTTPError
+5d7887275af9c49b,ambition.com,val,software_saas,https://ambition.com/blog/entry/2015-4-15-sales-management-lessons-10-coaching-catastrophes/,20180121101352,2311,831,0.0,False,words
+80e98c06d3d96104,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cisco-solutions/balancing-safety-and-security-during-year-of-remote-working/,20210315142620,693,,,False,fetch: HTTPError
+7dfa37cc57dad0a4,berndtcpa.com,test,services_other,https://berndtcpa.com/blog/blog/7-tips-for-surviving-back-to-school-this-year-35321,20210228221928,610,,,False,fetch: HTTPError
+1ecac895296ce7e0,communityphone.org,test,ecommerce_retail,https://www.communityphone.org/blogs/how-to-use-a-landline-phone,20221002093935,1467,1708,1.0,False,words
+559b5930d9fb6be0,alluremedical.com,val,health,https://www.alluremedical.com/blog/sleep-apnea/my-nightlase/,20220819011015,876,,,False,fetch: HTTPError
+436df575f1da2067,naborly.com,test,fintech_insurance,https://naborly.com/blog/resources-for-usa-landlords-tenants/,20200807041955,2213,837,0.43,False,words
+99cf8643a356201c,compliancequest.com,test,software_saas,https://www.compliancequest.com/blog/eqms-for-cannabis-in-the-2020s/,20200930080728,896,709,0.22,False,words
+177f3fc7611e3157,iconicit.com,test,services_other,https://iconicit.com/blog/adaptive-manufacturing-technology-and-the-modern-factory/,20211223161605,1004,,,False,fetch: HTTPError
+e4c900c1f0c9e294,computersolutionseast.com,test,services_other,https://www.computersolutionseast.com/blog/cloud-solutions/proven-tips-to-ensure-the-successful-implementation-of-cloudops/,20211017090656,785,,,False,fetch: HTTPError
+520a2319e22dfbf0,foster.co,test,ecommerce_retail,https://www.foster.co/blog/lessons-learned-helping-thousands-of-creators-with-josh-spector,20210517090854,1124,,,False,fetch: HTTPError
+36d69647770666f4,rocketrip.com,test,fintech_insurance,http://blog.rocketrip.com:80/2017-business-travel-outlook,20170316041216,638,,,False,fetch: URLError
+bca10b90853a425e,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/king-slayer-mode-guide-get-these-kills-with-ease,20210416191531,961,7409,0.0,False,words
+4379700312393f11,drinksupercoffee.com,test,ecommerce_retail,https://drinksupercoffee.com/blog/recipes/low-sugar-mocha-twix-bars/,20220704155849,712,782,0.71,True,
+156b3c7885679f12,lendingworks.co.uk,test,fintech_insurance,https://www.lendingworks.co.uk/blog/finance/brexit-what-it-means-for-peer-to-peer-lending,20190723213308,1592,,,False,fetch: HTTPError
+11eba0e6a541faac,sstid.com,val,services_other,https://www.sstid.com/blog/mobile-devices-for-healthcare/,20190723002854,864,864,1.0,True,
+06962d5644659e9e,iconicit.com,test,services_other,https://iconicit.com/blog/the-single-sign-on-solution-that-hack-proofs-your-company/,20210613133200,734,,,False,fetch: HTTPError
+dcbcc42760b46769,avocademy.com,val,edtech,https://www.avocademy.com/blog/what-does-a-ux-designer-actually-do,20220520005125,1305,,,False,fetch: HTTPError
+b22f0ad51d79f4ab,beacons.ai,val,ecommerce_retail,https://blog.beacons.ai/how-to-run-the-perfect-giveaway/,20211019222229,661,269,0.0,False,words
+903f2fdadadd58eb,supertokens.com,val,devtools,https://supertokens.com/blog/what-is-roles-based-access-control-vs-abac,20221103212705,737,1942,1.0,False,words
+5f8d321cd492b720,foster.co,test,ecommerce_retail,https://www.foster.co/blog/how-to-build-a-media-company-around-your-niche-with-jacob-donnelly,20210517090424,661,,,False,fetch: HTTPError
+2c6ed06044742981,incauthority.com,test,services_other,https://www.incauthority.com/blog/protect-your-assets-before-you-get-sued/,20210423093651,795,3418,0.56,False,words
+94c5a312e956a676,lendingworks.co.uk,test,fintech_insurance,http://www.lendingworks.co.uk:80/blog-post/3-handy-tips-when-saving-your-first-home,20150609030239,812,,,False,fetch: HTTPError
+811c8c2b8974d4a2,infoverity.com,val,services_other,http://www.infoverity.com:80/blog/purisma-to-mdm-transition-part-2/,20121205054939,1076,1084,0.0,False,title
+ee3fbe5147481d1d,foster.co,test,ecommerce_retail,https://www.foster.co/blog/the-evolving-media-landscape-with-paul-smalera,20210517090805,1129,,,False,fetch: HTTPError
+96ba7aef343463f4,legionfarm.com,val,ecommerce_retail,https://legionfarm.com/blog/top-warzone-settings-tips-for-xbox-s-x-one,20220928031428,957,7409,0.0,False,words
+efc0f9387e83b614,bamboohr.com,val,software_saas,http://www.bamboohr.com/blog/7-secrets-to-keeping-talented-employees-onboard,20121204150432,672,,,False,fetch: HTTPError
+bce87dbfa47eeb8d,queenly.com,val,ecommerce_retail,https://queenly.com/blog/fall-wedding-dress-trends,20221101144454,1095,,,False,fetch: HTTPError
+2d54354a8ad6871b,iconicit.com,test,services_other,https://iconicit.com/blog/the-five-ways-cloud-computing-saves-your-company-money/,20210925220322,1132,,,False,fetch: HTTPError
+464066ef0e3fafd0,custora.com,test,ecommerce_retail,https://www.custora.com/blog/discount-downward-spiral-excess-inventory,20190717205632,951,,,False,fetch: URLError
+b89c3b38d575dbc2,queenly.com,val,ecommerce_retail,https://queenly.com/blog/plan-quinceanera,20221109235427,2351,,,False,fetch: HTTPError

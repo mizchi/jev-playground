@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Infoverity, a professional services firm specializing in master data management, product information management, and data governance, explaining how industrial machinery and equipment manufacturers can use combined internal and external customer data to shift from product-centric to customer-centric cross-selling. Frame the reader as a manufacturing executive weighing this transition, and name the hurdles: trustworthy golden records, cultural resistance to centralization, crediting product business units, and ongoing data stewardship. Introduce Infoverity's roadmapping framework and support the case with two anonymized client engagements, one a large equipment maker and one an oilfield services firm. Keep the register corporate and case-study driven, ending with a concise company overview and invitation to get in touch.
+
+Your article must be approximately 800 words long.
+Write only the article, beginning with a title line.

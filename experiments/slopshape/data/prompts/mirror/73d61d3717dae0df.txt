@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Distillery, a software development company building web and mobile products, arguing that the choice between manual and automated testing is a false one and that quality comes from combining both. From the perspective of a seasoned QA lead, walk through the main testing types, from requirements and exploratory testing through GUI, API, regression, and load testing, explaining where automation earns its keep and where human judgment remains irreplaceable. Name the practical tools teams rely on and flag when UI automation is worth its cost. Keep the tone expert, practical, and lightly personable for stakeholders weighing QA investment, and close on the idea that machines still cannot ask the curious questions testers do.
+
+Your article must be approximately 1000 words long.
+Write only the article, beginning with a title line.

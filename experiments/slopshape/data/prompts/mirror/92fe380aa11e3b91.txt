@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for the publisher, an advisor to entrepreneurs leading small companies into rapid growth, about how scaling businesses can win talent against larger rivals without overspending on pay. Address founders who fear they cannot match big-company compensation, and reframe hiring as a risk-and-reward calculation on both sides rather than a pure money problem. Lay out numbered tactics spanning purpose, people-focused culture, authentic DEI, transparency, flexibility, rethought traditional benefits, hiring speed, and equity incentives for leaders, showing where modest spending beats the cost of an empty seat. Support points with quotes from outside business advisors, keep the tone pragmatic and encouraging, and close by urging leaders to treat people costs as a long-term investment.
+
+Your article must be approximately 1500 words long.
+Write only the article, beginning with a title line.

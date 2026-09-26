@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Atlassian, maker of the Git repository manager Stash along with Jira and Confluence, arguing that forking remains valuable inside the enterprise even for teams using a centralized repository with feature branches. Address developers adopting DVCS workflows, first defining a fork as a server-side repository copy distinct from a local clone and noting their dominance in open source. Then walk through enterprise uses: protecting core shared components while inviting outside contributions, coordinating departments that maintain their own variants, keeping central repositories free of branch noise, controlling contractor access, and giving developers private personal forks. Use Atlassian's own teams as evidence, keep the voice opinionated and technically fluent, and close by announcing Stash's new first-class fork support.
+
+Your article must be approximately 1100 words long.
+Write only the article, beginning with a title line.

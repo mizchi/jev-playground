@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Boldr, a global PEO and outsourcing provider, sharing practical ways to keep remote team members engaged and connected. Acknowledge that remote work is a prized perk but carries risks of isolation, disengagement, and low morale. Build the piece around four tactics drawn from Boldr's own department leads, quoting them directly: a weekly wrap-up ritual, regular personal check-ins that normalize talk about wellbeing, food-centered bonding rooted in Filipino culture, and monthly playful icebreaker sessions for a team spread across countries. Keep the tone warm, people-first, and anecdotal, then link team connection to trust, retention, and productivity before describing Boldr's payroll, compliance, and people-support services.
+
+Your article must be approximately 1300 words long.
+Write only the article, beginning with a title line.

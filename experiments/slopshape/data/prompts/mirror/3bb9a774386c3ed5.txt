@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for HackerRank, a technical hiring and skills assessment platform, about the major challenges companies building cloud-first tech stacks must solve in 2023. Frame the piece for engineering and business leaders riding rapid cloud market growth, opening with a plain definition of cloud computing and the pandemic's push toward adoption. Then walk through six problems: the shortage of cloud engineering talent (with hiring, retention, and upskilling as responses), migration that extends beyond moving data, vendor security and compliance vetting, backup and redundancy planning, rising costs, and the uncertain effect of a possible recession. Keep an informative, balanced tone, and end on the conviction that long-term cloud adoption is inevitable.
+
+Your article must be approximately 1200 words long.
+Write only the article, beginning with a title line.

@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Oxylabs, a provider of proxy services and web scraping tools including its Web Scraper API, explaining how Regular Expressions make web scraping more efficient when extracting structured data from messy, frequently changing HTML. Target developers with basic Python knowledge. Define RegEx, include a reference table of common tokens, then deliver a step-by-step tutorial: set up a virtual environment, install Requests and Beautiful Soup, fetch the Oxylabs sandbox products page, isolate product cards, inspect the markup, write capture-group patterns for titles and prices, and save results to a text file, finishing with the full script. Keep the register instructional and code-forward, and close by pointing readers to the Web Scraper API and further tutorials.
+
+Your article must be approximately 1000 words long.
+Write only the article, beginning with a title line.

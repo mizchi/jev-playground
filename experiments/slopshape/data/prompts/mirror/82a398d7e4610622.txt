@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for HackerRank, a technical hiring and skills assessment platform, about the database interview questions that data scientists, data engineers, and software engineers should be ready to answer. Frame it for job seekers preparing for technical screens, first describing what a database interview involves and the concepts and technologies it typically covers, from normalization and joins to SQL, NoSQL, and MapReduce. Then organize sample problems into tiers: multiple-choice concept checks, basic single-concept coding exercises, and harder challenges requiring deeper or language-specific knowledge, all solved in a collaborative IDE. Write original example problems rather than reusing existing ones, keep the tone practical and study-guide focused, and close by pointing to HackerRank SQL certifications as next steps.
+
+Your article must be approximately 1300 words long.
+Write only the article, beginning with a title line.

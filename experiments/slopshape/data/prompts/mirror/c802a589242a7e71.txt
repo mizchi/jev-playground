@@ -1,0 +1,8 @@
+[system]
+You are an expert content writer who produces rich, detailed articles.
+
+[user]
+Write a blog post for Manatal, a provider of a cloud-based, AI-powered applicant tracking system, arguing that a looming recession will not hand hiring leverage back to employers and that HR teams must adapt their recruitment strategies accordingly. Address HR professionals and talent acquisition leaders facing a candidate-driven market despite economic uncertainty. Outline strategies including tracking economic and labor data, promoting upskilling programs, taking authentic stances on social issues, investing in candidate engagement technology, offering whole-person wellness benefits, and preserving remote work. Support points with survey findings on employee attitudes. Keep the register confident, advisory, and forward-looking, then close by positioning Manatal's ATS and its free trial as a practical ally in the talent competition.
+
+Your article must be approximately 1700 words long.
+Write only the article, beginning with a title line.
