@@ -384,6 +384,126 @@ function repeatability() {
   return { posts: reps.length, items: A.length, exact: A.filter((x, i) => x === B[i]).length / A.length, kappa: kappa(A, B) };
 }
 
+// ------------------------------------------------------ §9: posts from 2023 on
+
+interface RecentMeta {
+  id: string;
+  domain: string;
+  url: string;
+  date: string;
+  words: number;
+}
+
+/**
+ * How often each detector flags the companies' own 2023+ posts, at cutoffs set
+ * on the pre-2022 data only. The labels of 2023+ posts are unknown, so a flag
+ * rate here is an UPPER BOUND on the false-positive rate.
+ *
+ * Every detector yields three score lists: pre-2022 human (out of fold where a
+ * model is fitted), AI mirror, and 2023+. Two cutoffs, both from pre-2022:
+ *   fpr10  flags at most 10% of pre-2022 human posts (score > the 90th percentile)
+ *   f1     the macro-F1-best cutoff on the pre-2022 pairs (score >= c)
+ */
+function recentProbe() {
+  const metaPath = resolve(RECORDS, "recent.json");
+  if (!existsSync(metaPath)) return null;
+  const meta = new Map((JSON.parse(readFileSync(metaPath, "utf8")) as RecentMeta[]).map((m) => [m.id, m]));
+  const rows = (kind: string) => new Map(load(resolve(RECORDS, `recent-${kind}.jsonl.gz`)).map((r) => [r.id, r]));
+  const feat = rows("features");
+  const core = rows("core");
+  const judge = rows("judge");
+  const recentIds = [...meta.keys()].filter((id) => feat.has(id) && core.has(id) && judge.has(id)).sort();
+  if (!recentIds.length) return null;
+
+  // The structural classifier, soft encoding: a 2023+ post from a company in the
+  // training pairs is scored by the model fitted without that company.
+  const struct = items(["human", "ai"], "narrative_strict", true);
+  const clean = (x: number[]) => x.map((z) => (Number.isFinite(z) ? z : 0));
+  const folds = new Map<string, (x: number[]) => number>();
+  const modelFor = (domain: string) => {
+    if (!folds.has(domain)) {
+      const train = struct.rows.filter((r) => r.domain !== domain);
+      folds.set(domain, fitLogistic(train.map((r) => clean(r.x)), train.map((r) => r.y), LAMBDA));
+    }
+    return folds.get(domain)!;
+  };
+  const structRecent = (r: Row) => {
+    const e = encode(r.answers, variantFeatures("narrative_strict"), true);
+    return modelFor(meta.get(r.id)!.domain)(clean(struct.cols.map((c) => e[c])));
+  };
+  const cv = crossValidate(["human", "ai"], ["human", "ai"], "narrative_strict", true);
+
+  type Det = { name: string; human: number[]; ai: number[]; recent: number[] };
+  const fromTable = (name: string, table: Map<string, Row>, recentTable: Map<string, Row>, f: (r: Row) => number): Det => ({
+    name,
+    human: scoredBy(["human"], f, table).map((r) => r.p),
+    ai: scoredBy(["ai"], f, table).map((r) => r.p),
+    recent: recentIds.map((id) => f(recentTable.get(id)!)),
+  });
+  const dets: Det[] = [
+    fromTable("A0, core 10 alone (hard)", coreByKey, core, (r) => coreRuleScore(r.answers)),
+    fromTable("A0, core 10 alone (soft)", coreByKey, core, (r) => coreRuleScore(r.answers, true)),
+    fromTable("A0, inside 307 (hard)", byKey, feat, (r) => coreRuleScore(r.answers)),
+    {
+      name: "structural 187, soft, fitted",
+      human: cv.filter((r) => r.y === 0).map((r) => r.p),
+      ai: cv.filter((r) => r.y === 1).map((r) => r.p),
+      recent: recentIds.map((id) => structRecent(feat.get(id)!)),
+    },
+    ...ARMS.map((arm) => fromTable(`judge: ${arm}`, judgeByKey, judge, judgeScore(arm))),
+  ];
+
+  const years = [...new Set(recentIds.map((id) => meta.get(id)!.date.slice(0, 4)))].sort();
+  const matched = new Set(ids.map((id) => domainOf.get(id)));
+  const rate = (xs: number[], pred: (v: number) => boolean) => xs.filter(pred).length / Math.max(1, xs.length);
+  const out = dets.map((d) => {
+    const hs = [...d.human].sort((a, b) => a - b);
+    const c10 = hs[Math.ceil(0.9 * hs.length) - 1];
+    const y = [...d.human.map(() => 0), ...d.ai.map(() => 1)];
+    const sc = [...d.human, ...d.ai];
+    let cF1 = 0.5;
+    let best = -1;
+    for (const c of [...new Set(sc)].sort((a, b) => a - b)) {
+      const f = macroF1(y, sc, c);
+      if (f > best) [cF1, best] = [c, f];
+    }
+    const recent = recentIds.map((id, i) => ({ id, domain: meta.get(id)!.domain, year: meta.get(id)!.date.slice(0, 4), p: d.recent[i] }));
+    const flagCI = (pred: (v: number) => boolean) =>
+      clusterCI(recent, (r) => r.domain, (xs) => rate(xs.map((r) => r.p), pred));
+    const fpr10 = (v: number) => v > c10;
+    const f1 = (v: number) => v >= cF1;
+    return {
+      detector: d.name,
+      auc_ai_vs_old_human: auc(d.ai, d.human),
+      auc_recent_vs_old_human: auc(d.recent, d.human),
+      fpr10: {
+        cutoff: c10,
+        old_human_flagged: rate(d.human, fpr10),
+        ai_recall: rate(d.ai, fpr10),
+        recent_flagged: rate(d.recent, fpr10),
+        recent_ci: flagCI(fpr10),
+        matched_companies: rate(recent.filter((r) => matched.has(r.domain)).map((r) => r.p), fpr10),
+        by_year: Object.fromEntries(years.map((yr) => [yr, rate(recent.filter((r) => r.year === yr).map((r) => r.p), fpr10)])),
+      },
+      f1: {
+        cutoff: cF1,
+        old_human_flagged: rate(d.human, f1),
+        ai_recall: rate(d.ai, f1),
+        recent_flagged: rate(d.recent, f1),
+        recent_ci: flagCI(f1),
+      },
+    };
+  });
+  return {
+    posts: recentIds.length,
+    companies: new Set(recentIds.map((id) => meta.get(id)!.domain)).size,
+    matched_posts: recentIds.filter((id) => matched.has(meta.get(id)!.domain)).length,
+    by_year: Object.fromEntries(years.map((yr) => [yr, recentIds.filter((id) => meta.get(id)!.date.startsWith(yr)).length])),
+    mean_words: mean(recentIds.map((id) => meta.get(id)!.words)),
+    detectors: out,
+  };
+}
+
 // --------------------------------------------------------------- the report
 
 const rel = (p: string) => JSON.parse(readFileSync(resolve(REL, p), "utf8"));
@@ -465,6 +585,7 @@ export function report() {
     rarity: { as_released: rarity("human", "ai"), titled: rarity("titled", "ai") },
     B,
     repeatability: repeatability(),
+    recent: recentProbe(),
     usage,
     paper: {
       structural: paper.variants.narrative_strict.test.macro_f1,
@@ -540,6 +661,17 @@ function markdown(r: ReturnType<typeof report>): string {
   for (const [arm, v] of Object.entries(r.B))
     L.push(`| ${arm} | ${cell(v.as_released)} | ${cell(v.titled)} | ${cell(v.reworded)} | ${f2(v.mean_noul.human)} / ${f2(v.mean_noul.ai)} | ${fitCell(v.as_released)} / ${fitCell(v.titled)} / ${fitCell(v.reworded)} |`);
   L.push("");
+  const rc = r.recent;
+  if (rc) {
+    L.push("## §9: the companies' own posts from 2023 on (flag rate = upper bound on false positives)");
+    L.push(`posts ${rc.posts} from ${rc.companies} companies (${rc.matched_posts} from the 33 pre-2022 companies), by year ${JSON.stringify(rc.by_year)}, mean words ${rc.mean_words.toFixed(0)}`);
+    L.push("");
+    L.push("| detector | AUC ai vs old human | AUC 2023+ vs old human | cutoff fpr10: old human / AI recall / **2023+** [CI] / matched | by year | cutoff F1: old human / AI recall / **2023+** [CI] |");
+    L.push("| --- | --- | --- | --- | --- | --- |");
+    for (const d of rc.detectors)
+      L.push(`| ${d.detector} | ${f2(d.auc_ai_vs_old_human)} | ${f2(d.auc_recent_vs_old_human)} | ${f2(d.fpr10.old_human_flagged)} / ${f2(d.fpr10.ai_recall)} / **${f2(d.fpr10.recent_flagged)}** ${ci(d.fpr10.recent_ci)} / ${f2(d.fpr10.matched_companies)} | ${Object.entries(d.fpr10.by_year).map(([y, v]) => `${y}: ${f2(v)}`).join(", ")} | ${f2(d.f1.old_human_flagged)} / ${f2(d.f1.ai_recall)} / **${f2(d.f1.recent_flagged)}** ${ci(d.f1.recent_ci)} |`);
+    L.push("");
+  }
   if (r.repeatability)
     L.push(`## repeatability: ${r.repeatability.posts} rescored posts, ${r.repeatability.items} single-answer items, exact ${f2(r.repeatability.exact)}, kappa ${f2(r.repeatability.kappa)} (paper alpha 0.891)`);
   return L.join("\n");

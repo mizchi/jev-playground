@@ -23,10 +23,30 @@ export const REL = resolve(ROOT, "vendor/slopshape");
 export const DATA = resolve(ROOT, "data");
 export const RECORDS = resolve(ROOT, "records");
 
-export type Source = "human" | "titled" | "ai" | "reworded";
+/** `recent` is a company's own post dated 2023 or later (docs/66 §9): unpaired, presumed human. */
+export type Source = "human" | "titled" | "ai" | "reworded" | "recent";
 export const SOURCES: Source[] = ["human", "titled", "ai", "reworded"];
 /** Which sources are human-written, for every metric. */
-export const isHuman = (s: Source) => s === "human" || s === "titled";
+export const isHuman = (s: Source) => s === "human" || s === "titled" || s === "recent";
+
+export interface RecentFile {
+  id: string;
+  domain: string;
+  url: string;
+  date: string;
+  title: string;
+  text: string;
+}
+
+/** data/recent/ (gitignored), written by src/fetch_recent.py. */
+export function recents(): RecentFile[] {
+  const dir = resolve(DATA, "recent");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort()
+    .map((f) => JSON.parse(readFileSync(resolve(dir, f), "utf8")) as RecentFile);
+}
 
 export interface Doc {
   id: string;

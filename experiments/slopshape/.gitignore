@@ -5,3 +5,4 @@ data/human/
 data/prompts/brief/
 # Embeds the release's LAMP prompt (prompts/ is all rights reserved); `npm run prompts` rebuilds it.
 data/prompts/reword/
+data/recent/
